@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { fetchDashboardData } from '@/lib/api'; // ✅ nette API import
 
 export function useMacroData() {
   const [macroData, setMacroData] = useState([]);
@@ -12,29 +13,16 @@ export function useMacroData() {
     return () => clearInterval(interval);
   }, []);
 
-  async function safeFetch(url) {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Fout bij ophalen van ${url}`);
-        const data = await res.json();
-        if (!data || !data.macro_data) throw new Error("Lege response");
-        return data.macro_data;
-      } catch (err) {
-        console.error("❌ safeFetch:", err);
-        retries--;
-        await new Promise(r => setTimeout(r, 2000));
-      }
-    }
-    return [];
-  }
-
   async function loadData() {
-    const data = await safeFetch('/api/dashboard_data');
-    setMacroData(data);
-    updateScore(data);
-    markStepDone(3);
+    try {
+      const data = await fetchDashboardData();
+      const macro = data?.macro_data || [];
+      setMacroData(macro);
+      updateScore(macro);
+      markStepDone(3);
+    } catch (err) {
+      console.error("❌ Macrodata ophalen mislukt:", err);
+    }
   }
 
   function calculateMacroScore(name, value) {
@@ -94,7 +82,6 @@ export function useMacroData() {
     updateScore(updated);
   }
 
-  // ✅ Zorg dat je component meteen alles heeft wat hij nodig heeft
   return {
     macroData,
     avgScore,

@@ -1,4 +1,3 @@
-// ✅ components/ScoreGauge.jsx
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -37,7 +36,10 @@ export default function ScoreGauge({ id, label }) {
         rotation: -90,
         circumference: 180,
         cutout: "80%",
-        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        }
       }
     });
 
@@ -62,7 +64,7 @@ export default function ScoreGauge({ id, label }) {
         chartRef.current.update();
       }
 
-      // ✅ Tekst update
+      // ✅ Score en uitleg
       document.getElementById(`${id}Score`).textContent = `Score: ${score}`;
       document.getElementById(`${id}Explanation`).innerHTML = `
         <div style="text-align:center; margin-top: 8px;">
@@ -83,29 +85,35 @@ export default function ScoreGauge({ id, label }) {
         logDiv.innerHTML += `</ul>`;
       }
 
-      // ✅ Setup extra (alleen bij setup)
+      // ✅ Setup-specific: Top 3 & beste uitleg
       if (id === 'setup' && data.setups) {
         const best = [...data.setups].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
-        if (best) {
-          const top = [...data.setups].slice(0, 3).map(s => `⭐️ <strong>${s.name}</strong> → <code>${s.score}</code>`);
-          const mini = document.getElementById("topSetupsMini");
-          if (mini) mini.innerHTML = `<strong>Top 3 setups</strong><ul><li>${top.join('</li><li>')}</li></ul>`;
+        const mini = document.getElementById("topSetupsMini");
+
+        if (best && mini) {
+          const top = data.setups
+            .filter(s => typeof s.score === 'number')
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3)
+            .map(s => `⭐️ <strong>${s.name}</strong> → <code>${s.score}</code>`);
+
+          mini.innerHTML = `<strong>Top 3 setups</strong><ul><li>${top.join('</li><li>')}</li></ul>`;
         }
       }
+
     } catch (err) {
       console.error(`❌ Fout bij ophalen ${id} score:`, err);
     }
   }
 
   return (
-    <div className="gauge-wrapper">
+    <div className="gauge-wrapper space-y-2">
       <canvas ref={canvasRef} id={`${id}Gauge`} className="w-full h-40" />
-      <span>{label}</span>
-      <div className="score-label" id={`${id}Score`}>Score: ⏳</div>
-      <div className="explanation" id={`${id}Explanation`}>Uitleg wordt geladen...</div>
-      <div className="log-block" id={`${id}Log`}></div>
-      {id === 'setup' && <div id="topSetupsMini" className="log-block mt-2"></div>}
+      <div className="text-center font-semibold">{label}</div>
+      <div className="score-label text-sm text-center" id={`${id}Score`}>Score: ⏳</div>
+      <div className="explanation text-center text-gray-600 text-sm" id={`${id}Explanation`}>Uitleg wordt geladen...</div>
+      <div className="log-block text-xs px-2" id={`${id}Log`}></div>
+      {id === 'setup' && <div id="topSetupsMini" className="log-block mt-2 text-xs px-2"></div>}
     </div>
   );
 }
-

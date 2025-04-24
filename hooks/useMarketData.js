@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchMarketData } from '@/lib/api'; // ✅ centraal beheerde API-call
+import { fetchMarketData } from '@/lib/api/market'; // 🔁 domeinspecifiek
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);

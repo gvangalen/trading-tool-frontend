@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchTechnicalData } from '@/lib/api'; // ✅ herbruikbare centrale fetch
+import { fetchTechnicalData } from '@/lib/api/technical'; // ✅ specifieke module voor technische data
 
 export function useTechnicalData() {
   const [technicalData, setTechnicalData] = useState([]);

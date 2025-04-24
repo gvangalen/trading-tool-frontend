@@ -1,6 +1,6 @@
-// ✅ useTechnicalData.js — hook voor technische analyse
 'use client';
 import { useEffect, useState } from 'react';
+import { fetchTechnicalData } from '@/lib/api'; // ✅ herbruikbare centrale fetch
 
 export function useTechnicalData() {
   const [technicalData, setTechnicalData] = useState([]);
@@ -8,33 +8,20 @@ export function useTechnicalData() {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 60000);
+    loadData();
+    const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  async function safeFetch(url) {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Fout bij ophalen van ${url}`);
-        const data = await res.json();
-        if (!data || !data.technical_data) throw new Error("Lege response");
-        return data.technical_data;
-      } catch (err) {
-        console.error("❌ safeFetch:", err);
-        retries--;
-        await new Promise(r => setTimeout(r, 2000));
-      }
+  async function loadData() {
+    try {
+      const data = await fetchTechnicalData();
+      setTechnicalData(data);
+      updateScore(data);
+    } catch (err) {
+      console.error("❌ Technische data ophalen mislukt:", err);
+      setTechnicalData([]);
     }
-    return [];
-  }
-
-  async function fetchData() {
-    const data = await safeFetch('/api/dashboard_data');
-    setTechnicalData(data);
-    updateScore(data);
   }
 
   function calculateScore(item) {
@@ -72,5 +59,6 @@ export function useTechnicalData() {
     avgScore,
     advies,
     removeIndicator,
+    calculateScore,
   };
 }

@@ -1,45 +1,48 @@
+// ✅ app/dashboard/page.jsx
 'use client';
+
 import NavBar from '@/components/NavBar';
 import ScoreGauge from '@/components/ScoreGauge';
 import MarketTable from '@/components/MarketTable';
 import MacroTable from '@/components/MacroTable';
 import TechnicalTable from '@/components/TechnicalTable';
-import AssetSelector from '@/components/AssetSelector';
+import SetupManager from '@/components/SetupManager';
 import TradingAdvice from '@/components/TradingAdvice';
-import SetupManager from '@/components/SetupManager'; // ✅ nieuwe component
+import AssetSelector from '@/components/AssetSelector';
 
-export default function Dashboard() {
+export default function DashboardPage() {
   return (
     <div className="p-4 space-y-8">
       <NavBar />
-
       <h2 className="text-2xl font-bold">📊 Dashboard</h2>
 
-      {/* ✅ Meters */}
+      {/* 🔁 Live Scores */}
       <div className="flex flex-wrap gap-4">
         <ScoreGauge label="📉 Macro" id="macro" />
         <ScoreGauge label="📈 Technisch" id="technical" />
         <ScoreGauge label="📊 Setup" id="setup" />
       </div>
 
-      {/* ✅ Asset keuze + AI-advies */}
+      {/* 🎯 Selecteer asset */}
       <AssetSelector />
+
+      {/* 🧠 Tradingadvies */}
       <TradingAdvice />
 
-      {/* ✅ Market Data */}
+      {/* 📈 Marktgegevens */}
       <h3 className="text-xl font-semibold mt-8">📊 Market Data</h3>
       <MarketTable />
 
-      {/* ✅ Macro Indicatoren */}
-      <h3 className="text-xl font-semibold mt-8">📊 Macro Indicatoren</h3>
+      {/* 📉 Macro Indicatoren */}
+      <h3 className="text-xl font-semibold mt-8">📉 Macro Indicatoren</h3>
       <MacroTable />
 
-      {/* ✅ Technische Indicatoren */}
-      <h3 className="text-xl font-semibold mt-8">📊 Technische Indicatoren</h3>
+      {/* 📈 Technische Indicatoren */}
+      <h3 className="text-xl font-semibold mt-8">📈 Technische Indicatoren</h3>
       <TechnicalTable />
 
-      {/* ✅ Setups (nieuw systeem) */}
-      <h3 className="text-xl font-semibold mt-8">📊 Setups</h3>
+      {/* 🧪 Setups beheren */}
+      <h3 className="text-xl font-semibold mt-8">📋 Setups</h3>
       <SetupManager />
     </div>
   );

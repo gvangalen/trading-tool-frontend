@@ -1,6 +1,6 @@
-// ✅ hooks/useMarketData.js
 'use client';
 import { useEffect, useState } from 'react';
+import { fetchMarketData } from '@/lib/api'; // ✅ centraal beheerde API-call
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
@@ -15,32 +15,15 @@ export function useMarketData() {
     return () => clearInterval(interval);
   }, []);
 
-  async function safeFetch(url) {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Fout bij ophalen van ${url}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error("Geen geldige lijst ontvangen");
-        return data;
-      } catch (err) {
-        console.error("❌ safeFetch market:", err);
-        retries--;
-        await new Promise(r => setTimeout(r, 1500));
-      }
-    }
-    return [];
-  }
-
   async function loadData() {
     setLoading(true);
     setError('');
     try {
-      const data = await safeFetch('/api/dashboard_data/market');
+      const data = await fetchMarketData(); // ✅ netter
       setMarketData(data);
       updateScore(data);
     } catch (err) {
+      console.error("❌ Marktdata laden mislukt:", err);
       setError("❌ Fout bij laden marktdata");
       setMarketData([]);
     } finally {

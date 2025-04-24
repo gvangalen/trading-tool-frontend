@@ -1,4 +1,3 @@
-// ✅ useMacroData.js — hook voor macro logica
 'use client';
 import { useEffect, useState } from 'react';
 
@@ -48,6 +47,15 @@ export function useMacroData() {
     return 0;
   }
 
+  function getExplanation(name) {
+    const uitleg = {
+      fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
+      btc_dominance: "Hoge dominantie = minder altcoin-risico.",
+      dxy: "Lage DXY = gunstig voor crypto."
+    };
+    return uitleg[name] || "Geen uitleg beschikbaar";
+  }
+
   function updateScore(data) {
     let total = 0, count = 0;
     data.forEach(ind => {
@@ -86,11 +94,14 @@ export function useMacroData() {
     updateScore(updated);
   }
 
+  // ✅ Zorg dat je component meteen alles heeft wat hij nodig heeft
   return {
     macroData,
     avgScore,
     advies,
-    editValue,
-    removeIndicator,
+    handleEdit: editValue,
+    handleRemove: removeIndicator,
+    calculateMacroScore,
+    getExplanation,
   };
 }

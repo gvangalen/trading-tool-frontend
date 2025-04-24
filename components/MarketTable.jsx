@@ -1,54 +1,16 @@
+// ✅ components/MarketTable.jsx
 'use client';
-import { useEffect, useState } from 'react';
-
-const API_URL = '/api/dashboard_data';
+import { useMarketData } from '@/hooks/useMarketData';
 
 export default function MarketTable() {
-  const [marketData, setMarketData] = useState([]);
-  const [avgScore, setAvgScore] = useState('–');
-  const [advies, setAdvies] = useState('⚖️ Neutraal');
-
-  useEffect(() => {
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function fetchMarketData() {
-    try {
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error("Fout bij ophalen dashboard_data");
-      const data = await res.json();
-      const market = data.market_data || [];
-      setMarketData(market);
-      updateMarketSummary(market);
-    } catch (err) {
-      console.error("❌ Marktdata laden mislukt:", err);
-    }
-  }
-
-  function calculateMarketScore(asset) {
-    let score = 0;
-    const change = asset.change_24h ?? 0;
-    const rsi = asset.rsi ?? 50;
-
-    if (change > 2) score += 1;
-    if (change > 5) score += 1;
-    if (rsi < 30) score += 1;
-    if (rsi > 70) score -= 1;
-    if (asset.price > asset.ma_200) score += 1;
-    else score -= 1;
-
-    return Math.max(-2, Math.min(2, score));
-  }
-
-  function updateMarketSummary(data) {
-    const total = data.reduce((sum, asset) => sum + calculateMarketScore(asset), 0);
-    const count = data.length;
-    const avg = count ? (total / count).toFixed(1) : '–';
-    setAvgScore(avg);
-    setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
-  }
+  const {
+    marketData,
+    avgScore,
+    advies,
+    loading,
+    error,
+    calculateMarketScore,
+  } = useMarketData();
 
   function formatChange(change) {
     if (change === null || change === undefined) return "–";
@@ -68,9 +30,13 @@ export default function MarketTable() {
 
   return (
     <div className="space-y-4">
+      {loading && <div className="text-sm text-gray-500">📡 Laden...</div>}
+      {error && <div className="text-sm text-red-500">{error}</div>}
+      
       <div className="text-sm text-gray-700">
         Gemiddelde score: <strong>{avgScore}</strong> | Advies: <strong>{advies}</strong>
       </div>
+
       <table className="w-full border text-left text-sm">
         <thead className="bg-gray-100">
           <tr>

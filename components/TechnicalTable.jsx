@@ -1,87 +1,25 @@
 'use client';
-import { useEffect, useState } from 'react';
-
-const API_BASE_URL = '/api/technical_data';
+import { useTechnicalData } from '@/hooks/useTechnicalData';
 
 export default function TechnicalTable() {
-  const [assets, setAssets] = useState([]);
-  const [query, setQuery] = useState('');
-  const [sortField, setSortField] = useState('symbol');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [timeframe, setTimeframe] = useState('4hr');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [avgScore, setAvgScore] = useState('N/A');
-  const [advies, setAdvies] = useState('⚖️ Neutraal');
+  const {
+    technicalData,
+    query,
+    sortField,
+    sortOrder,
+    timeframe,
+    avgScore,
+    advies,
+    loading,
+    error,
+    setQuery,
+    setSortField,
+    setSortOrder,
+    setTimeframe,
+    deleteAsset
+  } = useTechnicalData();
 
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 60000);
-    return () => clearInterval(interval);
-  }, [timeframe]);
-
-  async function loadData() {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await safeFetch(`${API_BASE_URL}?timeframe=${timeframe}`);
-      if (!Array.isArray(data)) throw new Error('Ongeldige API-response');
-      setAssets(data);
-      updateScoreSummary(data);
-    } catch (err) {
-      console.error(err);
-      setError('❌ Fout bij laden.');
-      setAssets([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function safeFetch(url, method = "GET", body = null) {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        const options = { method, headers: { "Content-Type": "application/json" } };
-        if (body) options.body = JSON.stringify(body);
-        const res = await fetch(url, options);
-        if (!res.ok) throw new Error(`Serverfout (${res.status})`);
-        return method === "GET" ? await res.json() : true;
-      } catch (err) {
-        retries--;
-        await new Promise(res => setTimeout(res, 1500));
-      }
-    }
-    throw new Error("❌ Alle retries mislukt!");
-  }
-
-  function calculateScore(asset) {
-    let score = 0;
-    if (asset.rsi > 70) score -= 2;
-    else if (asset.rsi > 55) score -= 1;
-    else if (asset.rsi < 30) score += 2;
-    else if (asset.rsi < 45) score += 1;
-
-    if (asset.volume > 1_000_000_000) score += 1;
-    if (asset.ma_200 < asset.price) score += 1;
-    else score -= 1;
-
-    return Math.max(-2, Math.min(2, score));
-  }
-
-  function updateScoreSummary(data) {
-    const total = data.reduce((sum, a) => sum + calculateScore(a), 0);
-    const avg = data.length ? (total / data.length).toFixed(1) : 'N/A';
-    setAvgScore(avg);
-    setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
-  }
-
-  async function handleDelete(id) {
-    if (!confirm("Weet je zeker dat je deze asset wilt verwijderen?")) return;
-    await safeFetch(`${API_BASE_URL}/${id}`, "DELETE");
-    loadData();
-  }
-
-  const filteredSorted = [...assets]
+  const filteredSorted = [...technicalData]
     .filter(a => a.symbol.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => {
       const aVal = a[sortField];
@@ -96,6 +34,7 @@ export default function TechnicalTable() {
           type="text"
           placeholder="🔍 Zoek asset"
           className="border p-2 rounded"
+          value={query}
           onChange={e => setQuery(e.target.value)}
         />
         <select
@@ -137,9 +76,8 @@ export default function TechnicalTable() {
         </thead>
         <tbody>
           {filteredSorted.map(asset => {
-            const score = calculateScore(asset);
-            const trend =
-              score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal';
+            const score = asset._score;
+            const trend = score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal';
             return (
               <tr key={asset.id} className="border-t">
                 <td className="p-2">{asset.symbol}</td>
@@ -151,7 +89,7 @@ export default function TechnicalTable() {
                 <td>
                   <button
                     className="text-red-600 hover:underline"
-                    onClick={() => handleDelete(asset.id)}
+                    onClick={() => deleteAsset(asset.id)}
                   >
                     ❌
                   </button>

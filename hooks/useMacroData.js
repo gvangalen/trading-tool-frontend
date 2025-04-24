@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchDashboardData } from '@/lib/api'; // ✅ nette API import
+import { fetchMacroData } from '@/lib/api/macro'; // 🔁 specifiek voor macro
 
 export function useMacroData() {
   const [macroData, setMacroData] = useState([]);

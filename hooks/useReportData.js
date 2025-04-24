@@ -1,5 +1,5 @@
 // ✅ useReportData.js — vervangt report.js
-'tuse client';
+'use client';
 import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/config';
 

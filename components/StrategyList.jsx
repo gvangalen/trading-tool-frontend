@@ -1,30 +1,30 @@
 'use client';
-import { useStrategieData } from '@/hooks/useStrategieData';
+import { useStrategyData } from '@/hooks/useStrategyData';
 import { useEffect, useState } from 'react';
 
-export default function StrategieLijst() {
-  const { strategieën, loadStrategieën, updateStrategie, deleteStrategie, generateStrategie } = useStrategieData();
+export default function StrategyList() {
+  const { strategies, loadStrategies, updateStrategy, deleteStrategy, generateStrategy } = useStrategyData();
   const [sort, setSort] = useState('created_at');
 
   useEffect(() => {
-    loadStrategieën();
+    loadStrategies();
   }, []);
 
-  const sortedStrategieën = [...strategieën].sort((a, b) => {
+  const sortedStrategies = [...strategies].sort((a, b) => {
     if (sort === 'score') return (b.score || 0) - (a.score || 0);
-    if (sort === 'favoriet') return (b.favorite === true) - (a.favorite === true);
+    if (sort === 'favorite') return (b.favorite === true) - (a.favorite === true);
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
   return (
     <div className="space-y-4">
-      {sortedStrategieën.map((s) => (
+      {sortedStrategies.map((s) => (
         <div key={s.id} className="p-4 border rounded shadow bg-white dark:bg-gray-800">
           <div className="flex justify-between">
-            <strong>{s.setup_name || 'Strategie'}</strong>
+            <strong>{s.setup_name || 'Strategy'}</strong>
             <span>{s.favorite ? '⭐️' : '☆'}</span>
           </div>
-          {/* Vul hier verder in: TF, Score, Entry, Targets, Stoploss, Uitleg */}
+          {/* Fill in further: TF, Score, Entry, Targets, Stoploss, Explanation */}
         </div>
       ))}
     </div>

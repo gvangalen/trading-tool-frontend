@@ -7,7 +7,7 @@ import {
   generateStrategy,
   generateAllStrategies,
   fetchSetups
-} from '@/lib/api';
+} from '@/lib/api/strategy'; // ✅ juiste import
 
 export function useStrategyData() {
   const [strategies, setStrategies] = useState([]);

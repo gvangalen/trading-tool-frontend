@@ -73,12 +73,12 @@ export default function SetupList() {
   }
 
   return (
-    <div className="space-y-4 mt-6">
+    <div className="space-y-6 mt-6">
       <div className="flex flex-wrap items-center gap-4">
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="border p-2 rounded"
+          className="border p-2 rounded bg-white shadow-sm"
         >
           <option value="all">🔁 All Trends</option>
           <option value="bullish">📈 Bullish</option>
@@ -89,28 +89,28 @@ export default function SetupList() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="border p-2 rounded"
+          className="border p-2 rounded bg-white shadow-sm"
         >
           <option value="name">🔤 Sort by Name</option>
         </select>
       </div>
 
-      <ul className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {setups.map((setup) => (
-          <li key={setup.id} className="p-3 border rounded bg-white shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-center gap-2">
+          <div key={setup.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition">
+            <div className="space-y-2">
               <input
-                className="border p-1 rounded w-full md:w-1/4"
+                className="border p-2 rounded w-full font-semibold"
                 defaultValue={setup.name}
                 onChange={(e) => (setup.name = e.target.value)}
               />
               <input
-                className="border p-1 rounded w-full md:w-1/3"
+                className="border p-2 rounded w-full text-sm"
                 defaultValue={setup.indicators}
                 onChange={(e) => (setup.indicators = e.target.value)}
               />
               <select
-                className="border p-1 rounded"
+                className="border p-2 rounded w-full"
                 defaultValue={setup.trend}
                 onChange={(e) => (setup.trend = e.target.value)}
               >
@@ -118,26 +118,29 @@ export default function SetupList() {
                 <option value="bearish">📉 Bearish</option>
                 <option value="neutral">⚖️ Neutral</option>
               </select>
-
-              <div className="flex gap-2 ml-auto">
-                <button
-                  onClick={() => handleSave(setup.id, setup.name, setup.indicators, setup.trend)}
-                  className="text-green-700 hover:underline"
-                >
-                  💾 Save
-                </button>
-                <button
-                  onClick={() => handleDelete(setup.id)}
-                  className="text-red-600 hover:underline"
-                >
-                  ❌ Delete
-                </button>
-              </div>
             </div>
-            <div className="text-sm text-gray-500 mt-1">💡 {setup.explanation}</div>
-          </li>
+
+            <div className="text-xs text-gray-500 mt-2">
+              💡 {setup.explanation}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => handleSave(setup.id, setup.name, setup.indicators, setup.trend)}
+                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+              >
+                💾 Save
+              </button>
+              <button
+                onClick={() => handleDelete(setup.id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+              >
+                ❌ Delete
+              </button>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

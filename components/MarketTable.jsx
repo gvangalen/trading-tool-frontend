@@ -1,4 +1,3 @@
-// ✅ components/MarketTable.jsx
 'use client';
 import { useMarketData } from '@/hooks/useMarketData';
 
@@ -53,6 +52,11 @@ export default function MarketTable() {
         <tbody>
           {marketData.map((asset) => {
             const score = calculateMarketScore(asset);
+            const scoreColor =
+              score >= 2 ? 'text-green-600' :
+              score <= -2 ? 'text-red-600' :
+              'text-gray-600';
+
             return (
               <tr key={asset.symbol} className="border-t">
                 <td className="p-2">{asset.symbol}</td>
@@ -61,7 +65,7 @@ export default function MarketTable() {
                 <td>{formatNumber(asset.volume)}</td>
                 <td>{formatNumber(asset.rsi)}</td>
                 <td>{formatPosition(asset.price, asset.ma_200)}</td>
-                <td className="font-bold">{score}</td>
+                <td className={`font-bold ${scoreColor}`}>{score}</td>
                 <td>{asset.timestamp ? new Date(asset.timestamp).toLocaleTimeString() : "–"}</td>
               </tr>
             );

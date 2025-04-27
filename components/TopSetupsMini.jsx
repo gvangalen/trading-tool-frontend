@@ -12,11 +12,20 @@ export default function TopSetupsMini() {
 
   async function loadTopSetups() {
     try {
-      const res = await fetch('/api/setups/top3');
+      let res = await fetch('/api/setups/top3');
+      if (!res.ok) {
+        console.warn('⚠️ /api/setups/top3 niet beschikbaar, fallback naar /api/setups');
+        res = await fetch('/api/setups');
+      }
       const data = await res.json();
-      setTopSetups(data || []);
+      const sorted = [...data]
+        .filter(s => s.score !== undefined)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+
+      setTopSetups(sorted);
     } catch (error) {
-      console.error('❌ Error loading top setups:', error);
+      console.error('❌ Fout bij laden top setups:', error);
       setTopSetups([]);
     } finally {
       setLoading(false);
@@ -35,11 +44,26 @@ export default function TopSetupsMini() {
     <div className="space-y-2 text-left text-sm">
       <h4 className="font-semibold">🏆 Top Setups:</h4>
       <ul className="list-disc list-inside space-y-1">
-        {topSetups.map((setup) => (
-          <li key={setup.id}>
-            <strong>{setup.name}</strong> — {setup.trend === 'bullish' ? '📈' : setup.trend === 'bearish' ? '📉' : '⚖️'} ({setup.indicators})
-          </li>
-        ))}
+        {topSetups.map((setup) => {
+          const trendIcon =
+            setup.trend === 'bullish' ? '📈' :
+            setup.trend === 'bearish' ? '📉' :
+            '⚖️';
+
+          const scoreColor =
+            setup.score >= 2 ? 'text-green-600' :
+            setup.score <= -2 ? 'text-red-600' :
+            'text-gray-600';
+
+          return (
+            <li key={setup.id}>
+              <strong>{setup.name}</strong> {trendIcon} ({setup.indicators}) — 
+              <span className={`ml-1 font-semibold ${scoreColor}`}>
+                Score: {setup.score.toFixed(1)}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

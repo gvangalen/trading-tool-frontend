@@ -5,54 +5,61 @@ import { useState } from 'react';
 import GaugeChart from '@/components/GaugeChart';
 
 export default function DashboardGauges() {
-  const { macroScore, technicalScore, setupScore, macroExplanation, technicalExplanation, setupExplanation, loading } = useDashboardData();
+  const {
+    macroScore,
+    technicalScore,
+    setupScore,
+    macroExplanation,
+    technicalExplanation,
+    setupExplanation,
+    loading,
+  } = useDashboardData();
   const [selectedAsset, setSelectedAsset] = useState('BTC');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
-      {/* ✅ Asset selector en status */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
+      {/* ✅ Asset selector + Status */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <label htmlFor="assetSelect" className="font-semibold">🔁 Kies asset:</label>
           <select
             id="assetSelect"
-            className="ml-2 p-2 border rounded"
             value={selectedAsset}
             onChange={(e) => setSelectedAsset(e.target.value)}
+            className="ml-2 p-2 border rounded"
           >
             <option value="BTC">BTC</option>
             <option value="SOL">SOL</option>
           </select>
         </div>
-
-        <div className="text-gray-500 text-sm">
+        <div className="text-sm text-gray-500">
           {loading ? '📡 Data laden...' : '✅ Data geladen'}
         </div>
       </div>
 
-      {/* ✅ Meters + uitleg */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+      {/* ✅ Meters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* Macro Gauge */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-4 text-center">
+        {/* Macro Meter */}
+        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-3">
           <h3 className="font-bold">📉 Macro</h3>
-          <GaugeChart label="Macro" score={macroScore} />
-          <div className="text-sm text-gray-500">{macroExplanation || 'Uitleg laden...'}</div>
+          <GaugeChart value={macroScore ?? 0} label="Macro" color="#60a5fa" />
+          <p className="text-sm text-gray-500">{macroExplanation || '📡 Uitleg laden...'}</p>
         </div>
 
-        {/* Technical Gauge */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-4 text-center">
+        {/* Technische Meter */}
+        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-3">
           <h3 className="font-bold">📈 Technisch</h3>
-          <GaugeChart label="Technisch" score={technicalScore} />
-          <div className="text-sm text-gray-500">{technicalExplanation || 'Uitleg laden...'}</div>
+          <GaugeChart value={technicalScore ?? 0} label="Technisch" color="#facc15" />
+          <p className="text-sm text-gray-500">{technicalExplanation || '📡 Uitleg laden...'}</p>
         </div>
 
-        {/* Setup Gauge */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-4 text-center">
+        {/* Setup Meter */}
+        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-3">
           <h3 className="font-bold">📊 Setup</h3>
-          <GaugeChart label="Setup" score={setupScore} />
-          <div className="text-sm text-gray-500">{setupExplanation || 'Uitleg laden...'}</div>
+          <GaugeChart value={setupScore ?? 0} label="Setup" color="#34d399" />
+          <p className="text-sm text-gray-500">{setupExplanation || '📡 Uitleg laden...'}</p>
         </div>
 
       </div>

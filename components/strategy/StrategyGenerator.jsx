@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { generateAllStrategieën } from '@/lib/api';
+import { generateAllStrategies } from '@/lib/api/strategy'; // 🔥 Correcte import
 
 export default function StrategyGenerator() {
   const [status, setStatus] = useState('');
@@ -12,7 +12,7 @@ export default function StrategyGenerator() {
     setStatus('⏳ Strategieën worden gegenereerd...');
 
     try {
-      const data = await generateAllStrategieën();
+      const data = await generateAllStrategies();
       if (data?.task_id) {
         setStatus(`✅ AI-strategiegeneratie gestart (Task ID: ${data.task_id})`);
       } else {
@@ -35,7 +35,9 @@ export default function StrategyGenerator() {
       >
         🔁 Genereer Strategieën (AI)
       </button>
-      {status && <p className="text-sm text-gray-600 dark:text-gray-400">{status}</p>}
+      {status && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">{status}</p>
+      )}
     </div>
   );
 }

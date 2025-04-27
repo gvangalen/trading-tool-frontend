@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useSetupData } from '@/hooks/useSetupData'; // 🔥 nieuw
 
-export default function SetupForm({ onSubmitted }) {
+export default function SetupForm() {
+  const { addSetup } = useSetupData(); // ✅ ophalen uit hook
   const [form, setForm] = useState({
     name: '',
     indicators: '',
@@ -19,23 +21,23 @@ export default function SetupForm({ onSubmitted }) {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (e) => {
+  function handleChange(e) {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-  };
+  }
 
-  const validate = () => {
-    const validationErrors = {};
-    if (!form.name || form.name.length < 3) validationErrors.name = true;
-    if (!form.indicators) validationErrors.indicators = true;
-    if (!form.trend) validationErrors.trend = true;
-    return validationErrors;
-  };
+  function validate() {
+    const valErrors = {};
+    if (!form.name || form.name.length < 3) valErrors.name = true;
+    if (!form.indicators) valErrors.indicators = true;
+    if (!form.trend) valErrors.trend = true;
+    return valErrors;
+  }
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
     const valErrors = validate();
     if (Object.keys(valErrors).length > 0) {
@@ -45,43 +47,40 @@ export default function SetupForm({ onSubmitted }) {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/setups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) throw new Error('Network error');
-
-      setForm({
-        name: '',
-        indicators: '',
-        trend: '',
-        timeframe: '4hr',
-        account_type: '',
-        strategy_type: '',
-        symbol: '',
-        min_investment: '',
-        dynamic: false,
-        tags: '',
-        favorite: false,
-      });
-      setErrors({});
-      if (onSubmitted) onSubmitted();
+      await addSetup(form); // 🔥 via useSetupData
+      resetForm();
     } catch (err) {
-      console.error('❌ Setup save failed:', err);
-      alert('❌ Fout bij opslaan setup.');
+      console.error('❌ Setup toevoegen mislukt:', err);
+      alert('Fout bij opslaan setup.');
     } finally {
       setSubmitting(false);
     }
-  };
+  }
+
+  function resetForm() {
+    setForm({
+      name: '',
+      indicators: '',
+      trend: '',
+      timeframe: '4hr',
+      account_type: '',
+      strategy_type: '',
+      symbol: '',
+      min_investment: '',
+      dynamic: false,
+      tags: '',
+      favorite: false,
+    });
+    setErrors({});
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded bg-white shadow-sm">
-      <h3 className="text-lg font-semibold">➕ Add New Setup</h3>
+      <h3 className="text-lg font-semibold">➕ Nieuwe Setup</h3>
 
       {/* 🔹 Basisvelden */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Name */}
         <input
           name="name"
           placeholder="Name*"
@@ -89,6 +88,7 @@ export default function SetupForm({ onSubmitted }) {
           onChange={handleChange}
           className={`border p-2 rounded ${errors.name ? 'border-red-500' : ''}`}
         />
+        {/* Indicators */}
         <input
           name="indicators"
           placeholder="Indicators*"
@@ -96,6 +96,7 @@ export default function SetupForm({ onSubmitted }) {
           onChange={handleChange}
           className={`border p-2 rounded ${errors.indicators ? 'border-red-500' : ''}`}
         />
+        {/* Trend */}
         <select
           name="trend"
           value={form.trend}
@@ -107,6 +108,7 @@ export default function SetupForm({ onSubmitted }) {
           <option value="bearish">📉 Bearish</option>
           <option value="neutral">⚖️ Neutral</option>
         </select>
+        {/* Timeframe */}
         <select
           name="timeframe"
           value={form.timeframe}
@@ -119,6 +121,7 @@ export default function SetupForm({ onSubmitted }) {
           <option value="1d">1D</option>
           <option value="1w">1W</option>
         </select>
+        {/* Symbol */}
         <input
           name="symbol"
           placeholder="Symbol (BTC, SOL...)"
@@ -126,25 +129,28 @@ export default function SetupForm({ onSubmitted }) {
           onChange={handleChange}
           className="border p-2 rounded"
         />
+        {/* Strategy Type */}
         <input
           name="strategy_type"
-          placeholder="Strategy type"
+          placeholder="Strategy Type"
           value={form.strategy_type}
           onChange={handleChange}
           className="border p-2 rounded"
         />
+        {/* Account Type */}
         <input
           name="account_type"
-          placeholder="Account type"
+          placeholder="Account Type"
           value={form.account_type}
           onChange={handleChange}
           className="border p-2 rounded"
         />
+        {/* Minimum Investment */}
         <input
           name="min_investment"
           type="number"
           step="0.01"
-          placeholder="Min. investment (€)"
+          placeholder="Min. Investment (€)"
           value={form.min_investment}
           onChange={handleChange}
           className="border p-2 rounded"
@@ -152,10 +158,10 @@ export default function SetupForm({ onSubmitted }) {
       </div>
 
       {/* 🔹 Checkboxes */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap gap-4">
         <label className="flex items-center gap-2">
           <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} />
-          💡 Dynamic
+          🔄 Dynamic
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} />
@@ -173,7 +179,7 @@ export default function SetupForm({ onSubmitted }) {
       />
 
       {/* 🔹 Live Preview */}
-      <div className="text-sm text-gray-700 bg-gray-50 p-2 rounded border">
+      <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border">
         <strong>📋 Live Preview:</strong><br />
         <strong>Name:</strong> {form.name || '-'}<br />
         <strong>Indicators:</strong> {form.indicators || '-'}<br />
@@ -183,13 +189,13 @@ export default function SetupForm({ onSubmitted }) {
         <strong>Strategy:</strong> {form.strategy_type || '-'}
       </div>
 
-      {/* 🔹 Submit */}
+      {/* 🔹 Submit Button */}
       <button
         type="submit"
         disabled={submitting}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition"
       >
-        {submitting ? '⏳ Saving...' : '💾 Save Setup'}
+        {submitting ? '⏳ Opslaan...' : '💾 Setup Opslaan'}
       </button>
     </form>
   );

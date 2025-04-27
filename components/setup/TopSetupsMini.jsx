@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 export default function TopSetupsMini() {
   const [topSetups, setTopSetups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [trendFilter, setTrendFilter] = useState('all');
 
   useEffect(() => {
     loadTopSetups();
@@ -21,7 +22,7 @@ export default function TopSetupsMini() {
       const sorted = (data || [])
         .filter(s => typeof s.score === 'number')
         .sort((a, b) => b.score - a.score)
-        .slice(0, 3);
+        .slice(0, 10); // iets ruimer voor filtering
 
       setTopSetups(sorted);
     } catch (error) {
@@ -31,6 +32,11 @@ export default function TopSetupsMini() {
       setLoading(false);
     }
   }
+
+  const filteredSetups = topSetups.filter(setup => {
+    if (trendFilter === 'all') return true;
+    return setup.trend === trendFilter;
+  }).slice(0, 3); // top 3 per filter
 
   if (loading) {
     return (
@@ -49,29 +55,51 @@ export default function TopSetupsMini() {
   }
 
   return (
-    <div className="space-y-2 text-left text-sm">
+    <div className="space-y-4 text-left text-sm">
       <h4 className="font-semibold mb-2">🏆 Top Setups:</h4>
+
+      {/* 🔹 Trend Filter */}
+      <div className="flex items-center gap-2">
+        <label htmlFor="trendFilter" className="text-xs">🔍 Filter:</label>
+        <select
+          id="trendFilter"
+          value={trendFilter}
+          onChange={(e) => setTrendFilter(e.target.value)}
+          className="border p-1 rounded text-xs"
+        >
+          <option value="all">🔁 Alle</option>
+          <option value="bullish">📈 Bullish</option>
+          <option value="bearish">📉 Bearish</option>
+          <option value="neutral">⚖️ Neutraal</option>
+        </select>
+      </div>
+
+      {/* 🔹 Top Setups List */}
       <ul className="list-disc list-inside space-y-1">
-        {topSetups.map((setup) => {
-          const trendIcon =
-            setup.trend === 'bullish' ? '📈' :
-            setup.trend === 'bearish' ? '📉' :
-            '⚖️';
+        {filteredSetups.length === 0 ? (
+          <li className="text-gray-400">Geen setups gevonden voor deze trend.</li>
+        ) : (
+          filteredSetups.map((setup) => {
+            const trendIcon =
+              setup.trend === 'bullish' ? '📈' :
+              setup.trend === 'bearish' ? '📉' :
+              '⚖️';
 
-          const scoreColor =
-            setup.score >= 2 ? 'text-green-600' :
-            setup.score <= -2 ? 'text-red-600' :
-            'text-gray-600';
+            const scoreColor =
+              setup.score >= 2 ? 'text-green-600' :
+              setup.score <= -2 ? 'text-red-600' :
+              'text-gray-600';
 
-          return (
-            <li key={setup.id}>
-              <strong>{setup.name}</strong> {trendIcon} ({setup.indicators}) — 
-              <span className={`ml-1 font-semibold ${scoreColor}`}>
-                Score: {setup.score?.toFixed(1) ?? '-'}
-              </span>
-            </li>
-          );
-        })}
+            return (
+              <li key={setup.id}>
+                <strong>{setup.name}</strong> {trendIcon} ({setup.indicators}) — 
+                <span className={`ml-1 font-semibold ${scoreColor}`}>
+                  Score: {setup.score?.toFixed(1) ?? '-'}
+                </span>
+              </li>
+            );
+          })
+        )}
       </ul>
     </div>
   );

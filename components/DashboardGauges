@@ -1,8 +1,9 @@
 'use client';
 
-import { useDashboardData } from '@/hooks/useDashboardData';
 import { useState } from 'react';
+import { useDashboardData } from '@/hooks/useDashboardData';
 import GaugeChart from '@/components/GaugeChart';
+import TopSetupsMini from '@/components/TopSetupsMini'; // ✅ jouw extra import
 
 export default function DashboardGauges() {
   const {
@@ -19,7 +20,7 @@ export default function DashboardGauges() {
   return (
     <div className="space-y-8">
 
-      {/* ✅ Asset selector + Status */}
+      {/* ✅ Asset selector + status */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <label htmlFor="assetSelect" className="font-semibold">🔁 Kies asset:</label>
@@ -40,29 +41,52 @@ export default function DashboardGauges() {
 
       {/* ✅ Meters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* Macro Meter */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-3">
-          <h3 className="font-bold">📉 Macro</h3>
-          <GaugeChart value={macroScore ?? 0} label="Macro" color="#60a5fa" />
-          <p className="text-sm text-gray-500">{macroExplanation || '📡 Uitleg laden...'}</p>
-        </div>
-
-        {/* Technische Meter */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-3">
-          <h3 className="font-bold">📈 Technisch</h3>
-          <GaugeChart value={technicalScore ?? 0} label="Technisch" color="#facc15" />
-          <p className="text-sm text-gray-500">{technicalExplanation || '📡 Uitleg laden...'}</p>
-        </div>
-
-        {/* Setup Meter */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-3">
-          <h3 className="font-bold">📊 Setup</h3>
-          <GaugeChart value={setupScore ?? 0} label="Setup" color="#34d399" />
-          <p className="text-sm text-gray-500">{setupExplanation || '📡 Uitleg laden...'}</p>
-        </div>
-
+        <GaugeCard
+          label="Macro"
+          emoji="📉"
+          score={macroScore}
+          explanation={macroExplanation}
+        />
+        <GaugeCard
+          label="Technisch"
+          emoji="📈"
+          score={technicalScore}
+          explanation={technicalExplanation}
+        />
+        <GaugeCard
+          label="Setup"
+          emoji="📊"
+          score={setupScore}
+          explanation={setupExplanation}
+          showTopSetups // ✅ Zet TopSetupsMini alleen bij Setup
+        />
       </div>
+    </div>
+  );
+}
+
+function GaugeCard({ label, emoji, score, explanation, showTopSetups = false }) {
+  const displayScore = score ?? 0;
+  const displayExplanation = explanation || '📡 Uitleg laden...';
+
+  // ✅ Dynamische kleur op basis van score
+  let color = '#9ca3af'; // Grijs standaard
+  if (displayScore >= 2) color = '#34d399'; // Groen bij sterke bullish
+  else if (displayScore <= -2) color = '#f87171'; // Rood bij sterke bearish
+  else if (displayScore > 0) color = '#60a5fa'; // Blauw bij lichte bullish
+  else if (displayScore < 0) color = '#facc15'; // Geel bij lichte bearish
+
+  return (
+    <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-4">
+      <h3 className="font-bold text-lg">{emoji} {label}</h3>
+      <GaugeChart value={displayScore} label={label} color={color} />
+      <p className="text-sm text-gray-500">{displayExplanation}</p>
+
+      {showTopSetups && (
+        <div className="mt-4">
+          <TopSetupsMini />
+        </div>
+      )}
     </div>
   );
 }

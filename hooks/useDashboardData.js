@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchDashboardData } from '@/lib/api/dashboardService'; // 🚀 Nieuwe juiste locatie!
+import { fetchDashboardData } from '@/lib/api/dashboard'; // 🚀 Nieuwe juiste locatie!
 
 export function useDashboardData() {
   const [marketData, setMarketData] = useState(null);

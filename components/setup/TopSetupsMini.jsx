@@ -18,8 +18,8 @@ export default function TopSetupsMini() {
         res = await fetch('/api/setups');
       }
       const data = await res.json();
-      const sorted = [...data]
-        .filter(s => s.score !== undefined)
+      const sorted = (data || [])
+        .filter(s => typeof s.score === 'number')
         .sort((a, b) => b.score - a.score)
         .slice(0, 3);
 
@@ -33,16 +33,24 @@ export default function TopSetupsMini() {
   }
 
   if (loading) {
-    return <div className="text-gray-500 text-sm">📡 Setups laden...</div>;
+    return (
+      <div className="text-gray-500 text-sm text-center py-4">
+        📡 Setups laden...
+      </div>
+    );
   }
 
   if (topSetups.length === 0) {
-    return <div className="text-gray-500 text-sm">⚠️ Geen actieve setups gevonden.</div>;
+    return (
+      <div className="text-gray-500 text-sm text-center py-4">
+        ⚠️ Geen actieve setups gevonden.
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2 text-left text-sm">
-      <h4 className="font-semibold">🏆 Top Setups:</h4>
+      <h4 className="font-semibold mb-2">🏆 Top Setups:</h4>
       <ul className="list-disc list-inside space-y-1">
         {topSetups.map((setup) => {
           const trendIcon =
@@ -59,7 +67,7 @@ export default function TopSetupsMini() {
             <li key={setup.id}>
               <strong>{setup.name}</strong> {trendIcon} ({setup.indicators}) — 
               <span className={`ml-1 font-semibold ${scoreColor}`}>
-                Score: {setup.score.toFixed(1)}
+                Score: {setup.score?.toFixed(1) ?? '-'}
               </span>
             </li>
           );

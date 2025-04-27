@@ -1,49 +1,53 @@
 // ✅ app/dashboard/page.jsx
 'use client';
 
-import NavBar from '@/components/NavBar';
-import ScoreGauge from '@/components/ScoreGauge';
+import DashboardGauges from '@/components/DashboardGauges';
+import TradingAdvice from '@/components/TradingAdvice';
 import MarketTable from '@/components/MarketTable';
 import MacroTable from '@/components/MacroTable';
 import TechnicalTable from '@/components/TechnicalTable';
-import SetupManager from '@/components/SetupManager';
-import TradingAdvice from '@/components/TradingAdvice';
-import AssetSelector from '@/components/AssetSelector';
+import SetupList from '@/components/SetupList';
 
 export default function DashboardPage() {
   return (
-    <div className="p-4 space-y-8">
-      <NavBar />
-      <h2 className="text-2xl font-bold">📊 Dashboard</h2>
+    <div className="p-6 space-y-10 max-w-7xl mx-auto">
 
-      {/* 🔁 Live Scores */}
-      <div className="flex flex-wrap gap-4">
-        <ScoreGauge label="📉 Macro" id="macro" />
-        <ScoreGauge label="📈 Technisch" id="technical" />
-        <ScoreGauge label="📊 Setup" id="setup" />
-      </div>
+      {/* ✅ Titel */}
+      <h1 className="text-3xl font-bold mb-4">📊 Dashboard</h1>
 
-      {/* 🎯 Selecteer asset */}
-      <AssetSelector />
+      {/* ✅ Meters */}
+      <DashboardGauges />
 
-      {/* 🧠 Tradingadvies */}
-      <TradingAdvice />
+      {/* ✅ Tradingadvies */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-2">🚀 Actueel Tradingadvies</h2>
+        <TradingAdvice />
+      </section>
 
-      {/* 📈 Marktgegevens */}
-      <h3 className="text-xl font-semibold mt-8">📊 Market Data</h3>
-      <MarketTable />
+      {/* ✅ Market Data */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-2">💰 Market Data</h2>
+        <MarketTable />
+      </section>
 
-      {/* 📉 Macro Indicatoren */}
-      <h3 className="text-xl font-semibold mt-8">📉 Macro Indicatoren</h3>
-      <MacroTable />
+      {/* ✅ Macro Indicatoren */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-2">🌍 Macro Indicatoren</h2>
+        <MacroTable />
+      </section>
 
-      {/* 📈 Technische Indicatoren */}
-      <h3 className="text-xl font-semibold mt-8">📈 Technische Indicatoren</h3>
-      <TechnicalTable />
+      {/* ✅ Technische Indicatoren */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-2">📈 Technische Analyse</h2>
+        <TechnicalTable />
+      </section>
 
-      {/* 🧪 Setups beheren */}
-      <h3 className="text-xl font-semibold mt-8">📋 Setups</h3>
-      <SetupManager />
+      {/* ✅ Setups */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-2">⚙️ Setup Overzicht</h2>
+        <SetupList />
+      </section>
+
     </div>
   );
 }

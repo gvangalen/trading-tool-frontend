@@ -2,16 +2,11 @@
 
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useState } from 'react';
-import { Chart } from 'chart.js/auto';
-import { useEffect } from 'react';
+import GaugeChart from '@/components/GaugeChart';
 
 export default function DashboardGauges() {
   const { macroScore, technicalScore, setupScore, macroExplanation, technicalExplanation, setupExplanation, loading } = useDashboardData();
   const [selectedAsset, setSelectedAsset] = useState('BTC');
-
-  useEffect(() => {
-    // Hier zouden de Chart.js gauges komen (optioneel later)
-  }, [macroScore, technicalScore, setupScore]);
 
   return (
     <div className="space-y-6">
@@ -36,27 +31,27 @@ export default function DashboardGauges() {
         </div>
       </div>
 
-      {/* ✅ Meters */}
+      {/* ✅ Meters + uitleg */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
 
         {/* Macro Gauge */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-2 text-center">
+        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-4 text-center">
           <h3 className="font-bold">📉 Macro</h3>
-          <div>Score: <strong>{macroScore ?? '⏳'}</strong></div>
+          <GaugeChart label="Macro" score={macroScore} />
           <div className="text-sm text-gray-500">{macroExplanation || 'Uitleg laden...'}</div>
         </div>
 
         {/* Technical Gauge */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-2 text-center">
+        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-4 text-center">
           <h3 className="font-bold">📈 Technisch</h3>
-          <div>Score: <strong>{technicalScore ?? '⏳'}</strong></div>
+          <GaugeChart label="Technisch" score={technicalScore} />
           <div className="text-sm text-gray-500">{technicalExplanation || 'Uitleg laden...'}</div>
         </div>
 
         {/* Setup Gauge */}
-        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-2 text-center">
+        <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 space-y-4 text-center">
           <h3 className="font-bold">📊 Setup</h3>
-          <div>Score: <strong>{setupScore ?? '⏳'}</strong></div>
+          <GaugeChart label="Setup" score={setupScore} />
           <div className="text-sm text-gray-500">{setupExplanation || 'Uitleg laden...'}</div>
         </div>
 

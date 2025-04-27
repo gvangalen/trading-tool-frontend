@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchMacroData } from '@/lib/api/macro'; // 🔁 specifiek voor macro
+import { fetchMacroData } from '@/lib/api/macro'; // Correcte import
 
 export function useMacroData() {
   const [macroData, setMacroData] = useState([]);
@@ -15,23 +15,20 @@ export function useMacroData() {
 
   async function loadData() {
     try {
-      const data = await fetchDashboardData();
+      const data = await fetchMacroData(); // ✅ Goed!
       const macro = data?.macro_data || [];
       setMacroData(macro);
       updateScore(macro);
       markStepDone(3);
-    } catch (err) {
-      console.error("❌ Macrodata ophalen mislukt:", err);
+    } catch (error) {
+      console.error('❌ Macrodata ophalen mislukt:', error);
     }
   }
 
   function calculateMacroScore(name, value) {
-    if (name === "fear_greed_index")
-      return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;
-    if (name === "btc_dominance")
-      return value > 55 ? 2 : value > 50 ? 1 : value < 45 ? -2 : value < 48 ? -1 : 0;
-    if (name === "dxy")
-      return value < 100 ? 2 : value < 103 ? 1 : value > 107 ? -2 : value > 104 ? -1 : 0;
+    if (name === "fear_greed_index") return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;
+    if (name === "btc_dominance") return value > 55 ? 2 : value > 50 ? 1 : value < 45 ? -2 : value < 48 ? -1 : 0;
+    if (name === "dxy") return value < 100 ? 2 : value < 103 ? 1 : value > 107 ? -2 : value > 104 ? -1 : 0;
     return 0;
   }
 
@@ -45,11 +42,12 @@ export function useMacroData() {
   }
 
   function updateScore(data) {
-    let total = 0, count = 0;
-    data.forEach(ind => {
-      const s = calculateMacroScore(ind.name, parseFloat(ind.value));
-      if (!isNaN(s)) {
-        total += s;
+    let total = 0;
+    let count = 0;
+    data.forEach((ind) => {
+      const score = calculateMacroScore(ind.name, parseFloat(ind.value));
+      if (!isNaN(score)) {
+        total += score;
         count++;
       }
     });
@@ -59,25 +57,25 @@ export function useMacroData() {
   }
 
   function markStepDone(step) {
-    const userId = localStorage.getItem("user_id");
+    const userId = localStorage.getItem('user_id');
     if (!userId) return;
     fetch(`/api/onboarding_progress/${userId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step }),
     });
   }
 
-  function editValue(name, newValue) {
-    const updated = macroData.map(ind =>
+  function handleEdit(name, newValue) {
+    const updated = macroData.map((ind) =>
       ind.name === name ? { ...ind, value: parseFloat(newValue) } : ind
     );
     setMacroData(updated);
     updateScore(updated);
   }
 
-  function removeIndicator(name) {
-    const updated = macroData.filter(ind => ind.name !== name);
+  function handleRemove(name) {
+    const updated = macroData.filter((ind) => ind.name !== name);
     setMacroData(updated);
     updateScore(updated);
   }
@@ -86,8 +84,8 @@ export function useMacroData() {
     macroData,
     avgScore,
     advies,
-    handleEdit: editValue,
-    handleRemove: removeIndicator,
+    handleEdit,
+    handleRemove,
     calculateMacroScore,
     getExplanation,
   };

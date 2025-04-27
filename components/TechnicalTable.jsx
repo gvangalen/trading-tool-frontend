@@ -78,13 +78,20 @@ export default function TechnicalTable() {
           {filteredSorted.map(asset => {
             const score = asset._score;
             const trend = score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal';
+
+            // ✅ BONUS: kleur toevoegen afhankelijk van de score
+            const scoreColor =
+              score >= 2 ? 'text-green-600' :
+              score <= -2 ? 'text-red-600' :
+              'text-gray-600';
+
             return (
               <tr key={asset.id} className="border-t">
                 <td className="p-2">{asset.symbol}</td>
                 <td>{asset.rsi}</td>
                 <td>{(asset.volume / 1e6).toFixed(1)}M</td>
                 <td>{asset.ma_200}</td>
-                <td>{score}</td>
+                <td className={`font-bold ${scoreColor}`}>{score}</td>
                 <td>{trend}</td>
                 <td>
                   <button

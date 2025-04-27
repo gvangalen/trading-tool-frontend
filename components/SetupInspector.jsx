@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '@/config';
-import { ButtonSmall } from '@/components/ui/ButtonsSmall';
+import { useEffect, useState } from 'react';
+import { ButtonSmall } from '@/components/ui/ButtonSmall';
 
 export default function SetupInspector() {
   const [open, setOpen] = useState(false);
@@ -11,73 +10,80 @@ export default function SetupInspector() {
 
   useEffect(() => {
     if (open) {
-      fetchSetups();
+      loadSetups();
     }
   }, [open]);
 
-  async function fetchSetups() {
+  async function loadSetups() {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/score/setup`);
+      const res = await fetch('/api/score/setup');
+      if (!res.ok) throw new Error('Fout bij ophalen');
       const data = await res.json();
       setSetups(data.setups || []);
     } catch (err) {
-      console.error('❌ Fout bij ophalen van setups:', err);
+      console.error('❌ Error loading setups:', err);
       setSetups([]);
     } finally {
       setLoading(false);
     }
   }
 
+  if (!open) {
+    return (
+      <ButtonSmall onClick={() => setOpen(true)}>
+        🔍 Bekijk beste setup scores
+      </ButtonSmall>
+    );
+  }
+
   return (
-    <>
-      {/* 🔍 Open knop */}
-      <ButtonSmall onClick={() => setOpen(true)}>🔍 Bekijk Setup Inspector</ButtonSmall>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 max-w-5xl w-full relative overflow-y-auto max-h-[90vh] space-y-6">
+        <h2 className="text-2xl font-bold">📋 Setup Inspector</h2>
 
-      {/* 🧩 Popup overlay */}
-      {open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-20 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 space-y-4 relative">
-            <h3 className="text-xl font-bold mb-4">📋 Setup Inspector</h3>
+        {loading && <p className="text-gray-500">📡 Setups laden...</p>}
 
-            {loading ? (
-              <p className="text-gray-500">📡 Setups laden...</p>
-            ) : setups.length === 0 ? (
-              <p className="text-gray-500">⚠️ Geen actieve setups gevonden.</p>
-            ) : (
-              <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-                {setups.sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).map(setup => (
-                  <div key={setup.id} className="border rounded p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="font-semibold">{setup.name || 'Naam onbekend'}</div>
-                      <div className="font-bold">{setup.score ?? '-'}</div>
-                    </div>
-                    <p className="text-gray-500 text-sm">{setup.explanation || 'Geen uitleg beschikbaar'}</p>
-                    {setup.indicators && (
-                      <ul className="list-disc list-inside text-sm text-gray-700 mt-2">
-                        {Object.entries(setup.indicators).map(([key, val]) => (
-                          <li key={key}>
-                            <strong>{key}</strong>: {val?.value ?? '-'} → <code>score {val?.score ?? '-'}</code>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+        {!loading && setups.length === 0 && (
+          <p className="text-gray-500">⚠️ Geen actieve setups gevonden.</p>
+        )}
+
+        {!loading && setups.length > 0 && (
+          <div className="space-y-4">
+            {setups
+              .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+              .map((setup) => (
+                <div key={setup.id} className="p-4 border rounded bg-gray-50 dark:bg-gray-800 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-lg">{setup.name || 'Onbekende setup'}</h3>
+                    <span className="text-green-600 font-bold">
+                      🔥 Score: {setup.score ?? '–'}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* ❌ Sluit knop */}
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl"
-              aria-label="Sluiten"
-            >
-              ❌
-            </button>
+                  <p className="text-sm text-gray-500 italic">{setup.explanation || 'Geen uitleg beschikbaar.'}</p>
+                  {setup.indicators && (
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      {Object.entries(setup.indicators).map(([key, val]) => (
+                        <li key={key}>
+                          <strong>{key}</strong>: {val?.value ?? '-'} → <code>score {val?.score ?? '-'}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
           </div>
-        </div>
-      )}
-    </>
+        )}
+
+        {/* Sluitknop */}
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black dark:hover:text-white text-xl"
+          title="Sluiten"
+        >
+          ❌
+        </button>
+      </div>
+    </div>
   );
 }

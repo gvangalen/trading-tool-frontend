@@ -6,12 +6,11 @@ import TradingAdvice from '@/components/TradingAdvice';
 import MarketTable from '@/components/MarketTable';
 import MacroTable from '@/components/MacroTable';
 import TechnicalTable from '@/components/TechnicalTable';
-import SetupList from '@/components/SetupList';
+import SetupManager from '@/components/SetupManager'; // ✅ Correcte nieuwe import
 import SetupInspector from '@/components/SetupInspector';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
-  const [showInspector, setShowInspector] = useState(false);
 
   useEffect(() => {
     function handleScroll() {
@@ -64,18 +63,9 @@ export default function DashboardPage() {
       {/* ✅ Setups */}
       <section className="mt-10 mb-20">
         <h2 className="text-2xl font-bold mb-2">⚙️ Setup Overzicht</h2>
-        
-        {/* 🔍 Extra knop voor inspector */}
-        <div className="flex gap-4 mb-4">
-          <button
-            onClick={() => setShowInspector(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
-          >
-            🔍 Bekijk Setup Scores
-          </button>
-        </div>
 
-        <SetupList />
+        {/* 🔍 Setup Manager */}
+        <SetupManager />
       </section>
 
       {/* ✅ Scroll to top button */}
@@ -90,7 +80,7 @@ export default function DashboardPage() {
       )}
 
       {/* ✅ Popup Setup Inspector */}
-      <SetupInspector visible={showInspector} onClose={() => setShowInspector(false)} />
+      <SetupInspector /> {/* ⚡ Geen props meer nodig */}
     </div>
   );
 }

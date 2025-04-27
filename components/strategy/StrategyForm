@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { createStrategie } from '@/lib/api';
-import { useStrategieData } from '@/hooks/useStrategieData';
+import { createStrategy } from '@/lib/api/strategy'; // 🔥 Correcte import
+import { useStrategyData } from '@/hooks/useStrategyData'; // 🔥 Correcte import
 
 export default function StrategyForm() {
-  const { loadStrategieën } = useStrategieData();
+  const { loadStrategies } = useStrategyData(); // 🔥 Correcte hook functie
   const [setupName, setSetupName] = useState('');
   const [tags, setTags] = useState('');
   const [explanation, setExplanation] = useState('');
@@ -28,11 +28,11 @@ export default function StrategyForm() {
     };
 
     try {
-      await createStrategie(payload);
+      await createStrategy(payload);
       setSetupName('');
       setTags('');
       setExplanation('');
-      await loadStrategieën();
+      await loadStrategies();
       alert('✅ Strategie succesvol toegevoegd!');
     } catch (err) {
       console.error('❌ Strategie opslaan mislukt:', err);
@@ -58,7 +58,7 @@ export default function StrategyForm() {
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">Tags (comma-separated)</label>
+        <label className="block mb-1 font-medium">Tags (komma-gescheiden)</label>
         <input
           type="text"
           className="w-full border p-2 rounded"

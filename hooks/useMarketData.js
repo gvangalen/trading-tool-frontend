@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchMarketData } from '@/lib/api/market'; // 🔁 domeinspecifiek
+import { fetchMarketData } from '@/lib/api/market'; // Correcte import!
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
@@ -19,12 +19,12 @@ export function useMarketData() {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchMarketData(); // ✅ netter
-      setMarketData(data);
-      updateScore(data);
+      const data = await fetchMarketData();
+      setMarketData(data || []);
+      updateScore(data || []);
     } catch (err) {
-      console.error("❌ Marktdata laden mislukt:", err);
-      setError("❌ Fout bij laden marktdata");
+      console.error('❌ Marktdata ophalen mislukt:', err);
+      setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
     } finally {
       setLoading(false);
@@ -36,14 +36,14 @@ export function useMarketData() {
     const change = asset.change_24h ?? 0;
     const rsi = asset.rsi ?? 50;
 
-    if (change > 2) score += 1;
-    if (change > 5) score += 1;
+    if (change > 5) score += 2;
+    else if (change > 2) score += 1;
     if (rsi < 30) score += 1;
     if (rsi > 70) score -= 1;
     if (asset.price > asset.ma_200) score += 1;
     else score -= 1;
 
-    return Math.max(-2, Math.min(2, score));
+    return Math.max(-2, Math.min(2, score)); // Clamp tussen -2 en +2
   }
 
   function updateScore(data) {

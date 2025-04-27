@@ -1,7 +1,7 @@
 'use client';
 
 import { useMarketData } from '@/hooks/useMarketData';
-import SkeletonTable from '@/components/SkeletonTable'; // ✅ Vergeet deze import niet!
+import SkeletonTable from '@/components/ui/SkeletonTable'; // 🔁 Correcte nieuwe map!
 
 export default function MarketTable() {
   const {
@@ -29,56 +29,55 @@ export default function MarketTable() {
     return price > ma200 ? "✅ Boven 200MA" : "❌ Onder 200MA";
   }
 
+  if (loading) return <SkeletonTable rows={6} columns={7} />;
+  if (error) return <div className="text-sm text-red-500">{error}</div>;
+
   return (
     <div className="space-y-4">
-      {loading ? (
-        <SkeletonTable rows={6} columns={7} />
-      ) : error ? (
-        <div className="text-sm text-red-500">{error}</div>
-      ) : (
-        <>
-          <div className="text-sm text-gray-700">
-            Gemiddelde score: <strong>{avgScore}</strong> | Advies: <strong>{advies}</strong>
-          </div>
+      {/* 🔹 Score Summary */}
+      <div className="text-sm text-gray-700">
+        Gemiddelde score: <strong>{avgScore}</strong> | Advies: <strong>{advies}</strong>
+      </div>
 
-          <table className="w-full border text-left text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th>Asset</th>
-                <th>Prijs</th>
-                <th>24h %</th>
-                <th>Volume</th>
-                <th>RSI</th>
-                <th>200MA Positie</th>
-                <th>Score</th>
-                <th>🕒 Laatste update</th>
-              </tr>
-            </thead>
-            <tbody>
-              {marketData.map((asset) => {
-                const score = calculateMarketScore(asset);
-                const scoreColor =
-                  score >= 2 ? 'text-green-600' :
-                  score <= -2 ? 'text-red-600' :
-                  'text-gray-600';
+      {/* 🔹 Market Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full border text-left text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th>Asset</th>
+              <th>Prijs</th>
+              <th>24u %</th>
+              <th>Volume</th>
+              <th>RSI</th>
+              <th>200MA Positie</th>
+              <th>Score</th>
+              <th>🕒 Laatste update</th>
+            </tr>
+          </thead>
+          <tbody>
+            {marketData.map((asset) => {
+              const score = calculateMarketScore(asset);
+              const scoreColor =
+                score >= 2 ? 'text-green-600' :
+                score <= -2 ? 'text-red-600' :
+                'text-gray-600';
 
-                return (
-                  <tr key={asset.symbol} className="border-t">
-                    <td className="p-2">{asset.symbol}</td>
-                    <td>{formatNumber(asset.price, true)}</td>
-                    <td>{formatChange(asset.change_24h)}</td>
-                    <td>{formatNumber(asset.volume)}</td>
-                    <td>{formatNumber(asset.rsi)}</td>
-                    <td>{formatPosition(asset.price, asset.ma_200)}</td>
-                    <td className={`font-bold ${scoreColor}`}>{score}</td>
-                    <td>{asset.timestamp ? new Date(asset.timestamp).toLocaleTimeString() : "–"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </>
-      )}
+              return (
+                <tr key={asset.symbol} className="border-t">
+                  <td className="p-2">{asset.symbol}</td>
+                  <td>{formatNumber(asset.price, true)}</td>
+                  <td>{formatChange(asset.change_24h)}</td>
+                  <td>{formatNumber(asset.volume)}</td>
+                  <td>{formatNumber(asset.rsi)}</td>
+                  <td>{formatPosition(asset.price, asset.ma_200)}</td>
+                  <td className={`font-bold ${scoreColor}`}>{score}</td>
+                  <td>{asset.timestamp ? new Date(asset.timestamp).toLocaleTimeString() : "–"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

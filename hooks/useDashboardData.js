@@ -1,6 +1,8 @@
+// ✅ hooks/useDashboardData.js
 'use client';
+
 import { useEffect, useState } from 'react';
-import { fetchDashboardData } from '@/lib/api/dashboard';
+import { fetchDashboardData } from '@/lib/api/dashboardService'; // 🚀 Nieuwe juiste locatie!
 
 export function useDashboardData() {
   const [marketData, setMarketData] = useState(null);
@@ -10,22 +12,32 @@ export function useDashboardData() {
   useEffect(() => {
     let mounted = true;
 
-    const load = async () => {
-      setLoading(true);
-      const data = await fetchDashboardData();
-      if (mounted && data) {
-        setMarketData(data.crypto || {});
-        setMacroData({
-          fear_greed_index: data.fear_greed_index ?? 'N/A',
-          dominance: data.crypto?.bitcoin?.dominance?.toFixed(2) ?? 'N/A'
-        });
-        setLoading(false);
-      }
-    };
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        const data = await fetchDashboardData();
 
-    load();
-    const interval = setInterval(load, 60000);
-    return () => { mounted = false; clearInterval(interval); };
+        if (mounted && data) {
+          setMarketData(data.crypto || {});
+          setMacroData({
+            fear_greed_index: data.fear_greed_index ?? 'N/A',
+            dominance: data.crypto?.bitcoin?.dominance?.toFixed(2) ?? 'N/A',
+          });
+        }
+      } catch (error) {
+        console.error('❌ Fout bij laden dashboarddata:', error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadDashboardData();
+    const interval = setInterval(loadDashboardData, 60000); // 🔁 Elke 60 sec verversen
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   return { marketData, macroData, loading };

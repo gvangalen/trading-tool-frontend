@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchTechnicalData } from '@/lib/api/technical'; // ✅ specifieke module voor technische data
+import { fetchTechnicalData } from '@/lib/api/technical'; // Correcte import
 
 export function useTechnicalData() {
   const [technicalData, setTechnicalData] = useState([]);
@@ -16,28 +16,29 @@ export function useTechnicalData() {
   async function loadData() {
     try {
       const data = await fetchTechnicalData();
-      setTechnicalData(data);
-      updateScore(data);
+      setTechnicalData(data || []);
+      updateScore(data || []);
     } catch (err) {
-      console.error("❌ Technische data ophalen mislukt:", err);
+      console.error('❌ Technische data ophalen mislukt:', err);
       setTechnicalData([]);
     }
   }
 
-  function calculateScore(item) {
+  function calculateTechnicalScore(item) {
     let score = 0;
     if (item.rsi < 30) score += 1;
     if (item.rsi > 70) score -= 1;
     if (item.volume > 500000000) score += 1;
     if (item.price > item.ma_200) score += 1;
     else score -= 1;
-    return Math.max(-2, Math.min(2, score));
+    return Math.max(-2, Math.min(2, score)); // Clamp tussen -2 en +2
   }
 
   function updateScore(data) {
-    let total = 0, count = 0;
+    let total = 0;
+    let count = 0;
     data.forEach(d => {
-      const s = calculateScore(d);
+      const s = calculateTechnicalScore(d);
       if (!isNaN(s)) {
         total += s;
         count++;
@@ -59,6 +60,6 @@ export function useTechnicalData() {
     avgScore,
     advies,
     removeIndicator,
-    calculateScore,
+    calculateTechnicalScore,
   };
 }

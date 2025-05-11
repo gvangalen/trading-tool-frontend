@@ -4,8 +4,14 @@ on:
   push:
     branches:
       - main
-  paths:
-    - 'frontend/**'
+    paths:
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+      - '**.json'
+      - '**/styles/**'
+      - '.github/workflows/deploy-frontend.yml'
 
 jobs:
   deploy:

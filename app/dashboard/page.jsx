@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DashboardGauges from '@/components/DashboardGauges';
-import TradingAdvice from '@/components/TradingAdvice';
-import MarketTable from '@/components/MarketTable';
-import MacroTable from '@/components/MacroTable';
-import TechnicalTable from '@/components/TechnicalTable';
-import SetupManager from '@/components/SetupManager'; // ✅ Correcte nieuwe import
-import SetupInspector from '@/components/SetupInspector';
+import DashboardGauges from '@/components/dashboard/DashboardGauges';
+import TradingAdvice from '@/components/dashboard/TradingAdvice';
+import MarketTable from '@/components/market/MarketTable';
+import MacroTable from '@/components/macro/MacroTable';
+import TechnicalTable from '@/components/technical/TechnicalTable';
+import SetupManager from '@/components/setup/SetupManager'; // ✅ Correcte nieuwe import
+import SetupInspector from '@/components/modals/SetupInspector';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);

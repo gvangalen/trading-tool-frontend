@@ -1,6 +1,6 @@
 // ✅ app/onboarding/page.jsx — vervanger voor oude onboarding.html
 'use client';
-import OnboardingProgress from '@/components/OnboardingProgress';
+import OnboardingProgress from '@/components/ui/OnboardingProgress';
 
 export default function OnboardingPage() {
   return (

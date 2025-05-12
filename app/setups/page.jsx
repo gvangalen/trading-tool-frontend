@@ -1,7 +1,7 @@
 'use client';
 
-import SetupForm from '@/components/SetupForm';
-import SetupList from '@/components/SetupList';
+import SetupForm from '@/components/setup/SetupForm';
+import SetupList from '@/components/setup/SetupList';
 
 export default function SetupPage() {
   return (

@@ -1,7 +1,7 @@
 'use client';
-import StrategyList from '@/components/StrategyList';
-import StrategyForm from '@/components/StrategyForm';
-import StrategyGenerator from '@/components/StrategyGenerator';
+import StrategyList from '@/components/strategy/StrategyList';
+import StrategyForm from '@/components/strategy/StrategyForm';
+import StrategyGenerator from '@/components/strategy/StrategyGenerator';
 
 export default function StrategyPage() {
   return (

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useDashboardData } from '@/hooks/useDashboardData';
-import GaugeChart from '@/components/GaugeChart';
-import TopSetupsMini from '@/components/TopSetupsMini'; // ✅ jouw extra import
+import GaugeChart from '@/components/ui/GaugeChart';
+import TopSetupsMini from '@/components/setup/TopSetupsMini'; // ✅ jouw extra import
 
 export default function DashboardGauges() {
   const {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/lib/config';
 
 export default function TradingAdvice() {
   const [advice, setAdvice] = useState(null);

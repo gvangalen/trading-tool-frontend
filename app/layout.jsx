@@ -1,5 +1,5 @@
 // app/layout.jsx
-import './globals.css'; // ✅ Vanuit /styles/globals.css (verwijzing klopt)
+import '../styles/globals.css';// ✅ Vanuit /styles/globals.css (verwijzing klopt)
 
 export const metadata = {
   title: 'Trading Dashboard',

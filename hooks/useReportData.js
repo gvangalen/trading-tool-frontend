@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/lib/config';
 
 export function useReportData() {
   const [report, setReport] = useState(null);

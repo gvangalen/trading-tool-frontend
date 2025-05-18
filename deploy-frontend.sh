@@ -16,5 +16,8 @@ npm run build
 echo "🐳 Stop bestaande container (indien actief)..."
 docker compose down || true
 
-echo "🚀 Start frontend opnieuw..."
+# ⚙️ Build de frontend vooraf buiten Docker
+npm run build
+
+# 🐳 Start frontend zonder opnieuw te bouwen
 docker compose up -d

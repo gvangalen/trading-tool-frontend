@@ -13,6 +13,7 @@ RUN npm install
 COPY . .
 
 # ✅ Build de Next.js app
+ENV NODE_OPTIONS=--max-old-space-size=1536
 RUN npm run build
 
 # ✅ Expose poort en start de app

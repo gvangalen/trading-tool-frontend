@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   frontend:
     container_name: frontend
@@ -9,3 +7,9 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+
+    # Voeg een memorylimiet toe voor runtime (nodig op sommige Docker setups)
+    deploy:
+      resources:
+        limits:
+          memory: 2g

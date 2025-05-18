@@ -10,4 +10,4 @@ COPY . .
 EXPOSE 3000
 
 # 🔥 Build pas bij runtime uitvoeren, niet tijdens build-fase
-CMD npm run build && npm start
+CMD ["sh", "-c", "npm run build && npm start"]

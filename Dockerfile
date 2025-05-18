@@ -1,19 +1,20 @@
-# 1. Base image
-FROM node:18-alpine
+# ✅ Veilige, stabiele base image
+FROM node:20
 
-# 2. Set working directory
 WORKDIR /app
 
-# 3. Copy package.json and install dependencies
+# ✅ Eerst alleen package info kopiëren
 COPY package.json package-lock.json* ./
+
+# ✅ Installeer afhankelijkheden
 RUN npm install
 
-# 4. Copy rest of the app
+# ✅ Kopieer alle overige bestanden
 COPY . .
 
-# 5. Build Next.js app
+# ✅ Build de Next.js app
 RUN npm run build
 
-# 6. Expose port and start app
+# ✅ Expose poort en start de app
 EXPOSE 3000
 CMD ["npm", "start"]

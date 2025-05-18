@@ -4,15 +4,15 @@ on:
   push:
     branches:
       - main
-   paths:
-  - '**.js'
-  - '**.jsx'
-  - '**.ts'
-  - '**.tsx'
-  - '**.json'
-  - '**/styles/**'
-  - 'deploy-frontend.sh'              # ✅ deze toevoegen
-  - '.github/workflows/deploy-frontend.yml'
+    paths:
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+      - '**.json'
+      - '**/styles/**'
+      - 'deploy-frontend.sh'                     # ✅ deze regel toevoegen
+      - '.github/workflows/deploy-frontend.yml'
 
 jobs:
   deploy:

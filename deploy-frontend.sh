@@ -1,20 +1,37 @@
 #!/bin/bash
 
 echo "📁 Ga naar frontend map..."
-cd ~/trading-tool-frontend || exit 1
+cd ~/trading-tool-frontend || {
+  echo "❌ Kan map ~/trading-tool-frontend niet vinden."
+  exit 1
+}
 
-echo "📥 Haal laatste code op..."
-git reset --hard origin/main
-git pull origin main
+echo "📥 Haal laatste code op vanaf GitHub (forceer sync)..."
+git fetch origin
+git reset --hard origin/main || {
+  echo "❌ Git reset mislukt."
+  exit 1
+}
 
-echo "📦 Installeer/updaten van dependencies..."
-npm install
+echo "📦 Installeer of update dependencies (npm install)..."
+npm install || {
+  echo "❌ NPM install mislukt."
+  exit 1
+}
 
-echo "🏗️ Build frontend app..."
-npm run build
+echo "🏗️ Build frontend app (Next.js)..."
+npm run build || {
+  echo "❌ Build mislukt (Next.js)."
+  exit 1
+}
 
-echo "🐳 Stop bestaande container (indien actief)..."
-docker compose down || true
+echo "🐳 Stop bestaande Docker container (indien actief)..."
+docker compose down || echo "⚠️ Geen actieve container om te stoppen."
 
-echo "🚀 Start frontend zonder opnieuw te bouwen..."
-docker compose up -d
+echo "🚀 Start frontend met Docker (zonder opnieuw te builden)..."
+docker compose up -d || {
+  echo "❌ Docker Compose start mislukt."
+  exit 1
+}
+
+echo "✅ Frontend succesvol gedeployed!"

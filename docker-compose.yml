@@ -7,9 +7,4 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
-
-    # Voeg een memorylimiet toe voor runtime (nodig op sommige Docker setups)
-    deploy:
-      resources:
-        limits:
-          memory: 2g
+    mem_limit: 2g  # ✅ dit werkt wél met gewone `docker compose up`

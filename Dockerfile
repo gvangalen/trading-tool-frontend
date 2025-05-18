@@ -9,5 +9,5 @@ COPY . .
 
 EXPOSE 3000
 
-# ⚙️ Alleen starten — niet builden!
+# 🔥 Start alleen (geen build hier!)
 CMD ["npm", "start"]

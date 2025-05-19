@@ -1,17 +1,13 @@
-# ✅ Stabiele Node image
-FROM node:20
+# ✅ Downgrade naar Node 18 voor compatibiliteit met ARM + Next.js
+FROM node:18
 
 WORKDIR /app
 
-# ✅ Installeer dependencies
 COPY package.json package-lock.json* ./
 RUN npm install
 
-# ✅ Kopieer volledige app
 COPY . .
 
-# ✅ Expose Next.js poort
 EXPOSE 3000
 
-# ✅ Alleen starten (geen build!)
 CMD ["npm", "start"]

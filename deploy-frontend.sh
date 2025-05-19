@@ -1,37 +1,21 @@
-#!/bin/bash
+# ✅ Stabiele Node-versie
+FROM node:18
 
-echo "📁 Ga naar frontend map..."
-cd ~/trading-tool-frontend || {
-  echo "❌ Kan map ~/trading-tool-frontend niet vinden."
-  exit 1
-}
+# ✅ Werkmap instellen
+WORKDIR /app
 
-echo "📥 Haal laatste code op (force)..."
-git fetch origin
-git reset --hard origin/main || {
-  echo "❌ Git reset mislukt."
-  exit 1
-}
+# ✅ Alleen package-info kopiëren en dependencies installeren
+COPY package.json package-lock.json* ./
+RUN npm install
 
-echo "📦 Installeer of update dependencies (npm install)..."
-npm install || {
-  echo "❌ NPM install mislukt."
-  exit 1
-}
+# ✅ Overige bestanden kopiëren
+COPY . .
 
-echo "🏗️ Build frontend app (lokaal, buiten Docker)..."
-npm run build || {
-  echo "❌ Build mislukt (Next.js)."
-  exit 1
-}
+# ✅ 🔧 Productie build uitvoeren (verplicht voor next start)
+RUN npm run build
 
-echo "🐳 Stop bestaande Docker container (indien actief)..."
-docker compose down || echo "⚠️ Geen actieve container om te stoppen."
+# ✅ Poort openen
+EXPOSE 3000
 
-echo "🚀 Start frontend zonder opnieuw te builden (alleen npm start)..."
-docker compose up -d || {
-  echo "❌ Docker Compose start mislukt."
-  exit 1
-}
-
-echo "✅ Frontend succesvol gedeployed!"
+# ✅ Productie starten
+CMD ["npm", "start"]

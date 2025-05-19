@@ -19,7 +19,7 @@ npm install || {
   exit 1
 }
 
-echo "🏗️ Build frontend app (lokaal)..."
+echo "🏗️ Build frontend app (lokaal, buiten Docker)..."
 npm run build || {
   echo "❌ Build mislukt (Next.js)."
   exit 1
@@ -28,7 +28,7 @@ npm run build || {
 echo "🐳 Stop bestaande Docker container (indien actief)..."
 docker compose down || echo "⚠️ Geen actieve container om te stoppen."
 
-echo "🚀 Start frontend met Docker (zonder opnieuw te builden)..."
+echo "🚀 Start frontend zonder opnieuw te builden (alleen npm start)..."
 docker compose up -d || {
   echo "❌ Docker Compose start mislukt."
   exit 1

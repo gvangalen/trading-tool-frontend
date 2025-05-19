@@ -6,7 +6,7 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
-echo "📥 Haal laatste code op vanaf GitHub (forceer sync)..."
+echo "📥 Haal laatste code op (force)..."
 git fetch origin
 git reset --hard origin/main || {
   echo "❌ Git reset mislukt."
@@ -19,7 +19,7 @@ npm install || {
   exit 1
 }
 
-echo "🏗️ Build frontend app (Next.js)..."
+echo "🏗️ Build frontend app (lokaal)..."
 npm run build || {
   echo "❌ Build mislukt (Next.js)."
   exit 1

@@ -7,7 +7,7 @@ import MarketTable from '@/components/market/MarketTable';
 import MacroTable from '@/components/macro/MacroTable';
 import TechnicalTable from '@/components/technical/TechnicalTable';
 import SetupManager from '@/components/setup/SetupManager'; // ✅ Correcte nieuwe import
-import SetupInspector from '@/components/modals/SetupInspector';
+
 
 console.log('✅ DashboardGauges', DashboardGauges);
 console.log('✅ TradingAdvice', TradingAdvice);
@@ -15,7 +15,7 @@ console.log('✅ MarketTable', MarketTable);
 console.log('✅ MacroTable', MacroTable);
 console.log('✅ TechnicalTable', TechnicalTable);
 console.log('✅ SetupManager', SetupManager);
-console.log('✅ SetupInspector', SetupInspector);
+
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);

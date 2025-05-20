@@ -6,9 +6,9 @@ import TradingAdvice from '@/components/dashboard/TradingAdvice';
 import MarketTable from '@/components/market/MarketTable';
 import MacroTable from '@/components/macro/MacroTable';
 import TechnicalTable from '@/components/technical/TechnicalTable';
-import SetupManager from '@/components/setup/SetupManager'; // ✅ Correcte nieuwe import
+import SetupManager from '@/components/setup/SetupManager'; // ✅ Correcte import
 
-
+// Debug logging (optioneel)
 console.log('✅ DashboardGauges', DashboardGauges);
 console.log('✅ TradingAdvice', TradingAdvice);
 console.log('✅ MarketTable', MarketTable);
@@ -16,14 +16,12 @@ console.log('✅ MacroTable', MacroTable);
 console.log('✅ TechnicalTable', TechnicalTable);
 console.log('✅ SetupManager', SetupManager);
 
-
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
   useEffect(() => {
     function handleScroll() {
-      if (window.scrollY > 300) setShowScroll(true);
-      else setShowScroll(false);
+      setShowScroll(window.scrollY > 300);
     }
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -71,8 +69,6 @@ export default function DashboardPage() {
       {/* ✅ Setups */}
       <section className="mt-10 mb-20">
         <h2 className="text-2xl font-bold mb-2">⚙️ Setup Overzicht</h2>
-
-        {/* 🔍 Setup Manager */}
         <SetupManager />
       </section>
 
@@ -86,9 +82,6 @@ export default function DashboardPage() {
           ⬆️
         </button>
       )}
-
-      {/* ✅ Popup Setup Inspector */}
-      <SetupInspector /> {/* ⚡ Geen props meer nodig */}
     </div>
   );
 }

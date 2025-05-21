@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.env.local
+Dockerfile
+README.md
+*.log
+npm-debug.log
+*.swp
+*.swo

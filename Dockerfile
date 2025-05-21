@@ -1,5 +1,5 @@
 # ✅ Stabiele Node-versie
-FROM node:18
+FROM node:20
 
 # ✅ Werkmap instellen
 WORKDIR /app

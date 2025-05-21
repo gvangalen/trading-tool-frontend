@@ -11,7 +11,7 @@ on:
       - '**.tsx'
       - '**.json'
       - '**/styles/**'
-      - 'deploy-frontend.sh'                     # ✅ deze regel toevoegen
+      - 'deploy-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
@@ -20,10 +20,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
-      - name: SSH and run deploy-frontend.sh
+      - name: 🧰 Installeer Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 🚀 SSH en run deploy-frontend.sh
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}

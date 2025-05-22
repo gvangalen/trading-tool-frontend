@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - '**/*.js'
-      - '**/*.jsx'
-      - '**/*.ts'
-      - '**/*.tsx'
-      - '**/*.json'
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+      - '**.json'
       - '**/styles/**'
       - 'deploy-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
@@ -30,6 +30,4 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: |
-            echo "🌐 Start frontend deployment via GitHub Actions"
-            bash ~/deploy-frontend.sh
+          script: bash ~/deploy-frontend.sh

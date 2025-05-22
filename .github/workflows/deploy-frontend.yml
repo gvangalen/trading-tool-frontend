@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - '**.js'
-      - '**.jsx'
-      - '**.ts'
-      - '**.tsx'
-      - '**.json'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.json'
       - '**/styles/**'
       - 'deploy-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
@@ -23,11 +23,6 @@ jobs:
       - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧰 Installeer Node 18
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
       - name: 🚀 SSH en run deploy-frontend.sh
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -35,4 +30,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: bash ~/deploy-frontend.sh
+          script: |
+            echo "🌐 Start frontend deployment via GitHub Actions"
+            bash ~/deploy-frontend.sh

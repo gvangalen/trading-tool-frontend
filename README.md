@@ -55,3 +55,5 @@ Wil je meewerken of feedback geven? Open gerust een issue of stuur een PR. Voor 
 ## 🧠 Team & Tools
 - Gebouwd door [gvangalen](https://github.com/gvangalen)
 - Stack: Next.js, Tailwind, shadcn/ui, Chart.js, CoinGecko, PostgreSQL, AI via OpenAI
+
+## 🔄 Test: frontend deploy via GitHub Actions (22 mei)

@@ -2,10 +2,13 @@
 
 set -e  # ⛑️ Stop script bij fouten
 
-# ⬇️ Zorg dat Node 18 en pm2 beschikbaar zijn
+# ⬇️ Zorg dat nvm actief is (ook bij GitHub Actions SSH)
 export NVM_DIR="$HOME/.nvm"
-source "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 nvm use 18
+
+# ⬇️ Voeg npm-global toe aan pad voor pm2
+export PATH="$HOME/.npm-global/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
@@ -13,7 +16,7 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
-echo "📥 Haal laatste code op..."
+echo "📥 Haal laatste code op (force)..."
 git fetch origin main
 git reset --hard origin/main
 

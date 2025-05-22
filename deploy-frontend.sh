@@ -1,12 +1,11 @@
 #!/bin/bash
-
 set -e  # ⛑️ Stop script bij fouten
 
-# ✅ Zorg dat PM2 en NVM correct werken
-export PATH="$(npm bin -g):$PATH"
-source ~/.nvm/nvm.sh
-nvm install 18
+echo "🔧 Activeer Node 18 via NVM..."
+export NVM_DIR="$HOME/.nvm"
+source "$NVM_DIR/nvm.sh"
 nvm use 18
+export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
@@ -14,7 +13,7 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
-echo "📥 Haal laatste code op..."
+echo "📥 Haal laatste code op (force)..."
 git fetch origin main
 git reset --hard origin/main
 
@@ -31,6 +30,9 @@ npm run build || {
 }
 
 echo "🚀 Start frontend via PM2..."
-pm2 start "npm run start -- -H 0.0.0.0" --name frontend
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend || {
+  echo "❌ Start mislukt."
+  exit 1
+}
 
 echo "✅ Frontend succesvol gedeployed!"

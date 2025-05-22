@@ -1,14 +1,11 @@
 #!/bin/bash
-
 set -e  # ⛑️ Stop script bij fouten
 
-# ⬇️ Zorg dat nvm actief is (ook bij GitHub Actions SSH)
+# ✅ Zorg dat Node 18 + pm2 werken (voor GitHub Actions of SSH)
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm use 18
-
-# ⬇️ Voeg npm-global toe aan pad voor pm2
-export PATH="$HOME/.npm-global/bin:$PATH"
+export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {

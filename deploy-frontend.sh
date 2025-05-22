@@ -1,11 +1,11 @@
 #!/bin/bash
+
 set -e  # ⛑️ Stop script bij fouten
 
-echo "🔧 Activeer Node 18 via NVM..."
+# ⬇️ Zorg dat Node 18 en pm2 beschikbaar zijn
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
 nvm use 18
-export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
@@ -13,7 +13,7 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
-echo "📥 Haal laatste code op (force)..."
+echo "📥 Haal laatste code op..."
 git fetch origin main
 git reset --hard origin/main
 

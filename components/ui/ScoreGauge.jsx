@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Chart from 'chart.js/auto.cjs';
+import 'chart.js/auto';
 import { API_BASE_URL } from '@/config';
 
 const SCORE_LABELS = ["Strong Sell", "Sell", "Neutral", "Buy", "Strong Buy"];

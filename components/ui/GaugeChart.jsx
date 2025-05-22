@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Chart } from 'chart.js/auto';
+import Chart from 'chart.js/auto.cjs';
 
 export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade80' }) {
   const canvasRef = useRef(null);

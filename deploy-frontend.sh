@@ -1,17 +1,12 @@
 #!/bin/bash
 
-set -e  # ⛑️ Stop bij fouten
+set -e  # ⛑️ Stop script bij fouten
 
-# ✅ Zorg dat NVM beschikbaar is
-export NVM_DIR="$HOME/.nvm"
-source "$NVM_DIR/nvm.sh"
-
-# ✅ Gebruik Node 18 (voor Next.js compatibiliteit)
+# ✅ Zorg dat PM2 en NVM correct werken
+export PATH="$(npm bin -g):$PATH"
+source ~/.nvm/nvm.sh
 nvm install 18
 nvm use 18
-
-# ✅ Zorg dat globale npm binaries (zoals pm2) beschikbaar zijn
-export PATH="$HOME/.npm-global/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
@@ -19,39 +14,23 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
-echo "📥 Haal laatste code op (force)..."
+echo "📥 Haal laatste code op..."
 git fetch origin main
 git reset --hard origin/main
 
-# 🔧 (Optioneel) Stop PM2 frontend proces als je dat ooit gebruikt:
-echo "🚧 Stop frontend (indien actief via PM2)..."
-command -v pm2 >/dev/null && pm2 delete frontend || echo "ℹ️ Geen PM2 of frontend draaide niet"
+echo "🚧 Stop frontend (indien actief)..."
+pm2 delete frontend || echo "ℹ️ Frontend draaide nog niet"
 
 echo "📦 Installeer/updaten van dependencies..."
 npm install
 
-echo "🔧 Productie build uitvoeren (Next.js)..."
+echo "🔧 Productie build uitvoeren..."
 npm run build || {
   echo "❌ Build mislukt."
   exit 1
 }
 
-echo "🐳 Stop bestaande Docker container (indien actief)..."
-docker compose down || echo "⚠️ Geen actieve container om te stoppen."
-
-echo "🧼 Opschonen oude Docker cache..."
-docker builder prune -af || echo "⚠️ Geen oude cache gevonden."
-
-echo "🛠️ Docker-image opnieuw builden..."
-docker compose build --no-cache || {
-  echo "❌ Docker build mislukt."
-  exit 1
-}
-
-echo "🚀 Start frontend container..."
-docker compose up -d || {
-  echo "❌ Docker Compose start mislukt."
-  exit 1
-}
+echo "🚀 Start frontend via PM2..."
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend
 
 echo "✅ Frontend succesvol gedeployed!"

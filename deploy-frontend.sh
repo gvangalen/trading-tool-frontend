@@ -1,65 +1,36 @@
 #!/bin/bash
-set -e
+set -e  # ⛑️ Stop direct bij fout
 
-echo "🧠 Init Node & PM2 via NVM (met logging)"
+# 🧠 Zorg dat NVM, Node 18 en pm2 beschikbaar zijn (voor GitHub Actions of handmatig)
 export NVM_DIR="$HOME/.nvm"
-echo "🔍 NVM_DIR: $NVM_DIR"
-
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-  echo "✅ nvm.sh gevonden"
-  source "$NVM_DIR/nvm.sh"
-else
-  echo "❌ nvm.sh niet gevonden"
-fi
-
-echo "📦 Gebruik Node 18 via NVM"
-nvm use 18 || echo "⚠️ nvm use 18 faalt misschien"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
+nvm use 18 || echo "⚠️ Let op: nvm use 18 faalde mogelijk buiten interactive shell"
 
-# Extra debug
-echo "🔍 Node info:"
-node -v || echo "❌ Node niet beschikbaar"
-which node || echo "❌ Node pad onbekend"
-echo "🔍 NPM versie:"
-npm -v || echo "❌ NPM niet beschikbaar"
-echo "🔍 PM2 info:"
-which pm2 || echo "❌ pm2 niet gevonden"
-pm2 -v || echo "❌ pm2 -v mislukt"
-
-echo "👤 User: $(whoami)"
-echo "📄 Shell: $SHELL"
-echo "📂 Current dir: $(pwd)"
-
-echo "📁 Ga naar projectmap"
+echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
   echo "❌ Map ~/trading-tool-frontend niet gevonden."
   exit 1
 }
 
-echo "📥 Git pull + reset"
+echo "📥 Git ophalen"
 git fetch origin main
 git reset --hard origin/main
 
-echo "📦 Install dependencies (npm ci)"
-npm ci || {
-  echo "❌ npm ci mislukt"
-  exit 1
-}
+echo "📦 Dependencies installeren"
+npm ci || npm install
 
-echo "🛠️ Build frontend"
+echo "🛠️ Build uitvoeren"
 npm run build || {
-  echo "❌ Build mislukt"
+  echo "❌ Build faalde"
   exit 1
 }
 
-echo "🛑 Stop oude frontend (PM2)"
-pm2 delete frontend || echo "ℹ️ Geen actieve PM2-app"
+echo "🚀 Herstart frontend via PM2"
+pm2 delete frontend || echo "🟡 Frontend draaide nog niet"
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend
 
-echo "🚀 Start nieuwe frontend via PM2"
-pm2 start "npm run start -- -H 0.0.0.0" --name frontend || {
-  echo "❌ PM2 start mislukt"
-  exit 1
-}
+echo "💾 PM2 configuratie opslaan (voor reboot)"
 pm2 save
 
-echo "✅ Deployment afgerond!"
+echo "✅ Alles gelukt"

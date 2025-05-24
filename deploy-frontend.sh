@@ -1,11 +1,11 @@
 #!/bin/bash
-set -e  # Stop script bij fouten
+set -e  # Stop bij fout
 
-echo "🧠 Initialiseer NVM + Node 18 + pad naar pm2"
+echo "🔁 Init NVM + Node 18 + pad naar PM2"
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
+source "$NVM_DIR/nvm.sh"
 nvm use 18
+export PATH="$NVM_DIR/versions/node/v18.20.8/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
@@ -17,6 +17,9 @@ echo "📥 Haal laatste code op (force)..."
 git fetch origin main
 git reset --hard origin/main
 
+echo "🚧 Stop frontend (indien actief)..."
+pm2 delete frontend || echo "ℹ️ Frontend draaide nog niet"
+
 echo "📦 Installeer/updaten van dependencies..."
 npm install
 
@@ -26,13 +29,13 @@ npm run build || {
   exit 1
 }
 
-echo "🛑 Stop bestaande frontend (indien actief)..."
-pm2 delete frontend || echo "ℹ️ Frontend draaide nog niet"
-
 echo "🚀 Start frontend via PM2..."
-pm2 start "npm run start -- -H 0.0.0.0" --name frontend
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend || {
+  echo "❌ Start mislukt."
+  exit 1
+}
 
-echo "💾 Sla PM2 configuratie op voor reboot"
+echo "💾 Bewaar PM2 proceslijst..."
 pm2 save
 
 echo "✅ Frontend succesvol gedeployed!"

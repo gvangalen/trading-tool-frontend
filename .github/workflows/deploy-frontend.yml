@@ -30,4 +30,5 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: bash ~/deploy-frontend.sh
+          script: bash -l ~/deploy-frontend.sh
+          # debug: true  # Zet aan indien nodig

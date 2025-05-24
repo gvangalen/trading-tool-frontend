@@ -12,6 +12,7 @@ on:
       - '**.json'
       - '**/styles/**'
       - 'deploy-frontend.sh'
+      - 'run-with-node18.sh'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
@@ -23,11 +24,11 @@ jobs:
       - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
-      - name: 🚀 SSH en run deploy-frontend.sh met login shell
+      - name: 🚀 SSH en run deploy-frontend.sh via wrapper
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: bash -l -c "~/deploy-frontend.sh"
+          script: ~/run-with-node18.sh bash ~/deploy-frontend.sh

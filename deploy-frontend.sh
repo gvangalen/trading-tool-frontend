@@ -4,7 +4,7 @@ set -e
 echo "🔧 Init Node & PM2 pad"
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
-nvm use 18
+nvm use 18 >/dev/null
 export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
 echo "📁 Ga naar projectmap"
@@ -27,4 +27,4 @@ echo "🚀 Start nieuwe instance"
 pm2 start "npm run start -- -H 0.0.0.0" --name frontend
 pm2 save
 
-echo "✅ Done"
+echo "✅ Frontend gedeployed"

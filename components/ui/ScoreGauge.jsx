@@ -1,8 +1,15 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import 'chart.js/auto';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { API_BASE_URL } from '@/config';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const SCORE_LABELS = ["Strong Sell", "Sell", "Neutral", "Buy", "Strong Buy"];
 const EXPLANATION_MAP = {
@@ -20,7 +27,7 @@ export default function ScoreGauge({ id, label }) {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    chartRef.current = new Chart(canvasRef.current, {
+    chartRef.current = new ChartJS(canvasRef.current, {
       type: 'doughnut',
       data: {
         labels: SCORE_LABELS,

@@ -1,41 +1,30 @@
 #!/bin/bash
-set -e  # Stop bij fout
+set -e
 
-echo "🔁 Init NVM + Node 18 + pad naar PM2"
+echo "🔧 Init Node & PM2 pad"
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
 nvm use 18
-export PATH="$NVM_DIR/versions/node/v18.20.8/bin:$PATH"
+export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
-echo "📁 Ga naar frontend map..."
-cd ~/trading-tool-frontend || {
-  echo "❌ Map ~/trading-tool-frontend niet gevonden."
-  exit 1
-}
+echo "📁 Ga naar projectmap"
+cd ~/trading-tool-frontend || exit 1
 
-echo "📥 Haal laatste code op (force)..."
+echo "📥 Haal laatste code op"
 git fetch origin main
 git reset --hard origin/main
 
-echo "🚧 Stop frontend (indien actief)..."
-pm2 delete frontend || echo "ℹ️ Frontend draaide nog niet"
+echo "📦 Dependencies installeren"
+npm ci
 
-echo "📦 Installeer/updaten van dependencies..."
-npm install
+echo "🛠️ Builden"
+npm run build
 
-echo "🔧 Productie build uitvoeren..."
-npm run build || {
-  echo "❌ Build mislukt."
-  exit 1
-}
+echo "🛑 Stop oude instance"
+pm2 delete frontend || echo "Geen actieve PM2-app"
 
-echo "🚀 Start frontend via PM2..."
-pm2 start "npm run start -- -H 0.0.0.0" --name frontend || {
-  echo "❌ Start mislukt."
-  exit 1
-}
-
-echo "💾 Bewaar PM2 proceslijst..."
+echo "🚀 Start nieuwe instance"
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend
 pm2 save
 
-echo "✅ Frontend succesvol gedeployed!"
+echo "✅ Done"

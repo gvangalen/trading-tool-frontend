@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # ⛑️ Stop script bij fouten
+set -e  # Stop script bij fouten
 
 echo "🧠 Initialiseer NVM + Node 18 + pad naar pm2"
 export NVM_DIR="$HOME/.nvm"
@@ -26,8 +26,13 @@ npm run build || {
   exit 1
 }
 
-echo "🚀 Start frontend via npm (tijdelijk, zonder pm2)..."
-npm run start -- -H 0.0.0.0 &
-sleep 5
+echo "🛑 Stop bestaande frontend (indien actief)..."
+pm2 delete frontend || echo "ℹ️ Frontend draaide nog niet"
+
+echo "🚀 Start frontend via PM2..."
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend
+
+echo "💾 Sla PM2 configuratie op voor reboot"
+pm2 save
 
 echo "✅ Frontend succesvol gedeployed!"

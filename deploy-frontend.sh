@@ -1,30 +1,65 @@
 #!/bin/bash
 set -e
 
-echo "🔧 Init Node & PM2 pad"
+echo "🧠 Init Node & PM2 via NVM (met logging)"
 export NVM_DIR="$HOME/.nvm"
-source "$NVM_DIR/nvm.sh"
-nvm use 18 >/dev/null
+echo "🔍 NVM_DIR: $NVM_DIR"
+
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  echo "✅ nvm.sh gevonden"
+  source "$NVM_DIR/nvm.sh"
+else
+  echo "❌ nvm.sh niet gevonden"
+fi
+
+echo "📦 Gebruik Node 18 via NVM"
+nvm use 18 || echo "⚠️ nvm use 18 faalt misschien"
 export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
-echo "📁 Ga naar projectmap"
-cd ~/trading-tool-frontend || exit 1
+# Extra debug
+echo "🔍 Node info:"
+node -v || echo "❌ Node niet beschikbaar"
+which node || echo "❌ Node pad onbekend"
+echo "🔍 NPM versie:"
+npm -v || echo "❌ NPM niet beschikbaar"
+echo "🔍 PM2 info:"
+which pm2 || echo "❌ pm2 niet gevonden"
+pm2 -v || echo "❌ pm2 -v mislukt"
 
-echo "📥 Haal laatste code op"
+echo "👤 User: $(whoami)"
+echo "📄 Shell: $SHELL"
+echo "📂 Current dir: $(pwd)"
+
+echo "📁 Ga naar projectmap"
+cd ~/trading-tool-frontend || {
+  echo "❌ Map ~/trading-tool-frontend niet gevonden."
+  exit 1
+}
+
+echo "📥 Git pull + reset"
 git fetch origin main
 git reset --hard origin/main
 
-echo "📦 Dependencies installeren"
-npm ci
+echo "📦 Install dependencies (npm ci)"
+npm ci || {
+  echo "❌ npm ci mislukt"
+  exit 1
+}
 
-echo "🛠️ Builden"
-npm run build
+echo "🛠️ Build frontend"
+npm run build || {
+  echo "❌ Build mislukt"
+  exit 1
+}
 
-echo "🛑 Stop oude instance"
-pm2 delete frontend || echo "Geen actieve PM2-app"
+echo "🛑 Stop oude frontend (PM2)"
+pm2 delete frontend || echo "ℹ️ Geen actieve PM2-app"
 
-echo "🚀 Start nieuwe instance"
-pm2 start "npm run start -- -H 0.0.0.0" --name frontend
+echo "🚀 Start nieuwe frontend via PM2"
+pm2 start "npm run start -- -H 0.0.0.0" --name frontend || {
+  echo "❌ PM2 start mislukt"
+  exit 1
+}
 pm2 save
 
-echo "✅ Frontend gedeployed"
+echo "✅ Deployment afgerond!"

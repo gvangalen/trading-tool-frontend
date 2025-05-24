@@ -1,10 +1,12 @@
 #!/bin/bash
 set -e  # ⛑️ Stop script bij fouten
 
-# ✅ Zorg dat Node 18 + pm2 werken (voor GitHub Actions of SSH)
+# ✅ Activeer NVM en selecteer Node 18
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 18
+nvm use 18 >/dev/null
+
+# ✅ Voeg node & pm2 pad toe aan PATH (voor veiligheid bij GitHub Actions)
 export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 
 echo "📁 Ga naar frontend map..."
@@ -18,7 +20,11 @@ git fetch origin main
 git reset --hard origin/main
 
 echo "🚧 Stop frontend (indien actief)..."
-pm2 delete frontend || echo "ℹ️ Frontend draaide nog niet"
+if pm2 list | grep -q "frontend"; then
+  pm2 delete frontend
+else
+  echo "ℹ️ Frontend draaide nog niet"
+fi
 
 echo "📦 Installeer/updaten van dependencies..."
 npm install

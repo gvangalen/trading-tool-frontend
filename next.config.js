@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
+const util = require('util'); // ✅ Fix voor build error
 
 const nextConfig = {
   async redirects() {
@@ -21,14 +22,6 @@ const nextConfig = {
       '@lib': path.resolve(__dirname, 'lib'),
       '@styles': path.resolve(__dirname, 'styles'),
     };
-
-    // ✅ Voeg fallback op modules toe voor chart.js/auto compatibiliteit
-    config.resolve.fallback = {
-      ...(config.resolve.fallback || {}),
-      "util": require.resolve("util/"),
-      "path": require.resolve("path-browserify"),
-    };
-
     return config;
   },
 };

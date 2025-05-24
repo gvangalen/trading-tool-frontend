@@ -21,6 +21,14 @@ const nextConfig = {
       '@lib': path.resolve(__dirname, 'lib'),
       '@styles': path.resolve(__dirname, 'styles'),
     };
+
+    // ✅ Voeg fallback op modules toe voor chart.js/auto compatibiliteit
+    config.resolve.fallback = {
+      ...(config.resolve.fallback || {}),
+      "util": require.resolve("util/"),
+      "path": require.resolve("path-browserify"),
+    };
+
     return config;
   },
 };

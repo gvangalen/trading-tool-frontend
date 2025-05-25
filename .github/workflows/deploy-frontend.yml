@@ -24,6 +24,20 @@ jobs:
       - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
+      - name: ✅ Test verbinding met server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "✅ Verbinding met server werkt."
+            echo "🔍 Node versie:"
+            node -v || echo "❌ Node niet gevonden"
+            echo "🔍 PM2 versie:"
+            pm2 -v || echo "❌ PM2 niet gevonden"
+
       - name: 🚀 SSH en run deploy-frontend.sh via wrapper
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -31,4 +45,9 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: ~/run-with-node18.sh bash ~/deploy-frontend.sh
+          script: |
+            echo "🚀 Start deployment via wrapper..."
+            ~/run-with-node18.sh bash ~/deploy-frontend.sh || {
+              echo "❌ Deployment script is mislukt!";
+              exit 1;
+            }

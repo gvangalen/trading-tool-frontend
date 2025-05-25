@@ -20,6 +20,9 @@ git reset --hard origin/main
 echo "📦 Dependencies installeren"
 npm ci || npm install
 
+echo "🧹 Verwijder oude .next cache"
+rm -rf .next
+
 echo "🛠️ Build uitvoeren"
 npm run build || {
   echo "❌ Build faalde"

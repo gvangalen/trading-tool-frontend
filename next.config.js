@@ -1,13 +1,6 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
 
-try {
-  const chartPath = require.resolve('chart.js');
-  console.log('✅ chart.js gevonden in:', chartPath);
-} catch (err) {
-  console.error('❌ chart.js NIET gevonden!', err);
-}
-
 const nextConfig = {
   async redirects() {
     return [

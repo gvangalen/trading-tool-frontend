@@ -7,7 +7,7 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 nvm use 18 || echo "⚠️ Let op: nvm use 18 faalde mogelijk buiten interactive shell"
 
-# ✅ Zorg dat de juiste omgeving gebruikt wordt
+# ✅ Poort en host instellen
 export HOST=0.0.0.0
 export PORT=3100
 
@@ -17,27 +17,30 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
-echo "📥 Git ophalen..."
+echo "📥 Haal laatste code van GitHub..."
 git fetch origin main
 git reset --hard origin/main
 
-echo "📦 Dependencies installeren..."
+echo "📦 Installeer dependencies..."
 npm ci || npm install
 
-echo "🧹 Oude .next cache verwijderen..."
+echo "🧹 Verwijder oude build-cache..."
 rm -rf .next
 
-echo "🛠️ Build uitvoeren..."
+echo "🛠️ Bouw project..."
 npm run build || {
   echo "❌ Build faalde"
   exit 1
 }
 
-echo "🚀 Frontend herstarten via PM2..."
-pm2 delete frontend || echo "🟡 Frontend draaide nog niet"
-pm2 start "npm run start -- -p 3100 -H 0.0.0.0" --name frontend
+echo "🚀 Herstart frontend via PM2..."
+pm2 delete frontend || echo "ℹ️ Geen bestaande PM2-processen"
+pm2 start "npm run start -- -p $PORT -H $HOST" --name frontend
 
-echo "💾 PM2 configuratie opslaan..."
+echo "💾 Bewaar PM2-configuratie..."
 pm2 save
 
-echo "✅ Frontend succesvol gedeployed op http://<public-ip>:3100"
+# Haal het publieke IP op via metadata service of Oracle CLI
+PUBLIC_IP=$(curl -s ifconfig.me || echo "<jouw-public-ip>")
+
+echo "✅ Frontend succesvol gedeployed op: http://$PUBLIC_IP:$PORT"

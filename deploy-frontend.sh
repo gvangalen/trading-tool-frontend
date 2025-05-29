@@ -17,6 +17,9 @@ cd ~/trading-tool-frontend || {
   exit 1
 }
 
+echo "💀 Stop alle processen op poort $PORT (voorkomt EADDRINUSE)..."
+kill -9 $(lsof -t -i:$PORT) 2>/dev/null || echo "ℹ️ Geen actieve processen op poort $PORT"
+
 echo "📥 Haal laatste code van GitHub..."
 git fetch origin main
 git reset --hard origin/main
@@ -40,7 +43,6 @@ pm2 start "npm run start -- -p $PORT -H $HOST" --name frontend
 echo "💾 Bewaar PM2-configuratie..."
 pm2 save
 
-# Haal het publieke IP op via metadata service of Oracle CLI
 PUBLIC_IP=$(curl -s ifconfig.me || echo "<jouw-public-ip>")
 
 echo "✅ Frontend succesvol gedeployed op: http://$PUBLIC_IP:$PORT"

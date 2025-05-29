@@ -9,7 +9,7 @@ nvm use 18 || echo "⚠️ Let op: nvm use 18 faalde mogelijk buiten interactive
 
 # ✅ Poort en host instellen
 export HOST=0.0.0.0
-export PORT=3100
+export PORT=80
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {

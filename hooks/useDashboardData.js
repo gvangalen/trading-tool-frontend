@@ -2,37 +2,44 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchDashboardData } from '@/lib/api/dashboard'; // 🚀 Nieuwe juiste locatie!
+import { fetchDashboardData } from '@/lib/api/dashboard'; // Zorg dat dit goed werkt
 
 export function useDashboardData() {
-  const [marketData, setMarketData] = useState(null);
-  const [macroData, setMacroData] = useState(null);
+  const [macroScore, setMacroScore] = useState(0);
+  const [technicalScore, setTechnicalScore] = useState(0);
+  const [setupScore, setSetupScore] = useState(0);
+  const [macroExplanation, setMacroExplanation] = useState('');
+  const [technicalExplanation, setTechnicalExplanation] = useState('');
+  const [setupExplanation, setSetupExplanation] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadDashboardData() {
+    async function loadData() {
       try {
         setLoading(true);
         const data = await fetchDashboardData();
 
-        if (mounted && data) {
-          setMarketData(data.crypto || {});
-          setMacroData({
-            fear_greed_index: data.fear_greed_index ?? 'N/A',
-            dominance: data.crypto?.bitcoin?.dominance?.toFixed(2) ?? 'N/A',
-          });
-        }
-      } catch (error) {
-        console.error('❌ Fout bij laden dashboarddata:', error);
+        if (!mounted || !data) return;
+
+        // ✅ Verwachte structuur vanuit backend:
+        setMacroScore(data.scores?.macro ?? 0);
+        setTechnicalScore(data.scores?.technical ?? 0);
+        setSetupScore(data.scores?.setup ?? 0);
+
+        setMacroExplanation(data.explanation?.macro ?? '');
+        setTechnicalExplanation(data.explanation?.technical ?? '');
+        setSetupExplanation(data.explanation?.setup ?? '');
+      } catch (err) {
+        console.error('❌ Fout bij laden dashboarddata:', err);
       } finally {
         if (mounted) setLoading(false);
       }
     }
 
-    loadDashboardData();
-    const interval = setInterval(loadDashboardData, 60000); // 🔁 Elke 60 sec verversen
+    loadData();
+    const interval = setInterval(loadData, 60000); // 🔁 elke 60 sec
 
     return () => {
       mounted = false;
@@ -40,5 +47,13 @@ export function useDashboardData() {
     };
   }, []);
 
-  return { marketData, macroData, loading };
+  return {
+    macroScore,
+    technicalScore,
+    setupScore,
+    macroExplanation,
+    technicalExplanation,
+    setupExplanation,
+    loading,
+  };
 }

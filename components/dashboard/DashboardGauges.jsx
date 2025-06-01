@@ -3,7 +3,19 @@
 import { useState } from 'react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import GaugeChart from '@/components/ui/GaugeChart';
-import TopSetupsMini from '@/components/setup/TopSetupsMini'; // ✅ jouw extra import
+import TopSetupsMini from '@/components/setup/TopSetupsMini';
+
+// ✅ Chart.js fix voor "doughnut" error
+import {
+  Chart,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale
+} from 'chart.js';
+
+Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale); // ✅ registreer alles wat nodig is
 
 export default function DashboardGauges() {
   const {
@@ -15,12 +27,12 @@ export default function DashboardGauges() {
     setupExplanation,
     loading,
   } = useDashboardData();
+
   const [selectedAsset, setSelectedAsset] = useState('BTC');
 
   return (
     <div className="space-y-8">
-
-      {/* ✅ Asset selector + status */}
+      {/* 🔁 Asset selector */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <label htmlFor="assetSelect" className="font-semibold">🔁 Kies asset:</label>
@@ -39,11 +51,11 @@ export default function DashboardGauges() {
         </div>
       </div>
 
-      {/* ✅ Meters */}
+      {/* 📊 Meters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <GaugeCard
           label="Macro"
-          emoji="📉"
+          emoji="🌍"
           score={macroScore}
           explanation={macroExplanation}
         />
@@ -55,10 +67,10 @@ export default function DashboardGauges() {
         />
         <GaugeCard
           label="Setup"
-          emoji="📊"
+          emoji="⚙️"
           score={setupScore}
           explanation={setupExplanation}
-          showTopSetups // ✅ Zet TopSetupsMini alleen bij Setup
+          showTopSetups
         />
       </div>
     </div>
@@ -69,12 +81,12 @@ function GaugeCard({ label, emoji, score, explanation, showTopSetups = false }) 
   const displayScore = score ?? 0;
   const displayExplanation = explanation || '📡 Uitleg laden...';
 
-  // ✅ Dynamische kleur op basis van score
+  // 🔵 Kleur op basis van score
   let color = '#9ca3af'; // Grijs standaard
-  if (displayScore >= 2) color = '#34d399'; // Groen bij sterke bullish
-  else if (displayScore <= -2) color = '#f87171'; // Rood bij sterke bearish
-  else if (displayScore > 0) color = '#60a5fa'; // Blauw bij lichte bullish
-  else if (displayScore < 0) color = '#facc15'; // Geel bij lichte bearish
+  if (displayScore >= 2) color = '#34d399'; // Groen
+  else if (displayScore <= -2) color = '#f87171'; // Rood
+  else if (displayScore > 0) color = '#60a5fa'; // Blauw
+  else if (displayScore < 0) color = '#facc15'; // Geel
 
   return (
     <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-4">

@@ -1,24 +1,21 @@
 #!/bin/bash
-set -e  # ⛑️ Stop direct bij fout
+set -e
 
-# 🧠 Zorg dat NVM, Node 18 en pm2 beschikbaar zijn
+# 🧠 Zet Node 18 actief + pm2 beschikbaar
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
 nvm use 18 || echo "⚠️ Let op: nvm use 18 faalde mogelijk buiten interactive shell"
 
-# ✅ Poort en host instellen
+# ✅ Poort/host voor Next.js
 export HOST=0.0.0.0
-export PORT=80
+export PORT=3000  # 👉 Belangrijk: 3000 gebruiken voor Next.js
 
 echo "📁 Ga naar frontend map..."
 cd ~/trading-tool-frontend || {
   echo "❌ Map ~/trading-tool-frontend niet gevonden."
   exit 1
 }
-
-echo "💀 Stop alle processen op poort $PORT (voorkomt EADDRINUSE)..."
-kill -9 $(lsof -t -i:$PORT) 2>/dev/null || echo "ℹ️ Geen actieve processen op poort $PORT"
 
 echo "📥 Haal laatste code van GitHub..."
 git fetch origin main
@@ -27,22 +24,23 @@ git reset --hard origin/main
 echo "📦 Installeer dependencies..."
 npm ci || npm install
 
-echo "🧹 Verwijder oude build-cache..."
+echo "🧹 Verwijder oude build..."
 rm -rf .next
 
-echo "🛠️ Bouw project..."
+echo "🛠️ Build uitvoeren..."
 npm run build || {
   echo "❌ Build faalde"
   exit 1
 }
 
-echo "🚀 Herstart frontend via PM2..."
-pm2 delete frontend || echo "ℹ️ Geen bestaande PM2-processen"
-pm2 start "npm run start -- -p $PORT -H $HOST" --name frontend
+echo "💀 Stop bestaande PM2-proces (indien actief)..."
+pm2 delete frontend || echo "ℹ️ Geen bestaand PM2-proces"
 
-echo "💾 Bewaar PM2-configuratie..."
+echo "🚀 Start frontend via PM2 op poort 3000..."
+pm2 start "npx next start -p $PORT -H $HOST" --name frontend
+
+echo "💾 PM2-config bewaren..."
 pm2 save
 
 PUBLIC_IP=$(curl -s ifconfig.me || echo "<jouw-public-ip>")
-
-echo "✅ Frontend succesvol gedeployed op: http://$PUBLIC_IP:$PORT"
+echo "✅ Frontend bereikbaar via: http://$PUBLIC_IP:$PORT"

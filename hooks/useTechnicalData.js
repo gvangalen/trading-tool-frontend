@@ -1,26 +1,35 @@
 'use client';
+
 import { useEffect, useState } from 'react';
-import { fetchTechnicalData } from '@/lib/api/technical'; // Correcte import
+import { fetchTechnicalData } from '@/lib/api/technical';
 
 export function useTechnicalData() {
   const [technicalData, setTechnicalData] = useState([]);
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000);
+    const interval = setInterval(loadData, 60000); // 🔁 elke 60 sec
     return () => clearInterval(interval);
   }, []);
 
   async function loadData() {
+    setLoading(true);
+    setError('');
     try {
       const data = await fetchTechnicalData();
-      setTechnicalData(data || []);
-      updateScore(data || []);
+      const valid = Array.isArray(data) ? data : [];
+      setTechnicalData(valid);
+      updateScore(valid);
     } catch (err) {
       console.error('❌ Technische data ophalen mislukt:', err);
+      setError('❌ Fout bij laden technische indicatoren');
       setTechnicalData([]);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -31,16 +40,17 @@ export function useTechnicalData() {
     if (item.volume > 500000000) score += 1;
     if (item.price > item.ma_200) score += 1;
     else score -= 1;
-    return Math.max(-2, Math.min(2, score)); // Clamp tussen -2 en +2
+
+    return Math.max(-2, Math.min(2, score));
   }
 
   function updateScore(data) {
     let total = 0;
     let count = 0;
-    data.forEach(d => {
-      const s = calculateTechnicalScore(d);
-      if (!isNaN(s)) {
-        total += s;
+    data.forEach((d) => {
+      const score = calculateTechnicalScore(d);
+      if (!isNaN(score)) {
+        total += score;
         count++;
       }
     });
@@ -49,8 +59,17 @@ export function useTechnicalData() {
     setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
 
+  function getExplanation(field) {
+    const uitleg = {
+      rsi: 'RSI < 30 = oversold (bullish), > 70 = overbought (bearish).',
+      volume: 'Hoger volume duidt op interesse in de asset.',
+      ma_200: 'Boven 200MA is bullish, onder is bearish.',
+    };
+    return uitleg[field] || 'Geen uitleg beschikbaar';
+  }
+
   function removeIndicator(symbol) {
-    const updated = technicalData.filter(d => d.symbol !== symbol);
+    const updated = technicalData.filter((d) => d.symbol !== symbol);
     setTechnicalData(updated);
     updateScore(updated);
   }
@@ -59,7 +78,10 @@ export function useTechnicalData() {
     technicalData,
     avgScore,
     advies,
+    loading,
+    error,
     removeIndicator,
     calculateTechnicalScore,
+    getExplanation,
   };
 }

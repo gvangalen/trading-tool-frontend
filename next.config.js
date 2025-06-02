@@ -2,15 +2,15 @@
 const path = require('path');
 
 const nextConfig = {
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/dashboard',
-        permanent: true,
-      },
-    ];
+  // ✅ App-directory gebruiken (voor nieuwe routerstructuur)
+  experimental: {
+    appDir: true,
   },
+
+  // ✅ Standalone build (handig voor server deployment)
+  output: 'standalone',
+
+  // ✅ Webpack aliases (voor nette imports zoals @components etc.)
   webpack: (config) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
@@ -23,6 +23,8 @@ const nextConfig = {
     };
     return config;
   },
+
+  // 🚫 Geen redirects hier — gebruik <redirect> component in app/page.tsx
 };
 
 module.exports = nextConfig;

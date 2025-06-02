@@ -33,6 +33,13 @@ npm run build || {
   exit 1
 }
 
+# ✅ Controleer of de .next map bestaat
+if [ ! -d ".next" ]; then
+  echo "❌ Build lijkt gelukt, maar '.next' map ontbreekt."
+  echo "🔍 Mogelijk staat er 'output: export' in next.config.js — dat werkt NIET met 'next start'"
+  exit 1
+fi
+
 echo "💀 Stop bestaande PM2-proces (indien actief)..."
 pm2 delete frontend || echo "ℹ️ Geen bestaand PM2-proces"
 

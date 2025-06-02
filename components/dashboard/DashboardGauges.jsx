@@ -58,18 +58,21 @@ export default function DashboardGauges() {
           emoji="🌍"
           score={macroScore}
           explanation={macroExplanation}
+          loading={loading}
         />
         <GaugeCard
           label="Technisch"
           emoji="📈"
           score={technicalScore}
           explanation={technicalExplanation}
+          loading={loading}
         />
         <GaugeCard
           label="Setup"
           emoji="⚙️"
           score={setupScore}
           explanation={setupExplanation}
+          loading={loading}
           showTopSetups
         />
       </div>
@@ -77,9 +80,15 @@ export default function DashboardGauges() {
   );
 }
 
-function GaugeCard({ label, emoji, score, explanation, showTopSetups = false }) {
-  const displayScore = score ?? 0;
-  const displayExplanation = explanation || '📡 Uitleg laden...';
+function GaugeCard({ label, emoji, score, explanation, showTopSetups = false, loading }) {
+  const displayScore =
+    typeof score === 'number' && !isNaN(score)
+      ? Math.max(-10, Math.min(10, score))
+      : 0;
+
+  const displayExplanation = loading
+    ? '📡 Uitleg laden...'
+    : explanation || '⚠️ Geen uitleg beschikbaar';
 
   // 🔵 Kleur op basis van score
   let color = '#9ca3af'; // Grijs standaard

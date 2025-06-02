@@ -18,8 +18,11 @@ export default function TopSetupsMini() {
         console.warn('⚠️ /api/setups/top3 niet beschikbaar, fallback naar /api/setups');
         res = await fetch('/api/setups');
       }
+
       const data = await res.json();
-      const sorted = (data || [])
+      const setups = Array.isArray(data) ? data : [];
+
+      const sorted = setups
         .filter(s => typeof s.score === 'number')
         .sort((a, b) => b.score - a.score)
         .slice(0, 10); // iets ruimer voor filtering
@@ -27,16 +30,28 @@ export default function TopSetupsMini() {
       setTopSetups(sorted);
     } catch (error) {
       console.error('❌ Fout bij laden top setups:', error);
-      setTopSetups([]);
+
+      // ⛑️ Fallback dummy setup (optioneel)
+      setTopSetups([
+        {
+          id: 'fallback-1',
+          name: 'Voorbeeld Setup',
+          trend: 'neutral',
+          indicators: 'RSI, Volume',
+          score: 0,
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   }
 
-  const filteredSetups = topSetups.filter(setup => {
-    if (trendFilter === 'all') return true;
-    return setup.trend === trendFilter;
-  }).slice(0, 3); // top 3 per filter
+  const filteredSetups = topSetups
+    .filter(setup => {
+      if (trendFilter === 'all') return true;
+      return setup.trend === trendFilter;
+    })
+    .slice(0, 3); // top 3 per filter
 
   if (loading) {
     return (

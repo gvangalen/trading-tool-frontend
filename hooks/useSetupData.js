@@ -13,49 +13,61 @@ export function useSetupData() {
   const [topSetups, setTopSetups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
+  // 🔁 Initiale load bij mount
   useEffect(() => {
     loadSetups();
     loadTopSetups();
   }, []);
 
+  // 📥 Setuplijst ophalen
   async function loadSetups() {
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
       const data = await fetchSetups();
-      setSetups(data || []);
+      setSetups(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('❌ Fout bij laden setups:', err);
       setError('Kan setups niet laden.');
+      setSetups([]);
     } finally {
       setLoading(false);
     }
   }
 
+  // 🌟 Top setups ophalen (bijv. gesorteerd op score)
   async function loadTopSetups() {
     try {
       const data = await fetchTopSetups();
-      setTopSetups(data || []);
+      setTopSetups(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('❌ Fout bij laden top setups:', err);
+      setTopSetups([]);
     }
   }
 
+  // 💾 Setup opslaan
   async function saveSetup(id, updatedData) {
     try {
       await updateSetup(id, updatedData);
+      setSuccessMessage('Setup succesvol opgeslagen.');
       await loadSetups();
     } catch (err) {
       console.error('❌ Fout bij opslaan setup:', err);
+      setError('Opslaan mislukt.');
     }
   }
 
+  // ❌ Setup verwijderen
   async function removeSetup(id) {
     try {
       await deleteSetup(id);
       await loadSetups();
     } catch (err) {
       console.error('❌ Fout bij verwijderen setup:', err);
+      setError('Verwijderen mislukt.');
     }
   }
 
@@ -64,6 +76,7 @@ export function useSetupData() {
     topSetups,
     loading,
     error,
+    successMessage,
     loadSetups,
     loadTopSetups,
     saveSetup,

@@ -15,7 +15,7 @@ import {
   LinearScale
 } from 'chart.js';
 
-Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale); // ✅ registreer alles wat nodig is
+Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale); // ✅ alles registreren
 
 export default function DashboardGauges() {
   const {
@@ -32,6 +32,7 @@ export default function DashboardGauges() {
 
   return (
     <div className="space-y-8">
+
       {/* 🔁 Asset selector */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -58,21 +59,18 @@ export default function DashboardGauges() {
           emoji="🌍"
           score={macroScore}
           explanation={macroExplanation}
-          loading={loading}
         />
         <GaugeCard
           label="Technisch"
           emoji="📈"
           score={technicalScore}
           explanation={technicalExplanation}
-          loading={loading}
         />
         <GaugeCard
           label="Setup"
           emoji="⚙️"
           score={setupScore}
           explanation={setupExplanation}
-          loading={loading}
           showTopSetups
         />
       </div>
@@ -80,18 +78,14 @@ export default function DashboardGauges() {
   );
 }
 
-function GaugeCard({ label, emoji, score, explanation, showTopSetups = false, loading }) {
-  const displayScore =
-    typeof score === 'number' && !isNaN(score)
-      ? Math.max(-10, Math.min(10, score))
-      : 0;
-
-  const displayExplanation = loading
-    ? '📡 Uitleg laden...'
-    : explanation || '⚠️ Geen uitleg beschikbaar';
+function GaugeCard({ label, emoji, score, explanation, showTopSetups = false }) {
+  const displayScore = typeof score === 'number' ? score : 0;
+  const displayExplanation = typeof explanation === 'string' && explanation.trim()
+    ? explanation
+    : '📡 Geen uitleg beschikbaar';
 
   // 🔵 Kleur op basis van score
-  let color = '#9ca3af'; // Grijs standaard
+  let color = '#9ca3af'; // Grijs
   if (displayScore >= 2) color = '#34d399'; // Groen
   else if (displayScore <= -2) color = '#f87171'; // Rood
   else if (displayScore > 0) color = '#60a5fa'; // Blauw

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  Chart as ChartJS,
+  Chart,
   ArcElement,
   Tooltip,
   Legend,
 } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+Chart.register(ArcElement, Tooltip, Legend);
 
 export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade80' }) {
   const canvasRef = useRef(null);
@@ -20,7 +20,7 @@ export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade8
         chartRef.current.destroy();
       }
 
-      chartRef.current = new ChartJS(canvasRef.current, {
+      chartRef.current = new Chart(canvasRef.current, {
         type: 'doughnut',
         data: {
           datasets: [

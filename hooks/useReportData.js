@@ -8,6 +8,7 @@ export function useReportData() {
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('latest');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadDates();
@@ -22,24 +23,30 @@ export function useReportData() {
   async function loadDates() {
     try {
       const res = await fetch(`${API_BASE_URL}/daily_report/history`);
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const data = await res.json();
-      setDates(data || []);
+      setDates(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn('⚠️ Datums ophalen mislukt:', err);
+      setDates([]);
     }
   }
 
   async function loadReport(date) {
     setLoading(true);
+    setError('');
     try {
-      const endpoint = date === 'latest'
-        ? `${API_BASE_URL}/daily_report/latest`
-        : `${API_BASE_URL}/daily_report/${date}`;
+      const endpoint =
+        date === 'latest'
+          ? `${API_BASE_URL}/daily_report/latest`
+          : `${API_BASE_URL}/daily_report/${date}`;
       const res = await fetch(endpoint);
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const data = await res.json();
-      setReport(data);
+      setReport(data || null);
     } catch (err) {
       console.error('❌ Rapport laden mislukt:', err);
+      setError('Rapport kon niet geladen worden.');
       setReport(null);
     } finally {
       setLoading(false);
@@ -79,6 +86,7 @@ export function useReportData() {
     selectedDate,
     setSelectedDate,
     loading,
+    error,
     downloadReport,
   };
 }

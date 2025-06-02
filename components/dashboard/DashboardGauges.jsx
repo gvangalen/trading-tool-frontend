@@ -5,18 +5,6 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import GaugeChart from '@/components/ui/GaugeChart';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 
-// ✅ Chart.js fix voor "doughnut" error
-import {
-  Chart,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale
-} from 'chart.js';
-
-Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale); // ✅ alles registreren
-
 export default function DashboardGauges() {
   const {
     macroScore,
@@ -32,7 +20,6 @@ export default function DashboardGauges() {
 
   return (
     <div className="space-y-8">
-
       {/* 🔁 Asset selector */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

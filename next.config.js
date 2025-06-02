@@ -2,15 +2,12 @@
 const path = require('path');
 
 const nextConfig = {
-  // ✅ App-directory gebruiken (voor nieuwe routerstructuur)
   experimental: {
     appDir: true,
   },
 
-  // ✅ Standalone build (handig voor server deployment)
   output: 'standalone',
 
-  // ✅ Webpack aliases (voor nette imports zoals @components etc.)
   webpack: (config) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
@@ -24,7 +21,14 @@ const nextConfig = {
     return config;
   },
 
-  // 🚫 Geen redirects hier — gebruik <redirect> component in app/page.tsx
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5002/api/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

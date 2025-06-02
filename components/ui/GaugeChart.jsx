@@ -2,20 +2,22 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  Chart,
+  Chart as ChartJS,
   ArcElement,
   Tooltip,
   Legend,
 } from 'chart.js';
 
-Chart.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade80' }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // ✅ Fallback voor ongeldige waarden
-  const displayValue = typeof value === 'number' && !isNaN(value) ? Math.max(0, Math.min(10, value)) : 0;
+  const displayValue =
+    typeof value === 'number' && !isNaN(value)
+      ? Math.max(0, Math.min(10, value))
+      : 0;
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -23,7 +25,7 @@ export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade8
         chartRef.current.destroy();
       }
 
-      chartRef.current = new Chart(canvasRef.current, {
+      chartRef.current = new ChartJS(canvasRef.current, {
         type: 'doughnut',
         data: {
           datasets: [

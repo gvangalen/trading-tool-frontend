@@ -1,6 +1,7 @@
 'use client';
+
 import { useEffect, useState } from 'react';
-import { fetchMacroData } from '@/lib/api/macro'; // Correcte import
+import { fetchMacroData } from '@/lib/api/macro';
 
 export function useMacroData() {
   const [macroData, setMacroData] = useState([]);
@@ -15,13 +16,19 @@ export function useMacroData() {
 
   async function loadData() {
     try {
-      const data = await fetchMacroData(); // ✅ Goed!
+      const data = await fetchMacroData();
       const macro = data?.macro_data || [];
+
+      if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
+
       setMacroData(macro);
       updateScore(macro);
       markStepDone(3);
     } catch (error) {
-      console.error('❌ Macrodata ophalen mislukt:', error);
+      console.warn('⚠️ Macrodata kon niet worden geladen. Gebruik lege lijst.');
+      setMacroData([]);
+      setAvgScore('N/A');
+      setAdvies('⚖️ Neutraal');
     }
   }
 
@@ -63,6 +70,8 @@ export function useMacroData() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ step }),
+    }).catch(() => {
+      console.warn('⚠️ Onboarding progress kon niet worden opgeslagen');
     });
   }
 

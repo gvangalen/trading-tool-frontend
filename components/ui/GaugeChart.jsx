@@ -14,6 +14,9 @@ export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade8
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
+  // ✅ Fallback voor ongeldige waarden
+  const displayValue = typeof value === 'number' && !isNaN(value) ? Math.max(0, Math.min(10, value)) : 0;
+
   useEffect(() => {
     if (canvasRef.current) {
       if (chartRef.current) {
@@ -25,7 +28,7 @@ export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade8
         data: {
           datasets: [
             {
-              data: [value, 10 - value],
+              data: [displayValue, 10 - displayValue],
               backgroundColor: [color, '#e5e7eb'],
               borderWidth: 0,
               cutout: '80%',
@@ -43,14 +46,16 @@ export default function GaugeChart({ value = 0, label = 'Score', color = '#4ade8
         },
       });
     }
-  }, [value, color]);
+  }, [displayValue, color]);
 
   return (
     <div className="relative w-32 h-16">
       <canvas ref={canvasRef} />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
         <span className="font-semibold">{label}</span>
-        <span className="text-lg font-bold">{value ?? '-'} / 10</span>
+        <span className="text-lg font-bold">
+          {typeof value === 'number' && !isNaN(value) ? value.toFixed(1) : '-'} / 10
+        </span>
       </div>
     </div>
   );

@@ -33,18 +33,17 @@ npm run build || {
   exit 1
 }
 
-# ✅ Controleer of de .next map bestaat
-if [ ! -d ".next" ]; then
-  echo "❌ Build lijkt gelukt, maar '.next' map ontbreekt."
-  echo "🔍 Mogelijk staat er 'output: export' in next.config.js — dat werkt NIET met 'next start'"
+# ✅ Controleer of de standalone server bestaat
+if [ ! -f ".next/standalone/server.js" ]; then
+  echo "❌ Build is niet standalone of ontbreekt — check next.config.js"
   exit 1
 fi
 
 echo "💀 Stop bestaande PM2-proces (indien actief)..."
 pm2 delete frontend || echo "ℹ️ Geen bestaand PM2-proces"
 
-echo "🚀 Start frontend via PM2 op poort 3000..."
-pm2 start "npx next start -p $PORT -H $HOST" --name frontend
+echo "🚀 Start standalone frontend via PM2..."
+pm2 start node --name frontend -- .next/standalone/server.js
 
 echo "💾 PM2-config bewaren..."
 pm2 save

@@ -13,25 +13,34 @@ export default function TopSetupsMini() {
 
   async function loadTopSetups() {
     try {
-      let res = await fetch('/api/setups/top3');
-      if (!res.ok) {
-        console.warn('⚠️ /api/setups/top3 niet beschikbaar, fallback naar /api/setups');
+      let res;
+      try {
+        // ✅ Probeer top 3 endpoint als beschikbaar
+        res = await fetch('/api/setups/top?limit=3');
+        if (!res.ok) throw new Error('Top endpoint faalt');
+      } catch {
+        console.warn('⚠️ /api/setups/top faalt, fallback naar /api/setups');
         res = await fetch('/api/setups');
       }
 
       const data = await res.json();
-      const setups = Array.isArray(data) ? data : [];
+
+      // ✅ Flexibele parsing, ook als `data.setups` of fallback
+      const setups = Array.isArray(data)
+        ? data
+        : Array.isArray(data.setups)
+        ? data.setups
+        : [];
 
       const sorted = setups
-        .filter(s => typeof s.score === 'number')
+        .filter((s) => typeof s.score === 'number')
         .sort((a, b) => b.score - a.score)
-        .slice(0, 10); // iets ruimer voor filtering
+        .slice(0, 10); // ruimer ophalen, filter daarna
 
       setTopSetups(sorted);
     } catch (error) {
       console.error('❌ Fout bij laden top setups:', error);
-
-      // ⛑️ Fallback dummy setup (optioneel)
+      // ⛑️ Fallback dummy setup
       setTopSetups([
         {
           id: 'fallback-1',
@@ -47,7 +56,7 @@ export default function TopSetupsMini() {
   }
 
   const filteredSetups = topSetups
-    .filter(setup => {
+    .filter((setup) => {
       if (trendFilter === 'all') return true;
       return setup.trend === trendFilter;
     })

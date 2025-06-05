@@ -2,35 +2,26 @@
 import { useMarketData } from '@/hooks/useMarketData';
 
 export default function MarketPage() {
-  const { marketData, avgScore, advies, loading, error } = useMarketData();
+  const { marketData, loading, error } = useMarketData();
 
   return (
     <div className="p-4 space-y-6">
       <h2 className="text-2xl font-bold">📊 Market Data</h2>
 
-      {/* Status */}
-      {loading && <p className="text-gray-600">📡 Loading data...</p>}
+      {/* 🔄 Statusweergave */}
+      {loading && <p className="text-gray-600">📡 Laden van data...</p>}
       {error && <p className="text-red-500">❌ {error}</p>}
 
-      {/* Samenvatting */}
-      <div className="text-sm">
-        <strong>Average score:</strong> <span className="text-green-600">{avgScore}</span> |
-        <strong> Advice:</strong> <span className="text-blue-600">{advies}</span>
-      </div>
-
-      {/* Tabel */}
+      {/* 📈 Markt Tabel */}
       <div className="overflow-x-auto">
-        <table className="w-full table-auto border-collapse">
+        <table className="w-full table-auto border-collapse text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-2">Asset</th>
-              <th className="p-2">💰 Price</th>
-              <th className="p-2">📉 24h %</th>
+              <th className="p-2">💰 Prijs</th>
+              <th className="p-2">📉 24u %</th>
               <th className="p-2">📊 Volume</th>
-              <th className="p-2">📈 RSI</th>
-              <th className="p-2">📏 200MA Position</th>
-              <th className="p-2">🧠 Score</th>
-              <th className="p-2">⏱️ Last Update</th>
+              <th className="p-2">⏱️ Laatste update</th>
             </tr>
           </thead>
           <tbody>
@@ -46,10 +37,9 @@ export default function MarketPage() {
                   ) : '–'}
                 </td>
                 <td className="p-2">{asset.volume ? Number(asset.volume).toLocaleString() : '–'}</td>
-                <td className="p-2">{asset.rsi ?? '–'}</td>
-                <td className="p-2">{asset.price > asset.ma_200 ? '✅ Above 200MA' : '❌ Below 200MA'}</td>
-                <td className="p-2 font-bold">{asset.score ?? '-'}</td>
-                <td className="p-2">{asset.timestamp ? new Date(asset.timestamp).toLocaleTimeString() : '–'}</td>
+                <td className="p-2">
+                  {asset.timestamp ? new Date(asset.timestamp).toLocaleTimeString() : '–'}
+                </td>
               </tr>
             ))}
           </tbody>

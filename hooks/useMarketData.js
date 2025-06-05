@@ -11,7 +11,7 @@ export function useMarketData() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000);
+    const interval = setInterval(loadData, 60000); // ⏱️ Elke minuut verversen
     return () => clearInterval(interval);
   }, []);
 
@@ -38,14 +38,11 @@ export function useMarketData() {
   function calculateMarketScore(asset) {
     let score = 0;
     const change = asset.change_24h ?? 0;
-    const rsi = asset.rsi ?? 50;
 
     if (change > 5) score += 2;
     else if (change > 2) score += 1;
-    if (rsi < 30) score += 1;
-    if (rsi > 70) score -= 1;
-    if (asset.price > asset.ma_200) score += 1;
-    else score -= 1;
+    else if (change < -5) score -= 2;
+    else if (change < -2) score -= 1;
 
     return Math.max(-2, Math.min(2, score));
   }

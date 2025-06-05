@@ -15,9 +15,8 @@ export default function TopSetupsMini() {
     try {
       let res;
       try {
-        // ✅ Probeer top 3 endpoint als beschikbaar
-        res = await fetch('/api/setups/top?limit=3');
-        if (!res.ok) throw new Error('Top endpoint faalt');
+        res = await fetch('/api/setups/top?limit=10');
+        if (!res.ok) throw new Error('Top setups endpoint faalt');
       } catch {
         console.warn('⚠️ /api/setups/top faalt, fallback naar /api/setups');
         res = await fetch('/api/setups');
@@ -25,7 +24,6 @@ export default function TopSetupsMini() {
 
       const data = await res.json();
 
-      // ✅ Flexibele parsing, ook als `data.setups` of fallback
       const setups = Array.isArray(data)
         ? data
         : Array.isArray(data.setups)
@@ -33,17 +31,16 @@ export default function TopSetupsMini() {
         : [];
 
       const sorted = setups
-        .filter((s) => typeof s.score === 'number')
+        .filter(s => typeof s.score === 'number')
         .sort((a, b) => b.score - a.score)
-        .slice(0, 10); // ruimer ophalen, filter daarna
+        .slice(0, 10);
 
       setTopSetups(sorted);
     } catch (error) {
-      console.error('❌ Fout bij laden top setups:', error);
-      // ⛑️ Fallback dummy setup
+      console.error('❌ Fout bij laden setups:', error);
       setTopSetups([
         {
-          id: 'fallback-1',
+          id: 'fallback',
           name: 'Voorbeeld Setup',
           trend: 'neutral',
           indicators: 'RSI, Volume',
@@ -56,11 +53,8 @@ export default function TopSetupsMini() {
   }
 
   const filteredSetups = topSetups
-    .filter((setup) => {
-      if (trendFilter === 'all') return true;
-      return setup.trend === trendFilter;
-    })
-    .slice(0, 3); // top 3 per filter
+    .filter(s => trendFilter === 'all' || s.trend === trendFilter)
+    .slice(0, 3); // Top 3 per filter
 
   if (loading) {
     return (
@@ -82,7 +76,7 @@ export default function TopSetupsMini() {
     <div className="space-y-4 text-left text-sm">
       <h4 className="font-semibold mb-2">🏆 Top Setups:</h4>
 
-      {/* 🔹 Trend Filter */}
+      {/* 🔹 Filter */}
       <div className="flex items-center gap-2">
         <label htmlFor="trendFilter" className="text-xs">🔍 Filter:</label>
         <select
@@ -98,7 +92,7 @@ export default function TopSetupsMini() {
         </select>
       </div>
 
-      {/* 🔹 Top Setups List */}
+      {/* 🔹 Setups */}
       <ul className="list-disc list-inside space-y-1">
         {filteredSetups.length === 0 ? (
           <li className="text-gray-400">Geen setups gevonden voor deze trend.</li>
@@ -116,7 +110,7 @@ export default function TopSetupsMini() {
 
             return (
               <li key={setup.id}>
-                <strong>{setup.name}</strong> {trendIcon} ({setup.indicators}) — 
+                <strong>{setup.name}</strong> {trendIcon}{' '}
                 <span className={`ml-1 font-semibold ${scoreColor}`}>
                   Score: {setup.score?.toFixed(1) ?? '-'}
                 </span>

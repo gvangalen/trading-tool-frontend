@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchTechnicalData } from '@/lib/api/technical';
+import { fetchTechnicalData, deleteTechnicalIndicator } from '@/lib/api/technical';
 
 export function useTechnicalData() {
   const [technicalData, setTechnicalData] = useState([]);
@@ -9,6 +9,11 @@ export function useTechnicalData() {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [query, setQuery] = useState('');
+  const [sortField, setSortField] = useState('score');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [timeframe, setTimeframe] = useState('1d');
 
   useEffect(() => {
     loadData();
@@ -68,10 +73,16 @@ export function useTechnicalData() {
     return uitleg[field] || 'Geen uitleg beschikbaar';
   }
 
-  function removeIndicator(symbol) {
-    const updated = technicalData.filter((d) => d.symbol !== symbol);
-    setTechnicalData(updated);
-    updateScore(updated);
+  async function deleteAsset(id) {
+    try {
+      await deleteTechnicalIndicator(id);
+      const updated = technicalData.filter((item) => item.id !== id);
+      setTechnicalData(updated);
+      updateScore(updated);
+    } catch (err) {
+      console.error('❌ Verwijderen mislukt:', err);
+      setError('❌ Verwijderen mislukt');
+    }
   }
 
   return {
@@ -80,7 +91,15 @@ export function useTechnicalData() {
     advies,
     loading,
     error,
-    removeIndicator,
+    query,
+    sortField,
+    sortOrder,
+    timeframe,
+    setQuery,
+    setSortField,
+    setSortOrder,
+    setTimeframe,
+    deleteAsset,
     calculateTechnicalScore,
     getExplanation,
   };

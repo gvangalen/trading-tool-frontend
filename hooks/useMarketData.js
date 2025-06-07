@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchMarketData } from '@/lib/api/market';
+import { fetchMarketData, deleteMarketAsset } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
@@ -8,10 +8,13 @@ export function useMarketData() {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [sortField, setSortField] = useState('symbol');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000); // ⏱️ Elke minuut verversen
+    const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -21,11 +24,10 @@ export function useMarketData() {
     try {
       const data = await fetchMarketData();
       const validData = Array.isArray(data) ? data : [];
-
       setMarketData(validData);
       updateScore(validData);
     } catch (err) {
-      console.warn('⚠️ Marktdata ophalen mislukt. Gebruik lege lijst als fallback.');
+      console.warn('⚠️ Marktdata ophalen mislukt:', err);
       setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
       setAvgScore('N/A');
@@ -60,12 +62,30 @@ export function useMarketData() {
     setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
 
+  async function deleteAsset(id) {
+    try {
+      await deleteMarketAsset(id);
+      const updated = marketData.filter((a) => a.id !== id);
+      setMarketData(updated);
+      updateScore(updated);
+    } catch (err) {
+      console.error('❌ Verwijderen mislukt:', err);
+    }
+  }
+
   return {
     marketData,
     avgScore,
     advies,
     loading,
     error,
+    query,
+    sortField,
+    sortOrder,
+    setQuery,
+    setSortField,
+    setSortOrder,
     calculateMarketScore,
+    deleteAsset,
   };
 }

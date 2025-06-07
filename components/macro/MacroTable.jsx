@@ -37,7 +37,7 @@ export default function MacroTable() {
               <th>Interpretatie</th>
               <th>Actie</th>
               <th>Score</th>
-              <th>✏️</th>
+              <th>❌</th>
             </tr>
           </thead>
           <tbody>
@@ -51,13 +51,21 @@ export default function MacroTable() {
               return (
                 <tr key={ind.name} className="border-t">
                   <td className="p-2" title={getExplanation(ind.name)}>{ind.name}</td>
-                  <td>{ind.value}</td>
+                  <td>
+                    <input
+                      type="number"
+                      className="w-20 border px-1 py-0.5 rounded"
+                      value={ind.value}
+                      onChange={e => handleEdit(ind.name, e.target.value)}
+                    />
+                  </td>
                   <td>{ind.trend || '–'}</td>
                   <td>{ind.interpretation || '–'}</td>
                   <td>{ind.action || '–'}</td>
-                  <td className={`font-semibold ${scoreColor}`}>{score}</td>
-                  <td className="flex gap-2 p-2">
-                    <button onClick={() => handleEdit(ind.name, ind.value)}>✏️</button>
+                  <td className={`font-semibold ${scoreColor}`} title={`Score berekend op basis van ${ind.name}`}>
+                    {score}
+                  </td>
+                  <td className="p-2">
                     <button onClick={() => handleRemove(ind.name)}>❌</button>
                   </td>
                 </tr>

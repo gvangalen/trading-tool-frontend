@@ -12,8 +12,8 @@ on:
       - '**.json'
       - '**/styles/**'
       - 'deploy-frontend.sh'
+      - 'start-frontend.sh'            # ✅ Deze regel is toegevoegd
       - 'run-with-node18.sh'
-      - 'start-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:

@@ -12,8 +12,7 @@ on:
       - '**.json'
       - '**/styles/**'
       - 'deploy-frontend.sh'
-      - 'start-frontend.sh'            # ✅ Deze regel is toegevoegd
-      - 'run-with-node18.sh'
+      - 'start-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
@@ -25,7 +24,7 @@ jobs:
       - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
-      - name: ✅ Verbind met Oracle-server en test omgeving
+      - name: 🚀 SSH naar Oracle en start frontend deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
@@ -33,22 +32,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            echo "✅ Verbinding succesvol"
-            echo "🔍 Node versie:"
-            node -v || echo "❌ Node niet gevonden"
-            echo "🔍 PM2 versie:"
-            pm2 -v || echo "❌ PM2 niet gevonden"
-
-      - name: 🚀 Voer deploy-frontend.sh uit via wrapper
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            echo "🚀 Start frontend deployment..."
-            bash ~/run-with-node18.sh bash ~/deploy-frontend.sh || {
-              echo "❌ Deployment is mislukt";
-              exit 1;
-            }
+            cd ~/trading-tool-frontend
+            chmod +x start-frontend.sh
+            ./start-frontend.sh

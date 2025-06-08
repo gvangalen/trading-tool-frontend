@@ -1,55 +1,38 @@
 #!/bin/bash
-set -e
 
-# 🧠 Zet Node 18 actief + pm2 beschikbaar
+set -e  # Stop script bij elke fout
+
+# ✅ 0. Activeer Node 18 via NVM (voor correcte Next.js build)
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"
-nvm use 18 || echo "⚠️ Let op: nvm use 18 faalde mogelijk buiten interactive shell"
+nvm use 18 || echo "⚠️ nvm use 18 faalde — controleer of Node 18 actief is"
+echo "🔢 Actieve Node-versie: $(node -v)"
 
-# ✅ Poort/host voor Next.js
-export HOST=0.0.0.0
-export PORT=3000
-export NEXT_PUBLIC_API_BASE_URL=http://143.47.186.148:5002/api
+echo "📦 1. Git pull laatste versie..."
+git reset --hard HEAD
+git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
-echo "📁 Ga naar frontend map..."
-cd ~/trading-tool-frontend || {
-  echo "❌ Map ~/trading-tool-frontend niet gevonden."
-  exit 1
-}
-
-echo "📥 Haal laatste code van GitHub..."
-git fetch origin main
-git reset --hard origin/main
-
-echo "📦 Installeer dependencies..."
-npm ci || npm install
-
-echo "🧹 Verwijder oude build..."
-rm -rf .next
-
-echo "🛠️ Build uitvoeren..."
-npm run build || {
-  echo "❌ Build faalde"
-  exit 1
-}
-
-echo "✨ Kopieer statische bestanden naar standalone..."
-cp -r .next/static .next/standalone/.next/static
-
-if [ ! -f ".next/standalone/server.js" ]; then
-  echo "❌ Build is niet standalone of ontbreekt — check next.config.js"
-  exit 1
+echo "📂 2. node_modules controleren..."
+if [ ! -d "node_modules" ]; then
+  echo "📦 node_modules niet gevonden, uitvoeren npm install..."
+  npm install || { echo "❌ npm install faalde"; exit 1; }
+else
+  echo "📦 node_modules al aanwezig, overslaan"
 fi
 
-echo "💀 Stop bestaande PM2-proces (indien actief)..."
+echo "⚙️ 3. Bouwen van frontend (Next.js)..."
+npm run build || { echo "❌ Build faalde"; exit 1; }
+
+echo "🧹 4. Opruimen oude processen en poort 3000..."
 pm2 delete frontend || echo "ℹ️ Geen bestaand PM2-proces"
+fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was vrij"
 
-echo "🚀 Start standalone frontend via PM2..."
-pm2 start .next/standalone/server.js --name frontend --update-env
+echo "🚀 5. Start frontend via PM2 (standalone build)..."
+pm2 start node \
+  --name frontend \
+  --interpreter bash \
+  --time \
+  -- .next/standalone/server.js || { echo "❌ PM2 start faalde"; exit 1; }
 
-echo "💾 PM2-config bewaren..."
-pm2 save
-
-PUBLIC_IP=$(curl -s ifconfig.me || echo "<jouw-public-ip>")
-echo "✅ Frontend bereikbaar via: http://$PUBLIC_IP:$PORT"
+echo "✅ Frontend succesvol gestart op poort 3000"
+pm2 logs frontend --lines 20

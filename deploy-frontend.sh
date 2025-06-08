@@ -9,9 +9,7 @@ nvm use 18 || echo "⚠️ Let op: nvm use 18 faalde mogelijk buiten interactive
 
 # ✅ Poort/host voor Next.js
 export HOST=0.0.0.0
-export PORT=3000  # 👉 Belangrijk: 3000 gebruiken voor Next.js
-
-# ✅ Zet correcte API base URL voor productie (frontend → backend)
+export PORT=3000
 export NEXT_PUBLIC_API_BASE_URL=http://143.47.186.148:5002/api
 
 echo "📁 Ga naar frontend map..."
@@ -36,11 +34,9 @@ npm run build || {
   exit 1
 }
 
-# ✅ Kopieer statische bestanden naar standalone map (anders geen styling)
 echo "✨ Kopieer statische bestanden naar standalone..."
 cp -r .next/static .next/standalone/.next/static
 
-# ✅ Controleer of de standalone server bestaat
 if [ ! -f ".next/standalone/server.js" ]; then
   echo "❌ Build is niet standalone of ontbreekt — check next.config.js"
   exit 1
@@ -50,7 +46,7 @@ echo "💀 Stop bestaande PM2-proces (indien actief)..."
 pm2 delete frontend || echo "ℹ️ Geen bestaand PM2-proces"
 
 echo "🚀 Start standalone frontend via PM2..."
-pm2 start node --name frontend --update-env -- .next/standalone/server.js
+pm2 start .next/standalone/server.js --name frontend --update-env
 
 echo "💾 PM2-config bewaren..."
 pm2 save

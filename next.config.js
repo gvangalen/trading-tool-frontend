@@ -1,13 +1,14 @@
-/** @type {import('next').NextConfig} */
+// next.config.js
 const path = require('path');
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  reactStrictMode: true,
-  swcMinify: true,
+
   experimental: {
     appDir: true,
   },
+
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
@@ -18,6 +19,7 @@ const nextConfig = {
       '@lib': path.resolve(__dirname, 'lib'),
       '@styles': path.resolve(__dirname, 'styles'),
     };
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -25,6 +27,7 @@ const nextConfig = {
         path: false,
       };
     }
+
     return config;
   },
 };

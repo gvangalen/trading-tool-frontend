@@ -1,17 +1,18 @@
 #!/bin/bash
+set -e
 
-set -e  # Stop script bij elke fout
-
-# ✅ Node versie via NVM
+# ✅ 0. Activeer Node 18 via NVM
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 18 || echo "⚠️ nvm use 18 faalde — controleer je Node versie"
-echo "🔢 Actieve Node-versie: $(node -v)"
+nvm use 18 || echo "⚠️ nvm use 18 faalde"
+echo "🔢 Node versie: $(node -v)"
 
-echo "📦 1. Git pull laatste versie..."
+# ✅ 1. Pull laatste code
+echo "📦 1. Git pull..."
 git reset --hard HEAD
 git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
+# ✅ 2. Dependencies controleren
 echo "📂 2. node_modules controleren..."
 if [ ! -d "node_modules" ]; then
   echo "📦 node_modules niet gevonden, uitvoeren npm install..."
@@ -20,17 +21,22 @@ else
   echo "📦 node_modules al aanwezig, overslaan"
 fi
 
-echo "⚙️ 3. Bouwen van frontend (Next.js)..."
+# ✅ 3. Build
+echo "⚙️ 3. Builden met Next.js..."
 NEXT_TELEMETRY_DISABLED=1 npm run build || { echo "❌ Build faalde"; exit 1; }
 
-echo "🧹 4. Stop oude frontend + poort 3000"
+# ✅ 4. Clean oude PM2 processen
+echo "🧹 4. Stop oude frontend + poort 3000..."
 pm2 delete frontend || echo "ℹ️ Geen bestaand PM2-proces"
 fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was vrij"
 
-echo "🚀 5. Start frontend via PM2"
-pm2 start .next/standalone/server.js --name frontend || { echo "❌ PM2 start faalde"; exit 1; }
+# ✅ 5. Start met correcte node
+echo "🚀 5. Start frontend via PM2..."
+pm2 start .next/standalone/server.js \
+  --name frontend \
+  --time || { echo "❌ PM2 start faalde"; exit 1; }
 
 echo "📄 Laatste logs:"
-pm2 logs frontend --lines 20 || true
+pm2 logs frontend --lines 20
 
-echo "✅ Frontend succesvol gestart op poort 3000"
+echo "✅ Frontend draait op http://<IP>:3000"

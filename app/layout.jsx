@@ -1,6 +1,6 @@
 // app/layout.jsx
 import '../styles/globals.css';
-import NavBar from '@/ui/NavBar'; // ✅ Voeg deze import toe
+import NavBar from '@/components/ui/NavBar';
 
 export const metadata = {
   title: 'Trading Dashboard',
@@ -10,9 +10,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body className="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
-        <NavBar /> {/* ✅ Voeg navigatie toe */}
-        <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
+      <body className="bg-background text-foreground">
+        <NavBar />
+        <main>{children}</main>
       </body>
     </html>
   );

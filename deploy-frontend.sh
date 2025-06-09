@@ -30,8 +30,8 @@ cp -r public .next/standalone/ || true
 pm2 delete frontend || true
 fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was al vrij"
 
-# 🚀 6. Start nieuwe versie via standalone build
-pm2 start node --name frontend --time -- .next/standalone/server.js || { echo "❌ PM2 start faalde"; exit 1; }
+# 🚀 Start correct
+pm2 start .next/standalone/server.js --name frontend --time || { echo "❌ PM2 start faalde"; exit 1; }
 
 # 📄 7. Laatste logs
 pm2 logs frontend --lines 20 || true

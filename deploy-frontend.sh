@@ -34,5 +34,7 @@ pm2 start node \
   --time \
   -- .next/standalone/server.js || { echo "❌ PM2 start faalde"; exit 1; }
 
+echo "📄 Laatste 20 regels log:"
+pm2 logs frontend --lines 20 --no-stream || true
+
 echo "✅ Frontend succesvol gestart op poort 3000"
-pm2 logs frontend --lines 20

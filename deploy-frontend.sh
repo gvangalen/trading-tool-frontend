@@ -1,27 +1,39 @@
 #!/bin/bash
 set -e  # ❗ Stop direct bij fouten
 
-# ✅ 1. Activeer Node 18 via NVM
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 18 || { echo "❌ Node 18 niet actief"; exit 1; }
-echo "🔢 Node versie: $(node -v)"
+echo "📦 Start frontend deploy op $(date)"
 
-# ✅ 2. Ga naar frontend map en haal nieuwste code op
-cd ~/trading-tool-frontend || { echo "❌ Map niet gevonden"; exit 1; }
+# ✅ Ga naar projectfolder
+cd ~/trading-tool-frontend
+
+# ✅ Haal laatste code op van GitHub
+echo "⬇️ Pull laatste code van GitHub..."
 git reset --hard HEAD
-git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
+git pull origin main
 
-# ✅ 3. Herinstalleer alles opnieuw
-rm -rf node_modules package-lock.json .next
-npm install || { echo "❌ npm install faalde"; exit 1; }
-npm run build || { echo "❌ Build faalde"; exit 1; }
+# ✅ Zorg dat juiste Node-versie actief is
+echo "🔢 Activeer juiste Node versie via NVM..."
+export NVM_DIR="$HOME/.nvm"
+source "$NVM_DIR/nvm.sh"
+nvm use 18
 
-# ✅ 4. Herstart frontend via standaard Next.js server
+echo "🔢 Node versie: $(node -v)"
+echo "🧼 Verwijder cache en oude bestanden (indien nodig)..."
+
+# ✅ Clean install met fallback
+echo "📦 Installeer dependencies (npm ci)..."
+if ! npm ci; then
+  echo "⚠️ npm ci faalde, probeer npm install"
+  npm install
+fi
+
+# ✅ Build project (voor productie)
+echo "🏗️ Build Next.js project..."
+npm run build
+
+# ✅ Herstart frontend met PM2
+echo "🔁 Herstart frontend via PM2..."
 pm2 delete frontend || true
-fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was al vrij"
-pm2 start npm --name frontend -- run start || { echo "❌ PM2 start faalde"; exit 1; }
+pm2 start npm --name frontend -- start
 
-# ✅ 5. Toon logs
-pm2 logs frontend --lines 20 || true
-echo "✅ ✅ Frontend draait op http://localhost:3000"
+echo "✅ Deploy voltooid op $(date)"

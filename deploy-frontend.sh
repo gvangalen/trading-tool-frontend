@@ -12,10 +12,9 @@ cd ~/trading-tool-frontend || { echo "❌ Pad niet gevonden"; exit 1; }
 git reset --hard HEAD
 git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
-# ✅ 2. Herinstalleer dependencies via npm ci
+# ✅ 2. Herinstalleer dependencies
 rm -rf node_modules package-lock.json
-cp package-lock.ci.json package-lock.json || true  # optioneel als je stabiele versie hebt
-npm ci || { echo "❌ npm ci faalde"; exit 1; }
+npm install || { echo "❌ npm install faalde"; exit 1; }
 
 # ✅ 3. Build als standalone (voor PM2)
 rm -rf .next
@@ -27,21 +26,15 @@ if [ ! -f ".next/BUILD_ID" ]; then
   exit 1
 fi
 
-# ✅ 5. Kopieer output naar standalone map (incl. CSS/public/server)
-mkdir -p .next/standalone/.next
-cp -r .next/static .next/standalone/.next/static
-cp -r .next/server .next/standalone/.next/server   # <-- ❗ Nodig voor foutpagina's zoals 404
-cp .next/BUILD_ID .next/standalone/.next/BUILD_ID
-cp -r public .next/standalone/public || true
-
-# ✅ 6. Stop bestaand frontend proces
+# ✅ 5. Stop bestaand frontend proces
 pm2 delete frontend || true
 fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was al vrij"
 
-# ✅ 7. Start frontend opnieuw via PM2
-pm2 start .next/standalone/server.js --name frontend --time || { echo "❌ PM2 start faalde"; exit 1; }
+# ✅ 6. Start frontend vanuit standalone map (correcte rootpad)
+cd .next/standalone
+pm2 start server.js --name frontend --time || { echo "❌ PM2 start faalde"; exit 1; }
 
-# ✅ 8. Toon logs
+# ✅ 7. Toon logs
 pm2 logs frontend --lines 20 || true
 
 echo "✅ ✅ Frontend draait op http://localhost:3000"

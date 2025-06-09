@@ -1,9 +1,8 @@
 const path = require('path');
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  outputFileTracingRoot: path.join(__dirname), // ✅ Op hoogste niveau plaatsen
+  outputFileTracingRoot: path.join(__dirname),
 
   experimental: {
     appDir: true,

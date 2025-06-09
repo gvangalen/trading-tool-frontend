@@ -23,17 +23,17 @@ npx next build || { echo "❌ Build faalde"; exit 1; }
 # 🧱 4. Extra: kopieer static files naar juiste plek
 mkdir -p .next/standalone/.next
 cp -r .next/static .next/standalone/.next/
-cp -r .next/BUILD_ID .next/standalone/.next/
+cp .next/BUILD_ID .next/standalone/.next/    # ✅ FIX: correcte BUILD_ID kopie
 cp -r public .next/standalone/ || true
 
 # 🧹 5. Stop oude PM2 proces en maak poort vrij
 pm2 delete frontend || true
 fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was al vrij"
 
-# 🚀 Start correct
+# 🚀 6. Start nieuwe PM2-proces
 pm2 start .next/standalone/server.js --name frontend --time || { echo "❌ PM2 start faalde"; exit 1; }
 
-# 📄 7. Laatste logs
+# 📄 7. Laatste logs tonen
 pm2 logs frontend --lines 20 || true
 
 echo "✅ Frontend draait op http://localhost:3000"

@@ -8,34 +8,35 @@ export default function NavBar() {
 
   const links = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/setups', label: 'Setups' },
-    { href: '/strategies', label: 'Strategies' },
+    { href: '/setup', label: 'Setups' },
+    { href: '/strategy', label: 'Strategieën' },
     { href: '/market', label: 'Market' },
     { href: '/macro', label: 'Macro' },
     { href: '/technical', label: 'Technical' },
-    { href: '/report', label: 'Report' },
+    { href: '/report', label: 'Rapport' },
+    { href: '/ai', label: 'AI Advies' },
   ];
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-md p-4 mb-6">
-      <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center">
-        <div className="text-xl font-bold text-blue-600">
-          Trading Tool
-        </div>
-        <div className="flex flex-wrap gap-4 mt-4 md:mt-0">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
-                pathname.startsWith(link.href)
-                  ? 'font-bold text-blue-600'
-                  : 'text-gray-600 dark:text-gray-300'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+    <nav className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="text-xl font-bold text-green-700">🧠 Trading Tool</div>
+          <div className="flex space-x-2 md:space-x-4 text-sm md:text-base">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-2 rounded-md transition ${
+                  pathname.startsWith(link.href)
+                    ? 'text-green-700 font-semibold bg-green-50'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-green-700'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </nav>

@@ -1,5 +1,6 @@
 // app/layout.jsx
-import '../styles/globals.css';// ✅ Vanuit /styles/globals.css (verwijzing klopt)
+import '../styles/globals.css';
+import NavBar from '@/ui/NavBar'; // ✅ Voeg deze import toe
 
 export const metadata = {
   title: 'Trading Dashboard',
@@ -9,7 +10,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body>{children}</body>
+      <body className="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
+        <NavBar /> {/* ✅ Voeg navigatie toe */}
+        <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
+      </body>
     </html>
   );
 }

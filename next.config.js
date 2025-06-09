@@ -1,12 +1,11 @@
+// ✅ Correcte versie van next.config.js
 const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    appDir: true,
-    outputFileTracingRoot: path.join(__dirname),
-  },
+  outputFileTracingRoot: path.join(__dirname), // <-- Verplaatst naar hoofdconfig
+
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),

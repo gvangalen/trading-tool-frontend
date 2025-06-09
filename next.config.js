@@ -3,9 +3,11 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+
   experimental: {
     appDir: true,
   },
+
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
@@ -15,6 +17,7 @@ const nextConfig = {
       '@hooks': path.resolve(__dirname, 'hooks'),
       '@lib': path.resolve(__dirname, 'lib'),
       '@styles': path.resolve(__dirname, 'styles'),
+      '@ui': path.resolve(__dirname, 'components/ui'), // optioneel als je dit pad gebruikt
     };
 
     if (!isServer) {

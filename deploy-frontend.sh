@@ -1,49 +1,39 @@
 #!/bin/bash
-set -e
-
-echo ""
-echo "🚀 Start deployment van frontend..."
+set -e  # ❗ Stop direct bij fouten
 
 # ✅ 0. Activeer Node 18 via NVM
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 18 || { echo "❌ Node 18 niet actief of niet geïnstalleerd"; exit 1; }
-echo "🔢 Node versie actief: $(node -v)"
+nvm use 18 || { echo "❌ Node 18 niet actief"; exit 1; }
+echo "🔢 Node versie: $(node -v)"
 
-# ✅ 1. Ga naar frontend directory
-cd ~/trading-tool-frontend || { echo "❌ Pad ~/trading-tool-frontend niet gevonden"; exit 1; }
-echo "📁 In map: $(pwd)"
-
-# ✅ 2. Haal laatste versie van GitHub op
-echo "🔄 Git pull uitvoeren..."
+# ✅ 1. Ga naar frontend map en haal laatste code op
+cd ~/trading-tool-frontend || { echo "❌ Pad niet gevonden"; exit 1; }
 git reset --hard HEAD
 git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
-# ✅ 3. Verwijder oude build + node_modules
-echo "🧹 Verwijder oude build en node_modules..."
-rm -rf .next node_modules package-lock.json
-rm -rf node_modules/yaml/browser/* || true  # Extra fix voor ENOTEMPTY bug
-
-# ✅ 4. Installeer opnieuw alle dependencies
-echo "📦 Dependencies installeren..."
+# ✅ 2. Herinstalleer dependencies
+rm -rf node_modules package-lock.json
 npm install || { echo "❌ npm install faalde"; exit 1; }
 
-# ✅ 5. Build als standalone app
-echo "🏗️ Builden als standalone..."
+# ✅ 3. Build als standalone (voor PM2)
+rm -rf .next
 npx next build || { echo "❌ Build faalde"; exit 1; }
 
-# ✅ 6. Stop vorige versie en maak poort vrij
-echo "🛑 Stop PM2 proces & maak poort 3000 vrij..."
+# ✅ 4. Kopieer output naar standalone map (incl. CSS/public)
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/static
+cp .next/BUILD_ID .next/standalone/.next/BUILD_ID
+cp -r public .next/standalone/public || true
+
+# ✅ 5. Stop bestaand frontend proces
 pm2 delete frontend || true
 fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was al vrij"
 
-# ✅ 7. Start nieuwe versie via PM2
-echo "🚀 Start nieuwe frontend via PM2..."
+# ✅ 6. Start frontend opnieuw via PM2
 pm2 start .next/standalone/server.js --name frontend --time
 
-# ✅ 8. Toon logs (laatste 20 regels)
-echo "📜 Laatste PM2 logs:"
+# ✅ 7. Toon logs
 pm2 logs frontend --lines 20 || true
 
-echo ""
 echo "✅ Frontend draait op http://localhost:3000"

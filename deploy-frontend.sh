@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -e  # ❗ Stop direct bij fouten
 
 # ✅ 0. Activeer Node 18 via NVM
 export NVM_DIR="$HOME/.nvm"
@@ -12,9 +12,10 @@ cd ~/trading-tool-frontend || { echo "❌ Pad niet gevonden"; exit 1; }
 git reset --hard HEAD
 git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
-# ✅ 2. Herinstalleer dependencies
+# ✅ 2. Herinstalleer dependencies via npm ci
 rm -rf node_modules package-lock.json
-npm install || { echo "❌ npm install faalde"; exit 1; }
+cp package-lock.ci.json package-lock.json || true  # optioneel als je stabiele versie hebt
+npm ci || { echo "❌ npm ci faalde"; exit 1; }
 
 # ✅ 3. Build als standalone (voor PM2)
 rm -rf .next
@@ -26,10 +27,10 @@ if [ ! -f ".next/BUILD_ID" ]; then
   exit 1
 fi
 
-# ✅ 4. Kopieer output naar standalone map (incl. CSS/public/server)
+# ✅ 5. Kopieer output naar standalone map (incl. CSS/public/server)
 mkdir -p .next/standalone/.next
 cp -r .next/static .next/standalone/.next/static
-cp -r .next/server .next/standalone/.next/server   # <-- ❗ Deze regel toevoegen!
+cp -r .next/server .next/standalone/.next/server   # <-- ❗ Nodig voor foutpagina's zoals 404
 cp .next/BUILD_ID .next/standalone/.next/BUILD_ID
 cp -r public .next/standalone/public || true
 

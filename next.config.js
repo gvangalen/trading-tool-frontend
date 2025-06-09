@@ -6,6 +6,7 @@ const nextConfig = {
 
   experimental: {
     appDir: true,
+    outputFileTracingRoot: path.join(__dirname), // ✅ Deze regel is cruciaal
   },
 
   webpack: (config, { isServer }) => {
@@ -17,7 +18,7 @@ const nextConfig = {
       '@hooks': path.resolve(__dirname, 'hooks'),
       '@lib': path.resolve(__dirname, 'lib'),
       '@styles': path.resolve(__dirname, 'styles'),
-      '@ui': path.resolve(__dirname, 'components/ui'), // optioneel als je dit pad gebruikt
+      '@ui': path.resolve(__dirname, 'components/ui'),
     };
 
     if (!isServer) {

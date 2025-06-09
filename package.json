@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node .next/standalone/server.js"
+    "start": "next start"  // ✅ Gebruik standaard Next.js server
   },
   "dependencies": {
     "autoprefixer": "^10.4.15",

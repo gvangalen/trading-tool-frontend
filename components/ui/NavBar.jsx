@@ -1,43 +1,49 @@
-'use client';
+// components/NavBar.jsx
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function NavBar() {
-  const pathname = usePathname();
+  const [isDark, setIsDark] = useState(false);
 
-  const links = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/setup', label: 'Setups' },
-    { href: '/strategy', label: 'Strategieën' },
-    { href: '/market', label: 'Market' },
-    { href: '/macro', label: 'Macro' },
-    { href: '/technical', label: 'Technical' },
-    { href: '/report', label: 'Rapport' },
-    { href: '/ai', label: 'AI Advies' },
-  ];
+  // ✅ Lees voorkeur uit localStorage en systeeminstellingen
+  useEffect(() => {
+    const userPref = localStorage.getItem("theme");
+    const systemPref = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (userPref === "dark" || (!userPref && systemPref)) {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    }
+  }, []);
+
+  // ✅ Toggle functie
+  const toggleDarkMode = () => {
+    const newTheme = isDark ? "light" : "dark";
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+    localStorage.setItem("theme", newTheme);
+    setIsDark(!isDark);
+  };
 
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="text-xl font-bold text-green-700">🧠 Trading Tool</div>
-          <div className="flex space-x-2 md:space-x-4 text-sm md:text-base">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-3 py-2 rounded-md transition ${
-                  pathname.startsWith(link.href)
-                    ? 'text-green-700 font-semibold bg-green-50'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-green-700'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
+    <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 shadow bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="text-xl font-bold text-gray-800 dark:text-white">📊 Trading Tool</div>
+      <div className="flex items-center gap-6">
+        <Link href="/" className="text-gray-700 dark:text-gray-300 hover:underline">
+          Dashboard
+        </Link>
+        <Link href="/setups" className="text-gray-700 dark:text-gray-300 hover:underline">
+          Setups
+        </Link>
+        <Link href="/strategieën" className="text-gray-700 dark:text-gray-300 hover:underline">
+          Strategieën
+        </Link>
+        <button
+          onClick={toggleDarkMode}
+          className="text-sm px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600"
+        >
+          {isDark ? "☀️ Licht" : "🌙 Donker"}
+        </button>
       </div>
     </nav>
   );

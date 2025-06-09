@@ -1,42 +1,39 @@
 #!/bin/bash
-set -e
+set -e  # Stop bij fout
 
-# ✅ Node activeren (NVM)
+# ✅ 0. Node activeren via NVM
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm use 18 || { echo "❌ Node 18 niet actief"; exit 1; }
-
 echo "🔢 Node versie: $(node -v)"
 
-# 📦 Ga naar juiste map
+# ✅ 1. Ga naar projectfolder en haal laatste versie op
 cd ~/trading-tool-frontend || { echo "❌ Pad niet gevonden"; exit 1; }
-
-# 📥 Laatste code ophalen
 git reset --hard HEAD
-git pull origin main
+git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
-# 📂 Dependencies opnieuw installeren
+# ✅ 2. Herinstalleer dependencies
 rm -rf node_modules package-lock.json
-npm install
+npm install || { echo "❌ npm install faalde"; exit 1; }
 
-# 🏗️ Build uitvoeren
-rm -rf .next .output .next/standalone
-npx next build
+# ✅ 3. Verwijder oude .next output en build opnieuw in standalone
+rm -rf .next/standalone
+npx next build || { echo "❌ Build faalde"; exit 1; }
 
-# 🧱 Correcte structuur opbouwen voor standalone
-cp -r .next/standalone .
+# ✅ 4. Kopieer vereiste files naar juiste plek in standalone
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/static
+cp .next/BUILD_ID .next/standalone/.next/BUILD_ID
 cp -r public .next/standalone/ || true
-cp -r .next/static .next/standalone/.next/static || true
-cp .next/BUILD_ID .next/standalone/.next/BUILD_ID || true
 
-# 🧹 Stop vorige PM2 proces & maak poort vrij
+# ✅ 5. Stop vorige frontend proces (indien bestaat)
 pm2 delete frontend || true
 fuser -k 3000/tcp || echo "ℹ️ Poort 3000 was al vrij"
 
-# 🚀 Start frontend opnieuw via PM2
+# ✅ 6. Start frontend via PM2
 pm2 start .next/standalone/server.js --name frontend --time
 
-# 🪵 Laatste logs tonen
+# ✅ 7. Laat logs zien
 pm2 logs frontend --lines 20 || true
 
 echo "✅ Frontend draait op http://localhost:3000"

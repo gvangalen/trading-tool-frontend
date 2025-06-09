@@ -5,25 +5,23 @@ on:
     branches:
       - main
     paths:
-      - '**.js'
-      - '**.jsx'
-      - '**.ts'
-      - '**.tsx'
-      - '**.json'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.json'
       - '**/styles/**'
       - 'deploy-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
   deploy:
-    name: SSH Deploy Frontend
     runs-on: ubuntu-latest
-
     steps:
-      - name: 🧾 Checkout code
+      - name: 📥 Checkout repo
         uses: actions/checkout@v3
 
-      - name: 🚀 SSH naar Oracle en start frontend deploy
+      - name: 🔐 SSH + Deploy frontend
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}

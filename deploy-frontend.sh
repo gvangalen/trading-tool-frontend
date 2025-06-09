@@ -26,10 +26,11 @@ if [ ! -f ".next/BUILD_ID" ]; then
   exit 1
 fi
 
-# ✅ 5. Kopieer output naar standalone map (incl. CSS/public)
+# ✅ 4. Kopieer output naar standalone map (incl. CSS/public/server)
 mkdir -p .next/standalone/.next
-cp -r .next/static .next/standalone/.next/static || true
-cp .next/BUILD_ID .next/standalone/.next/BUILD_ID || { echo "❌ BUILD_ID kopiëren faalde"; exit 1; }
+cp -r .next/static .next/standalone/.next/static
+cp -r .next/server .next/standalone/.next/server   # <-- ❗ Deze regel toevoegen!
+cp .next/BUILD_ID .next/standalone/.next/BUILD_ID
 cp -r public .next/standalone/public || true
 
 # ✅ 6. Stop bestaand frontend proces

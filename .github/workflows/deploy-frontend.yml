@@ -1,34 +1,33 @@
-name: Auto Deploy Frontend to Oracle
+#!/bin/bash
+set -e
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - '**/*.js'
-      - '**/*.jsx'
-      - '**/*.ts'
-      - '**/*.tsx'
-      - '**/*.json'
-      - '**/styles/**'
-      - 'deploy-frontend.sh'
-      - '.github/workflows/deploy-frontend.yml'
+# ✅ 1. NVM en Node activeren
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm use 18 || { echo "❌ Node 18 niet actief"; exit 1; }
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout repo
-        uses: actions/checkout@v3
+# ✅ 2. Update project
+cd ~/trading-tool-frontend
+git reset --hard HEAD
+git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 
-      - name: 🔐 SSH + Deploy frontend
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            cd ~/trading-tool-frontend
-            chmod +x deploy-frontend.sh
-            ./deploy-frontend.sh
+# ✅ 3. Dependencies opnieuw installeren
+rm -rf node_modules package-lock.json
+npm install || { echo "❌ npm install faalde"; exit 1; }
+
+# ✅ 4. Build maken
+rm -rf .next .output
+npm run build || { echo "❌ Build faalde"; exit 1; }
+
+# ✅ 5. Extra bestanden kopiëren voor standalone Next.js
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/
+cp .next/BUILD_ID .next/standalone/.next/
+cp -r public .next/standalone/
+
+# ✅ 6. PM2 herstart
+pm2 delete frontend || true
+fuser -k 3000/tcp || true
+pm2 start .next/standalone/server.js --name frontend --time
+
+echo "✅ Frontend draait op http://localhost:3000"

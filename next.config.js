@@ -1,13 +1,12 @@
 const path = require('path');
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  outputFileTracingRoot: path.join(__dirname),
-
   experimental: {
     appDir: true,
+    outputFileTracingRoot: path.join(__dirname),
   },
-
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),

@@ -3,11 +3,9 @@ const path = require('path');
 
 const nextConfig = {
   output: 'standalone',
-
   experimental: {
     appDir: true,
   },
-
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
@@ -18,8 +16,6 @@ const nextConfig = {
       '@lib': path.resolve(__dirname, 'lib'),
       '@styles': path.resolve(__dirname, 'styles'),
     };
-
-    // Optioneel: Fix voor extern gebruik op sommige servers
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -27,7 +23,6 @@ const nextConfig = {
         path: false,
       };
     }
-
     return config;
   },
 };

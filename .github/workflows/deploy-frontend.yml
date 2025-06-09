@@ -11,6 +11,7 @@ on:
       - '**/*.tsx'
       - '**/*.json'
       - '**/styles/**'
+      - 'next.config.js'
       - 'deploy-frontend.sh'
       - '.github/workflows/deploy-frontend.yml'
 

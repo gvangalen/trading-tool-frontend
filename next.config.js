@@ -3,10 +3,10 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname), // ✅ Op hoogste niveau plaatsen
 
   experimental: {
     appDir: true,
-    outputFileTracingRoot: path.join(__dirname), // ✅ Deze regel is cruciaal
   },
 
   webpack: (config, { isServer }) => {

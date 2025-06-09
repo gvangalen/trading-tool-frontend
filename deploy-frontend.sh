@@ -16,7 +16,7 @@ git pull origin main || { echo "❌ Git pull faalde"; exit 1; }
 rm -rf node_modules package-lock.json
 npm install || { echo "❌ npm install faalde"; exit 1; }
 
-# ✅ 3. Build als standalone (voor PM2)
+# ✅ 3. Build als standalone
 rm -rf .next
 npx next build || { echo "❌ Build faalde"; exit 1; }
 
@@ -26,10 +26,10 @@ if [ ! -f ".next/BUILD_ID" ]; then
   exit 1
 fi
 
-# ✅ 5. Kopieer output naar standalone map
+# ✅ 5. Kopieer alleen relevante App Router output
 mkdir -p .next/standalone/.next
 cp -r .next/static .next/standalone/.next/static
-cp -r .next/server .next/standalone/.next/server
+cp -r .next/server/app .next/standalone/.next/server/app
 cp .next/BUILD_ID .next/standalone/.next/BUILD_ID
 cp -r public .next/standalone/public || true
 

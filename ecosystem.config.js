@@ -6,7 +6,7 @@ module.exports = {
       args: 'start',
       cwd: '/home/ubuntu/trading-tool-frontend',
       exec_mode: 'fork',
-      interpreter: 'node',
+      interpreter: '/bin/bash', // ✅ Belangrijk!
       watch: false,
       env: {
         NODE_ENV: 'production',

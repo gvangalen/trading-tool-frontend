@@ -1,8 +1,9 @@
-const path = require('path');
-
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  experimental: {
+    appDir: true
+  },
 
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
@@ -16,7 +17,6 @@ const nextConfig = {
       '@ui': path.resolve(__dirname, 'components/ui'),
     };
 
-    // Alleen nodig als sommige libraries 'fs' of 'path' gebruiken op client side
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

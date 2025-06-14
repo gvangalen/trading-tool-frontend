@@ -1,8 +1,11 @@
+const path = require('path');
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 
   experimental: {
-    appDir: true
+    appDir: true, // ✅ nodig voor gebruik van /app directory (i.p.v. /pages)
   },
 
   webpack: (config, { isServer }) => {

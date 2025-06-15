@@ -17,8 +17,9 @@ nvm use 18
 echo "🔢 Node versie: $(node -v)"
 
 # ✅ Stap 3: Schoonmaak vóór install
-echo "🧨 Verwijder node_modules en package-lock.json..."
+echo "🧨 Verwijder node_modules, .next en package-lock.json..."
 rm -rf node_modules
+rm -rf .next
 rm -f package-lock.json
 
 # ✅ Stap 4: Dependencies installeren

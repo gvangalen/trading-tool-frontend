@@ -33,3 +33,4 @@ jobs:
             cd ~/trading-tool-frontend
             chmod +x deploy-frontend.sh
             ./deploy-frontend.sh
+          command_timeout: 1800  # ⏱️ Verhoog naar 30 minuten

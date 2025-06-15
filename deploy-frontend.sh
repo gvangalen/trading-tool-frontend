@@ -16,12 +16,11 @@ source "$NVM_DIR/nvm.sh"
 nvm use 18
 echo "🔢 Node versie: $(node -v)"
 
-# ✅ Stap 3: Schoonmaak vóór install
-echo "🧨 Verwijder node_modules en .next (laat lockfile staan voor npm ci)..."
+# ✅ Stap 3: Schoonmaak vóór install (laat lockfile staan!)
+echo "🧨 Verwijder node_modules en .next..."
 rm -rf node_modules
 rm -rf .next
-# ⚠️ Laat package-lock.json staan! Nodig voor `npm ci`
-# rm -f package-lock.json
+# ❌ Niet verwijderen: rm -f package-lock.json
 
 # ✅ Stap 4: Dependencies installeren
 echo "📦 Installeer dependencies (npm ci)..."

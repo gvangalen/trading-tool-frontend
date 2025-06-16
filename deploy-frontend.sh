@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # ❗ Stop bij fout
+set -e  # ❗ Stop direct bij fout
 
 echo "📦 Start frontend deploy op $(date)"
 
@@ -16,7 +16,7 @@ source "$NVM_DIR/nvm.sh"
 nvm use 18
 echo "🔢 Node versie: $(node -v)"
 
-# ✅ Stap 3: Schoonmaak vóór install (lockfile blijft staan)
+# ✅ Stap 3: Schoonmaak vóór install (laat lockfile staan!)
 echo "🧨 Verwijder node_modules en .next..."
 rm -rf node_modules
 rm -rf .next
@@ -30,7 +30,13 @@ fi
 
 # ✅ Stap 5: Build project
 echo "🏗️ Build Next.js project..."
-npm run build
+npm run build || { echo "❌ Build faalde. Stop script."; exit 1; }
+
+# ✅ Extra check: bestaat .next/BUILD_ID?
+if [ ! -f ".next/BUILD_ID" ]; then
+  echo "❌ .next/BUILD_ID ontbreekt → build waarschijnlijk mislukt!"
+  exit 1
+fi
 
 # ✅ Stap 6: Start of herstart frontend met PM2
 echo "🚀 Herstart frontend via PM2..."

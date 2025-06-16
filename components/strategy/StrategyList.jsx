@@ -180,12 +180,12 @@ export default function StrategyList() {
                 <strong>Targets:</strong>{' '}
                 {isEditing ? (
                   <input
-                    value={(data.targets || []).join(', ')}
+                    value={Array.isArray(data.targets) ? data.targets.join(', ') : ''}
                     onChange={(e) => handleFieldChange('targets', e.target.value.split(',').map((v) => v.trim()))}
                     className="border p-1 rounded w-full"
                   />
                 ) : (
-                  (s.targets || []).join(', ') || '-'
+                  Array.isArray(s.targets) && s.targets.length > 0 ? s.targets.join(', ') : '-'
                 )}
               </div>
               <div>

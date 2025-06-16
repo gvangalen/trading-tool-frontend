@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { createStrategy } from '@/lib/api/strategy'; // 🔥 Correcte import
-import { useStrategyData } from '@/hooks/useStrategyData'; // 🔥 Correcte import
+import { createStrategy } from '@/lib/api/strategy';
+import { useStrategyData } from '@/hooks/useStrategyData';
 
 export default function StrategyForm() {
-  const { loadStrategies } = useStrategyData(); // 🔥 Correcte hook functie
+  const { loadStrategies } = useStrategyData();
   const [setupName, setSetupName] = useState('');
   const [tags, setTags] = useState('');
   const [explanation, setExplanation] = useState('');
@@ -14,8 +14,14 @@ export default function StrategyForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setLoading(true);
+
+    if (!setupName.trim()) {
+      setError('Strategienaam is verplicht.');
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       setup_name: setupName.trim(),
@@ -23,7 +29,10 @@ export default function StrategyForm() {
       timeframe: '1D',
       explanation: explanation.trim(),
       favorite: false,
-      tags: tags.split(',').map(tag => tag.trim()),
+      tags: tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag !== ''),
       origin: 'Handmatig',
     };
 
@@ -43,7 +52,10 @@ export default function StrategyForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4"
+    >
       <h2 className="text-lg font-bold">➕ Nieuwe Strategie</h2>
 
       <div>
@@ -64,6 +76,7 @@ export default function StrategyForm() {
           className="w-full border p-2 rounded"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
+          placeholder="bijv. breakout, swing, btc"
         />
       </div>
 
@@ -74,6 +87,7 @@ export default function StrategyForm() {
           rows="4"
           value={explanation}
           onChange={(e) => setExplanation(e.target.value)}
+          placeholder="Leg uit waarom deze strategie werkt..."
         />
       </div>
 

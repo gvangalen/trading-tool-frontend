@@ -18,6 +18,8 @@ export function useMacroData() {
     try {
       const data = await fetchMacroData();
       const macro = data?.macro_data || [];
+      console.log('📦 Binnengekomen macro response:', data);
+      console.log('📊 Parsed macro_data:', macro);
 
       if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
 

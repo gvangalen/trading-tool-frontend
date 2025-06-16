@@ -1,4 +1,3 @@
-console.log('📊 Macro data:', macroData);
 'use client';
 
 import { useMacroData } from '@/hooks/useMacroData';
@@ -17,6 +16,8 @@ export default function MacroTable() {
     error,
   } = useMacroData();
 
+  console.log('📊 Macro data:', macroData);
+  
   if (loading) return <SkeletonTable rows={6} columns={6} />;
   if (error) return <div className="text-sm text-red-500">{error}</div>;
 

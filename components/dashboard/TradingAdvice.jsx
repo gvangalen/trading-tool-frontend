@@ -28,12 +28,27 @@ export default function TradingAdvice() {
   async function fetchAdvice(sym) {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/trading_advice?symbol=${sym}`);
+      const res = await fetch(`${API_BASE_URL}/trading_advice?symbol=${sym}`);
+      if (!res.ok) throw new Error('Response niet OK');
       const data = await res.json();
+
+      if (!data || typeof data !== 'object') {
+        throw new Error('Ongeldig advies-object');
+      }
+
       setAdvice(data);
     } catch (err) {
       console.error('❌ Fout bij ophalen tradingadvies:', err);
-      setAdvice(null);
+      // Fallback object
+      setAdvice({
+        setup: '-',
+        trend: 'Neutraal',
+        entry: 0,
+        targets: [],
+        stop_loss: '-',
+        risico: '-',
+        reden: 'Geen advies beschikbaar.',
+      });
     } finally {
       setLoading(false);
     }
@@ -43,7 +58,7 @@ export default function TradingAdvice() {
     return <div className="advice-card neutral">📡 Advies wordt geladen...</div>;
   }
 
-  if (!advice || advice.error) {
+  if (!advice) {
     return <div className="advice-card neutral">❌ Geen advies beschikbaar voor {symbol}</div>;
   }
 
@@ -64,7 +79,9 @@ export default function TradingAdvice() {
       <p><strong>🎯 Entry:</strong> ${Number(advice.entry ?? 0).toFixed(2)}</p>
       <p>
         <strong>🎯 Targets:</strong>{' '}
-        {Array.isArray(advice.targets) ? advice.targets.map(t => `$${t}`).join(' / ') : '-'}
+        {Array.isArray(advice.targets) && advice.targets.length > 0
+          ? advice.targets.map(t => `$${t}`).join(' / ')
+          : '-'}
       </p>
       <p><strong>🛑 Stop-loss:</strong> {advice.stop_loss ?? '-'}</p>
       <p><strong>⚠️ Risico:</strong> {advice.risico ?? '-'}</p>

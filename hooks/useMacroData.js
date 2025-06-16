@@ -15,26 +15,26 @@ export function useMacroData() {
   }, []);
 
   async function loadData() {
-  try {
-    const data = await fetchMacroData();
-    console.log('📦 Binnengekomen macro response:', data);
-    console.log('📊 Parsed macro_data:', data?.macro_data);
+    try {
+      const data = await fetchMacroData();
+      console.log('📦 Binnengekomen macro response:', data);
 
-    const macro = data?.macro_data || [];
+      const macro = data?.macro_data || data || [];
+      console.log('📊 Parsed macro_data:', macro);
 
-    if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
+      if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
 
-    setMacroData(macro);
-    updateScore(macro);
-    markStepDone(3);
-  } catch (error) {
-    console.warn('⚠️ Macrodata kon niet worden geladen. Gebruik lege lijst.');
-    console.error(error); // 🔁 voeg ook de foutlog toe
-    setMacroData([]);
-    setAvgScore('N/A');
-    setAdvies('⚖️ Neutraal');
+      setMacroData(macro);
+      updateScore(macro);
+      markStepDone(3);
+    } catch (error) {
+      console.warn('⚠️ Macrodata kon niet worden geladen. Gebruik lege lijst.');
+      console.error(error);
+      setMacroData([]);
+      setAvgScore('N/A');
+      setAdvies('⚖️ Neutraal');
+    }
   }
-}
 
   function calculateMacroScore(name, value) {
     if (name === "fear_greed_index") return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;

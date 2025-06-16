@@ -47,25 +47,30 @@ export default function TradingAdvice() {
     return <div className="advice-card neutral">❌ Geen advies beschikbaar voor {symbol}</div>;
   }
 
-  const trendClass = advice.trend === 'Bullish'
-    ? 'bullish'
-    : advice.trend === 'Bearish'
-    ? 'bearish'
-    : 'neutral';
+  const trendClass =
+    advice.trend === 'Bullish'
+      ? 'bullish'
+      : advice.trend === 'Bearish'
+      ? 'bearish'
+      : 'neutral';
 
   const assetName = symbol === 'SOL' ? 'Solana' : 'Bitcoin';
 
   return (
     <div className={`advice-card ${trendClass}`} id="tradingAdviceBox">
       <h3 className="text-lg font-semibold">🚀 Actueel Tradingadvies ({assetName})</h3>
-      <p><strong>📋 Setup:</strong> {advice.setup}</p>
-      <p><strong>📈 Trend:</strong> {advice.trend}</p>
-      <p><strong>🎯 Entry:</strong> ${Number(advice.entry).toFixed(2)}</p>
-      <p><strong>🎯 Targets:</strong> {advice.targets.map(t => `$${t}`).join(' / ')}</p>
-      <p><strong>🛑 Stop-loss:</strong> ${advice.stop_loss}</p>
-      <p><strong>⚠️ Risico:</strong> {advice.risico}</p>
-      {advice.reden && <p className="text-sm text-gray-500 italic">{advice.reden}</p>}
+      <p><strong>📋 Setup:</strong> {advice.setup ?? '-'}</p>
+      <p><strong>📈 Trend:</strong> {advice.trend ?? '-'}</p>
+      <p><strong>🎯 Entry:</strong> ${Number(advice.entry ?? 0).toFixed(2)}</p>
+      <p>
+        <strong>🎯 Targets:</strong>{' '}
+        {Array.isArray(advice.targets) ? advice.targets.map(t => `$${t}`).join(' / ') : '-'}
+      </p>
+      <p><strong>🛑 Stop-loss:</strong> {advice.stop_loss ?? '-'}</p>
+      <p><strong>⚠️ Risico:</strong> {advice.risico ?? '-'}</p>
+      {advice.reden && (
+        <p className="text-sm text-gray-500 italic">{advice.reden}</p>
+      )}
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/lib/config';
 
 export default function TopSetupsMini() {
   const [topSetups, setTopSetups] = useState([]);
@@ -15,11 +16,11 @@ export default function TopSetupsMini() {
     try {
       let res;
       try {
-        res = await fetch('/api/setups/top?limit=10');
+        res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
         if (!res.ok) throw new Error('Top setups endpoint faalt');
       } catch {
         console.warn('⚠️ /api/setups/top faalt, fallback naar /api/setups');
-        res = await fetch('/api/setups');
+        res = await fetch(`${API_BASE_URL}/api/setups`);
       }
 
       const data = await res.json();

@@ -1,3 +1,4 @@
+console.log('📊 Macro data:', macroData);
 'use client';
 
 import { useMacroData } from '@/hooks/useMacroData';

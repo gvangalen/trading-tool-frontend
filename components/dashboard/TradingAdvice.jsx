@@ -80,7 +80,11 @@ export default function TradingAdvice() {
       <p>
         <strong>🎯 Targets:</strong>{' '}
         {Array.isArray(advice.targets) && advice.targets.length > 0
-          ? advice.targets.map(t => `$${t}`).join(' / ')
+          ? advice.targets.map(t =>
+              typeof t === 'object' && t.price && t.type
+                ? `${t.type}: $${t.price}`
+                : `$${t}`
+            ).join(' / ')
           : '-'}
       </p>
       <p><strong>🛑 Stop-loss:</strong> {advice.stop_loss ?? '-'}</p>

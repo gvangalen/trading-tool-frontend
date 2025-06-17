@@ -29,11 +29,14 @@ export default function NavBar() {
         <Link href="/" className="text-gray-700 dark:text-gray-300 hover:underline">
           Dashboard
         </Link>
-        <Link href="/setup" className="text-gray-700 dark:text-gray-300 hover:underline">
+        <Link href="/setups" className="text-gray-700 dark:text-gray-300 hover:underline">
           Setups
         </Link>
         <Link href="/strategy" className="text-gray-700 dark:text-gray-300 hover:underline">
           Strategies
+        </Link>
+        <Link href="/report" className="text-gray-700 dark:text-gray-300 hover:underline">
+          Dagrapport
         </Link>
         <button
           onClick={toggleDarkMode}

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import GaugeChart from '@/components/ui/GaugeChart';
-import TopSetupsMini from '@/components/setup/TopSetupsMini';
 
 export default function DashboardGauges() {
   const {
@@ -19,23 +18,24 @@ export default function DashboardGauges() {
   const [selectedAsset, setSelectedAsset] = useState('BTC');
 
   return (
-    <div className="space-y-8">
-      {/* 🔁 Asset selector */}
+    <div className="space-y-6">
+
+      {/* 🔁 Asset selector + loading status */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <label htmlFor="assetSelect" className="font-semibold">🔁 Kies asset:</label>
+        <div className="flex items-center space-x-2">
+          <label htmlFor="assetSelect" className="font-semibold text-sm">🔁 Select asset:</label>
           <select
             id="assetSelect"
             value={selectedAsset}
             onChange={(e) => setSelectedAsset(e.target.value)}
-            className="ml-2 p-2 border rounded"
+            className="p-2 border rounded bg-white dark:bg-gray-800 dark:text-white"
           >
             <option value="BTC">BTC</option>
             <option value="SOL">SOL</option>
           </select>
         </div>
-        <div className="text-sm text-gray-500">
-          {loading ? '📡 Data laden...' : '✅ Data geladen'}
+        <div className="text-sm text-muted-foreground">
+          {loading ? '📡 Loading data...' : '✅ Live data'}
         </div>
       </div>
 
@@ -48,7 +48,7 @@ export default function DashboardGauges() {
           explanation={macroExplanation}
         />
         <GaugeCard
-          label="Technisch"
+          label="Technical"
           emoji="📈"
           score={technicalScore}
           explanation={technicalExplanation}
@@ -58,37 +58,28 @@ export default function DashboardGauges() {
           emoji="⚙️"
           score={setupScore}
           explanation={setupExplanation}
-          showTopSetups
         />
       </div>
     </div>
   );
 }
 
-function GaugeCard({ label, emoji, score, explanation, showTopSetups = false }) {
+function GaugeCard({ label, emoji, score, explanation }) {
   const displayScore = typeof score === 'number' ? score : 0;
-  const displayExplanation = typeof explanation === 'string' && explanation.trim()
-    ? explanation
-    : '📡 Geen uitleg beschikbaar';
+  const displayExplanation = explanation?.trim() || '📡 No explanation available';
 
-  // 🔵 Kleur op basis van score
-  let color = '#9ca3af'; // Grijs
-  if (displayScore >= 2) color = '#34d399'; // Groen
-  else if (displayScore <= -2) color = '#f87171'; // Rood
-  else if (displayScore > 0) color = '#60a5fa'; // Blauw
-  else if (displayScore < 0) color = '#facc15'; // Geel
+  // 🎨 Scorekleur bepalen
+  let color = '#9ca3af'; // Gray
+  if (displayScore >= 2) color = '#34d399'; // Green
+  else if (displayScore <= -2) color = '#f87171'; // Red
+  else if (displayScore > 0) color = '#60a5fa'; // Blue
+  else if (displayScore < 0) color = '#facc15'; // Yellow
 
   return (
-    <div className="p-4 border rounded shadow bg-white dark:bg-gray-800 text-center space-y-4">
+    <div className="p-4 border rounded-xl shadow bg-white dark:bg-gray-900 text-center flex flex-col justify-between h-full space-y-4">
       <h3 className="font-bold text-lg">{emoji} {label}</h3>
       <GaugeChart value={displayScore} label={label} color={color} />
-      <p className="text-sm text-gray-500">{displayExplanation}</p>
-
-      {showTopSetups && (
-        <div className="mt-4">
-          <TopSetupsMini />
-        </div>
-      )}
+      <p className="text-sm text-muted-foreground">{displayExplanation}</p>
     </div>
   );
 }

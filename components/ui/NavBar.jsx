@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 export default function NavBar() {
   const [isDark, setIsDark] = useState(false);
 
-  // ✅ Initialize dark mode from localStorage or system preference
   useEffect(() => {
     const userPref = localStorage.getItem('theme');
     const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -30,7 +29,7 @@ export default function NavBar() {
         <Link href="/" className="text-gray-700 dark:text-gray-300 hover:underline">
           Dashboard
         </Link>
-        <Link href="/setups" className="text-gray-700 dark:text-gray-300 hover:underline">
+        <Link href="/setup" className="text-gray-700 dark:text-gray-300 hover:underline">
           Setups
         </Link>
         <Link href="/strategy" className="text-gray-700 dark:text-gray-300 hover:underline">

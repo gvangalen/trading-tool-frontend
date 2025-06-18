@@ -9,10 +9,6 @@ import TechnicalTable from '@/components/technical/TechnicalTable';
 import SetupManager from '@/components/setup/SetupManager';
 import AvatarMenu from '@/components/ui/AvatarMenu';
 
-if (process.env.NODE_ENV === 'development') {
-  console.log('✅ Componenten geladen');
-}
-
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
@@ -29,7 +25,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="px-4 md:px-6 max-w-screen-xl mx-auto scroll-smooth">
+    <main className="px-4 md:px-6 max-w-screen-2xl mx-auto scroll-smooth">
       {/* 🔝 Sticky Topbar */}
       <nav className="sticky top-0 z-50 bg-white dark:bg-gray-950 shadow-md mb-10 py-3 px-4 rounded-xl flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight">📊 Dashboard</h1>
@@ -46,25 +42,13 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      {/* 📊 Gauges & Advies + Market naast elkaar */}
-      <section id="gauges" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <DashboardGauges />
-          <section id="advies">
-            <SectionHeader>🚀 Actueel Tradingadvies</SectionHeader>
-            <TradingAdvice />
-          </section>
-        </div>
-        <div>
-          <section id="market">
-            <SectionHeader>💰 Market Data</SectionHeader>
-            <MarketTable />
-          </section>
-        </div>
+      {/* 🌡️ Scores */}
+      <section id="gauges" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <DashboardGauges />
       </section>
 
-      {/* 🌍 Macro + 📈 Technical naast elkaar */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-16">
+      {/* 🧩 Grid-layout mockup */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <section id="macro">
           <SectionHeader>🌍 Macro Indicatoren</SectionHeader>
           <MacroTable />
@@ -73,9 +57,16 @@ export default function DashboardPage() {
           <SectionHeader>📈 Technische Analyse</SectionHeader>
           <TechnicalTable />
         </section>
-      </section>
+        <section id="market">
+          <SectionHeader>💰 Market Data</SectionHeader>
+          <MarketTable />
+        </section>
+        <section id="advies">
+          <SectionHeader>🚀 Actueel Tradingadvies</SectionHeader>
+          <TradingAdvice />
+        </section>
+      </div>
 
-      {/* ⚙️ Setups onderaan */}
       <section id="setups" className="mt-16 mb-24">
         <SectionHeader>⚙️ Setup Overzicht</SectionHeader>
         <SetupManager />

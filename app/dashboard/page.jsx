@@ -46,30 +46,25 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 🔹 Linkerkolom: Meters & Advies */}
-        <div className="space-y-12">
-          <section id="gauges">
-            <DashboardGauges />
-          </section>
-
+      {/* 📊 Gauges & Advies + Market naast elkaar */}
+      <section id="gauges" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <DashboardGauges />
           <section id="advies">
             <SectionHeader>🚀 Actueel Tradingadvies</SectionHeader>
             <TradingAdvice />
           </section>
         </div>
-
-        {/* 🔸 Rechterkolom: Market Data */}
         <div>
           <section id="market">
             <SectionHeader>💰 Market Data</SectionHeader>
             <MarketTable />
           </section>
         </div>
-      </div>
+      </section>
 
-      {/* 📊 Tabellen (2 kolommen) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-16">
+      {/* 🌍 Macro + 📈 Technical naast elkaar */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-16">
         <section id="macro">
           <SectionHeader>🌍 Macro Indicatoren</SectionHeader>
           <MacroTable />
@@ -78,15 +73,14 @@ export default function DashboardPage() {
           <SectionHeader>📈 Technische Analyse</SectionHeader>
           <TechnicalTable />
         </section>
-      </div>
+      </section>
 
-      {/* ⚙️ Setup Overzicht (volledige breedte) */}
+      {/* ⚙️ Setups onderaan */}
       <section id="setups" className="mt-16 mb-24">
         <SectionHeader>⚙️ Setup Overzicht</SectionHeader>
         <SetupManager />
       </section>
 
-      {/* ⬆️ Scroll to top */}
       {showScroll && (
         <button
           onClick={scrollToTop}

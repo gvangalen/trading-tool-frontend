@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import GaugeChart from '@/components/ui/GaugeChart';
+import TopSetupsMini from '@/components/setup/TopSetupsMini';
 
 export default function DashboardGauges() {
   const {
@@ -19,67 +20,80 @@ export default function DashboardGauges() {
 
   return (
     <div className="space-y-6">
-
-      {/* 🔁 Asset selector + loading status */}
+      {/* 🔁 Asset selector */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center space-x-2">
-          <label htmlFor="assetSelect" className="font-semibold text-sm">🔁 Select asset:</label>
+        <div>
+          <label htmlFor="assetSelect" className="font-semibold">🔁 Select asset:</label>
           <select
             id="assetSelect"
             value={selectedAsset}
             onChange={(e) => setSelectedAsset(e.target.value)}
-            className="p-2 border rounded bg-white dark:bg-gray-800 dark:text-white"
+            className="ml-2 p-2 border rounded"
           >
             <option value="BTC">BTC</option>
             <option value="SOL">SOL</option>
           </select>
         </div>
-        <div className="text-sm text-muted-foreground">
-          {loading ? '📡 Loading data...' : '✅ Live data'}
+        <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+          ✅ Live data
         </div>
       </div>
 
-      {/* 📊 Meters */}
+      {/* 📊 Meters + uitleg */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <GaugeCard
           label="Macro"
           emoji="🌍"
           score={macroScore}
           explanation={macroExplanation}
+          topContributors={['BTC', 'DXY', 'ETF inflows', 'Obligatierente', 'Inflatie']}
         />
         <GaugeCard
           label="Technical"
           emoji="📈"
           score={technicalScore}
           explanation={technicalExplanation}
+          topContributors={['RSI', 'ATR Model', 'Volume', '200MA', 'Stochastics']}
         />
         <GaugeCard
           label="Setup"
           emoji="⚙️"
           score={setupScore}
           explanation={setupExplanation}
+          showTopSetups
         />
       </div>
     </div>
   );
 }
 
-function GaugeCard({ label, emoji, score, explanation }) {
+function GaugeCard({ label, emoji, score, explanation, topContributors = [], showTopSetups = false }) {
   const displayScore = typeof score === 'number' ? score : 0;
-  const displayExplanation = explanation?.trim() || '📡 No explanation available';
-
-  // 🎨 Scorekleur bepalen
-  let color = '#9ca3af'; // Gray
-  if (displayScore >= 2) color = '#34d399'; // Green
-  else if (displayScore <= -2) color = '#f87171'; // Red
-  else if (displayScore > 0) color = '#60a5fa'; // Blue
-  else if (displayScore < 0) color = '#facc15'; // Yellow
+  const displayExplanation = explanation?.trim() || '📡 Geen uitleg beschikbaar';
 
   return (
-    <div className="p-4 border rounded-xl shadow bg-white dark:bg-gray-900 text-center flex flex-col justify-between h-full space-y-4">
-      <h3 className="font-bold text-lg">{emoji} {label}</h3>
-      <GaugeChart value={displayScore} label={label} color={color} />
-      <p className="text-sm text-muted-foreground">{displayExplanation}</p>
+    <div className="p-4 border rounded-xl shadow-sm bg-white dark:bg-gray-900 space-y-4">
+      <h3 className="text-lg font-semibold text-center">{emoji} {label}</h3>
+      <div className="flex flex-col items-center justify-center">
+        <GaugeChart value={displayScore} label={label} autoColor />
+      </div>
+
+      {topContributors.length > 0 && (
+        <div className="text-sm text-gray-600 dark:text-gray-300">
+          <div className="font-semibold mt-2 mb-1">Top 5 contributors</div>
+          <ul className="list-disc ml-5">
+            {topContributors.map((item, idx) => <li key={idx}>{item}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {showTopSetups && (
+        <div className="mt-2">
+          <TopSetupsMini />
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500 italic mt-2">{displayExplanation}</p>
     </div>
   );
 }

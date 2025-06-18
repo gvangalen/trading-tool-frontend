@@ -15,33 +15,28 @@ export default function GaugeChart({
   value = 0,
   label = 'Score',
   color,
-  autoColor = true, // ✅ toggle voor automatische kleuren
+  autoColor = true,
 }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // ✅ Score tussen 0 en 10
   const displayValue =
     typeof value === 'number' && !isNaN(value)
       ? Math.max(0, Math.min(10, value))
       : 0;
 
-  // ✅ Automatische kleur op basis van waarde
   const scoreColor = autoColor
     ? displayValue >= 7
-      ? '#4ade80' // groen
+      ? '#22c55e' // groen
       : displayValue >= 4
-      ? '#facc15' // geel
-      : '#f87171' // rood
-    : color || '#4ade80';
+      ? '#eab308' // geel
+      : '#ef4444' // rood
+    : color || '#22c55e';
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // ✅ Verwijder oude chart bij update
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    if (chartRef.current) chartRef.current.destroy();
 
     chartRef.current = new Chart(canvasRef.current, {
       type: 'doughnut',
@@ -67,19 +62,28 @@ export default function GaugeChart({
     });
 
     return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-      }
+      if (chartRef.current) chartRef.current.destroy();
     };
   }, [displayValue, scoreColor]);
 
   return (
-    <div className="relative w-28 h-14 sm:w-32 sm:h-16">
+    <div className="relative w-36 h-20">
       <canvas ref={canvasRef} />
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
-        <span className="font-semibold">{label}</span>
-        <span className="text-lg font-bold">
-          {typeof value === 'number' && !isNaN(value) ? value.toFixed(1) : '-'} / 10
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="text-sm font-semibold"
+          style={{ color: scoreColor }}
+        >
+          {label}
+        </span>
+        <span
+          className="text-xl font-bold"
+          style={{ color: scoreColor }}
+        >
+          {typeof value === 'number' && !isNaN(value)
+            ? value.toFixed(1)
+            : '-'}{' '}
+          / 10
         </span>
       </div>
     </div>

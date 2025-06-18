@@ -6,6 +6,7 @@ import {
   ArcElement,
   Tooltip,
   Legend,
+  DoughnutController,
 } from 'chart.js';
 
 Chart.register(ArcElement, Tooltip, Legend);

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import GaugeChart from '@/components/ui/GaugeChart';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
+import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function DashboardGauges() {
   const {
@@ -39,25 +40,22 @@ export default function DashboardGauges() {
         </div>
       </div>
 
-      {/* 📊 Meters + uitleg */}
+      {/* 📊 Gauges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <GaugeCard
-          label="Macro"
-          emoji="🌍"
+          title="🌍 Macro"
           score={macroScore}
           explanation={macroExplanation}
           topContributors={['BTC', 'DXY', 'ETF inflows', 'Obligatierente', 'Inflatie']}
         />
         <GaugeCard
-          label="Technical"
-          emoji="📈"
+          title="📈 Technical"
           score={technicalScore}
           explanation={technicalExplanation}
           topContributors={['RSI', 'ATR Model', 'Volume', '200MA', 'Stochastics']}
         />
         <GaugeCard
-          label="Setup"
-          emoji="⚙️"
+          title="⚙️ Setup"
           score={setupScore}
           explanation={setupExplanation}
           showTopSetups
@@ -67,13 +65,13 @@ export default function DashboardGauges() {
   );
 }
 
-function GaugeCard({ label, emoji, score, explanation, topContributors = [], showTopSetups = false }) {
+function GaugeCard({ title, score, explanation, topContributors = [], showTopSetups = false }) {
   const displayScore = typeof score === 'number' ? score : 0;
   const displayExplanation = explanation?.trim() || '📡 Geen uitleg beschikbaar';
+  const label = title.replace(/^[^a-zA-Z]+/, ''); // Strip emoji uit label
 
   return (
-    <div className="p-4 border rounded-xl shadow-sm bg-white dark:bg-gray-900 space-y-4">
-      <h3 className="text-lg font-semibold text-center">{emoji} {label}</h3>
+    <CardWrapper title={title}>
       <div className="flex flex-col items-center justify-center">
         <GaugeChart value={displayScore} label={label} autoColor />
       </div>
@@ -94,6 +92,6 @@ function GaugeCard({ label, emoji, score, explanation, topContributors = [], sho
       )}
 
       <p className="text-xs text-gray-500 italic mt-2">{displayExplanation}</p>
-    </div>
+    </CardWrapper>
   );
 }

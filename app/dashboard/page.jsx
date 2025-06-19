@@ -25,7 +25,7 @@ export default function DashboardPage() {
     <main className="bg-gray-50 dark:bg-black min-h-screen py-8 px-4">
       <div className="bg-white dark:bg-gray-900 max-w-screen-xl mx-auto rounded-xl shadow-lg p-6 md:p-10 space-y-10">
 
-        {/* ✅ Metersectie */}
+        {/* 📊 Meters */}
         <section>
           <DashboardGauges />
         </section>
@@ -54,7 +54,7 @@ export default function DashboardPage() {
           </CardWrapper>
         </section>
 
-        {/* 🏆 Top 3 + ⚙️ Setupbeheer */}
+        {/* 🏆 Top 3 Setups + ⚙️ Setupbeheer */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <CardWrapper>
             <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>

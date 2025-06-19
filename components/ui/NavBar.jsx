@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function NavBar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef();
+  const pathname = usePathname();
 
-  // 🔒 Sluit dropdown bij klikken buiten
+  // 🔒 Sluit dropdown bij klikken buiten menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -18,19 +20,24 @@ export default function NavBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 🔹 Voor actieve link styling
+  const isActive = (path) => pathname === path;
+
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-4 flex flex-wrap justify-between items-center rounded mb-8">
-      <h1 className="text-xl font-bold">📊 Dashboard</h1>
+      <Link href="/" className="text-xl font-bold hover:underline">📊 Dashboard</Link>
 
       <div className="flex flex-wrap items-center gap-6">
         {/* 🔗 Navigatielinks */}
         <div className="flex flex-wrap gap-4 text-sm">
-          <button onClick={() => scrollToSection('gauges')} className="hover:underline">🌡️ Scores</button>
-          <button onClick={() => scrollToSection('advies')} className="hover:underline">🚀 Advies</button>
-          <button onClick={() => scrollToSection('market')} className="hover:underline">💰 Market</button>
-          <button onClick={() => scrollToSection('macro')} className="hover:underline">🌍 Macro</button>
-          <button onClick={() => scrollToSection('technical')} className="hover:underline">📈 Technisch</button>
-          <button onClick={() => scrollToSection('setups')} className="hover:underline">⚙️ Setups</button>
+          <NavLink href="/">🌡️ Scores</NavLink>
+          <NavLink href="/advies">🚀 Advies</NavLink>
+          <NavLink href="/market">💰 Market</NavLink>
+          <NavLink href="/macro">🌍 Macro</NavLink>
+          <NavLink href="/technical">📈 Technisch</NavLink>
+          <NavLink href="/setup">⚙️ Setups</NavLink>
+          <NavLink href="/strategy">📊 Strategieën</NavLink>
+          <NavLink href="/report">📄 Rapport</NavLink>
         </div>
 
         {/* 👤 Avatar met dropdown */}
@@ -38,7 +45,7 @@ export default function NavBar() {
           <button
             onClick={() => setShowDropdown(!showDropdown)}
             className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold hover:ring-2 ring-blue-400 transition"
-            title="Open profile menu"
+            title="Open profielmenu"
           >
             G
           </button>
@@ -58,8 +65,15 @@ export default function NavBar() {
     </nav>
   );
 
-  function scrollToSection(id) {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  function NavLink({ href, children }) {
+    const isCurrent = isActive(href);
+    return (
+      <Link
+        href={href}
+        className={`hover:underline ${isCurrent ? 'font-bold text-blue-600' : ''}`}
+      >
+        {children}
+      </Link>
+    );
   }
 }

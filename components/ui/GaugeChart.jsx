@@ -9,13 +9,13 @@ import {
   DoughnutController,
 } from 'chart.js';
 
-Chart.register(ArcElement, Tooltip, Legend);
+// ✅ Registreer alle benodigde onderdelen
+Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
 export default function GaugeChart({ value = 0, label = 'Score' }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // Clamp value between 0 and 100
   const percentage = Math.max(0, Math.min(100, value));
 
   useEffect(() => {

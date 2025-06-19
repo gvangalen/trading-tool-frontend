@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useSetupData } from '@/hooks/useSetupData'; // 🔥 nieuw systeem
+import { useSetupData } from '@/hooks/useSetupData';
 
-export default function SetupList() {
+export default function SetupList({ searchTerm = '' }) {
   const {
     setups,
     loading,
@@ -25,9 +25,16 @@ export default function SetupList() {
     if (filter !== 'all') {
       list = list.filter((s) => s.trend === filter);
     }
+
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter((s) => (s.name || '').toLowerCase().includes(q));
+    }
+
     if (sortBy === 'name') {
       list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
+
     return list;
   }
 
@@ -80,7 +87,6 @@ export default function SetupList() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredSortedSetups().map((setup) => (
           <div key={setup.id} className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition relative">
-            
             {/* Favorite toggle */}
             <button
               onClick={() => toggleFavorite(setup.id, setup.favorite)}
@@ -92,7 +98,7 @@ export default function SetupList() {
 
             {editingId === setup.id ? (
               <>
-                {/* Editing mode */}
+                {/* ✏️ Edit mode */}
                 <input
                   className="border p-2 rounded w-full mb-2 font-semibold"
                   defaultValue={setup.name}
@@ -110,7 +116,7 @@ export default function SetupList() {
                 >
                   <option value="bullish">📈 Bullish</option>
                   <option value="bearish">📉 Bearish</option>
-                  <option value="neutral">⚖️ Neutral</option>
+                  <option value="neutral">⚖️ Neutraal</option>
                 </select>
 
                 <div className="flex justify-end gap-2">
@@ -130,12 +136,36 @@ export default function SetupList() {
               </>
             ) : (
               <>
-                {/* View mode */}
+                {/* 📄 View mode */}
                 <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
                 <p className="text-sm mb-2 text-gray-700">{setup.indicators}</p>
-                <div className="text-xs text-gray-500 mb-2">💬 {setup.explanation || 'Geen uitleg.'}</div>
 
-                <div className="flex justify-end gap-3">
+                <p className="text-xs mb-1">
+                  📊{' '}
+                  <span
+                    className={
+                      setup.trend === 'bullish'
+                        ? 'text-green-600'
+                        : setup.trend === 'bearish'
+                        ? 'text-red-500'
+                        : 'text-yellow-500'
+                    }
+                  >
+                    {setup.trend}
+                  </span>
+                </p>
+
+                <div className="text-xs text-gray-500 mb-2">💬 {setup.explanation || 'Geen uitleg beschikbaar.'}</div>
+
+                {/* 🔁 AI uitleg knop */}
+                <button
+                  onClick={() => generateExplanation(setup.id)}
+                  className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mb-2"
+                >
+                  🔁 Genereer uitleg (AI)
+                </button>
+
+                <div className="flex justify-end gap-3 mt-2">
                   <button
                     onClick={() => setEditingId(setup.id)}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
@@ -154,6 +184,13 @@ export default function SetupList() {
           </div>
         ))}
       </div>
+
+      {/* 📭 Geen resultaten */}
+      {!filteredSortedSetups().length && (
+        <p className="text-sm text-gray-500 mt-4">
+          ❌ Geen setups gevonden voor deze filters of zoekterm.
+        </p>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import MarketTable from '@/components/market/MarketTable';
 import TechnicalTable from '@/components/technical/TechnicalTable';
 import MacroTable from '@/components/macro/MacroTable';
 import SetupManager from '@/components/setup/SetupManager';
-import TopSetupsMini from '@/components/setup/TopSetupsMini'; // ✅ optioneel als je top 3 wilt tonen
+import TopSetupsMini from '@/components/setup/TopSetupsMini';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
@@ -23,21 +23,20 @@ export default function DashboardPage() {
 
   return (
     <main className="bg-gray-50 dark:bg-black min-h-screen py-8 px-4">
-      {/* ✅ Container */}
       <div className="bg-white dark:bg-gray-900 max-w-screen-xl mx-auto rounded-xl shadow-lg p-6 md:p-10 space-y-10">
-
+        
         {/* 🔝 Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-bold tracking-tight">📊 Dashboard</h1>
           <AvatarMenu />
         </div>
 
-        {/* 📊 Gauges */}
+        {/* 📊 Meters */}
         <section>
           <DashboardGauges />
         </section>
 
-        {/* 🧭 Market & Technical */}
+        {/* 💰 Market & 📈 Technische Analyse */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
@@ -49,7 +48,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* 🌍 Macro & Tradingadvies */}
+        {/* 🌍 Macro & 🚀 Tradingadvies */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
@@ -61,7 +60,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* 🏆 Top Setups + Setup Manager */}
+        {/* 🏆 Top 3 Setups & ⚙️ Setupbeheer */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
@@ -74,7 +73,7 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      {/* 🔝 Scroll-to-top knop */}
+      {/* 🔝 Scroll naar boven */}
       {showScroll && (
         <button
           onClick={scrollToTop}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import AvatarMenu from '@/components/ui/AvatarMenu';
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
 import MarketTable from '@/components/market/MarketTable';
@@ -9,6 +8,7 @@ import TechnicalTable from '@/components/technical/TechnicalTable';
 import MacroTable from '@/components/macro/MacroTable';
 import SetupManager from '@/components/setup/SetupManager';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
+import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
@@ -24,56 +24,50 @@ export default function DashboardPage() {
   return (
     <main className="bg-gray-50 dark:bg-black min-h-screen py-8 px-4">
       <div className="bg-white dark:bg-gray-900 max-w-screen-xl mx-auto rounded-xl shadow-lg p-6 md:p-10 space-y-10">
-        
-        {/* 🔝 Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold tracking-tight">📊 Dashboard</h1>
-          <AvatarMenu />
-        </div>
 
-        {/* 📊 Meters */}
+        {/* ✅ Metersectie */}
         <section>
           <DashboardGauges />
         </section>
 
-        {/* 💰 Market & 📈 Technische Analyse */}
+        {/* 💰 Market + 📈 Technische Analyse */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
+          <CardWrapper>
             <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
             <MarketTable />
-          </div>
-          <div>
+          </CardWrapper>
+          <CardWrapper>
             <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
             <TechnicalTable />
-          </div>
+          </CardWrapper>
         </section>
 
-        {/* 🌍 Macro & 🚀 Tradingadvies */}
+        {/* 🌍 Macro + 🚀 AI Advies */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
+          <CardWrapper>
             <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
             <MacroTable />
-          </div>
-          <div>
+          </CardWrapper>
+          <CardWrapper>
             <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
             <TradingAdvice />
-          </div>
+          </CardWrapper>
         </section>
 
-        {/* 🏆 Top 3 Setups & ⚙️ Setupbeheer */}
+        {/* 🏆 Top 3 + ⚙️ Setupbeheer */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
+          <CardWrapper>
             <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
             <TopSetupsMini />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold mb-2">⚙️ Setup Overzicht</h2>
+          </CardWrapper>
+          <CardWrapper>
+            <h2 className="text-xl font-semibold mb-2">⚙️ Setupbeheer</h2>
             <SetupManager />
-          </div>
+          </CardWrapper>
         </section>
       </div>
 
-      {/* 🔝 Scroll naar boven */}
+      {/* 🔝 Scroll-to-top */}
       {showScroll && (
         <button
           onClick={scrollToTop}

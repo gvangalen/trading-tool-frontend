@@ -9,17 +9,15 @@ import {
   DoughnutController,
 } from 'chart.js';
 
-// ✅ Vereiste registratie
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
 export default function GaugeChart({ value = 0, label = 'Score' }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // Clamp value between 0–100
   const percentage = Math.max(0, Math.min(100, value));
 
-  // ✅ Automatische kleur op basis van waarde
+  // 🎨 Dynamische kleur op basis van score
   const scoreColor =
     percentage >= 70
       ? '#22c55e' // groen
@@ -30,10 +28,12 @@ export default function GaugeChart({ value = 0, label = 'Score' }) {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    // Destroy oude chart bij update
     if (chartRef.current) {
       chartRef.current.destroy();
     }
 
+    // Instantieer nieuwe chart
     chartRef.current = new Chart(canvasRef.current, {
       type: 'doughnut',
       data: {
@@ -65,11 +65,11 @@ export default function GaugeChart({ value = 0, label = 'Score' }) {
   return (
     <div className="relative w-full h-32 flex flex-col items-center justify-center">
       <canvas ref={canvasRef} className="max-w-[180px]" />
-      <div className="absolute top-[42%] flex flex-col items-center">
-        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{label}</span>
-        <span className="text-3xl font-bold text-black dark:text-white">
+      <div className="absolute top-[42%] text-center">
+        <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+        <div className="text-3xl font-bold text-black dark:text-white">
           {value}
-        </span>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ import TechnicalTable from '@/components/technical/TechnicalTable';
 import MacroTable from '@/components/macro/MacroTable';
 import SetupManager from '@/components/setup/SetupManager';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
+import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
+import RightSidebarCard from '@/components/dashboard/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function DashboardPage() {
@@ -23,51 +25,69 @@ export default function DashboardPage() {
 
   return (
     <main className="bg-gray-50 dark:bg-black min-h-screen py-8 px-4">
-      <div className="bg-white dark:bg-gray-900 max-w-screen-xl mx-auto rounded-xl shadow-lg p-6 md:p-10 space-y-10">
+      <div className="relative max-w-screen-xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
 
-        {/* 📊 Meters */}
-        <section>
-          <DashboardGauges />
-        </section>
+          {/* 🔽 Linker hoofdkolom */}
+          <div className="space-y-10">
 
-        {/* 💰 Market + 📈 Technische Analyse */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
-            <MarketTable />
-          </CardWrapper>
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
-            <TechnicalTable />
-          </CardWrapper>
-        </section>
+            {/* 🔷 Highlights */}
+            <section>
+              <DashboardHighlights />
+            </section>
 
-        {/* 🌍 Macro + 🚀 AI Advies */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
-            <MacroTable />
-          </CardWrapper>
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
-            <TradingAdvice />
-          </CardWrapper>
-        </section>
+            {/* 📊 Meters */}
+            <section>
+              <DashboardGauges />
+            </section>
 
-        {/* 🏆 Top 3 Setups + ⚙️ Setupbeheer */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
-            <TopSetupsMini />
-          </CardWrapper>
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">⚙️ Setupbeheer</h2>
-            <SetupManager />
-          </CardWrapper>
-        </section>
+            {/* 💰 Market Data + 📈 Technische Analyse */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <CardWrapper>
+                <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
+                <MarketTable />
+              </CardWrapper>
+              <CardWrapper>
+                <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
+                <TechnicalTable />
+              </CardWrapper>
+            </section>
+
+            {/* 🌍 Macro + 🚀 AI Advies */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <CardWrapper>
+                <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
+                <MacroTable />
+              </CardWrapper>
+              <CardWrapper>
+                <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
+                <TradingAdvice />
+              </CardWrapper>
+            </section>
+
+            {/* 🏆 Top 3 Setups + ⚙️ Setupbeheer */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <CardWrapper>
+                <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
+                <TopSetupsMini />
+              </CardWrapper>
+              <CardWrapper>
+                <h2 className="text-xl font-semibold mb-2">⚙️ Setupbeheer</h2>
+                <SetupManager />
+              </CardWrapper>
+            </section>
+          </div>
+
+          {/* 🧠 Sticky rechterzijde met rapport/tradingbot */}
+          <div className="hidden lg:block">
+            <div className="sticky top-6">
+              <RightSidebarCard />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 🔝 Scroll-to-top */}
+      {/* 🔝 Scroll naar boven */}
       {showScroll && (
         <button
           onClick={scrollToTop}

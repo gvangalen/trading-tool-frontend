@@ -8,6 +8,7 @@ import TechnicalTable from '@/components/technical/TechnicalTable';
 import MacroTable from '@/components/macro/MacroTable';
 import SetupManager from '@/components/setup/SetupManager';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
+import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
 

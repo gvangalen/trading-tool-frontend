@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageSquareQuote } from 'lucide-react';
+import { MessageSquare } from 'lucide-react'; 
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ReportCard() {

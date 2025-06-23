@@ -75,11 +75,13 @@ export default function DashboardPage() {
 
           {/* 🧠 Sticky rechterzijde met rapport/tradingbot */}
           <div className="hidden xl:block w-full max-w-xs">
-  <div className="sticky top-6 min-h-full">
-    <RightSidebarCard />
-  </div>
-</div>
-          
+            <div className="sticky top-6 min-h-full">
+              <RightSidebarCard />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 🔝 Scroll naar boven */}
       {showScroll && (
         <button

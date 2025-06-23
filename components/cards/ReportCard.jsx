@@ -8,7 +8,7 @@ export default function ReportCard() {
     <Card className="bg-green-50 border-green-200">
       <CardContent>
         <div className="flex items-center mb-2 text-sm font-medium text-green-600">
-          <MessageSquareQuote className="w-4 h-4 mr-2 text-green-500" />
+          <MessageSquare className="w-4 h-4 mr-2 text-green-500" />
           Daily rapport
         </div>
         <p className="text-sm text-gray-800 italic">

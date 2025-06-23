@@ -1,12 +1,29 @@
 // components/cards/TradingBotCard.jsx
 'use client';
+
+import { Bot } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+
 export default function TradingBotCard() {
   return (
-    <div className="p-4 bg-white rounded-xl shadow-md w-full mt-4">
-      <h3 className="text-lg font-semibold mb-2">🤖 AI TradingBot</h3>
-      <p><strong>Status:</strong> Actief</p>
-      <p><strong>Volgende actie:</strong> Over 3 uur</p>
-      <p><strong>Strategie:</strong> DCA + Swing</p>
-    </div>
+    <Card className="bg-purple-100 dark:bg-purple-900">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Bot className="text-purple-600 w-4 h-4" />
+          <span className="text-sm font-medium text-purple-800 dark:text-purple-300">
+            AI TradingBot
+          </span>
+        </div>
+        <p className="text-sm text-gray-800 dark:text-gray-100">
+          <strong>Status:</strong> Actief
+        </p>
+        <p className="text-sm text-gray-800 dark:text-gray-100">
+          <strong>Volgende actie:</strong> Over 3 uur
+        </p>
+        <p className="text-sm text-gray-800 dark:text-gray-100">
+          <strong>Strategie:</strong> DCA + Swing
+        </p>
+      </CardContent>
+    </Card>
   );
 }

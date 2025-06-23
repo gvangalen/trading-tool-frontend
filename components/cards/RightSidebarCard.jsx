@@ -1,34 +1,67 @@
 'use client';
 
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import CardWrapper from '@/components/ui/CardWrapper';
+import { fetchDailyReportSummary, fetchActiveTrades, fetchAIBotStatus } from '@/lib/api/sidebar';
 
 export default function RightSidebarCard() {
+  const [report, setReport] = useState(null);
+  const [trades, setTrades] = useState([]);
+  const [botStatus, setBotStatus] = useState(null);
+
+  useEffect(() => {
+    fetchDailyReportSummary().then(setReport);
+    fetchActiveTrades().then(setTrades);
+    fetchAIBotStatus().then(setBotStatus);
+  }, []);
+
   return (
-    <div className="sticky top-24 w-full max-w-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-4 space-y-4">
-      <h3 className="text-lg font-bold text-gray-800 dark:text-white">📌 Actief Tradingplan</h3>
+    <aside className="hidden xl:block xl:fixed right-6 top-28 w-80 space-y-6">
+      <CardWrapper>
+        <h3 className="text-lg font-semibold mb-2">📅 Dagelijks Rapport</h3>
+        {report ? (
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="mb-2">{report.summary}</p>
+            <a
+              href="/rapporten"
+              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+            >
+              Bekijk volledig rapport →
+            </a>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">Laden...</p>
+        )}
+      </CardWrapper>
 
-      <div className="text-sm space-y-2">
-        <div><strong>Asset:</strong> BTC/USDT</div>
-        <div><strong>Entry:</strong> $63.500</div>
-        <div><strong>Targets:</strong> $66.000 / $68.500</div>
-        <div><strong>Stop-loss:</strong> $61.200</div>
-        <div><strong>Status:</strong> ✅ Actief · R/R 2.5</div>
-      </div>
+      <CardWrapper>
+        <h3 className="text-lg font-semibold mb-2">📈 Actieve Trades</h3>
+        {trades.length > 0 ? (
+          <ul className="text-sm space-y-1">
+            {trades.map((trade) => (
+              <li key={trade.id} className="flex justify-between">
+                <span>{trade.symbol}</span>
+                <span className="font-medium">{trade.status}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-400">Geen actieve trades</p>
+        )}
+      </CardWrapper>
 
-      <hr className="border-gray-300 dark:border-gray-700" />
-
-      <div className="space-y-1">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">🤖 AI Bot Status</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-400">Laatst gegenereerd: 07:34</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400">AI advies: Hold positie · wacht op breakout</p>
-      </div>
-
-      <div className="flex gap-2 pt-2">
-        <Link href="/strategie" className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition">📂 Bekijk Strategie</Link>
-        <button className="text-sm bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          🔁 Genereer Opnieuw
-        </button>
-      </div>
-    </div>
+      <CardWrapper>
+        <h3 className="text-lg font-semibold mb-2">🤖 AI Trading Bot</h3>
+        {botStatus ? (
+          <div className="text-sm">
+            <p>Status: <span className="font-medium">{botStatus.state}</span></p>
+            <p>Strategie: {botStatus.strategy}</p>
+            <p>Laatste update: {botStatus.updated}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">Botstatus ophalen...</p>
+        )}
+      </CardWrapper>
+    </aside>
   );
 }

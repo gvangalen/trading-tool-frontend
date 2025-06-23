@@ -6,7 +6,6 @@ import TradingAdvice from '@/components/dashboard/TradingAdvice';
 import MarketTable from '@/components/market/MarketTable';
 import TechnicalTable from '@/components/technical/TechnicalTable';
 import MacroTable from '@/components/macro/MacroTable';
-import SetupManager from '@/components/setup/SetupManager';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
@@ -65,15 +64,11 @@ export default function DashboardPage() {
               </CardWrapper>
             </section>
 
-            {/* 🏆 Top 3 Setups + ⚙️ Setupbeheer */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 🏆 Top 3 Setups */}
+            <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
                 <TopSetupsMini />
-              </CardWrapper>
-              <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">⚙️ Setupbeheer</h2>
-                <SetupManager />
               </CardWrapper>
             </section>
           </div>

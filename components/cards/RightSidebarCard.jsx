@@ -16,51 +16,58 @@ export default function RightSidebarCard() {
   }, []);
 
   return (
-    <aside className="hidden xl:block xl:fixed right-6 top-28 w-80 space-y-6">
+    <aside className="hidden xl:block xl:fixed right-6 top-28 w-80">
       <CardWrapper>
-        <h3 className="text-lg font-semibold mb-2">📅 Dagelijks Rapport</h3>
-        {report ? (
-          <div className="text-sm text-gray-700 dark:text-gray-300">
-            <p className="mb-2">{report.summary}</p>
-            <a
-              href="/rapporten"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-            >
-              Bekijk volledig rapport →
-            </a>
+        <div className="space-y-6">
+          {/* 📅 Dagelijks Rapport */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">📅 Dagelijks Rapport</h3>
+            {report ? (
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="mb-2">{report.summary}</p>
+                <a
+                  href="/rapporten"
+                  className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                >
+                  Bekijk volledig rapport →
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Laden...</p>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-gray-400">Laden...</p>
-        )}
-      </CardWrapper>
 
-      <CardWrapper>
-        <h3 className="text-lg font-semibold mb-2">📈 Actieve Trades</h3>
-        {trades.length > 0 ? (
-          <ul className="text-sm space-y-1">
-            {trades.map((trade) => (
-              <li key={trade.id} className="flex justify-between">
-                <span>{trade.symbol}</span>
-                <span className="font-medium">{trade.status}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-gray-400">Geen actieve trades</p>
-        )}
-      </CardWrapper>
-
-      <CardWrapper>
-        <h3 className="text-lg font-semibold mb-2">🤖 AI Trading Bot</h3>
-        {botStatus ? (
-          <div className="text-sm">
-            <p>Status: <span className="font-medium">{botStatus.state}</span></p>
-            <p>Strategie: {botStatus.strategy}</p>
-            <p>Laatste update: {botStatus.updated}</p>
+          {/* 📈 Actieve Trades */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">📈 Actieve Trades</h3>
+            {trades.length > 0 ? (
+              <ul className="text-sm space-y-1">
+                {trades.map((trade) => (
+                  <li key={trade.id} className="flex justify-between">
+                    <span>{trade.symbol}</span>
+                    <span className="font-medium">{trade.status}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-400">Geen actieve trades</p>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-gray-400">Botstatus ophalen...</p>
-        )}
+
+          {/* 🤖 AI Trading Bot */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">🤖 AI Trading Bot</h3>
+            {botStatus ? (
+              <div className="text-sm">
+                <p>Status: <span className="font-medium">{botStatus.state}</span></p>
+                <p>Strategie: {botStatus.strategy}</p>
+                <p>Laatste update: {botStatus.updated}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Botstatus ophalen...</p>
+            )}
+          </div>
+        </div>
       </CardWrapper>
     </aside>
   );

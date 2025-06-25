@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createStrategy } from '@/lib/api/strategy';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { useSetupData } from '@/hooks/useSetupData';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyForm() {
   const { strategies, loadStrategies } = useStrategyData();
@@ -95,7 +96,7 @@ export default function StrategyForm() {
 
       <div className="space-y-2">
         <label className="block font-medium">
-          Koppel aan Setup <span title="Je kunt alleen kiezen uit bestaande setups.">❓</span>
+          Koppel aan Setup <InfoTooltip text="Je kunt alleen kiezen uit bestaande setups." />
         </label>
         <select
           name="setup_name"
@@ -113,7 +114,7 @@ export default function StrategyForm() {
         </select>
 
         <label className="block font-medium">
-          Entry prijs (€) <span title="Het niveau waarop je instapt.">❓</span>
+          Entry prijs (€) <InfoTooltip text="Het niveau waarop je instapt." />
         </label>
         <input
           name="entry"
@@ -125,7 +126,7 @@ export default function StrategyForm() {
         />
 
         <label className="block font-medium">
-          Target prijs (€) <span title="Het winstdoel voor deze trade.">❓</span>
+          Target prijs (€) <InfoTooltip text="Het winstdoel voor deze trade." />
         </label>
         <input
           name="target"
@@ -137,7 +138,7 @@ export default function StrategyForm() {
         />
 
         <label className="block font-medium">
-          Stop-loss (€) <span title="Het niveau waarop je uitstapt bij verlies.">❓</span>
+          Stop-loss (€) <InfoTooltip text="Het niveau waarop je uitstapt bij verlies." />
         </label>
         <input
           name="stop_loss"
@@ -148,7 +149,9 @@ export default function StrategyForm() {
           required
         />
 
-        <label className="block font-medium">Uitleg <span title="Leg uit waarom deze strategie werkt.">❓</span></label>
+        <label className="block font-medium">
+          Uitleg <InfoTooltip text="Leg uit waarom deze strategie werkt." />
+        </label>
         <textarea
           name="explanation"
           value={form.explanation}
@@ -157,7 +160,9 @@ export default function StrategyForm() {
           className="w-full border p-2 rounded"
         />
 
-        <label className="block font-medium">Tags (komma-gescheiden)</label>
+        <label className="block font-medium">
+          Tags <InfoTooltip text="Komma-gescheiden, bijvoorbeeld: swing, btc, breakout" />
+        </label>
         <input
           name="tags"
           type="text"

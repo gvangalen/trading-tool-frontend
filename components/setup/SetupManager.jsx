@@ -13,14 +13,23 @@ export default function SetupManager() {
       {/* 🔧 Titel */}
       <h2 className="text-2xl font-bold">⚙️ Setupbeheer</h2>
 
-      {/* 🧾 Setupformulier in card */}
+      {/* 🧾 Setupformulier */}
       <CardWrapper title="➕ Nieuwe Setup">
         <SetupForm onSubmitted={reloadSetups} />
       </CardWrapper>
 
-      {/* 📋 Setuplijst in card */}
+      {/* 🔍 Zoekfunctie of filter (optioneel in toekomst) */}
+      {/* <div className="flex justify-end">
+        <input
+          type="text"
+          placeholder="🔍 Zoek setups..."
+          className="border p-2 rounded shadow-sm"
+        />
+      </div> */}
+
+      {/* 📋 Lijst met bestaande setups */}
       <CardWrapper title="📊 Actieve Setups">
-        <SetupList />
+        <SetupList onUpdated={reloadSetups} />
       </CardWrapper>
     </div>
   );

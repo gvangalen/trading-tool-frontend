@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
 
-export default function SetupForm() {
+export default function SetupForm({ onSubmitted }) {
   const formRef = useRef(null);
   const { addSetup } = useSetupData();
   const [form, setForm] = useState({
@@ -54,6 +54,7 @@ export default function SetupForm() {
       await addSetup(form);
       resetForm();
       setSuccess(true);
+      if (onSubmitted) onSubmitted(); // ✅ herladen lijst
       formRef.current.scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -140,71 +141,4 @@ export default function SetupForm() {
           placeholder="Symbol (BTC, SOL...)"
           value={form.symbol}
           onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="strategy_type"
-          placeholder="Strategy Type"
-          value={form.strategy_type}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="account_type"
-          placeholder="Account Type"
-          value={form.account_type}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="min_investment"
-          type="number"
-          step="0.01"
-          placeholder="Min. Investment (€)"
-          value={form.min_investment}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-4">
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} />
-          🔄 Dynamic
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} />
-          ⭐ Favorite
-        </label>
-      </div>
-
-      <textarea
-        name="tags"
-        placeholder="Tags (comma separated)"
-        value={form.tags}
-        onChange={handleChange}
-        className="w-full border p-2 rounded"
-      />
-
-      <div className={`text-sm bg-gray-50 p-3 rounded border ${isDisabled ? 'opacity-40' : ''}`}>
-        <strong>📋 Live Preview:</strong><br />
-        <strong>Name:</strong> {form.name || '-'}<br />
-        <strong>Indicators:</strong> {form.indicators || '-'}<br />
-        <strong>Trend:</strong> {form.trend || '-'}<br />
-        <strong>Timeframe:</strong> {form.timeframe || '-'}<br />
-        <strong>Symbol:</strong> {form.symbol || '-'}<br />
-        <strong>Strategy:</strong> {form.strategy_type || '-'}
-      </div>
-
-      <button
-        type="submit"
-        disabled={submitting || isDisabled}
-        className={`w-full p-2 rounded transition text-white ${
-          submitting || isDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-        }`}
-      >
-        {submitting ? '⏳ Opslaan...' : '💾 Setup Opslaan'}
-      </button>
-    </form>
-  );
-}
+          className

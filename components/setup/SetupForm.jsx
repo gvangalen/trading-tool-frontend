@@ -101,14 +101,14 @@ export default function SetupForm({ onSubmitted }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input
           name="name"
-          placeholder="Name*"
+          placeholder="Naam van de setup*"
           value={form.name}
           onChange={handleChange}
           className={`border p-2 rounded ${errors.name ? 'border-red-500' : ''}`}
         />
         <input
           name="indicators"
-          placeholder="Indicators* (bijv. RSI, MA)"
+          placeholder="Indicatoren* (bijv. RSI, MA)"
           value={form.indicators}
           onChange={handleChange}
           className={`border p-2 rounded ${errors.indicators ? 'border-red-500' : ''}`}
@@ -119,10 +119,10 @@ export default function SetupForm({ onSubmitted }) {
           onChange={handleChange}
           className={`border p-2 rounded ${errors.trend ? 'border-red-500' : ''}`}
         >
-          <option value="">Select trend*</option>
+          <option value="">Trend*</option>
           <option value="bullish">📈 Bullish</option>
           <option value="bearish">📉 Bearish</option>
-          <option value="neutral">⚖️ Neutral</option>
+          <option value="neutral">⚖️ Neutraal</option>
         </select>
         <select
           name="timeframe"
@@ -130,29 +130,29 @@ export default function SetupForm({ onSubmitted }) {
           onChange={handleChange}
           className="border p-2 rounded"
         >
-          <option value="15m">15m</option>
-          <option value="1h">1H</option>
-          <option value="4hr">4H</option>
-          <option value="1d">1D</option>
-          <option value="1w">1W</option>
+          <option value="15m">15 minuten</option>
+          <option value="1h">1 uur</option>
+          <option value="4hr">4 uur</option>
+          <option value="1d">1 dag</option>
+          <option value="1w">1 week</option>
         </select>
         <input
           name="symbol"
-          placeholder="Symbol (BTC, SOL...)"
+          placeholder="Symbool (BTC, SOL...)"
           value={form.symbol}
           onChange={handleChange}
           className="border p-2 rounded"
         />
         <input
           name="account_type"
-          placeholder="Account type (bijv. Spot, Futures)"
+          placeholder="Account type (Spot, Futures...)"
           value={form.account_type}
           onChange={handleChange}
           className="border p-2 rounded"
         />
         <input
           name="strategy_type"
-          placeholder="Strategie type (bijv. Swing, Breakout)"
+          placeholder="Strategietype (Breakout, Swing...)"
           value={form.strategy_type}
           onChange={handleChange}
           className="border p-2 rounded"
@@ -166,7 +166,7 @@ export default function SetupForm({ onSubmitted }) {
         />
         <input
           name="tags"
-          placeholder="Tags (comma-separated)"
+          placeholder="Tags (gescheiden door komma's)"
           value={form.tags}
           onChange={handleChange}
           className="border p-2 rounded"

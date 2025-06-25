@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useSetupData } from '@/hooks/useSetupData'; // 🔥 nieuw
+import { useState, useRef } from 'react';
+import { useSetupData } from '@/hooks/useSetupData';
 
 export default function SetupForm() {
-  const { addSetup } = useSetupData(); // ✅ ophalen uit hook
+  const formRef = useRef(null);
+  const { addSetup } = useSetupData();
   const [form, setForm] = useState({
     name: '',
     indicators: '',
@@ -20,6 +21,7 @@ export default function SetupForm() {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -42,13 +44,18 @@ export default function SetupForm() {
     const valErrors = validate();
     if (Object.keys(valErrors).length > 0) {
       setErrors(valErrors);
+      formRef.current.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
     setSubmitting(true);
+    setErrors({});
     try {
-      await addSetup(form); // 🔥 via useSetupData
+      await addSetup(form);
       resetForm();
+      setSuccess(true);
+      formRef.current.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Setup toevoegen mislukt:', err);
       alert('Fout bij opslaan setup.');
@@ -74,13 +81,23 @@ export default function SetupForm() {
     setErrors({});
   }
 
+  const isDisabled = !form.name || !form.indicators || !form.trend;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded bg-white shadow-sm">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="space-y-4 border p-4 rounded bg-white shadow-sm"
+    >
       <h3 className="text-lg font-semibold">➕ Nieuwe Setup</h3>
 
-      {/* 🔹 Basisvelden */}
+      {success && (
+        <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-2 rounded">
+          ✅ Setup succesvol opgeslagen!
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Name */}
         <input
           name="name"
           placeholder="Name*"
@@ -88,15 +105,13 @@ export default function SetupForm() {
           onChange={handleChange}
           className={`border p-2 rounded ${errors.name ? 'border-red-500' : ''}`}
         />
-        {/* Indicators */}
         <input
           name="indicators"
-          placeholder="Indicators*"
+          placeholder="Indicators* (bijv. RSI, MA)"
           value={form.indicators}
           onChange={handleChange}
           className={`border p-2 rounded ${errors.indicators ? 'border-red-500' : ''}`}
         />
-        {/* Trend */}
         <select
           name="trend"
           value={form.trend}
@@ -108,7 +123,6 @@ export default function SetupForm() {
           <option value="bearish">📉 Bearish</option>
           <option value="neutral">⚖️ Neutral</option>
         </select>
-        {/* Timeframe */}
         <select
           name="timeframe"
           value={form.timeframe}
@@ -121,7 +135,6 @@ export default function SetupForm() {
           <option value="1d">1D</option>
           <option value="1w">1W</option>
         </select>
-        {/* Symbol */}
         <input
           name="symbol"
           placeholder="Symbol (BTC, SOL...)"
@@ -129,7 +142,6 @@ export default function SetupForm() {
           onChange={handleChange}
           className="border p-2 rounded"
         />
-        {/* Strategy Type */}
         <input
           name="strategy_type"
           placeholder="Strategy Type"
@@ -137,7 +149,6 @@ export default function SetupForm() {
           onChange={handleChange}
           className="border p-2 rounded"
         />
-        {/* Account Type */}
         <input
           name="account_type"
           placeholder="Account Type"
@@ -145,7 +156,6 @@ export default function SetupForm() {
           onChange={handleChange}
           className="border p-2 rounded"
         />
-        {/* Minimum Investment */}
         <input
           name="min_investment"
           type="number"
@@ -157,7 +167,6 @@ export default function SetupForm() {
         />
       </div>
 
-      {/* 🔹 Checkboxes */}
       <div className="flex flex-wrap gap-4">
         <label className="flex items-center gap-2">
           <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} />
@@ -169,7 +178,6 @@ export default function SetupForm() {
         </label>
       </div>
 
-      {/* 🔹 Tags */}
       <textarea
         name="tags"
         placeholder="Tags (comma separated)"
@@ -178,8 +186,7 @@ export default function SetupForm() {
         className="w-full border p-2 rounded"
       />
 
-      {/* 🔹 Live Preview */}
-      <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border">
+      <div className={`text-sm bg-gray-50 p-3 rounded border ${isDisabled ? 'opacity-40' : ''}`}>
         <strong>📋 Live Preview:</strong><br />
         <strong>Name:</strong> {form.name || '-'}<br />
         <strong>Indicators:</strong> {form.indicators || '-'}<br />
@@ -189,11 +196,12 @@ export default function SetupForm() {
         <strong>Strategy:</strong> {form.strategy_type || '-'}
       </div>
 
-      {/* 🔹 Submit Button */}
       <button
         type="submit"
-        disabled={submitting}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition"
+        disabled={submitting || isDisabled}
+        className={`w-full p-2 rounded transition text-white ${
+          submitting || isDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+        }`}
       >
         {submitting ? '⏳ Opslaan...' : '💾 Setup Opslaan'}
       </button>

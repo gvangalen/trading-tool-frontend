@@ -4,120 +4,189 @@ import { useState } from 'react';
 import { createStrategy } from '@/lib/api/strategy';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { useSetupData } from '@/hooks/useSetupData';
-import InfoTooltip from '@/components/InfoTooltip';
 
 export default function StrategyForm() {
-  const { loadStrategies } = useStrategyData();
+  const { strategies, loadStrategies } = useStrategyData();
   const { setups } = useSetupData();
 
-  const [selectedSetup, setSelectedSetup] = useState('');
-  const [tags, setTags] = useState('');
-  const [explanation, setExplanation] = useState('');
+  const [form, setForm] = useState({
+    setup_name: '',
+    explanation: '',
+    entry: '',
+    target: '',
+    stop_loss: '',
+    favorite: false,
+    tags: '',
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  async function handleSubmit(e) {
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSuccess(false);
 
-    if (!selectedSetup.trim()) {
-      setError('Kies een geldige setup.');
-      setLoading(false);
+    if (!form.setup_name) {
+      setError('Je moet een bestaande setup kiezen.');
+      return;
+    }
+    if (!form.entry || !form.target || !form.stop_loss) {
+      setError('Entry, target en stop-loss zijn verplicht.');
       return;
     }
 
+    setLoading(true);
+
     const payload = {
-      setup_name: selectedSetup,
-      asset: 'BTC', // eventueel dynamisch in latere versie
-      timeframe: '1D',
-      explanation: explanation.trim(),
-      favorite: false,
-      tags: tags
+      setup_name: form.setup_name,
+      explanation: form.explanation,
+      entry: form.entry,
+      target: form.target,
+      stop_loss: form.stop_loss,
+      favorite: form.favorite,
+      tags: form.tags
         .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag !== ''),
+        .map((t) => t.trim())
+        .filter((t) => t !== ''),
+      asset: 'BTC',
+      timeframe: '1D',
       origin: 'Handmatig',
     };
 
     try {
       await createStrategy(payload);
-      setSelectedSetup('');
-      setTags('');
-      setExplanation('');
+      setForm({
+        setup_name: '',
+        explanation: '',
+        entry: '',
+        target: '',
+        stop_loss: '',
+        favorite: false,
+        tags: '',
+      });
       await loadStrategies();
-      alert('✅ Strategie succesvol toegevoegd!');
+      setSuccess(true);
     } catch (err) {
-      console.error('❌ Strategie opslaan mislukt:', err);
+      console.error('Strategie maken mislukt:', err);
       setError('Fout bij opslaan strategie.');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4"
-    >
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
       <h2 className="text-lg font-bold">➕ Nieuwe Strategie</h2>
 
-      <div>
-        <label className="block mb-1 font-medium">
-          Setup-naam
-          <InfoTooltip text="Kies een bestaande setup waarvoor deze strategie bedoeld is." />
+      {success && (
+        <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-2 rounded">
+          ✅ Strategie succesvol opgeslagen!
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Koppel aan Setup <span title="Je kunt alleen kiezen uit bestaande setups.">❓</span>
         </label>
         <select
+          name="setup_name"
+          value={form.setup_name}
+          onChange={handleChange}
           className="w-full border p-2 rounded"
-          value={selectedSetup}
-          onChange={(e) => setSelectedSetup(e.target.value)}
           required
         >
           <option value="">-- Kies een setup --</option>
           {setups.map((s) => (
-            <option key={s.id} value={s.name}>
+            <option key={s.name} value={s.name}>
               {s.name}
             </option>
           ))}
         </select>
-      </div>
 
-      <div>
-        <label className="block mb-1 font-medium">
-          Tags <InfoTooltip text="Voeg labels toe zoals breakout, trend, btc." />
+        <label className="block font-medium">
+          Entry prijs (€) <span title="Het niveau waarop je instapt.">❓</span>
         </label>
         <input
-          type="text"
+          name="entry"
+          type="number"
+          value={form.entry}
+          onChange={handleChange}
           className="w-full border p-2 rounded"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="bijv. breakout, swing, btc"
+          required
         />
-      </div>
 
-      <div>
-        <label className="block mb-1 font-medium">
-          Uitleg
-          <InfoTooltip text="Leg kort uit waarom deze strategie werkt of opvalt." />
+        <label className="block font-medium">
+          Target prijs (€) <span title="Het winstdoel voor deze trade.">❓</span>
         </label>
-        <textarea
+        <input
+          name="target"
+          type="number"
+          value={form.target}
+          onChange={handleChange}
           className="w-full border p-2 rounded"
-          rows="4"
-          value={explanation}
-          onChange={(e) => setExplanation(e.target.value)}
-          placeholder="Waarom werkt deze strategie? Wat maakt het sterk?"
+          required
         />
+
+        <label className="block font-medium">
+          Stop-loss (€) <span title="Het niveau waarop je uitstapt bij verlies.">❓</span>
+        </label>
+        <input
+          name="stop_loss"
+          type="number"
+          value={form.stop_loss}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
+
+        <label className="block font-medium">Uitleg <span title="Leg uit waarom deze strategie werkt.">❓</span></label>
+        <textarea
+          name="explanation"
+          value={form.explanation}
+          onChange={handleChange}
+          rows="3"
+          className="w-full border p-2 rounded"
+        />
+
+        <label className="block font-medium">Tags (komma-gescheiden)</label>
+        <input
+          name="tags"
+          type="text"
+          value={form.tags}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+        />
+
+        <label className="inline-flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="favorite"
+            checked={form.favorite}
+            onChange={handleChange}
+            className="w-4 h-4"
+          />
+          <span>Favoriet</span>
+        </label>
+
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+        >
+          {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
+        </button>
       </div>
-
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-
-      <button
-        type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
-        disabled={loading}
-      >
-        {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
-      </button>
     </form>
   );
 }

@@ -2,17 +2,16 @@
 
 import { useState } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
+import { generateExplanation } from '@/lib/setupService';
 
 export default function SetupList({ searchTerm = '' }) {
   const {
     setups,
     loading,
     error,
-    updateSetup,
-    deleteSetup,
-    toggleFavorite,
-    generateExplanation,
-    loadSetups: reloadSetups, // ✅ hernoemd om leesbaar te gebruiken
+    saveSetup,
+    removeSetup,
+    loadSetups,
   } = useSetupData();
 
   const [filter, setFilter] = useState('all');
@@ -20,7 +19,7 @@ export default function SetupList({ searchTerm = '' }) {
   const [editingId, setEditingId] = useState(null);
   const [editingValues, setEditingValues] = useState({});
 
-  function filteredSortedSetups() {
+  const filteredSortedSetups = () => {
     let list = [...setups];
     if (filter !== 'all') {
       list = list.filter((s) => s.trend === filter);
@@ -33,19 +32,22 @@ export default function SetupList({ searchTerm = '' }) {
       list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
     return list;
-  }
+  };
 
   async function handleSave(id) {
     if (!editingValues[id]) return;
-    await updateSetup(id, editingValues[id]);
+    await saveSetup(id, editingValues[id]);
     setEditingId(null);
     setEditingValues({});
-    await reloadSetups(); // ✅ herladen
   }
 
   async function handleGenerateExplanation(id) {
-    await generateExplanation(id);
-    await reloadSetups(); // ✅ herladen
+    try {
+      await generateExplanation(id);
+      await loadSetups(); // herladen na AI-uitleg
+    } catch (err) {
+      console.error('❌ Fout bij AI-explanation:', err);
+    }
   }
 
   function handleEditChange(id, field, value) {
@@ -81,19 +83,17 @@ export default function SetupList({ searchTerm = '' }) {
         {filteredSortedSetups().map((setup) => {
           const isEditing = editingId === setup.id;
           const trendColor =
-            setup.trend === 'bullish'
-              ? 'text-green-600'
-              : setup.trend === 'bearish'
-              ? 'text-red-500'
-              : 'text-yellow-500';
+            setup.trend === 'bullish' ? 'text-green-600' :
+            setup.trend === 'bearish' ? 'text-red-500' :
+            'text-yellow-500';
 
           return (
             <div key={setup.id} className="border rounded-lg p-4 bg-white shadow relative transition">
               {/* ⭐ Favoriet */}
               <button
-                onClick={() => toggleFavorite(setup.id, setup.favorite)}
                 className="absolute top-3 right-3 text-2xl"
-                title="Favoriet aan/uit"
+                disabled
+                title="Favoriet toggle (nog niet geactiveerd)"
               >
                 {setup.favorite ? '⭐️' : '☆'}
               </button>
@@ -145,16 +145,10 @@ export default function SetupList({ searchTerm = '' }) {
                   />
 
                   <div className="flex justify-end gap-2 mt-2">
-                    <button
-                      onClick={() => handleSave(setup.id)}
-                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
-                    >
+                    <button onClick={() => handleSave(setup.id)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
                       ✅ Opslaan
                     </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm"
-                    >
+                    <button onClick={() => setEditingId(null)} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm">
                       ❌ Annuleren
                     </button>
                   </div>
@@ -179,16 +173,10 @@ export default function SetupList({ searchTerm = '' }) {
                   </button>
 
                   <div className="flex justify-end gap-2 mt-2">
-                    <button
-                      onClick={() => setEditingId(setup.id)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                    >
+                    <button onClick={() => setEditingId(setup.id)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
                       ✏️ Bewerken
                     </button>
-                    <button
-                      onClick={() => deleteSetup(setup.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
-                    >
+                    <button onClick={() => removeSetup(setup.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
                       ❌ Verwijderen
                     </button>
                   </div>

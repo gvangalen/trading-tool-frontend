@@ -72,14 +72,15 @@ export function useSetupData() {
   }
 
   return {
-    setups,
-    topSetups,
-    loading,
-    error,
-    successMessage,
-    loadSetups,
-    loadTopSetups,
-    saveSetup,
-    removeSetup,
-  };
+  setups,
+  topSetups,
+  loading,
+  error,
+  successMessage,
+  loadSetups,
+  reloadSetups: loadSetups, // 🔁 alias toegevoegd
+  loadTopSetups,
+  saveSetup,
+  removeSetup,
+};
 }

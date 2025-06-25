@@ -21,20 +21,16 @@ export default function SetupList({ searchTerm = '' }) {
 
   function filteredSortedSetups() {
     let list = [...setups];
-
     if (filter !== 'all') {
       list = list.filter((s) => s.trend === filter);
     }
-
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       list = list.filter((s) => (s.name || '').toLowerCase().includes(q));
     }
-
     if (sortBy === 'name') {
       list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
-
     return list;
   }
 
@@ -59,137 +55,133 @@ export default function SetupList({ searchTerm = '' }) {
     <div className="space-y-6 mt-6">
       {/* 🔹 Filters */}
       <div className="flex flex-wrap items-center gap-4">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="border p-2 rounded bg-white shadow-sm"
-        >
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="border p-2 rounded bg-white">
           <option value="all">🔁 Alle trends</option>
           <option value="bullish">📈 Bullish</option>
           <option value="bearish">📉 Bearish</option>
           <option value="neutral">⚖️ Neutraal</option>
         </select>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="border p-2 rounded bg-white shadow-sm"
-        >
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="border p-2 rounded bg-white">
           <option value="name">🔤 Sorteer op naam</option>
         </select>
       </div>
 
-      {/* 🔹 Loading/Error */}
       {loading && <div className="text-gray-500 text-sm">📡 Laden setups...</div>}
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
       {/* 🔹 Setup cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredSortedSetups().map((setup) => (
-          <div key={setup.id} className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition relative">
-            {/* Favorite toggle */}
-            <button
-              onClick={() => toggleFavorite(setup.id, setup.favorite)}
-              className="absolute top-3 right-3 text-2xl"
-              title="Favoriet aan/uit"
-            >
-              {setup.favorite ? '⭐️' : '☆'}
-            </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredSortedSetups().map((setup) => {
+          const isEditing = editingId === setup.id;
+          const trendColor =
+            setup.trend === 'bullish'
+              ? 'text-green-600'
+              : setup.trend === 'bearish'
+              ? 'text-red-500'
+              : 'text-yellow-500';
 
-            {editingId === setup.id ? (
-              <>
-                {/* ✏️ Edit mode */}
-                <input
-                  className="border p-2 rounded w-full mb-2 font-semibold"
-                  defaultValue={setup.name}
-                  onChange={(e) => handleEditChange(setup.id, 'name', e.target.value)}
-                />
-                <input
-                  className="border p-2 rounded w-full mb-2 text-sm"
-                  defaultValue={setup.indicators}
-                  onChange={(e) => handleEditChange(setup.id, 'indicators', e.target.value)}
-                />
-                <select
-                  className="border p-2 rounded w-full mb-2"
-                  defaultValue={setup.trend}
-                  onChange={(e) => handleEditChange(setup.id, 'trend', e.target.value)}
-                >
-                  <option value="bullish">📈 Bullish</option>
-                  <option value="bearish">📉 Bearish</option>
-                  <option value="neutral">⚖️ Neutraal</option>
-                </select>
+          return (
+            <div key={setup.id} className="border rounded-lg p-4 bg-white shadow relative transition">
+              {/* ⭐ Favoriet */}
+              <button
+                onClick={() => toggleFavorite(setup.id, setup.favorite)}
+                className="absolute top-3 right-3 text-2xl"
+                title="Favoriet aan/uit"
+              >
+                {setup.favorite ? '⭐️' : '☆'}
+              </button>
 
-                <div className="flex justify-end gap-2">
+              {isEditing ? (
+                <>
+                  <input
+                    className="border p-2 rounded w-full mb-2 font-semibold"
+                    defaultValue={setup.name}
+                    onChange={(e) => handleEditChange(setup.id, 'name', e.target.value)}
+                  />
+                  <input
+                    className="border p-2 rounded w-full mb-2"
+                    defaultValue={setup.indicators}
+                    onChange={(e) => handleEditChange(setup.id, 'indicators', e.target.value)}
+                  />
+                  <select
+                    className="border p-2 rounded w-full mb-2"
+                    defaultValue={setup.trend}
+                    onChange={(e) => handleEditChange(setup.id, 'trend', e.target.value)}
+                  >
+                    <option value="bullish">📈 Bullish</option>
+                    <option value="bearish">📉 Bearish</option>
+                    <option value="neutral">⚖️ Neutraal</option>
+                  </select>
+                  <input
+                    className="border p-2 rounded w-full mb-2"
+                    placeholder="Timeframe"
+                    defaultValue={setup.timeframe}
+                    onChange={(e) => handleEditChange(setup.id, 'timeframe', e.target.value)}
+                  />
+                  <input
+                    className="border p-2 rounded w-full mb-2"
+                    placeholder="Symbol"
+                    defaultValue={setup.symbol}
+                    onChange={(e) => handleEditChange(setup.id, 'symbol', e.target.value)}
+                  />
+                  <input
+                    className="border p-2 rounded w-full mb-2"
+                    placeholder="Strategy type"
+                    defaultValue={setup.strategy_type}
+                    onChange={(e) => handleEditChange(setup.id, 'strategy_type', e.target.value)}
+                  />
+                  <input
+                    className="border p-2 rounded w-full mb-2"
+                    placeholder="Account type"
+                    defaultValue={setup.account_type}
+                    onChange={(e) => handleEditChange(setup.id, 'account_type', e.target.value)}
+                  />
+
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button onClick={() => handleSave(setup.id)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                      ✅ Opslaan
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm">
+                      ❌ Annuleren
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
+                  <p className="text-sm mb-1 text-gray-700">{setup.indicators}</p>
+                  <p className={`text-xs mb-1 ${trendColor}`}>📊 {setup.trend}</p>
+                  <p className="text-xs text-gray-500 mb-1">⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}</p>
+                  <p className="text-xs text-gray-500 mb-2">🔖 {setup.symbol}</p>
+
+                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border mb-2">
+                    💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
+                  </div>
+
                   <button
-                    onClick={() => handleSave(setup.id)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                    onClick={() => generateExplanation(setup.id)}
+                    className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mb-2"
                   >
-                    ✅ Opslaan
+                    🔁 Genereer uitleg (AI)
                   </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm"
-                  >
-                    ❌ Annuleren
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* 📄 View mode */}
-                <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
-                <p className="text-sm mb-2 text-gray-700">{setup.indicators}</p>
 
-                <p className="text-xs mb-1">
-                  📊{' '}
-                  <span
-                    className={
-                      setup.trend === 'bullish'
-                        ? 'text-green-600'
-                        : setup.trend === 'bearish'
-                        ? 'text-red-500'
-                        : 'text-yellow-500'
-                    }
-                  >
-                    {setup.trend}
-                  </span>
-                </p>
-
-                <div className="text-xs text-gray-500 mb-2">💬 {setup.explanation || 'Geen uitleg beschikbaar.'}</div>
-
-                {/* 🔁 AI uitleg knop */}
-                <button
-                  onClick={() => generateExplanation(setup.id)}
-                  className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mb-2"
-                >
-                  🔁 Genereer uitleg (AI)
-                </button>
-
-                <div className="flex justify-end gap-3 mt-2">
-                  <button
-                    onClick={() => setEditingId(setup.id)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    ✏️ Bewerken
-                  </button>
-                  <button
-                    onClick={() => deleteSetup(setup.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    ❌ Verwijderen
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button onClick={() => setEditingId(setup.id)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                      ✏️ Bewerken
+                    </button>
+                    <button onClick={() => deleteSetup(setup.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                      ❌ Verwijderen
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* 📭 Geen resultaten */}
       {!filteredSortedSetups().length && (
-        <p className="text-sm text-gray-500 mt-4">
-          ❌ Geen setups gevonden voor deze filters of zoekterm.
-        </p>
+        <p className="text-sm text-gray-500 mt-4">❌ Geen setups gevonden voor deze filters of zoekterm.</p>
       )}
     </div>
   );

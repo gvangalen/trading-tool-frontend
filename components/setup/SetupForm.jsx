@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSetupData } from '@/hooks/useSetupData';
+import { useSetupData, checkSetupNameExists } from '@/hooks/useSetupData';
 import InfoTooltip from '@/components/common/InfoTooltip';
 
 export default function SetupForm({ onSubmitted }) {
@@ -54,6 +54,14 @@ export default function SetupForm({ onSubmitted }) {
     setSubmitting(true);
     setErrors({});
     try {
+      const nameExists = await checkSetupNameExists(form.name);
+      if (nameExists) {
+        setErrors({ name: true });
+        alert('❌ Deze setup-naam bestaat al. Kies een andere naam.');
+        setSubmitting(false);
+        return;
+      }
+
       await addSetup(form);
       resetForm();
       setSuccess(true);

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
+import InfoTooltip from '@/components/common/InfoTooltip';
 
 export default function SetupForm({ onSubmitted }) {
   const formRef = useRef(null);
@@ -11,11 +12,13 @@ export default function SetupForm({ onSubmitted }) {
     indicators: '',
     trend: '',
     timeframe: '4hr',
+    symbol: '',
+    dynamic: false,
+    score_type: 'macro_score',
+    score_logic: '',
     account_type: '',
     strategy_type: '',
-    symbol: '',
     min_investment: '',
-    dynamic: false,
     tags: '',
     favorite: false,
   });
@@ -71,11 +74,13 @@ export default function SetupForm({ onSubmitted }) {
       indicators: '',
       trend: '',
       timeframe: '4hr',
+      symbol: '',
+      dynamic: false,
+      score_type: 'macro_score',
+      score_logic: '',
       account_type: '',
       strategy_type: '',
-      symbol: '',
       min_investment: '',
-      dynamic: false,
       tags: '',
       favorite: false,
     });
@@ -99,43 +104,94 @@ export default function SetupForm({ onSubmitted }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          name="name"
-          placeholder="Naam van de setup*"
-          value={form.name}
-          onChange={handleChange}
-          className={`border p-2 rounded ${errors.name ? 'border-red-500' : ''}`}
-        />
-        <input
-          name="indicators"
-          placeholder="Indicatoren* (bijv. RSI, MA)"
-          value={form.indicators}
-          onChange={handleChange}
-          className={`border p-2 rounded ${errors.indicators ? 'border-red-500' : ''}`}
-        />
-        <select
-          name="trend"
-          value={form.trend}
-          onChange={handleChange}
-          className={`border p-2 rounded ${errors.trend ? 'border-red-500' : ''}`}
-        >
-          <option value="">Trend*</option>
-          <option value="bullish">📈 Bullish</option>
-          <option value="bearish">📉 Bearish</option>
-          <option value="neutral">⚖️ Neutraal</option>
-        </select>
-        <select
-          name="timeframe"
-          value={form.timeframe}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        >
-          <option value="15m">15 minuten</option>
-          <option value="1h">1 uur</option>
-          <option value="4hr">4 uur</option>
-          <option value="1d">1 dag</option>
-          <option value="1w">1 week</option>
-        </select>
+        <div>
+          <label className="font-medium flex items-center">
+            Naam*
+            <InfoTooltip text="De naam van je setup, bijvoorbeeld 'Oversold RSI + Volume spike'" />
+          </label>
+          <input
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            className={`border p-2 rounded w-full ${errors.name ? 'border-red-500' : ''}`}
+          />
+        </div>
+
+        <div>
+          <label className="font-medium flex items-center">
+            Indicatoren*
+            <InfoTooltip text="Bijv. RSI, volume, structuur - gescheiden door komma's." />
+          </label>
+          <input
+            name="indicators"
+            value={form.indicators}
+            onChange={handleChange}
+            className={`border p-2 rounded w-full ${errors.indicators ? 'border-red-500' : ''}`}
+          />
+        </div>
+
+        <div>
+          <label className="font-medium flex items-center">
+            Trend*
+            <InfoTooltip text="Welke trend hoort bij deze setup: bullish, bearish of neutraal?" />
+          </label>
+          <select
+            name="trend"
+            value={form.trend}
+            onChange={handleChange}
+            className={`border p-2 rounded w-full ${errors.trend ? 'border-red-500' : ''}`}
+          >
+            <option value="">Kies trend</option>
+            <option value="bullish">📈 Bullish</option>
+            <option value="bearish">📉 Bearish</option>
+            <option value="neutral">⚖️ Neutraal</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="font-medium">Timeframe</label>
+          <select
+            name="timeframe"
+            value={form.timeframe}
+            onChange={handleChange}
+            className="border p-2 rounded w-full"
+          >
+            <option value="15m">15 minuten</option>
+            <option value="1h">1 uur</option>
+            <option value="4hr">4 uur</option>
+            <option value="1d">1 dag</option>
+            <option value="1w">1 week</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="font-medium">Scoretype</label>
+          <select
+            name="score_type"
+            value={form.score_type}
+            onChange={handleChange}
+            className="border p-2 rounded w-full"
+          >
+            <option value="macro_score">Macro score</option>
+            <option value="technical_score">Technische score</option>
+            <option value="ai_score">AI-score</option>
+            <option value="combined">Gecombineerd</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="font-medium">Scorelogica (optioneel)</label>
+          <textarea
+            name="score_logic"
+            rows={2}
+            value={form.score_logic}
+            onChange={handleChange}
+            placeholder='Bijv: { "macro": ">70", "rsi": "<30" }'
+            className="border p-2 rounded w-full"
+          />
+        </div>
+
+        {/* Geavanceerd gedeelte */}
         <input
           name="symbol"
           placeholder="Symbool (BTC, SOL...)"
@@ -180,6 +236,7 @@ export default function SetupForm({ onSubmitted }) {
             className="w-4 h-4"
           />
           <span>Dynamische investering</span>
+          <InfoTooltip text="Als deze optie aan staat, wordt de investering automatisch aangepast aan de score." />
         </label>
         <label className="flex items-center space-x-2">
           <input

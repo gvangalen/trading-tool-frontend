@@ -71,16 +71,22 @@ export function useSetupData() {
     }
   }
 
+  // ✅ Naamcontrole-functie
+  function checkSetupNameExists(name) {
+    return setups.some((setup) => setup.name.toLowerCase() === name.toLowerCase());
+  }
+
   return {
-  setups,
-  topSetups,
-  loading,
-  error,
-  successMessage,
-  loadSetups,
-  reloadSetups: loadSetups, // 🔁 alias toegevoegd
-  loadTopSetups,
-  saveSetup,
-  removeSetup,
-};
+    setups,
+    topSetups,
+    loading,
+    error,
+    successMessage,
+    loadSetups,
+    reloadSetups: loadSetups, // 🔁 alias toegevoegd
+    loadTopSetups,
+    saveSetup,
+    removeSetup,
+    checkSetupNameExists, // ✅ beschikbaar in je component
+  };
 }

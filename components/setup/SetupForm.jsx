@@ -54,7 +54,7 @@ export default function SetupForm({ onSubmitted }) {
       await addSetup(form);
       resetForm();
       setSuccess(true);
-      if (onSubmitted) onSubmitted(); // ✅ herladen lijst
+      if (onSubmitted) onSubmitted();
       formRef.current.scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -141,4 +141,67 @@ export default function SetupForm({ onSubmitted }) {
           placeholder="Symbol (BTC, SOL...)"
           value={form.symbol}
           onChange={handleChange}
-          className
+          className="border p-2 rounded"
+        />
+        <input
+          name="account_type"
+          placeholder="Account type (bijv. Spot, Futures)"
+          value={form.account_type}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
+        <input
+          name="strategy_type"
+          placeholder="Strategie type (bijv. Swing, Breakout)"
+          value={form.strategy_type}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
+        <input
+          name="min_investment"
+          placeholder="Minimale investering (€)"
+          value={form.min_investment}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
+        <input
+          name="tags"
+          placeholder="Tags (comma-separated)"
+          value={form.tags}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="dynamic"
+            checked={form.dynamic}
+            onChange={handleChange}
+            className="w-4 h-4"
+          />
+          <span>Dynamische investering</span>
+        </label>
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="favorite"
+            checked={form.favorite}
+            onChange={handleChange}
+            className="w-4 h-4"
+          />
+          <span>Favoriet</span>
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        disabled={isDisabled || submitting}
+        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
+          isDisabled || submitting ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+      >
+        {submitting ? 'Bezig met opslaan...' : 'Setup opslaan'}
+      </button>
+    </form>
+  );
+}

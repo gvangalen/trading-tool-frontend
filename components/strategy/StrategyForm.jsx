@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { createStrategy } from '@/lib/api/strategy';
 import { useStrategyData } from '@/hooks/useStrategyData';
+import { useSetupData } from '@/hooks/useSetupData';
+import InfoTooltip from '@/components/InfoTooltip';
 
 export default function StrategyForm() {
   const { loadStrategies } = useStrategyData();
-  const [setupName, setSetupName] = useState('');
+  const { setups } = useSetupData();
+
+  const [selectedSetup, setSelectedSetup] = useState('');
   const [tags, setTags] = useState('');
   const [explanation, setExplanation] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,15 +21,15 @@ export default function StrategyForm() {
     setError('');
     setLoading(true);
 
-    if (!setupName.trim()) {
-      setError('Strategienaam is verplicht.');
+    if (!selectedSetup.trim()) {
+      setError('Kies een geldige setup.');
       setLoading(false);
       return;
     }
 
     const payload = {
-      setup_name: setupName.trim(),
-      asset: 'BTC',
+      setup_name: selectedSetup,
+      asset: 'BTC', // eventueel dynamisch in latere versie
       timeframe: '1D',
       explanation: explanation.trim(),
       favorite: false,
@@ -38,7 +42,7 @@ export default function StrategyForm() {
 
     try {
       await createStrategy(payload);
-      setSetupName('');
+      setSelectedSetup('');
       setTags('');
       setExplanation('');
       await loadStrategies();
@@ -59,18 +63,29 @@ export default function StrategyForm() {
       <h2 className="text-lg font-bold">➕ Nieuwe Strategie</h2>
 
       <div>
-        <label className="block mb-1 font-medium">Strategie naam</label>
-        <input
-          type="text"
+        <label className="block mb-1 font-medium">
+          Setup-naam
+          <InfoTooltip text="Kies een bestaande setup waarvoor deze strategie bedoeld is." />
+        </label>
+        <select
           className="w-full border p-2 rounded"
-          value={setupName}
-          onChange={(e) => setSetupName(e.target.value)}
+          value={selectedSetup}
+          onChange={(e) => setSelectedSetup(e.target.value)}
           required
-        />
+        >
+          <option value="">-- Kies een setup --</option>
+          {setups.map((s) => (
+            <option key={s.id} value={s.name}>
+              {s.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">Tags (komma-gescheiden)</label>
+        <label className="block mb-1 font-medium">
+          Tags <InfoTooltip text="Voeg labels toe zoals breakout, trend, btc." />
+        </label>
         <input
           type="text"
           className="w-full border p-2 rounded"
@@ -81,13 +96,16 @@ export default function StrategyForm() {
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">Uitleg</label>
+        <label className="block mb-1 font-medium">
+          Uitleg
+          <InfoTooltip text="Leg kort uit waarom deze strategie werkt of opvalt." />
+        </label>
         <textarea
           className="w-full border p-2 rounded"
           rows="4"
           value={explanation}
           onChange={(e) => setExplanation(e.target.value)}
-          placeholder="Leg uit waarom deze strategie werkt..."
+          placeholder="Waarom werkt deze strategie? Wat maakt het sterk?"
         />
       </div>
 

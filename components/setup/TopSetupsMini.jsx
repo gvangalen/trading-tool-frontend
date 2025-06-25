@@ -7,13 +7,19 @@ export default function TopSetupsMini() {
   const [topSetups, setTopSetups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendFilter, setTrendFilter] = useState('all');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     loadTopSetups();
+
+    // ⏱️ Auto-refresh elke 60 sec
+    const interval = setInterval(() => loadTopSetups(), 60000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadTopSetups() {
     try {
+      setLoading(true);
       let res;
       try {
         res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
@@ -32,11 +38,12 @@ export default function TopSetupsMini() {
         : [];
 
       const sorted = setups
-        .filter(s => typeof s.score === 'number')
+        .filter((s) => typeof s.score === 'number')
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
 
       setTopSetups(sorted);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('❌ Fout bij laden setups:', error);
       setTopSetups([
@@ -54,8 +61,8 @@ export default function TopSetupsMini() {
   }
 
   const filteredSetups = topSetups
-    .filter(s => trendFilter === 'all' || s.trend === trendFilter)
-    .slice(0, 3); // Top 3 per filter
+    .filter((s) => trendFilter === 'all' || s.trend === trendFilter)
+    .slice(0, 3); // top 3 per trend
 
   if (loading) {
     return (
@@ -75,11 +82,18 @@ export default function TopSetupsMini() {
 
   return (
     <div className="space-y-4 text-left text-sm">
-      <h4 className="font-semibold mb-2">🏆 Top Setups:</h4>
+      <div className="flex items-center justify-between">
+        <h4 className="font-semibold">🏆 Top Setups</h4>
+        {lastUpdated && (
+          <span className="text-xs text-gray-500 italic">
+            Laatst geüpdatet: {lastUpdated.toLocaleTimeString()}
+          </span>
+        )}
+      </div>
 
-      {/* 🔹 Filter */}
+      {/* 🔍 Filter */}
       <div className="flex items-center gap-2">
-        <label htmlFor="trendFilter" className="text-xs">🔍 Filter:</label>
+        <label htmlFor="trendFilter" className="text-xs">Filter:</label>
         <select
           id="trendFilter"
           value={trendFilter}
@@ -93,10 +107,10 @@ export default function TopSetupsMini() {
         </select>
       </div>
 
-      {/* 🔹 Setups */}
+      {/* 📋 Setups */}
       <ul className="list-disc list-inside space-y-1">
         {filteredSetups.length === 0 ? (
-          <li className="text-gray-400">Geen setups gevonden voor deze trend.</li>
+          <li className="text-gray-400">Geen setups voor deze trend.</li>
         ) : (
           filteredSetups.map((setup) => {
             const trendIcon =
@@ -110,11 +124,21 @@ export default function TopSetupsMini() {
               'text-gray-600';
 
             return (
-              <li key={setup.id}>
-                <strong>{setup.name}</strong> {trendIcon}{' '}
-                <span className={`ml-1 font-semibold ${scoreColor}`}>
-                  Score: {setup.score?.toFixed(1) ?? '-'}
-                </span>
+              <li key={setup.id} className="hover:bg-gray-50 rounded px-1 py-1">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <strong>{setup.name}</strong> {trendIcon}
+                    <span
+                      className="ml-2 text-xs text-gray-500"
+                      title={`Indicators: ${setup.indicators || '-'}`}
+                    >
+                      🧠 {setup.indicators?.split(',')[0] ?? '-'}
+                    </span>
+                  </div>
+                  <span className={`font-semibold ${scoreColor}`}>
+                    {setup.score?.toFixed(1) ?? '-'}
+                  </span>
+                </div>
               </li>
             );
           })

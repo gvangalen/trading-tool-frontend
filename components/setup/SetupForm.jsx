@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useSetupData, checkSetupNameExists } from '@/hooks/useSetupData';
-import InfoTooltip from '@/components/common/InfoTooltip';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function SetupForm({ onSubmitted }) {
   const formRef = useRef(null);

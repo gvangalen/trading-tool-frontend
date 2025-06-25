@@ -12,6 +12,7 @@ export default function SetupList({ searchTerm = '' }) {
     deleteSetup,
     toggleFavorite,
     generateExplanation,
+    loadSetups: reloadSetups, // ✅ hernoemd om leesbaar te gebruiken
   } = useSetupData();
 
   const [filter, setFilter] = useState('all');
@@ -39,6 +40,12 @@ export default function SetupList({ searchTerm = '' }) {
     await updateSetup(id, editingValues[id]);
     setEditingId(null);
     setEditingValues({});
+    await reloadSetups(); // ✅ herladen
+  }
+
+  async function handleGenerateExplanation(id) {
+    await generateExplanation(id);
+    await reloadSetups(); // ✅ herladen
   }
 
   function handleEditChange(id, field, value) {
@@ -138,10 +145,16 @@ export default function SetupList({ searchTerm = '' }) {
                   />
 
                   <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={() => handleSave(setup.id)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                    <button
+                      onClick={() => handleSave(setup.id)}
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                    >
                       ✅ Opslaan
                     </button>
-                    <button onClick={() => setEditingId(null)} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm">
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm"
+                    >
                       ❌ Annuleren
                     </button>
                   </div>
@@ -159,17 +172,23 @@ export default function SetupList({ searchTerm = '' }) {
                   </div>
 
                   <button
-                    onClick={() => generateExplanation(setup.id)}
+                    onClick={() => handleGenerateExplanation(setup.id)}
                     className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mb-2"
                   >
                     🔁 Genereer uitleg (AI)
                   </button>
 
                   <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={() => setEditingId(setup.id)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                    <button
+                      onClick={() => setEditingId(setup.id)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                    >
                       ✏️ Bewerken
                     </button>
-                    <button onClick={() => deleteSetup(setup.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                    <button
+                      onClick={() => deleteSetup(setup.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    >
                       ❌ Verwijderen
                     </button>
                   </div>
@@ -181,7 +200,9 @@ export default function SetupList({ searchTerm = '' }) {
       </div>
 
       {!filteredSortedSetups().length && (
-        <p className="text-sm text-gray-500 mt-4">❌ Geen setups gevonden voor deze filters of zoekterm.</p>
+        <p className="text-sm text-gray-500 mt-4">
+          ❌ Geen setups gevonden voor deze filters of zoekterm.
+        </p>
       )}
     </div>
   );

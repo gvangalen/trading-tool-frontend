@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useStrategyData } from '@/hooks/useStrategyData';
-import CardWrapper from '@/components/ui/CardWrapper'; // ✅ toevoegen
+import { generateStrategyForSetup } from '@/lib/api/strategy';
+import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function StrategyList() {
   const { strategies, loadStrategies, updateStrategy, deleteStrategy } = useStrategyData();
@@ -53,9 +54,9 @@ export default function StrategyList() {
         setLoadingId(editingId);
         await updateStrategy(editingId, changes);
         await loadStrategies();
-        showToast('✅ Strategy saved!');
+        showToast('✅ Strategie opgeslagen!');
       } catch (err) {
-        showToast('❌ Save failed');
+        showToast('❌ Opslaan mislukt');
       } finally {
         setLoadingId(null);
       }
@@ -66,14 +67,14 @@ export default function StrategyList() {
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this strategy?')) {
+    if (confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) {
       try {
         setLoadingId(id);
         await deleteStrategy(id);
         await loadStrategies();
-        showToast('🗑️ Strategy deleted!');
+        showToast('🗑️ Strategie verwijderd!');
       } catch (err) {
-        showToast('❌ Delete failed');
+        showToast('❌ Verwijderen mislukt');
       } finally {
         setLoadingId(null);
       }
@@ -83,7 +84,27 @@ export default function StrategyList() {
   const handleFavoriteToggle = async (id, currentFavorite) => {
     await updateStrategy(id, { favorite: !currentFavorite });
     await loadStrategies();
-    showToast(currentFavorite ? '⭐️ Removed from favorites' : '⭐️ Added to favorites');
+    showToast(currentFavorite ? '⭐️ Verwijderd uit favorieten' : '⭐️ Toegevoegd aan favorieten');
+  };
+
+  const handleGenerateAI = async (setupId) => {
+    const overwrite = confirm(
+      '🔁 Wil je de bestaande strategie overschrijven?\n\nKlik OK om te overschrijven, of Annuleer om een nieuwe toe te voegen.'
+    );
+
+    try {
+      setLoadingId(setupId);
+      const res = await generateStrategyForSetup(setupId, overwrite);
+
+      if (!res.ok) throw new Error('API error');
+      await loadStrategies();
+      showToast(overwrite ? '♻️ Strategie overschreven' : '➕ Nieuwe strategie toegevoegd');
+    } catch (err) {
+      console.error('AI-generatie fout:', err);
+      showToast('❌ AI-generatie mislukt');
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   return (
@@ -116,8 +137,7 @@ export default function StrategyList() {
 
         return (
           <CardWrapper key={s.id}>
-            {/* alles binnenin blijft hetzelfde */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-2">
               {isEditing ? (
                 <input
                   value={data.setup_name || ''}
@@ -132,8 +152,29 @@ export default function StrategyList() {
               </button>
             </div>
 
-            {/* overige velden en knoppen zoals je ze al had */}
-            {/* ... */}
+            {/* 🔘 AI Genereer knop */}
+            <button
+              onClick={() => handleGenerateAI(s.setup_id)}
+              className="text-blue-600 text-sm hover:underline"
+              disabled={isLoading}
+            >
+              🔁 Genereer Strategie (AI)
+            </button>
+
+            {/* 🖊️ Edit / Save / Delete knoppen */}
+            <div className="flex gap-2 mt-2">
+              {isEditing ? (
+                <>
+                  <button onClick={handleSave} className="text-green-600">💾 Opslaan</button>
+                  <button onClick={handleCancelEdit} className="text-gray-500">Annuleren</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => handleEditToggle(s)} className="text-blue-600">✏️ Bewerken</button>
+                  <button onClick={() => handleDelete(s.id)} className="text-red-600">🗑️ Verwijderen</button>
+                </>
+              )}
+            </div>
           </CardWrapper>
         );
       })}

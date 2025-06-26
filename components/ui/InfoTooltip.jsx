@@ -1,14 +1,25 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+'use client';
+
+import * as React from 'react';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 
 export default function InfoTooltip({ text }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="ml-1 cursor-pointer text-gray-400">ℹ️</span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-sm text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-2 rounded shadow">
-        {text}
-      </TooltipContent>
-    </Tooltip>
+    <RadixTooltip.Provider>
+      <RadixTooltip.Root>
+        <RadixTooltip.Trigger asChild>
+          <span className="ml-1 cursor-pointer text-gray-400">ℹ️</span>
+        </RadixTooltip.Trigger>
+        <RadixTooltip.Portal>
+          <RadixTooltip.Content
+            className="z-50 overflow-hidden rounded-md border bg-white px-3 py-2 text-sm text-black shadow-md dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            sideOffset={5}
+          >
+            {text}
+            <RadixTooltip.Arrow className="fill-current text-gray-300 dark:text-gray-700" />
+          </RadixTooltip.Content>
+        </RadixTooltip.Portal>
+      </RadixTooltip.Root>
+    </RadixTooltip.Provider>
   );
 }

@@ -1,19 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { generateStrategyForSetup } from '@/lib/api/strategy';
 import CardWrapper from '@/components/ui/CardWrapper';
+import StrategyForm from '@/components/strategy/StrategyForm';
 
-export default function StrategyList() {
+export default function StrategyPage() {
   const { strategies, loadStrategies, updateStrategy, deleteStrategy } = useStrategyData();
   const [sort, setSort] = useState('created_at');
+  const [filters, setFilters] = useState({ asset: '', timeframe: '', tag: '' });
   const [editingId, setEditingId] = useState(null);
   const [editFields, setEditFields] = useState({});
   const [loadingId, setLoadingId] = useState(null);
   const [toast, setToast] = useState('');
 
-  const sortedStrategies = [...strategies].sort((a, b) => {
+  useEffect(() => {
+    loadStrategies();
+  }, []);
+
+  const filtered = strategies.filter((s) => {
+    const { asset, timeframe, tag } = filters;
+    return (
+      (!asset || s.asset === asset) &&
+      (!timeframe || s.timeframe === timeframe) &&
+      (!tag || (s.tags || '').includes(tag))
+    );
+  });
+
+  const sortedStrategies = [...filtered].sort((a, b) => {
     if (sort === 'score') return (b.score || 0) - (a.score || 0);
     if (sort === 'favorite') return (b.favorite === true) - (a.favorite === true);
     return new Date(b.created_at) - new Date(a.created_at);
@@ -94,9 +109,7 @@ export default function StrategyList() {
 
     try {
       setLoadingId(setupId);
-      const res = await generateStrategyForSetup(setupId, overwrite);
-
-      if (!res.ok) throw new Error('API error');
+      await generateStrategyForSetup(setupId, overwrite);
       await loadStrategies();
       showToast(overwrite ? '♻️ Strategie overschreven' : '➕ Nieuwe strategie toegevoegd');
     } catch (err) {
@@ -108,19 +121,46 @@ export default function StrategyList() {
   };
 
   return (
-    <div className="relative space-y-6">
-      {/* 🔘 Sorteeropties */}
-      <div className="flex justify-end mb-4">
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="border p-2 rounded"
-        >
+    <div className="p-4 max-w-6xl mx-auto space-y-10">
+      {/* 🔹 Titel */}
+      <header className="text-center">
+        <h1 className="text-3xl font-bold">📈 Strategieën Overzicht</h1>
+        <p className="text-gray-600 mt-2">Bekijk, filter en bewerk je tradingstrategieën.</p>
+      </header>
+
+      {/* 🔹 Filters + Sortering */}
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div className="flex gap-2">
+          <select onChange={(e) => setFilters({ ...filters, asset: e.target.value })} className="border p-2 rounded">
+            <option value="">Asset</option>
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
+          </select>
+          <select onChange={(e) => setFilters({ ...filters, timeframe: e.target.value })} className="border p-2 rounded">
+            <option value="">Timeframe</option>
+            <option value="1D">1D</option>
+            <option value="4H">4H</option>
+          </select>
+          <select onChange={(e) => setFilters({ ...filters, tag: e.target.value })} className="border p-2 rounded">
+            <option value="">Tag</option>
+            <option value="breakout">Breakout</option>
+            <option value="retracement">Retracement</option>
+          </select>
+        </div>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="border p-2 rounded">
           <option value="created_at">📅 Laatste</option>
           <option value="score">📈 Score</option>
           <option value="favorite">⭐ Favoriet</option>
         </select>
       </div>
+
+      {/* 🔹 Accordion voor nieuwe strategie */}
+      <details open={strategies.length === 0} className="border rounded p-4">
+        <summary className="cursor-pointer font-semibold">➕ Nieuwe Strategie Toevoegen</summary>
+        <div className="pt-4">
+          <StrategyForm />
+        </div>
+      </details>
 
       {/* 🔔 Toast */}
       {toast && (
@@ -147,22 +187,23 @@ export default function StrategyList() {
               ) : (
                 <strong>{s.setup_name || 'Strategy'}</strong>
               )}
-              <button onClick={() => handleFavoriteToggle(s.id, s.favorite)}>
-                {s.favorite ? '⭐️' : '☆'}
-              </button>
+              <button onClick={() => handleFavoriteToggle(s.id, s.favorite)}>{s.favorite ? '⭐️' : '☆'}</button>
             </div>
 
-            {/* 🔘 AI Genereer knop */}
-            <button
-              onClick={() => handleGenerateAI(s.setup_id)}
-              className="text-blue-600 text-sm hover:underline"
-              disabled={isLoading}
-            >
-              🔁 Genereer Strategie (AI)
-            </button>
+            {/* Extra velden */}
+            <div className="text-sm text-gray-700 space-y-1">
+              <div>🎯 Entry: {data.entry_price}</div>
+              <div>🛑 Stop-loss: {data.stop_loss}</div>
+              <div>🎯 Target: {data.target_price}</div>
+              <div>🧠 Uitleg: {data.explanation}</div>
+              <div>🏷️ Tags: {data.tags}</div>
+            </div>
 
-            {/* 🖊️ Edit / Save / Delete knoppen */}
-            <div className="flex gap-2 mt-2">
+            {/* Acties */}
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => handleGenerateAI(s.setup_id)} className="text-blue-600 text-sm hover:underline" disabled={isLoading}>
+                🔁 Genereer Strategie (AI)
+              </button>
               {isEditing ? (
                 <>
                   <button onClick={handleSave} className="text-green-600">💾 Opslaan</button>

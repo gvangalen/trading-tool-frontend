@@ -7,11 +7,11 @@ import StrategyGenerator from '@/components/strategy/StrategyGenerator';
 export default function StrategyPage() {
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-12">
-      {/* 🔹 Titel */}
+      {/* 🔹 Pagina Titel */}
       <header>
-        <h1 className="text-3xl font-bold text-center">📈 Strategieën Overzicht</h1>
+        <h1 className="text-3xl font-bold text-center">📈 Strategieën</h1>
         <p className="text-gray-600 text-center mt-2">
-          Bekijk, genereer of voeg strategieën toe voor je setups.
+          Beheer je strategieën, genereer AI-voorstellen of voeg handmatig nieuwe strategieën toe.
         </p>
       </header>
 
@@ -22,13 +22,20 @@ export default function StrategyPage() {
 
       {/* 🔹 Strategieënlijst */}
       <section>
+        <h2 className="text-2xl font-semibold mb-4">📋 Jouw Strategieën</h2>
         <StrategyList />
       </section>
 
-      {/* 🔹 Toevoegformulier */}
+      {/* 🔹 Nieuw Strategieformulier (inklapbaar) */}
       <section className="pt-10 border-t">
-        <h2 className="text-2xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-        <StrategyForm />
+        <details open className="w-full">
+          <summary className="cursor-pointer text-xl font-medium py-2 text-blue-700 hover:underline">
+            ➕ Nieuwe Strategie Toevoegen
+          </summary>
+          <div className="mt-4">
+            <StrategyForm />
+          </div>
+        </details>
       </section>
     </div>
   );

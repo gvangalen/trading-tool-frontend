@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { generateStrategyForSetup } from '@/lib/api/strategy';
-import StrategyForm from '@/components/strategy/StrategyForm';
 import StrategyCard from '@/components/strategy/StrategyCard';
 
-export default function StrategyList() {
+export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies, updateStrategy, deleteStrategy } = useStrategyData();
   const [sort, setSort] = useState('created_at');
   const [filters, setFilters] = useState({ asset: '', timeframe: '', tag: '' });
@@ -106,12 +105,11 @@ export default function StrategyList() {
   };
 
   const filtered = strategies.filter((s) => {
-    const { asset, timeframe, tag } = filters;
-    return (
-      (!asset || s.asset === asset) &&
-      (!timeframe || s.timeframe === timeframe) &&
-      (!tag || (s.tags || '').includes(tag))
-    );
+    const matchesAsset = !filters.asset || s.asset === filters.asset;
+    const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
+    const matchesTag = !filters.tag || (s.tags || '').includes(filters.tag);
+    const matchesSearch = !searchTerm || (s.asset || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.tags || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesAsset && matchesTimeframe && matchesTag && matchesSearch;
   });
 
   const sortedStrategies = [...filtered].sort((a, b) => {
@@ -121,7 +119,7 @@ export default function StrategyList() {
   });
 
   return (
-    <div className="p-4 max-w-6xl mx-auto space-y-10">
+    <div className="space-y-6">
       {/* 🔹 Filters & Sortering */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex gap-2">
@@ -148,64 +146,30 @@ export default function StrategyList() {
         </select>
       </div>
 
-      {/* 🔹 Nieuwe Strategie (altijd zichtbaar) */}
-      <section className="border rounded p-4 bg-gray-50">
-        <h2 className="text-xl font-semibold mb-2">➕ Nieuwe Strategie Toevoegen</h2>
-        <StrategyForm />
-      </section>
-
-      {/* 🔹 Strategy Cards */}
-      <section className="space-y-6">
-        {/* 📌 Altijd toonbare voorbeeldkaart */}
-        <div className="max-w-md mx-auto opacity-50">
-          <StrategyCard
-            strategy={{
-              id: 'voorbeeld',
-              setup_name: 'Voorbeeld Strategie',
-              explanation: 'Dit is een voorbeeldkaart van hoe een strategie eruitziet.',
-              entry: 100,
-              target: 110,
-              stop: 95,
-              tags: 'voorbeeld',
-              favorite: false,
-            }}
-            isEditing={false}
-            isLoading={false}
-            onEditToggle={() => {}}
-            onFieldChange={() => {}}
-            onCancelEdit={() => {}}
-            onSave={() => {}}
-            onDelete={() => {}}
-            onGenerateAI={() => {}}
-            onFavoriteToggle={() => {}}
-          />
+      {/* 🔹 Strategiekaarten */}
+      {sortedStrategies.length === 0 ? (
+        <div className="text-center text-gray-500 pt-6">
+          📭 Geen strategieën gevonden voor deze filters of zoekterm.
         </div>
+      ) : (
+        sortedStrategies.map((s) => (
+          <StrategyCard
+            key={s.id}
+            strategy={editingId === s.id ? editFields : s}
+            isEditing={editingId === s.id}
+            isLoading={loadingId === s.id}
+            onEditToggle={() => handleEditToggle(s)}
+            onFieldChange={handleFieldChange}
+            onCancelEdit={handleCancelEdit}
+            onSave={handleSave}
+            onDelete={() => handleDelete(s.id)}
+            onGenerateAI={() => handleGenerateAI(s.setup_id)}
+            onFavoriteToggle={() => handleFavoriteToggle(s.id, s.favorite)}
+          />
+        ))
+      )}
 
-        {/* Dynamische strategieën */}
-        {sortedStrategies.length === 0 ? (
-          <div className="text-center text-gray-500 pt-6">
-            📭 Geen strategieën gevonden. Voeg er eentje toe of genereer er één met AI.
-          </div>
-        ) : (
-          sortedStrategies.map((s) => (
-            <StrategyCard
-              key={s.id}
-              strategy={editingId === s.id ? editFields : s}
-              isEditing={editingId === s.id}
-              isLoading={loadingId === s.id}
-              onEditToggle={() => handleEditToggle(s)}
-              onFieldChange={handleFieldChange}
-              onCancelEdit={handleCancelEdit}
-              onSave={handleSave}
-              onDelete={() => handleDelete(s.id)}
-              onGenerateAI={() => handleGenerateAI(s.setup_id)}
-              onFavoriteToggle={() => handleFavoriteToggle(s.id, s.favorite)}
-            />
-          ))
-        )}
-      </section>
-
-      {/* 🔹 Toast feedback */}
+      {/* 🔹 Toast */}
       {toast && (
         <div className="fixed top-4 right-4 bg-black text-white px-4 py-2 rounded shadow-lg z-50">
           {toast}

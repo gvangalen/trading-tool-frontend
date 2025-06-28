@@ -19,7 +19,7 @@ export default function StrategyList() {
     loadStrategies();
   }, []);
 
-  const showToast = (message: string) => {
+  const showToast = (message) => {
     setToast(message);
     setTimeout(() => setToast(''), 3000);
   };

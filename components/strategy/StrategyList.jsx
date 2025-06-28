@@ -122,11 +122,7 @@ export default function StrategyList() {
 
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-10">
-      <header className="text-center">
-        <h1 className="text-3xl font-bold">📈 Strategieën Overzicht</h1>
-        <p className="text-gray-600 mt-2">Bekijk, filter en bewerk je tradingstrategieën.</p>
-      </header>
-
+      {/* 🔹 Filters & Sortering */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex gap-2">
           <select onChange={(e) => setFilters({ ...filters, asset: e.target.value })} className="border p-2 rounded">
@@ -152,34 +148,43 @@ export default function StrategyList() {
         </select>
       </div>
 
-      <details open={strategies.length === 0} className="border rounded p-4">
-        <summary className="cursor-pointer font-semibold">➕ Nieuwe Strategie Toevoegen</summary>
-        <div className="pt-4">
-          <StrategyForm />
-        </div>
-      </details>
+      {/* 🔹 Nieuwe Strategie (altijd zichtbaar) */}
+      <section className="border rounded p-4 bg-gray-50">
+        <h2 className="text-xl font-semibold mb-2">➕ Nieuwe Strategie Toevoegen</h2>
+        <StrategyForm />
+      </section>
 
+      {/* 🔹 Strategy Cards */}
+      <section>
+        {sortedStrategies.length === 0 ? (
+          <div className="text-center text-gray-500 pt-6">
+            📭 Geen strategieën gevonden. Voeg er eentje toe of genereer er één met AI.
+          </div>
+        ) : (
+          sortedStrategies.map((s) => (
+            <StrategyCard
+              key={s.id}
+              strategy={editingId === s.id ? editFields : s}
+              isEditing={editingId === s.id}
+              isLoading={loadingId === s.id}
+              onEditToggle={() => handleEditToggle(s)}
+              onFieldChange={handleFieldChange}
+              onCancelEdit={handleCancelEdit}
+              onSave={handleSave}
+              onDelete={() => handleDelete(s.id)}
+              onGenerateAI={() => handleGenerateAI(s.setup_id)}
+              onFavoriteToggle={() => handleFavoriteToggle(s.id, s.favorite)}
+            />
+          ))
+        )}
+      </section>
+
+      {/* 🔹 Toast feedback */}
       {toast && (
         <div className="fixed top-4 right-4 bg-black text-white px-4 py-2 rounded shadow-lg z-50">
           {toast}
         </div>
       )}
-
-      {sortedStrategies.map((s) => (
-        <StrategyCard
-          key={s.id}
-          strategy={editingId === s.id ? editFields : s}
-          isEditing={editingId === s.id}
-          isLoading={loadingId === s.id}
-          onEditToggle={() => handleEditToggle(s)}
-          onFieldChange={handleFieldChange}
-          onCancelEdit={handleCancelEdit}
-          onSave={handleSave}
-          onDelete={() => handleDelete(s.id)}
-          onGenerateAI={() => handleGenerateAI(s.setup_id)}
-          onFavoriteToggle={() => handleFavoriteToggle(s.id, s.favorite)}
-        />
-      ))}
     </div>
   );
 }

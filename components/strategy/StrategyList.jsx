@@ -157,9 +157,34 @@ export default function StrategyList() {
       {/* 🔹 Strategy Cards */}
       <section>
         {sortedStrategies.length === 0 ? (
-          <div className="text-center text-gray-500 pt-6">
-            📭 Geen strategieën gevonden. Voeg er eentje toe of genereer er één met AI.
-          </div>
+          <>
+            <div className="text-center text-gray-500 pt-6">
+              📭 Geen strategieën gevonden. Voeg er eentje toe of genereer er één met AI.
+            </div>
+            <div className="mt-6 max-w-md mx-auto opacity-50">
+              <StrategyCard
+                strategy={{
+                  id: 'voorbeeld',
+                  setup_name: 'Voorbeeld Strategie',
+                  explanation: 'Dit is een voorbeeldkaart van hoe een strategie eruitziet.',
+                  entry: 100,
+                  target: 110,
+                  stop: 95,
+                  tags: 'voorbeeld',
+                  favorite: false,
+                }}
+                isEditing={false}
+                isLoading={false}
+                onEditToggle={() => {}}
+                onFieldChange={() => {}}
+                onCancelEdit={() => {}}
+                onSave={() => {}}
+                onDelete={() => {}}
+                onGenerateAI={() => {}}
+                onFavoriteToggle={() => {}}
+              />
+            </div>
+          </>
         ) : (
           sortedStrategies.map((s) => (
             <StrategyCard

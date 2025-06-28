@@ -9,7 +9,7 @@ export default function SetupPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-10">
-      {/* 🧱 Titel en uitleg */}
+      {/* 🧱 Titel */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold">⚙️ Setup Editor</h2>
         <p className="text-gray-600 text-sm">
@@ -17,13 +17,7 @@ export default function SetupPage() {
         </p>
       </div>
 
-      {/* 🧾 Setup aanmaken */}
-      <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow space-y-4">
-        <h3 className="text-xl font-semibold">➕ Nieuwe Setup</h3>
-        <SetupForm />
-      </section>
-
-      {/* 🔍 Zoek/filter */}
+      {/* 🔍 Zoekveld */}
       <div className="flex justify-between items-center mt-4">
         <h3 className="text-xl font-semibold">📋 Huidige Setups</h3>
         <input
@@ -35,9 +29,15 @@ export default function SetupPage() {
         />
       </div>
 
-      {/* 🌀 Lijst (met loading en filter) */}
+      {/* 🌀 Setup kaarten */}
       <section className="space-y-4">
         <SetupList searchTerm={search} />
+      </section>
+
+      {/* ➕ Setup aanmaken (onderaan) */}
+      <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow space-y-4">
+        <h3 className="text-xl font-semibold">➕ Nieuwe Setup</h3>
+        <SetupForm />
       </section>
     </div>
   );

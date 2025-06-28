@@ -44,7 +44,7 @@ export default function SetupList({ searchTerm = '' }) {
   async function handleGenerateExplanation(id) {
     try {
       await generateExplanation(id);
-      await loadSetups(); // herladen na AI-uitleg
+      await loadSetups();
     } catch (err) {
       console.error('❌ Fout bij AI-explanation:', err);
     }
@@ -59,6 +59,20 @@ export default function SetupList({ searchTerm = '' }) {
       },
     }));
   }
+
+  // 🔹 Demo setup bovenaan
+  const demoSetup = {
+    id: 'demo',
+    name: 'Voorbeeld Setup',
+    indicators: 'RSI, 200MA, Volume',
+    trend: 'bullish',
+    timeframe: '1D',
+    symbol: 'BTCUSDT',
+    strategy_type: 'Breakout',
+    account_type: 'Spot',
+    explanation: 'Dit is een voorbeeld van hoe een setup eruitziet.',
+    favorite: false,
+  };
 
   return (
     <div className="space-y-6 mt-6">
@@ -78,8 +92,21 @@ export default function SetupList({ searchTerm = '' }) {
       {loading && <div className="text-gray-500 text-sm">📡 Laden setups...</div>}
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
-      {/* 🔹 Setup cards */}
+      {/* 🔹 Setup kaarten */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* 🔸 Voorbeeldkaart */}
+        <div className="border rounded-lg p-4 bg-gray-100 shadow opacity-60 pointer-events-none select-none">
+          <h3 className="font-bold text-lg mb-1">{demoSetup.name}</h3>
+          <p className="text-sm mb-1 text-gray-700">{demoSetup.indicators}</p>
+          <p className="text-xs mb-1 text-green-600">📊 {demoSetup.trend}</p>
+          <p className="text-xs text-gray-500 mb-1">⏱️ {demoSetup.timeframe} | 💼 {demoSetup.account_type} | 🧠 {demoSetup.strategy_type}</p>
+          <p className="text-xs text-gray-500 mb-2">🔖 {demoSetup.symbol}</p>
+          <div className="text-xs text-gray-600 bg-white p-2 rounded border">
+            💬 {demoSetup.explanation}
+          </div>
+        </div>
+
+        {/* 🔸 Echte setups */}
         {filteredSortedSetups().map((setup) => {
           const isEditing = editingId === setup.id;
           const trendColor =
@@ -89,12 +116,8 @@ export default function SetupList({ searchTerm = '' }) {
 
           return (
             <div key={setup.id} className="border rounded-lg p-4 bg-white shadow relative transition">
-              {/* ⭐ Favoriet */}
-              <button
-                className="absolute top-3 right-3 text-2xl"
-                disabled
-                title="Favoriet toggle (nog niet geactiveerd)"
-              >
+              {/* ⭐ Favoriet placeholder */}
+              <button className="absolute top-3 right-3 text-2xl" disabled title="Favoriet toggle (nog niet actief)">
                 {setup.favorite ? '⭐️' : '☆'}
               </button>
 
@@ -160,18 +183,15 @@ export default function SetupList({ searchTerm = '' }) {
                   <p className={`text-xs mb-1 ${trendColor}`}>📊 {setup.trend}</p>
                   <p className="text-xs text-gray-500 mb-1">⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}</p>
                   <p className="text-xs text-gray-500 mb-2">🔖 {setup.symbol}</p>
-
                   <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border mb-2">
                     💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
                   </div>
-
                   <button
                     onClick={() => handleGenerateExplanation(setup.id)}
                     className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mb-2"
                   >
                     🔁 Genereer uitleg (AI)
                   </button>
-
                   <div className="flex justify-end gap-2 mt-2">
                     <button onClick={() => setEditingId(setup.id)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
                       ✏️ Bewerken

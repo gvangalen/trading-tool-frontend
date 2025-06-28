@@ -24,12 +24,12 @@ export default function StrategyList() {
     setTimeout(() => setToast(''), 3000);
   };
 
-  const handleEditToggle = (strategy: any) => {
+  const handleEditToggle = (strategy) => {
     setEditingId(strategy.id);
     setEditFields({ ...strategy });
   };
 
-  const handleFieldChange = (field: string, value: any) => {
+  const handleFieldChange = (field, value) => {
     setEditFields((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -41,7 +41,7 @@ export default function StrategyList() {
   const handleSave = async () => {
     if (!editingId) return;
     const original = strategies.find((s) => s.id === editingId);
-    const changes: any = {};
+    const changes = {};
 
     for (const key in editFields) {
       if (editFields[key] !== original[key]) {
@@ -66,7 +66,7 @@ export default function StrategyList() {
     setEditFields({});
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id) => {
     if (confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) {
       try {
         setLoadingId(id);
@@ -81,13 +81,13 @@ export default function StrategyList() {
     }
   };
 
-  const handleFavoriteToggle = async (id: number, currentFavorite: boolean) => {
+  const handleFavoriteToggle = async (id, currentFavorite) => {
     await updateStrategy(id, { favorite: !currentFavorite });
     await loadStrategies();
     showToast(currentFavorite ? '⭐️ Verwijderd uit favorieten' : '⭐️ Toegevoegd aan favorieten');
   };
 
-  const handleGenerateAI = async (setupId: number) => {
+  const handleGenerateAI = async (setupId) => {
     const overwrite = confirm(
       '🔁 Wil je de bestaande strategie overschrijven?\n\nKlik OK om te overschrijven, of Annuleer om een nieuwe toe te voegen.'
     );

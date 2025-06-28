@@ -1,7 +1,6 @@
 'use client';
 
 import StrategyList from '@/components/strategy/StrategyList';
-import StrategyForm from '@/components/strategy/StrategyForm';
 import StrategyGenerator from '@/components/strategy/StrategyGenerator';
 
 export default function StrategyPage() {
@@ -20,22 +19,10 @@ export default function StrategyPage() {
         <StrategyGenerator />
       </section>
 
-      {/* 🔹 Strategieënlijst */}
+      {/* 🔹 Strategieënlijst incl. formulier en kaarten */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">📋 Jouw Strategieën</h2>
         <StrategyList />
-      </section>
-
-      {/* 🔹 Nieuw Strategieformulier (inklapbaar) */}
-      <section className="pt-10 border-t">
-        <details open className="w-full">
-          <summary className="cursor-pointer text-xl font-medium py-2 text-blue-700 hover:underline">
-            ➕ Nieuwe Strategie Toevoegen
-          </summary>
-          <div className="mt-4">
-            <StrategyForm />
-          </div>
-        </details>
       </section>
     </div>
   );

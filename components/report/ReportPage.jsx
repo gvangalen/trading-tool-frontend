@@ -1,7 +1,7 @@
 'use client';
 
 import { useReportData } from '@/hooks/useReportData';
-import { useEffect } from 'react';
+import ReportCard from '@/components/report/ReportCard';
 
 export default function ReportPage() {
   const {
@@ -10,59 +10,90 @@ export default function ReportPage() {
     selectedDate,
     setSelectedDate,
     loading,
-    downloadReport, // 🔥 Correcte functie!
+    downloadReport,
   } = useReportData();
 
-  useEffect(() => {
-    if (selectedDate) {
-      // 🎯 Geen extra fetch nodig, useReportData regelt ophalen
-    }
-  }, [selectedDate]);
+  const downloadUrl =
+    selectedDate === 'latest'
+      ? `/api/daily_report/export/pdf`
+      : `/api/daily_report/export/pdf?date=${selectedDate}`;
+
+  const noRealData = !loading && (!report || dates.length === 0);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold">📄 Dagelijks Tradingrapport</h2>
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold">📄 Dagrapport</h1>
 
-      {/* 🔹 Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <label htmlFor="dateSelect" className="font-semibold">🗓️ Rapportdatum:</label>
-          <select
-            id="dateSelect"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="latest">Laatste rapport</option>
-            {dates.map((date) => (
-              <option key={date} value={date}>
-                {date}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* 🔽 Toolbar */}
+      <div className="flex flex-wrap items-center gap-4">
+        <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
+        <select
+          id="reportDateSelect"
+          className="p-2 border rounded"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}>
+          <option value="latest">Laatste</option>
+          {dates.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
 
-        <button
-          onClick={downloadReport}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
-          📥 Download als PDF
-        </button>
+          📥 Download PDF
+        </a>
       </div>
 
-      {/* 🔹 Rapport Content */}
-      <div className="bg-white dark:bg-gray-900 p-6 rounded shadow min-h-[300px]">
-        {loading ? (
-          <p className="text-gray-500">📡 Rapport wordt geladen...</p>
-        ) : report ? (
-          <div className="prose dark:prose-invert max-w-none">
-            {/* De API levert HTML, dus veilig weergeven */}
-            <div dangerouslySetInnerHTML={{ __html: report.content }} />
+      {/* 🔄 Laadstatus */}
+      {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
+
+      {/* 🚫 Geen echte data → waarschuwing + voorbeeld */}
+      {noRealData && (
+        <div className="space-y-6">
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-100 rounded text-sm">
+            ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
           </div>
-        ) : (
-          <p className="text-red-500">❌ Geen rapport beschikbaar.</p>
-        )}
-      </div>
+
+          <div className="space-y-4">
+            <ReportCard title="🧠 Samenvatting BTC" content="Bitcoin consolideert na een eerdere uitbraak. RSI neutraal. Volume lager dan gemiddeld." />
+            <ReportCard title="📉 Macro Samenvatting" content="DXY stijgt licht. Fear & Greed Index toont 'Neutral'. Obligatierentes stabiel." />
+            <ReportCard title="📋 Setup Checklist" content={`✅ RSI boven 50\n❌ Volume onder gemiddelde\n✅ 200MA support intact`} pre />
+            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={`1. Breakout boven $70k monitoren\n2. Volume spikes volgen op 4H\n3. Setup 'Swing-BTC-Juni' valideren`} pre />
+            <ReportCard title="🔍 Wyckoff Analyse" content="BTC bevindt zich in Phase D. Mogelijke LPS-test voor nieuwe stijging. Bevestiging nodig via volume." pre />
+            <ReportCard title="📈 Aanbevelingen" content={`• Accumulatie bij dips\n• Entry ladder tussen $66.000–$64.000\n• Alert op breakout $70.500`} pre />
+            <ReportCard title="✅ Conclusie" content="BTC blijft sterk, maar bevestiging nodig via volume en breakout." />
+            <ReportCard title="🔮 Vooruitblik" content="Mogelijke beweging richting $74k bij positieve macro. Anders her-test support rond $64k." pre />
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Samenvattingsblok */}
+      {!loading && report && (
+        <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded space-y-1 text-sm">
+          <h2 className="text-lg font-semibold">📌 Samenvatting</h2>
+          <p><strong>🗓️ Datum:</strong> {report.report_date}</p>
+          <p><strong>🧠 BTC:</strong> {report.btc_summary || '–'}</p>
+          <p><strong>📈 Advies:</strong> {report.recommendations || '–'}</p>
+        </div>
+      )}
+
+      {/* ✅ Rapport in cards */}
+      {!loading && report && (
+        <div className="space-y-4">
+          <ReportCard title="🧠 Samenvatting BTC" content={report.btc_summary} />
+          <ReportCard title="📉 Macro Samenvatting" content={report.macro_summary} />
+          <ReportCard title="📋 Setup Checklist" content={report.setup_checklist} pre />
+          <ReportCard title="🎯 Dagelijkse Prioriteiten" content={report.priorities} pre />
+          <ReportCard title="🔍 Wyckoff Analyse" content={report.wyckoff_analysis} pre />
+          <ReportCard title="📈 Aanbevelingen" content={report.recommendations} pre />
+          <ReportCard title="✅ Conclusie" content={report.conclusion} />
+          <ReportCard title="🔮 Vooruitblik" content={report.outlook} pre />
+        </div>
+      )}
     </div>
   );
 }

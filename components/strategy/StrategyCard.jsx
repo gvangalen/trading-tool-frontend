@@ -14,10 +14,11 @@ export default function StrategyCard({
   onSave,
   onDelete,
   onFavoriteToggle,
-  onGenerateAI
+  onGenerateAI,
+  isEmpty = false,
 }) {
-  // 🔹 Toon placeholder als strategy null is
-  if (!strategy) {
+  // 🔹 Toon placeholder als strategy ontbreekt of als lege kaart expliciet gevraagd is
+  if (strategy === null || isEmpty) {
     return (
       <CardWrapper className="bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 text-center text-gray-500">
         <p className="text-lg">📭 Je hebt nog geen strategieën opgeslagen.</p>
@@ -47,8 +48,10 @@ export default function StrategyCard({
   );
 
   const getScoreBadge = (score) => {
-    if (score >= 80) return <Badge text={`Score: ${score}`} color="bg-green-100 text-green-800" title="Sterke strategie" />;
-    if (score >= 50) return <Badge text={`Score: ${score}`} color="bg-yellow-100 text-yellow-800" title="Gemiddelde strategie" />;
+    if (score >= 80)
+      return <Badge text={`Score: ${score}`} color="bg-green-100 text-green-800" title="Sterke strategie" />;
+    if (score >= 50)
+      return <Badge text={`Score: ${score}`} color="bg-yellow-100 text-yellow-800" title="Gemiddelde strategie" />;
     return <Badge text={`Score: ${score}`} color="bg-red-100 text-red-800" title="Zwakke strategie" />;
   };
 

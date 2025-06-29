@@ -9,6 +9,8 @@ export default function ReportPage() {
       ? `/api/daily_report/export/pdf`
       : `/api/daily_report/export/pdf?date=${selectedDate}`;
 
+  const noRealData = !loading && (!report || dates.length === 0);
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">📄 Dagrapport</h1>
@@ -39,7 +41,26 @@ export default function ReportPage() {
 
       {/* 🔄 Laadstatus */}
       {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
-      {!loading && !report && <p className="text-red-600">❌ Rapport ophalen mislukt.</p>}
+
+      {/* 🚫 Geen echte data → toon voorbeeldrapport + waarschuwing */}
+      {noRealData && (
+        <div className="space-y-6">
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-100 rounded text-sm">
+            ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
+          </div>
+
+          <div className="space-y-4">
+            <ReportCard title="🧠 Samenvatting BTC" content="Bitcoin consolideert na een eerdere uitbraak. RSI neutraal. Volume lager dan gemiddeld." />
+            <ReportCard title="📉 Macro Samenvatting" content="DXY stijgt licht. Fear & Greed Index toont 'Neutral'. Obligatierentes stabiel." />
+            <ReportCard title="📋 Setup Checklist" content={`✅ RSI boven 50\n❌ Volume onder gemiddelde\n✅ 200MA support intact`} pre />
+            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={`1. Breakout boven $70k monitoren\n2. Volume spikes volgen op 4H\n3. Setup 'Swing-BTC-Juni' valideren`} pre />
+            <ReportCard title="🔍 Wyckoff Analyse" content="BTC bevindt zich in Phase D. Mogelijke LPS-test voor nieuwe stijging. Bevestiging nodig via volume." pre />
+            <ReportCard title="📈 Aanbevelingen" content={`• Accumulatie bij dips\n• Entry ladder tussen $66.000–$64.000\n• Alert op breakout $70.500`} pre />
+            <ReportCard title="✅ Conclusie" content="BTC blijft sterk, maar bevestiging nodig via volume en breakout." />
+            <ReportCard title="🔮 Vooruitblik" content="Mogelijke beweging richting $74k bij positieve macro. Anders her-test support rond $64k." pre />
+          </div>
+        </div>
+      )}
 
       {/* ✅ Samenvattingsblok */}
       {!loading && report && (
@@ -68,7 +89,7 @@ export default function ReportPage() {
   );
 }
 
-// ✅ Herbruikbare card component
+// ✅ Herbruikbare kaartcomponent
 function ReportCard({ title, content, pre = false }) {
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-4 shadow">

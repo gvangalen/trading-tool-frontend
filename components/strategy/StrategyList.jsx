@@ -108,7 +108,10 @@ export default function StrategyList({ searchTerm = '' }) {
     const matchesAsset = !filters.asset || s.asset === filters.asset;
     const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
     const matchesTag = !filters.tag || (s.tags || '').includes(filters.tag);
-    const matchesSearch = !searchTerm || (s.asset || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.tags || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      !searchTerm ||
+      (s.asset || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.tags || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesAsset && matchesTimeframe && matchesTag && matchesSearch;
   });
 

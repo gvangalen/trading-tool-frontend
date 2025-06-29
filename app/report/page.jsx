@@ -48,7 +48,7 @@ export default function ReportPage() {
       {/* 🚫 Geen echte data */}
       {noRealData && (
         <div className="space-y-6">
-          <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm">
+          <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
             ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
           </div>
 

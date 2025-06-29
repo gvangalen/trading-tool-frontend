@@ -1,15 +1,21 @@
-export default function ReportCard({ title, content, icon = null, pre = false, className = '' }) {
+export default function ReportCard({ title, children, color = 'default' }) {
+  const colors = {
+    default: 'bg-white border border-gray-200',
+    blue: 'bg-blue-50 border border-blue-200',
+    green: 'bg-green-50 border border-green-200',
+    yellow: 'bg-yellow-50 border border-yellow-200',
+    red: 'bg-red-50 border border-red-200',
+    gray: 'bg-gray-50 border border-gray-200',
+  };
+
+  const colorClasses = colors[color] || colors.default;
+
   return (
-    <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm ${className}`}>
-      <h2 className="text-base font-semibold mb-2 flex items-center gap-2 text-gray-900 dark:text-white">
-        {icon && <span>{icon}</span>}
-        {title}
-      </h2>
-      {pre ? (
-        <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">{content || '–'}</pre>
-      ) : (
-        <p className="text-sm text-gray-800 dark:text-gray-200">{content || '–'}</p>
-      )}
+    <div className={`${colorClasses} p-4 rounded-md shadow-sm`}>
+      <h2 className="text-sm font-semibold mb-2">{title}</h2>
+      <div className="text-sm text-gray-800 dark:text-gray-200">
+        {children}
+      </div>
     </div>
   );
 }

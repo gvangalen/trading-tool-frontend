@@ -1,5 +1,7 @@
 'use client';
 import { useReportData } from '@/hooks/useReportData';
+import ReportCard from '@/components/ReportCard';
+import ReportContainer from '@/components/ReportContainer';
 
 export default function ReportPage() {
   const { report, dates, selectedDate, setSelectedDate, loading } = useReportData();
@@ -49,7 +51,7 @@ export default function ReportPage() {
             ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
           </div>
 
-          <div className="space-y-4">
+          <ReportContainer>
             <ReportCard title="🧠 Samenvatting BTC" content="Bitcoin consolideert na een eerdere uitbraak. RSI neutraal. Volume lager dan gemiddeld." />
             <ReportCard title="📉 Macro Samenvatting" content="DXY stijgt licht. Fear & Greed Index toont 'Neutral'. Obligatierentes stabiel." />
             <ReportCard title="📋 Setup Checklist" content={`✅ RSI boven 50\n❌ Volume onder gemiddelde\n✅ 200MA support intact`} pre />
@@ -58,23 +60,13 @@ export default function ReportPage() {
             <ReportCard title="📈 Aanbevelingen" content={`• Accumulatie bij dips\n• Entry ladder tussen $66.000–$64.000\n• Alert op breakout $70.500`} pre />
             <ReportCard title="✅ Conclusie" content="BTC blijft sterk, maar bevestiging nodig via volume en breakout." />
             <ReportCard title="🔮 Vooruitblik" content="Mogelijke beweging richting $74k bij positieve macro. Anders her-test support rond $64k." pre />
-          </div>
+          </ReportContainer>
         </div>
       )}
 
-      {/* ✅ Samenvattingsblok */}
+      {/* ✅ Echte data in één grote container */}
       {!loading && report && (
-        <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded space-y-1 text-sm">
-          <h2 className="text-lg font-semibold">📌 Samenvatting</h2>
-          <p><strong>🗓️ Datum:</strong> {report.report_date}</p>
-          <p><strong>🧠 BTC:</strong> {report.btc_summary || '–'}</p>
-          <p><strong>📈 Advies:</strong> {report.recommendations || '–'}</p>
-        </div>
-      )}
-
-      {/* ✅ Rapport-inhoud in Cards */}
-      {!loading && report && (
-        <div className="space-y-4">
+        <ReportContainer>
           <ReportCard title="🧠 Samenvatting BTC" content={report.btc_summary} />
           <ReportCard title="📉 Macro Samenvatting" content={report.macro_summary} />
           <ReportCard title="📋 Setup Checklist" content={report.setup_checklist} pre />
@@ -83,21 +75,7 @@ export default function ReportPage() {
           <ReportCard title="📈 Aanbevelingen" content={report.recommendations} pre />
           <ReportCard title="✅ Conclusie" content={report.conclusion} />
           <ReportCard title="🔮 Vooruitblik" content={report.outlook} pre />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ✅ Herbruikbare kaartcomponent
-function ReportCard({ title, content, pre = false }) {
-  return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-4 shadow">
-      <h2 className="text-lg font-semibold mb-2">{title}</h2>
-      {pre ? (
-        <pre className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200">{content || '–'}</pre>
-      ) : (
-        <p className="text-sm text-gray-800 dark:text-gray-200">{content || '–'}</p>
+        </ReportContainer>
       )}
     </div>
   );

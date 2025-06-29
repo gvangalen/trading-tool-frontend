@@ -151,7 +151,7 @@ export default function StrategyList({ searchTerm = '' }) {
 
       {/* 🔹 Strategiekaarten */}
       {strategies.length === 0 ? (
-        <StrategyCard strategy={null} />
+        <StrategyCard isEmpty={true} />
       ) : sortedStrategies.length === 0 ? (
         <div className="text-center text-gray-500 pt-6">
           📭 Geen strategieën gevonden voor deze filters of zoekterm.

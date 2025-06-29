@@ -1,7 +1,7 @@
 'use client';
 import { useReportData } from '@/hooks/useReportData';
-import ReportCard from '@/components/ReportCard';
-import ReportContainer from '@/components/ReportContainer';
+import ReportCard from '@/components/report/ReportCard';
+import ReportContainer from '@/components/report/ReportContainer';
 
 export default function ReportPage() {
   const { report, dates, selectedDate, setSelectedDate, loading } = useReportData();

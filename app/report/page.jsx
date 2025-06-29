@@ -30,7 +30,9 @@ export default function ReportPage() {
         <a
           href={downloadUrl}
           target="_blank"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          rel="noopener noreferrer"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        >
           📥 Download PDF
         </a>
       </div>
@@ -44,8 +46,8 @@ export default function ReportPage() {
         <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded space-y-1 text-sm">
           <h2 className="text-lg font-semibold">📌 Samenvatting</h2>
           <p><strong>🗓️ Datum:</strong> {report.report_date}</p>
-          <p><strong>🧠 BTC:</strong> {report.btc_summary}</p>
-          <p><strong>📈 Advies:</strong> {report.recommendations}</p>
+          <p><strong>🧠 BTC:</strong> {report.btc_summary || '–'}</p>
+          <p><strong>📈 Advies:</strong> {report.recommendations || '–'}</p>
         </div>
       )}
 
@@ -66,13 +68,13 @@ export default function ReportPage() {
   );
 }
 
-// ✅ Card component
+// ✅ Herbruikbare card component
 function ReportCard({ title, content, pre = false }) {
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-4 shadow">
       <h2 className="text-lg font-semibold mb-2">{title}</h2>
       {pre ? (
-        <pre className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200">{content}</pre>
+        <pre className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200">{content || '–'}</pre>
       ) : (
         <p className="text-sm text-gray-800 dark:text-gray-200">{content || '–'}</p>
       )}

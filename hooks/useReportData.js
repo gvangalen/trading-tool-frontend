@@ -10,7 +10,7 @@ export function useReportData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 🔄 Haal beschikbare datums op (één keer bij mount)
+  // 🔄 Haal beschikbare datums op bij mount
   useEffect(() => {
     const controller = new AbortController();
     async function loadDates() {
@@ -55,36 +55,8 @@ export function useReportData() {
     }
 
     if (selectedDate) loadReport(selectedDate);
-    return () => controller.abort(); // cleanup
+    return () => controller.abort();
   }, [selectedDate]);
-
-  // 📥 Download PDF als fallback (bijv. voor printen of archiveren)
-  function downloadReport() {
-    if (!report) return;
-    const content = document.getElementById('dailyReportContent');
-    if (!content) return;
-
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(`
-        <html>
-          <head>
-            <title>Trading Report - ${report.report_date}</title>
-            <style>
-              body { font-family: sans-serif; padding: 20px; }
-              h2 { margin-bottom: 1rem; }
-              table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-              th { background: #f0f0f0; }
-            </style>
-          </head>
-          <body>${content.innerHTML}</body>
-        </html>
-      `);
-      win.document.close();
-      win.print();
-    }
-  }
 
   return {
     report,
@@ -93,6 +65,5 @@ export function useReportData() {
     setSelectedDate,
     loading,
     error,
-    downloadReport,
   };
 }

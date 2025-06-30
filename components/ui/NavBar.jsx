@@ -25,7 +25,10 @@ export default function NavBar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-4 flex flex-wrap justify-between items-center rounded mb-8">
-      <Link href="/" className="text-xl font-bold hover:underline">📊 Dashboard</Link>
+      <Link href="/" className="flex items-center gap-2">
+  <img src="/logo.png" alt="TradeLayer Logo" className="h-8 w-auto" />
+  <span className="text-xl font-bold">TradeLayer</span>
+</Link>
 
       <div className="flex flex-wrap items-center gap-6">
         {/* 🔗 Navigatielinks */}

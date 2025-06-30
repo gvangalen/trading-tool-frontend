@@ -1,4 +1,5 @@
 'use client';
+
 import { useReportData } from '@/hooks/useReportData';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
@@ -6,6 +7,7 @@ import ReportContainer from '@/components/report/ReportContainer';
 export default function ReportPage() {
   const { report, dates, selectedDate, setSelectedDate, loading } = useReportData();
 
+  // 📥 Bouw download-URL op basis van geselecteerde datum
   const downloadUrl =
     selectedDate === 'latest'
       ? `/api/daily_report/export/pdf`
@@ -34,8 +36,7 @@ export default function ReportPage() {
 
         <a
           href={downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+          download
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
           📥 Download PDF

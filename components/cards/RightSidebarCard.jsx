@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import CardWrapper from '@/components/ui/CardWrapper';
 import { fetchDailyReportSummary, fetchActiveTrades, fetchAIBotStatus } from '@/lib/api/sidebar';
+import Link from 'next/link';
 
 export default function RightSidebarCard() {
   const [report, setReport] = useState(null);
@@ -18,18 +19,19 @@ export default function RightSidebarCard() {
   return (
     <CardWrapper>
       <div className="space-y-4">
+
         {/* 📅 Dagelijks Rapport */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm bg-white dark:bg-gray-900">
           <h3 className="text-lg font-semibold mb-2">📅 Dagelijks Rapport</h3>
           {report ? (
             <div className="text-sm text-gray-700 dark:text-gray-300">
               <p className="mb-2">{report.summary}</p>
-              <a
-                href="/rapporten"
+              <Link
+                href="/dashboard/report"
                 className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
               >
                 Bekijk volledig rapport →
-              </a>
+              </Link>
             </div>
           ) : (
             <p className="text-sm text-gray-400">Laden...</p>
@@ -66,6 +68,7 @@ export default function RightSidebarCard() {
             <p className="text-sm text-gray-400">Botstatus ophalen...</p>
           )}
         </div>
+
       </div>
     </CardWrapper>
   );

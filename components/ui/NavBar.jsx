@@ -9,7 +9,6 @@ export default function NavBar() {
   const dropdownRef = useRef();
   const pathname = usePathname();
 
-  // 🔒 Sluit dropdown bij klikken buiten menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -20,18 +19,16 @@ export default function NavBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 🔹 Voor actieve link styling
   const isActive = (path) => pathname === path;
 
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-4 flex flex-wrap justify-between items-center rounded mb-8">
       <Link href="/" className="flex items-center gap-2">
-  <img src="/logo.png" alt="TradeLayer Logo" className="h-8 w-auto" />
-  <span className="text-xl font-bold">TradeLayer</span>
-</Link>
+        <img src="/logo.png" alt="TradeLayer Logo" className="h-8 w-auto" />
+        <span className="text-xl font-bold">TradeLayer</span>
+      </Link>
 
       <div className="flex flex-wrap items-center gap-6">
-        {/* 🔗 Navigatielinks */}
         <div className="flex flex-wrap gap-4 text-sm">
           <NavLink href="/">🌡️ Scores</NavLink>
           <NavLink href="/advies">🚀 Advies</NavLink>
@@ -40,10 +37,9 @@ export default function NavBar() {
           <NavLink href="/technical">📈 Technisch</NavLink>
           <NavLink href="/setup">⚙️ Setups</NavLink>
           <NavLink href="/strategy">📊 Strategieën</NavLink>
-          <NavLink href="/report">📄 Rapport</NavLink>
+          <NavLink href="/dashboard/report">📄 Rapport</NavLink>
         </div>
 
-        {/* 👤 Avatar met dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}

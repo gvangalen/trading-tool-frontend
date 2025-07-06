@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import CardWrapper from '@/components/ui/CardWrapper';
 import { fetchDailyReportSummary, fetchActiveTrades, fetchAIBotStatus } from '@/lib/api/sidebar';
-import Link from 'next/link';
 
 export default function RightSidebarCard() {
   const [report, setReport] = useState(null);
@@ -27,7 +27,7 @@ export default function RightSidebarCard() {
             <div className="text-sm text-gray-700 dark:text-gray-300">
               <p className="mb-2">{report.summary}</p>
               <Link
-                href="/dashboard/report"
+                href="/report"
                 className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
               >
                 Bekijk volledig rapport →

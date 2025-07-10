@@ -7,12 +7,13 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 export default function SetupForm({ onSubmitted }) {
   const formRef = useRef(null);
   const { addSetup } = useSetupData();
+
   const [form, setForm] = useState({
     name: '',
     indicators: '',
     trend: '',
     timeframe: '4hr',
-    symbol: '',
+    symbol: 'BTC',
     dynamic: false,
     score_type: 'macro_score',
     score_logic: '',
@@ -22,6 +23,7 @@ export default function SetupForm({ onSubmitted }) {
     tags: '',
     favorite: false,
   });
+
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -36,7 +38,7 @@ export default function SetupForm({ onSubmitted }) {
 
   function validate() {
     const valErrors = {};
-    if (!form.name || form.name.length < 3) valErrors.name = true;
+    if (!form.name || form.name.trim().length < 3) valErrors.name = true;
     if (!form.indicators) valErrors.indicators = true;
     if (!form.trend) valErrors.trend = true;
     return valErrors;
@@ -54,7 +56,7 @@ export default function SetupForm({ onSubmitted }) {
     setSubmitting(true);
     setErrors({});
     try {
-      const nameExists = await checkSetupNameExists(form.name);
+      const nameExists = await checkSetupNameExists(form.name.trim());
       if (nameExists) {
         setErrors({ name: true });
         alert('❌ Deze setup-naam bestaat al. Kies een andere naam.');
@@ -62,7 +64,26 @@ export default function SetupForm({ onSubmitted }) {
         return;
       }
 
-      await addSetup(form);
+      const payload = {
+        ...form,
+        name: form.name.trim(),
+        indicators: form.indicators.trim(),
+        trend: form.trend,
+        timeframe: form.timeframe,
+        symbol: form.symbol.trim(),
+        score_type: form.score_type,
+        score_logic: form.score_logic?.trim() || '',
+        account_type: form.account_type?.trim(),
+        strategy_type: form.strategy_type?.trim(),
+        min_investment: form.min_investment ? parseFloat(form.min_investment) : null,
+        tags: form.tags
+          ? form.tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0)
+          : [],
+        dynamic: form.dynamic,
+        favorite: form.favorite,
+      };
+
+      await addSetup(payload);
       resetForm();
       setSuccess(true);
       if (onSubmitted) onSubmitted();
@@ -82,7 +103,7 @@ export default function SetupForm({ onSubmitted }) {
       indicators: '',
       trend: '',
       timeframe: '4hr',
-      symbol: '',
+      symbol: 'BTC',
       dynamic: false,
       score_type: 'macro_score',
       score_logic: '',
@@ -115,7 +136,7 @@ export default function SetupForm({ onSubmitted }) {
         <div>
           <label className="font-medium flex items-center">
             Naam*
-            <InfoTooltip text="De naam van je setup, bijvoorbeeld 'Oversold RSI + Volume spike'" />
+            <InfoTooltip text="Bijv. 'RSI Breakout 4H'" />
           </label>
           <input
             name="name"
@@ -128,7 +149,7 @@ export default function SetupForm({ onSubmitted }) {
         <div>
           <label className="font-medium flex items-center">
             Indicatoren*
-            <InfoTooltip text="Bijv. RSI, volume, structuur - gescheiden door komma's." />
+            <InfoTooltip text="Bijv. RSI, volume spike, structuur" />
           </label>
           <input
             name="indicators"
@@ -141,7 +162,7 @@ export default function SetupForm({ onSubmitted }) {
         <div>
           <label className="font-medium flex items-center">
             Trend*
-            <InfoTooltip text="Welke trend hoort bij deze setup: bullish, bearish of neutraal?" />
+            <InfoTooltip text="Bullish, Bearish of Neutraal?" />
           </label>
           <select
             name="trend"
@@ -164,11 +185,11 @@ export default function SetupForm({ onSubmitted }) {
             onChange={handleChange}
             className="border p-2 rounded w-full"
           >
-            <option value="15m">15 minuten</option>
-            <option value="1h">1 uur</option>
-            <option value="4hr">4 uur</option>
-            <option value="1d">1 dag</option>
-            <option value="1w">1 week</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="4hr">4hr</option>
+            <option value="1d">1d</option>
+            <option value="1w">1w</option>
           </select>
         </div>
 
@@ -191,7 +212,6 @@ export default function SetupForm({ onSubmitted }) {
           <label className="font-medium">Scorelogica (optioneel)</label>
           <textarea
             name="score_logic"
-            rows={2}
             value={form.score_logic}
             onChange={handleChange}
             placeholder='Bijv: { "macro": ">70", "rsi": "<30" }'
@@ -199,61 +219,19 @@ export default function SetupForm({ onSubmitted }) {
           />
         </div>
 
-        {/* Geavanceerd gedeelte */}
-        <input
-          name="symbol"
-          placeholder="Symbool (BTC, SOL...)"
-          value={form.symbol}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="account_type"
-          placeholder="Account type (Spot, Futures...)"
-          value={form.account_type}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="strategy_type"
-          placeholder="Strategietype (Breakout, Swing...)"
-          value={form.strategy_type}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="min_investment"
-          placeholder="Minimale investering (€)"
-          value={form.min_investment}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-        <input
-          name="tags"
-          placeholder="Tags (gescheiden door komma's)"
-          value={form.tags}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+        <input name="symbol" placeholder="Symbool (BTC, SOL...)" value={form.symbol} onChange={handleChange} className="border p-2 rounded" />
+        <input name="account_type" placeholder="Account type (Spot, Futures...)" value={form.account_type} onChange={handleChange} className="border p-2 rounded" />
+        <input name="strategy_type" placeholder="Strategietype (Breakout, Swing...)" value={form.strategy_type} onChange={handleChange} className="border p-2 rounded" />
+        <input name="min_investment" placeholder="Minimale investering (€)" value={form.min_investment} onChange={handleChange} className="border p-2 rounded" />
+        <input name="tags" placeholder="Tags (komma's)" value={form.tags} onChange={handleChange} className="border p-2 rounded" />
+
         <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="dynamic"
-            checked={form.dynamic}
-            onChange={handleChange}
-            className="w-4 h-4"
-          />
+          <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} className="w-4 h-4" />
           <span>Dynamische investering</span>
-          <InfoTooltip text="Als deze optie aan staat, wordt de investering automatisch aangepast aan de score." />
         </label>
+
         <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="favorite"
-            checked={form.favorite}
-            onChange={handleChange}
-            className="w-4 h-4"
-          />
+          <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} className="w-4 h-4" />
           <span>Favoriet</span>
         </label>
       </div>

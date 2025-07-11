@@ -22,11 +22,11 @@ export default function TopSetupsMini() {
       setLoading(true);
       let res;
       try {
-        res = await fetch(`${API_BASE_URL}/setups/top?limit=10`);
+        res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
         if (!res.ok) throw new Error('Top setups endpoint faalt');
       } catch {
         console.warn('⚠️ /api/setups/top faalt, fallback naar /api/setups');
-        res = await fetch(`${API_BASE_URL}/setups`);
+        res = await fetch(`${API_BASE_URL}/api/setups`);
       }
 
       const data = await res.json();

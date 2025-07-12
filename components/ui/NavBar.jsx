@@ -31,13 +31,12 @@ export default function NavBar() {
       <div className="flex flex-wrap items-center gap-6">
         <div className="flex flex-wrap gap-4 text-sm">
           <NavLink href="/">🌡️ Scores</NavLink>
-          <NavLink href="/advies">🚀 Advies</NavLink>
           <NavLink href="/market">💰 Market</NavLink>
           <NavLink href="/macro">🌍 Macro</NavLink>
           <NavLink href="/technical">📈 Technisch</NavLink>
           <NavLink href="/setup">⚙️ Setups</NavLink>
           <NavLink href="/strategy">📊 Strategieën</NavLink>
-          <NavLink href="/dashboard/report">📄 Rapport</NavLink>
+         <NavLink href="/report">📄 Rapport</NavLink>
         </div>
 
         <div className="relative" ref={dropdownRef}>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function NavBar() {
@@ -24,7 +25,14 @@ export default function NavBar() {
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-4 flex flex-wrap justify-between items-center rounded mb-8">
       <Link href="/" className="flex items-center gap-2">
-        <img src="/logo.png" alt="TradeLayer Logo" className="h-8 w-auto" />
+        <Image
+          src="/logo.png"
+          alt="TradeLayer Logo"
+          width={32}
+          height={32}
+          className="h-8 w-auto"
+          priority
+        />
         <span className="text-xl font-bold">TradeLayer</span>
       </Link>
 
@@ -36,7 +44,7 @@ export default function NavBar() {
           <NavLink href="/technical">📈 Technisch</NavLink>
           <NavLink href="/setup">⚙️ Setups</NavLink>
           <NavLink href="/strategy">📊 Strategieën</NavLink>
-         <NavLink href="/report">📄 Rapport</NavLink>
+          <NavLink href="/report">📄 Rapport</NavLink>
         </div>
 
         <div className="relative" ref={dropdownRef}>
@@ -50,11 +58,34 @@ export default function NavBar() {
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-md z-50">
               <ul className="py-1 text-sm text-gray-800 dark:text-gray-200">
-                <li><Link href="/profile" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">👤 Profiel</Link></li>
-                <li><button className="w-full text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">🌐 Taal & Regio</button></li>
-                <li><button className="w-full text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">🧠 AI Instellingen</button></li>
-                <li><button className="w-full text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">📈 Tradingstijl</button></li>
-                <li><button className="w-full text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">📤 Uitloggen</button></li>
+                <li>
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    👤 Profiel
+                  </Link>
+                </li>
+                <li>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    🌐 Taal & Regio
+                  </button>
+                </li>
+                <li>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    🧠 AI Instellingen
+                  </button>
+                </li>
+                <li>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    📈 Tradingstijl
+                  </button>
+                </li>
+                <li>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    📤 Uitloggen
+                  </button>
+                </li>
               </ul>
             </div>
           )}
@@ -68,7 +99,9 @@ export default function NavBar() {
     return (
       <Link
         href={href}
-        className={`hover:underline ${isCurrent ? 'font-bold text-blue-600' : ''}`}
+        className={`hover:underline ${
+          isCurrent ? 'font-bold text-blue-600' : ''
+        }`}
       >
         {children}
       </Link>

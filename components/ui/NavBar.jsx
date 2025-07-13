@@ -23,16 +23,17 @@ export default function NavBar() {
   const isActive = (path) => pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-4 flex flex-wrap justify-between items-center rounded mb-8">
-      <Link href="/" className="flex items-center">
+    <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-6 flex justify-between items-center rounded mb-8">
+      <Link href="/" className="flex flex-col items-start">
         <Image
           src="/logo.png"
           alt="TradeLayer Logo"
-          width={64}
-          height={64}
-          className="w-16 h-16"
+          width={128}
+          height={40}
+          className="w-32 h-auto"
           priority
         />
+        <span className="text-xs text-gray-500 mt-1">AI-driven trading dashboard</span>
       </Link>
 
       <div className="flex flex-wrap items-center gap-6">

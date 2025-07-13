@@ -24,16 +24,15 @@ export default function NavBar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-4 flex flex-wrap justify-between items-center rounded mb-8">
-      <Link href="/" className="flex items-center gap-3">
+      <Link href="/" className="flex items-center">
         <Image
           src="/logo.png"
           alt="TradeLayer Logo"
-          width={48}
-          height={48}
-          className="w-12 h-12"
+          width={64}
+          height={64}
+          className="w-16 h-16"
           priority
         />
-        <span className="text-2xl font-extrabold tracking-tight">TradeLayer</span>
       </Link>
 
       <div className="flex flex-wrap items-center gap-6">

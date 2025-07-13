@@ -16,7 +16,7 @@ export default function ReportCard() {
           “We blijven bullish zolang $101.500 standhoudt.”
         </p>
         <Link
-          href="/dashboard/report"
+          href="/report"
           className="text-xs text-blue-600 mt-2 inline-block hover:underline"
         >
           Bekijk volledig rapport →

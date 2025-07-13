@@ -28,7 +28,7 @@ export default function TradingAdvice() {
   async function fetchAdvice(sym) {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/ai/trading/trading_advice?symbol=${sym}`);
+      const res = await fetch(`${API_BASE_URL}/api/trading/trading_advice?symbol=${sym}`);
       if (!res.ok) throw new Error('Response niet OK');
       const data = await res.json();
 

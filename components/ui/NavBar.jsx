@@ -24,16 +24,19 @@ export default function NavBar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-6 flex justify-between items-center rounded mb-8">
-      <Link href="/" className="flex flex-col items-start">
+      <Link href="/" className="flex items-center space-x-3">
         <Image
           src="/logo.png"
           alt="TradeLayer Logo"
-          width={128}
-          height={40}
-          className="w-32 h-auto"
+          width={36}
+          height={36}
+          className="w-9 h-9"
           priority
         />
-        <span className="text-xs text-gray-500 mt-1">AI-driven trading dashboard</span>
+        <div className="flex flex-col leading-none">
+          <span className="text-lg font-semibold text-gray-900 dark:text-white">TradeLayer</span>
+          <span className="text-sm text-gray-500">AI-driven trading dashboard</span>
+        </div>
       </Link>
 
       <div className="flex flex-wrap items-center gap-6">
@@ -99,9 +102,7 @@ export default function NavBar() {
     return (
       <Link
         href={href}
-        className={`hover:underline ${
-          isCurrent ? 'font-bold text-blue-600' : ''
-        }`}
+        className={`hover:underline ${isCurrent ? 'font-bold text-blue-600' : ''}`}
       >
         {children}
       </Link>

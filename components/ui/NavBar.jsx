@@ -34,8 +34,7 @@ export default function NavBar() {
           priority
         />
         <div className="flex flex-col leading-none">
-          <span className="text-lg font-semibold text-gray-900 dark:text-white">TradeLayer</span>
-          <span className="text-sm text-gray-500">AI-driven trading dashboard</span>
+         <span className="text-lg font-medium text-gray-700">Trade your way. <strong>Build your edge.</strong></span>
         </div>
       </Link>
 

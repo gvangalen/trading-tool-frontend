@@ -28,13 +28,15 @@ export default function NavBar() {
         <Image
           src="/logo.png"
           alt="TradeLayer Logo"
-          width={36}
-          height={36}
-          className="w-9 h-9"
+          width={40}
+          height={40}
+          className="w-10 h-10"
           priority
         />
-        <div className="flex flex-col leading-none">
-         <span className="text-lg font-medium text-gray-700">Trade your way. <strong>Build your edge.</strong></span>
+        <div className="flex flex-col leading-none mt-[1px]">
+          <span className="text-lg font-medium text-gray-700">
+            Trade your way. <span className="font-semibold">Build your edge.</span>
+          </span>
         </div>
       </Link>
 

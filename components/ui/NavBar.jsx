@@ -28,9 +28,9 @@ export default function NavBar() {
         <Image
   src="/logo.png"
   alt="TradeLayer Logo"
-  width={64}
-  height={64}
-  className="w-16 h-16 object-contain"
+  width={80}
+  height={80}
+  className="w-20 h-20 object-contain"
   priority
 />
         <div className="flex flex-col leading-none mt-[1px]">

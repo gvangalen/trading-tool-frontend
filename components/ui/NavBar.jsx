@@ -26,13 +26,13 @@ export default function NavBar() {
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-6 flex justify-between items-center rounded mb-8">
       <Link href="/" className="flex items-center space-x-3">
         <Image
-          src="/logo.png"
-          alt="TradeLayer Logo"
-          width={40}
-          height={40}
-          className="w-10 h-10"
-          priority
-        />
+  src="/logo.png"
+  alt="TradeLayer Logo"
+  width={64}
+  height={64}
+  className="w-16 h-16 object-contain"
+  priority
+/>
         <div className="flex flex-col leading-none mt-[1px]">
           <span className="text-lg font-medium text-gray-700">
             Trade your way. <span className="font-semibold">Build your edge.</span>

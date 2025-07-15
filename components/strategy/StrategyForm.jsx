@@ -7,7 +7,7 @@ import { useSetupData } from '@/hooks/useSetupData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyForm() {
-  const { strategies, loadStrategies } = useStrategyData();
+  const { loadStrategies } = useStrategyData();
   const { setups } = useSetupData();
 
   const [form, setForm] = useState({
@@ -19,6 +19,7 @@ export default function StrategyForm() {
     favorite: false,
     tags: '',
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -51,7 +52,7 @@ export default function StrategyForm() {
       setup_name: form.setup_name,
       explanation: form.explanation,
       entry: form.entry,
-      target: form.target,
+      targets: [form.target], // ✅ VERPLICHT ALS ARRAY
       stop_loss: form.stop_loss,
       favorite: form.favorite,
       tags: form.tags

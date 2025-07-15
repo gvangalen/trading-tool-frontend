@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   fetchStrategies,
   fetchSetups,
+  createStrategy,       // ✅ Handmatig toevoegen
   updateStrategy,
   deleteStrategy,
   generateStrategy,
@@ -49,7 +50,7 @@ export function useStrategyData() {
     try {
       await updateStrategy(id, updatedData);
       setSuccessMessage('Strategie opgeslagen.');
-      await loadStrategies(); // Refresh lijst
+      await loadStrategies();
     } catch (err) {
       console.error('❌ Strategie opslaan mislukt:', err);
       setError('Opslaan mislukt.');
@@ -91,6 +92,18 @@ export function useStrategyData() {
     }
   }
 
+  // ➕ Handmatig strategie toevoegen
+  async function addStrategy(strategyData) {
+    try {
+      await createStrategy(strategyData);
+      setSuccessMessage('Strategie toegevoegd.');
+      await loadStrategies();
+    } catch (err) {
+      console.error('❌ Strategie toevoegen mislukt:', err);
+      setError('Toevoegen mislukt.');
+    }
+  }
+
   return {
     strategies,
     setups,
@@ -103,5 +116,6 @@ export function useStrategyData() {
     removeStrategy,
     generateStrategyForSetup,
     generateAll,
+    addStrategy, // ✅ Nieuw toegevoegd
   };
 }

@@ -17,8 +17,7 @@ export default function StrategyCard({
   onGenerateAI,
   isEmpty = false,
 }) {
-  // 🔹 Toon placeholder als strategy ontbreekt of als lege kaart expliciet gevraagd is
-  if (strategy === null || isEmpty) {
+  if (!strategy || isEmpty) {
     return (
       <CardWrapper className="bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 text-center text-gray-500">
         <p className="text-lg">📭 Je hebt nog geen strategieën opgeslagen.</p>
@@ -55,6 +54,10 @@ export default function StrategyCard({
     return <Badge text={`Score: ${score}`} color="bg-red-100 text-red-800" title="Zwakke strategie" />;
   };
 
+  const handleChange = (field, value) => {
+    onFieldChange(field, value);
+  };
+
   return (
     <CardWrapper className="bg-white p-4 rounded-xl shadow space-y-3 border border-gray-200">
       {/* 🧠 Titel + favoriet */}
@@ -84,8 +87,8 @@ export default function StrategyCard({
           <div className="flex flex-wrap items-center gap-3">
             {data.asset && <span title="Asset">🪙 <strong>{data.asset}</strong></span>}
             {data.timeframe && <span title="Timeframe">⏱️ {data.timeframe}</span>}
-            <span title="Entry prijs">🎯 Entry: €{data.entry_price || '-'}</span>
-            <span title="Target prijs">🎯 Target: €{data.target_price || '-'}</span>
+            <span title="Entry prijs">🎯 Entry: €{data.entry || '-'}</span>
+            <span title="Target prijs">🎯 Target: €{data.targets?.[0] || '-'}</span>
             <span title="Stop-loss">🛡️ SL: €{data.stop_loss || '-'}</span>
           </div>
 
@@ -106,26 +109,26 @@ export default function StrategyCard({
           <input
             className="border p-1 rounded w-full"
             placeholder="Entry prijs (€)"
-            value={data.entry_price || ''}
-            onChange={(e) => onFieldChange('entry_price', e.target.value)}
+            value={editFields.entry || ''}
+            onChange={(e) => handleChange('entry', e.target.value)}
           />
           <input
             className="border p-1 rounded w-full"
             placeholder="Target prijs (€)"
-            value={data.target_price || ''}
-            onChange={(e) => onFieldChange('target_price', e.target.value)}
+            value={editFields.targets?.[0] || ''}
+            onChange={(e) => handleChange('targets', [e.target.value])}
           />
           <input
             className="border p-1 rounded w-full"
             placeholder="Stop-loss (€)"
-            value={data.stop_loss || ''}
-            onChange={(e) => onFieldChange('stop_loss', e.target.value)}
+            value={editFields.stop_loss || ''}
+            onChange={(e) => handleChange('stop_loss', e.target.value)}
           />
           <textarea
             className="border p-1 rounded w-full"
             placeholder="Uitleg"
-            value={data.explanation || ''}
-            onChange={(e) => onFieldChange('explanation', e.target.value)}
+            value={editFields.explanation || ''}
+            onChange={(e) => handleChange('explanation', e.target.value)}
           />
         </div>
       )}

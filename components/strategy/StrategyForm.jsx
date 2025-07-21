@@ -11,7 +11,7 @@ export default function StrategyForm() {
   const { setups } = useSetupData();
 
   const [form, setForm] = useState({
-    setup_id: '',           // ✅ Nieuw veld
+    setup_id: '',
     setup_name: '',
     explanation: '',
     entry: '',
@@ -29,7 +29,7 @@ export default function StrategyForm() {
     const { name, value, type, checked, selectedOptions } = e.target;
 
     if (name === 'setup_id') {
-      const selectedName = selectedOptions[0]?.textContent || '';
+      const selectedName = selectedOptions?.[0]?.textContent || '';
       setForm((prev) => ({
         ...prev,
         setup_id: value,
@@ -49,7 +49,7 @@ export default function StrategyForm() {
     setSuccess(false);
 
     if (!form.setup_id) {
-      setError('Je moet een bestaande setup kiezen.');
+      setError('Je moet een setup kiezen.');
       return;
     }
     if (!form.entry || !form.target || !form.stop_loss) {
@@ -57,25 +57,21 @@ export default function StrategyForm() {
       return;
     }
 
-    setLoading(true);
-
     const payload = {
-      setup_id: form.setup_id, // ✅ Toegevoegd
-      setup_name: form.setup_name,
-      explanation: form.explanation,
-      entry: form.entry,
+      ...form,
       targets: [form.target],
-      stop_loss: form.stop_loss,
-      favorite: form.favorite,
+      asset: 'BTC',
+      timeframe: '1D',
+      origin: 'Handmatig',
       tags: form.tags
         .split(',')
         .map((t) => t.trim())
         .filter((t) => t !== ''),
-      asset: 'BTC',
-      timeframe: '1D',
-      origin: 'Handmatig',
     };
 
+    console.log('🚀 Payload naar backend:', payload);
+
+    setLoading(true);
     try {
       await createStrategy(payload);
       setForm({
@@ -127,82 +123,29 @@ export default function StrategyForm() {
           ))}
         </select>
 
-        <label className="block font-medium">
-          Entry prijs (€) <InfoTooltip text="Het niveau waarop je instapt." />
-        </label>
-        <input
-          name="entry"
-          type="number"
-          value={form.entry}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
+        <label className="block font-medium">Entry prijs (€)</label>
+        <input name="entry" type="number" value={form.entry} onChange={handleChange} className="w-full border p-2 rounded" required />
 
-        <label className="block font-medium">
-          Target prijs (€) <InfoTooltip text="Het winstdoel voor deze trade." />
-        </label>
-        <input
-          name="target"
-          type="number"
-          value={form.target}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
+        <label className="block font-medium">Target prijs (€)</label>
+        <input name="target" type="number" value={form.target} onChange={handleChange} className="w-full border p-2 rounded" required />
 
-        <label className="block font-medium">
-          Stop-loss (€) <InfoTooltip text="Het niveau waarop je uitstapt bij verlies." />
-        </label>
-        <input
-          name="stop_loss"
-          type="number"
-          value={form.stop_loss}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
+        <label className="block font-medium">Stop-loss (€)</label>
+        <input name="stop_loss" type="number" value={form.stop_loss} onChange={handleChange} className="w-full border p-2 rounded" required />
 
-        <label className="block font-medium">
-          Uitleg <InfoTooltip text="Leg uit waarom deze strategie werkt." />
-        </label>
-        <textarea
-          name="explanation"
-          value={form.explanation}
-          onChange={handleChange}
-          rows="3"
-          className="w-full border p-2 rounded"
-        />
+        <label className="block font-medium">Uitleg</label>
+        <textarea name="explanation" value={form.explanation} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
 
-        <label className="block font-medium">
-          Tags <InfoTooltip text="Komma-gescheiden, bijvoorbeeld: swing, btc, breakout" />
-        </label>
-        <input
-          name="tags"
-          type="text"
-          value={form.tags}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-        />
+        <label className="block font-medium">Tags</label>
+        <input name="tags" type="text" value={form.tags} onChange={handleChange} className="w-full border p-2 rounded" />
 
         <label className="inline-flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="favorite"
-            checked={form.favorite}
-            onChange={handleChange}
-            className="w-4 h-4"
-          />
+          <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} className="w-4 h-4" />
           <span>Favoriet</span>
         </label>
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
-        >
+        <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300">
           {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
         </button>
       </div>

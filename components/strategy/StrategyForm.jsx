@@ -48,25 +48,26 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
-    if (!form.setup_id) {
-      setError('Je moet een setup kiezen.');
-      return;
-    }
-    if (!form.entry || !form.target || !form.stop_loss) {
-      setError('Entry, target en stop-loss zijn verplicht.');
+    if (!form.setup_id || !form.entry || !form.target || !form.stop_loss) {
+      setError('❌ Setup, entry, target en stop-loss zijn verplicht.');
       return;
     }
 
     const payload = {
-      ...form,
-      targets: [form.target],
-      asset: 'BTC',
-      timeframe: '1D',
-      origin: 'Handmatig',
+      setup_id: form.setup_id,
+      setup_name: form.setup_name,
+      explanation: form.explanation,
+      entry: parseFloat(form.entry),
+      targets: [parseFloat(form.target)],
+      stop_loss: parseFloat(form.stop_loss),
+      favorite: form.favorite,
       tags: form.tags
         .split(',')
         .map((t) => t.trim())
-        .filter((t) => t !== ''),
+        .filter(Boolean),
+      asset: 'BTC',
+      timeframe: '1D',
+      origin: 'Handmatig',
     };
 
     console.log('🚀 Payload naar backend:', payload);
@@ -87,7 +88,7 @@ export default function StrategyForm() {
       await loadStrategies();
       setSuccess(true);
     } catch (err) {
-      console.error('Strategie maken mislukt:', err);
+      console.error('❌ Strategie maken mislukt:', err);
       setError('Fout bij opslaan strategie.');
     } finally {
       setLoading(false);
@@ -124,18 +125,18 @@ export default function StrategyForm() {
         </select>
 
         <label className="block font-medium">Entry prijs (€)</label>
-        <input name="entry" type="number" value={form.entry} onChange={handleChange} className="w-full border p-2 rounded" required />
+        <input name="entry" type="number" step="any" value={form.entry} onChange={handleChange} className="w-full border p-2 rounded" required />
 
         <label className="block font-medium">Target prijs (€)</label>
-        <input name="target" type="number" value={form.target} onChange={handleChange} className="w-full border p-2 rounded" required />
+        <input name="target" type="number" step="any" value={form.target} onChange={handleChange} className="w-full border p-2 rounded" required />
 
         <label className="block font-medium">Stop-loss (€)</label>
-        <input name="stop_loss" type="number" value={form.stop_loss} onChange={handleChange} className="w-full border p-2 rounded" required />
+        <input name="stop_loss" type="number" step="any" value={form.stop_loss} onChange={handleChange} className="w-full border p-2 rounded" required />
 
         <label className="block font-medium">Uitleg</label>
         <textarea name="explanation" value={form.explanation} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
 
-        <label className="block font-medium">Tags</label>
+        <label className="block font-medium">Tags (gescheiden door komma's)</label>
         <input name="tags" type="text" value={form.tags} onChange={handleChange} className="w-full border p-2 rounded" />
 
         <label className="inline-flex items-center space-x-2">
@@ -145,7 +146,11 @@ export default function StrategyForm() {
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300">
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+        >
           {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
         </button>
       </div>

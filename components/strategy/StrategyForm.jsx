@@ -11,6 +11,7 @@ export default function StrategyForm() {
   const { setups } = useSetupData();
 
   const [form, setForm] = useState({
+    setup_id: '',           // ✅ Nieuw veld
     setup_name: '',
     explanation: '',
     entry: '',
@@ -25,11 +26,21 @@ export default function StrategyForm() {
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    const { name, value, type, checked, selectedOptions } = e.target;
+
+    if (name === 'setup_id') {
+      const selectedName = selectedOptions[0]?.textContent || '';
+      setForm((prev) => ({
+        ...prev,
+        setup_id: value,
+        setup_name: selectedName,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -37,7 +48,7 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
-    if (!form.setup_name) {
+    if (!form.setup_id) {
       setError('Je moet een bestaande setup kiezen.');
       return;
     }
@@ -49,10 +60,11 @@ export default function StrategyForm() {
     setLoading(true);
 
     const payload = {
+      setup_id: form.setup_id, // ✅ Toegevoegd
       setup_name: form.setup_name,
       explanation: form.explanation,
       entry: form.entry,
-      targets: [form.target], // ✅ VERPLICHT ALS ARRAY
+      targets: [form.target],
       stop_loss: form.stop_loss,
       favorite: form.favorite,
       tags: form.tags
@@ -67,6 +79,7 @@ export default function StrategyForm() {
     try {
       await createStrategy(payload);
       setForm({
+        setup_id: '',
         setup_name: '',
         explanation: '',
         entry: '',
@@ -100,15 +113,15 @@ export default function StrategyForm() {
           Koppel aan Setup <InfoTooltip text="Je kunt alleen kiezen uit bestaande setups." />
         </label>
         <select
-          name="setup_name"
-          value={form.setup_name}
+          name="setup_id"
+          value={form.setup_id}
           onChange={handleChange}
           className="w-full border p-2 rounded"
           required
         >
           <option value="">-- Kies een setup --</option>
           {setups.map((s) => (
-            <option key={s.name} value={s.name}>
+            <option key={s.id} value={s.id}>
               {s.name}
             </option>
           ))}

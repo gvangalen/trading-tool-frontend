@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { generateAllStrategies } from '@/lib/api/strategy'; // 🔥 Correcte import
+import { generateAllStrategies } from '@/lib/api/strategy'; // ✅ Correcte import
 
 export default function StrategyGenerator() {
   const [status, setStatus] = useState('');
@@ -13,10 +13,16 @@ export default function StrategyGenerator() {
 
     try {
       const data = await generateAllStrategies();
+      console.log('⚙️ Response van backend:', data);
+
       if (data?.task_id) {
         setStatus(`✅ AI-strategiegeneratie gestart (Task ID: ${data.task_id})`);
+      } else if (data?.status === 'completed') {
+        setStatus('✅ Strategieën succesvol gegenereerd (zonder Celery)');
+      } else if (Array.isArray(data)) {
+        setStatus(`✅ ${data.length} strategieën gegenereerd zonder Celery`);
       } else {
-        setStatus('⚠️ Fout: geen task ID ontvangen.');
+        setStatus('⚠️ Fout: onbekend antwoord van backend');
       }
     } catch (err) {
       console.error('❌ Fout bij AI-strategiegeneratie:', err);

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   fetchStrategies,
   fetchSetups,
-  createStrategy,       // ✅ Handmatig toevoegen
+  createStrategy,
   updateStrategy,
   deleteStrategy,
   generateStrategy,
@@ -68,11 +68,21 @@ export function useStrategyData() {
     }
   }
 
-  // 🧠 Genereer AI-strategie voor één setup
+  // 🧠 Genereer AI-strategie voor één setup (met response fallback)
   async function generateStrategyForSetup(setupId, overwrite = false) {
     try {
-      await generateStrategy(setupId, overwrite);
-      setSuccessMessage('Strategie gegenereerd via AI.');
+      const response = await generateStrategy(setupId, overwrite);
+
+      if (response?.task_id) {
+        setSuccessMessage(`Celery gestart (Task ID: ${response.task_id})`);
+      } else if (response?.status === 'completed') {
+        setSuccessMessage('Strategie overschreven.');
+      } else if (Array.isArray(response)) {
+        setSuccessMessage(`${response.length} strategieën gegenereerd.`);
+      } else {
+        setSuccessMessage('Strategie gegenereerd via AI.');
+      }
+
       await loadStrategies();
     } catch (err) {
       console.error('❌ AI-generatie mislukt:', err);
@@ -116,6 +126,6 @@ export function useStrategyData() {
     removeStrategy,
     generateStrategyForSetup,
     generateAll,
-    addStrategy, // ✅ Nieuw toegevoegd
+    addStrategy,
   };
 }

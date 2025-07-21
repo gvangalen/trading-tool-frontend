@@ -93,9 +93,18 @@ export default function StrategyList({ searchTerm = '' }) {
 
     try {
       setLoadingId(setupId);
-      await generateStrategyForSetup(setupId, overwrite);
+      const response = await generateStrategyForSetup(setupId, overwrite);
       await loadStrategies();
-      showToast(overwrite ? '♻️ Strategie overschreven' : '➕ Nieuwe strategie toegevoegd');
+
+      if (response?.task_id) {
+        showToast(`✅ Celery gestart (Task ID: ${response.task_id})`);
+      } else if (response?.status === 'completed') {
+        showToast(overwrite ? '♻️ Strategie overschreven' : '➕ Strategie toegevoegd');
+      } else if (Array.isArray(response)) {
+        showToast(`✅ ${response.length} strategieën gegenereerd`);
+      } else {
+        showToast('✅ Strategie gegenereerd');
+      }
     } catch (err) {
       console.error('AI-generatie fout:', err);
       showToast('❌ AI-generatie mislukt');

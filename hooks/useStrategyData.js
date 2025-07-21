@@ -18,7 +18,7 @@ export function useStrategyData() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // ✅ Strategieën laden (optioneel filteren op asset/timeframe)
+  // ✅ Strategieën laden
   async function loadStrategies(asset = '', timeframe = '') {
     setLoading(true);
     setError('');
@@ -34,7 +34,7 @@ export function useStrategyData() {
     }
   }
 
-  // ✅ Setups laden om te linken aan strategieën
+  // ✅ Setups laden
   async function loadSetups() {
     try {
       const data = await fetchSetups();
@@ -45,8 +45,18 @@ export function useStrategyData() {
     }
   }
 
-  // 💾 Strategie bewerken
+  // 💾 Strategie bewerken (met validatie)
   async function saveStrategy(id, updatedData) {
+    const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'targets', 'stop_loss'];
+    const missing = requiredFields.filter((field) => !updatedData[field]);
+
+    if (missing.length > 0) {
+      const message = `❌ Verplichte velden ontbreken: ${missing.join(', ')}`;
+      console.warn(message);
+      setError(message);
+      return;
+    }
+
     try {
       await updateStrategy(id, updatedData);
       setSuccessMessage('Strategie opgeslagen.');
@@ -68,7 +78,7 @@ export function useStrategyData() {
     }
   }
 
-  // 🧠 Genereer AI-strategie voor één setup (met response fallback)
+  // 🧠 Genereer AI-strategie voor één setup
   async function generateStrategyForSetup(setupId, overwrite = false) {
     try {
       const response = await generateStrategy(setupId, overwrite);
@@ -102,8 +112,18 @@ export function useStrategyData() {
     }
   }
 
-  // ➕ Handmatig strategie toevoegen
+  // ➕ Handmatig strategie toevoegen (met validatie)
   async function addStrategy(strategyData) {
+    const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'targets', 'stop_loss'];
+    const missing = requiredFields.filter((field) => !strategyData[field]);
+
+    if (missing.length > 0) {
+      const message = `❌ Verplichte velden ontbreken: ${missing.join(', ')}`;
+      console.warn(message);
+      setError(message);
+      return;
+    }
+
     try {
       await createStrategy(strategyData);
       setSuccessMessage('Strategie toegevoegd.');

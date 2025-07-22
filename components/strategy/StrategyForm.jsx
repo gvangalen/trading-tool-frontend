@@ -13,6 +13,8 @@ export default function StrategyForm() {
   const [form, setForm] = useState({
     setup_id: '',
     setup_name: '',
+    asset: 'BTC',
+    timeframe: '1D',
     explanation: '',
     entry: '',
     target: '',
@@ -48,14 +50,19 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
-    if (!form.setup_id || !form.entry || !form.target || !form.stop_loss) {
-      setError('❌ Setup, entry, target en stop-loss zijn verplicht.');
-      return;
+    const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'target', 'stop_loss'];
+    for (const field of requiredFields) {
+      if (!form[field]) {
+        setError(`❌ Veld "${field}" is verplicht.`);
+        return;
+      }
     }
 
     const payload = {
       setup_id: form.setup_id,
       setup_name: form.setup_name,
+      asset: form.asset,
+      timeframe: form.timeframe,
       explanation: form.explanation,
       entry: parseFloat(form.entry),
       targets: [parseFloat(form.target)],
@@ -65,8 +72,6 @@ export default function StrategyForm() {
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
-      asset: 'BTC',
-      timeframe: '1D',
       origin: 'Handmatig',
     };
 
@@ -78,6 +83,8 @@ export default function StrategyForm() {
       setForm({
         setup_id: '',
         setup_name: '',
+        asset: 'BTC',
+        timeframe: '1D',
         explanation: '',
         entry: '',
         target: '',
@@ -122,6 +129,22 @@ export default function StrategyForm() {
               {s.name}
             </option>
           ))}
+        </select>
+
+        <label className="block font-medium">Asset</label>
+        <select name="asset" value={form.asset} onChange={handleChange} className="w-full border p-2 rounded">
+          <option value="BTC">BTC</option>
+          <option value="SOL">SOL</option>
+          <option value="ETH">ETH</option>
+        </select>
+
+        <label className="block font-medium">Timeframe</label>
+        <select name="timeframe" value={form.timeframe} onChange={handleChange} className="w-full border p-2 rounded">
+          <option value="15m">15m</option>
+          <option value="1H">1H</option>
+          <option value="4H">4H</option>
+          <option value="1D">1D</option>
+          <option value="1W">1W</option>
         </select>
 
         <label className="block font-medium">Entry prijs (€)</label>

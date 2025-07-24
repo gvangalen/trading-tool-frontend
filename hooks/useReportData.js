@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { API_BASE_URL } from '@/lib/config';
+import { fetchReportDates, fetchReportByDate } from '@/lib/api/report';
 
 export function useReportData() {
   const [report, setReport] = useState(null);
@@ -15,11 +15,7 @@ export function useReportData() {
     const controller = new AbortController();
     async function loadDates() {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/daily_report/history`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
-        const data = await res.json();
+        const data = await fetchReportDates();
         setDates(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('⚠️ Datums ophalen mislukt:', err);
@@ -27,7 +23,7 @@ export function useReportData() {
       }
     }
     loadDates();
-    return () => controller.abort(); // cleanup
+    return () => controller.abort();
   }, []);
 
   // 🔁 Haal rapport op bij wijziging van datum
@@ -37,13 +33,7 @@ export function useReportData() {
       setLoading(true);
       setError('');
       try {
-        const endpoint =
-          date === 'latest'
-            ? `${API_BASE_URL}/api/daily_report/latest`
-            : `${API_BASE_URL}/api/daily_report/${date}`;
-        const res = await fetch(endpoint, { signal: controller.signal });
-        if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
-        const data = await res.json();
+        const data = await fetchReportByDate(date);
         setReport(data || null);
       } catch (err) {
         console.error('❌ Rapport laden mislukt:', err);

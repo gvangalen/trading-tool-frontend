@@ -15,7 +15,7 @@ export function useReportData() {
     const controller = new AbortController();
     async function loadDates() {
       try {
-        const res = await fetch(`${API_BASE_URL}/daily_report/history`, {
+        const res = await fetch(`${API_BASE_URL}/api/daily_report/history`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
@@ -39,8 +39,8 @@ export function useReportData() {
       try {
         const endpoint =
           date === 'latest'
-            ? `${API_BASE_URL}/daily_report/latest`
-            : `${API_BASE_URL}/daily_report/${date}`;
+            ? `${API_BASE_URL}/api/daily_report/latest`
+            : `${API_BASE_URL}/api/daily_report/${date}`;
         const res = await fetch(endpoint, { signal: controller.signal });
         if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
         const data = await res.json();

@@ -144,6 +144,9 @@ export default function SetupForm({ onSubmitted }) {
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.name ? 'border-red-500' : ''}`}
           />
+          {errors.name && (
+            <p className="text-red-600 text-sm mt-1">Naam is verplicht (minimaal 3 tekens).</p>
+          )}
         </div>
 
         <div>
@@ -157,6 +160,9 @@ export default function SetupForm({ onSubmitted }) {
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.indicators ? 'border-red-500' : ''}`}
           />
+          {errors.indicators && (
+            <p className="text-red-600 text-sm mt-1">Vul minimaal één indicator in.</p>
+          )}
         </div>
 
         <div>
@@ -175,6 +181,9 @@ export default function SetupForm({ onSubmitted }) {
             <option value="bearish">📉 Bearish</option>
             <option value="neutral">⚖️ Neutraal</option>
           </select>
+          {errors.trend && (
+            <p className="text-red-600 text-sm mt-1">Kies een trendrichting.</p>
+          )}
         </div>
 
         <div>

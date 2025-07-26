@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSetupData, checkSetupNameExists } from '@/hooks/useSetupData';
+import { addSetup, checkSetupNameExists } from '@/lib/setupService';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function SetupForm({ onSubmitted }) {

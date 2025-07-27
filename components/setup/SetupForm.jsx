@@ -74,9 +74,7 @@ export default function SetupForm() {
         account_type: form.account_type?.trim(),
         strategy_type: form.strategy_type?.trim(),
         min_investment: form.min_investment ? parseFloat(form.min_investment) : null,
-        tags: form.tags
-          ? form.tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0)
-          : [],
+        tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0) : [],
       };
 
       await addSetup(payload);
@@ -98,7 +96,7 @@ export default function SetupForm() {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Setup toevoegen mislukt:', err);
-      alert('Fout bij opslaan setup.');
+      alert('Fout bij opslaan setup. Controleer je invoer.');
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +124,6 @@ export default function SetupForm() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Naam */}
         <div>
           <label className="font-medium flex items-center">
             Naam* <InfoTooltip text="Unieke naam per symbool vereist." />
@@ -136,17 +133,15 @@ export default function SetupForm() {
             value={form.name}
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.name ? 'border-red-500' : ''}`}
+            placeholder="Bijv. Swing Breakout"
           />
           {errors.name && (
             <p className="text-red-600 text-sm mt-1">
-              {form.name?.trim().length < 3
-                ? 'Naam is verplicht (min. 3 tekens)'
-                : 'Deze naam bestaat al voor dit symbool'}
+              {form.name?.trim().length < 3 ? 'Naam is verplicht (min. 3 tekens)' : 'Deze naam bestaat al voor dit symbool'}
             </p>
           )}
         </div>
 
-        {/* Symbool */}
         <div>
           <label className="font-medium flex items-center">
             Symbool* <InfoTooltip text="Bijv. BTC, SOL, AAPL" />
@@ -156,13 +151,11 @@ export default function SetupForm() {
             value={form.symbol}
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.symbol ? 'border-red-500' : ''}`}
+            placeholder="Bijv. BTC"
           />
-          {errors.symbol && (
-            <p className="text-red-600 text-sm mt-1">Symbool is verplicht</p>
-          )}
+          {errors.symbol && <p className="text-red-600 text-sm mt-1">Symbool is verplicht</p>}
         </div>
 
-        {/* Indicatoren */}
         <div>
           <label className="font-medium flex items-center">
             Indicatoren* <InfoTooltip text="Bijv. RSI, volume spike" />
@@ -172,11 +165,11 @@ export default function SetupForm() {
             value={form.indicators}
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.indicators ? 'border-red-500' : ''}`}
+            placeholder="Bijv. RSI, MACD, Volume"
           />
           {errors.indicators && <p className="text-red-600 text-sm mt-1">Veld is verplicht</p>}
         </div>
 
-        {/* Trend */}
         <div>
           <label className="font-medium flex items-center">
             Trend* <InfoTooltip text="Bullish, Bearish of Neutraal?" />
@@ -195,7 +188,6 @@ export default function SetupForm() {
           {errors.trend && <p className="text-red-600 text-sm mt-1">Trend is verplicht</p>}
         </div>
 
-        {/* Overige velden */}
         <input name="account_type" value={form.account_type} onChange={handleChange} className="border p-2 rounded" placeholder="Account type (optioneel)" />
         <input name="strategy_type" value={form.strategy_type} onChange={handleChange} className="border p-2 rounded" placeholder="Strategie type (optioneel)" />
         <input name="min_investment" value={form.min_investment} onChange={handleChange} className="border p-2 rounded" placeholder="Minimale investering (optioneel)" />
@@ -205,11 +197,10 @@ export default function SetupForm() {
           name="score_logic"
           value={form.score_logic}
           onChange={handleChange}
-          className="border p-2 rounded"
+          className="border p-2 rounded col-span-2"
           placeholder="Score logica (optioneel)"
         />
 
-        {/* Checkboxes */}
         <label className="flex items-center space-x-2">
           <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} className="w-4 h-4" />
           <span>Dynamische investering</span>
@@ -224,9 +215,7 @@ export default function SetupForm() {
       <button
         type="submit"
         disabled={isDisabled}
-        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-          isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
+        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {submitting ? 'Bezig met opslaan...' : 'Setup toevoegen'}
       </button>

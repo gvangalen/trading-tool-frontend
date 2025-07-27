@@ -1,22 +1,31 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { checkSetupNameExists } from '@/lib/setupService';
+import { useState, useRef } from 'react';
+import { addSetup, checkSetupNameExists } from '@/lib/setupService';
 import { useSetupData } from '@/hooks/useSetupData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
-export default function EditSetupPopup({ setup, onClose }) {
+export default function SetupForm() {
+  const { loadSetups } = useSetupData();
   const formRef = useRef(null);
-  const { updateSetup } = useSetupData();
 
-  const [form, setForm] = useState({ ...setup });
+  const [form, setForm] = useState({
+    name: '',
+    symbol: '',
+    indicators: '',
+    trend: '',
+    score_logic: '',
+    account_type: '',
+    strategy_type: '',
+    min_investment: '',
+    tags: '',
+    dynamic: false,
+    favorite: false,
+  });
+
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    setForm({ ...setup });
-  }, [setup]);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -29,6 +38,7 @@ export default function EditSetupPopup({ setup, onClose }) {
   function validate() {
     const valErrors = {};
     if (!form.name || form.name.trim().length < 3) valErrors.name = true;
+    if (!form.symbol || form.symbol.trim().length < 1) valErrors.symbol = true;
     if (!form.indicators) valErrors.indicators = true;
     if (!form.trend) valErrors.trend = true;
     return valErrors;
@@ -46,23 +56,20 @@ export default function EditSetupPopup({ setup, onClose }) {
     setSubmitting(true);
     setErrors({});
     try {
-      const nameChanged = form.name.trim() !== setup.name;
-      const symbolChanged = form.symbol.trim() !== setup.symbol;
-
-      if (nameChanged || symbolChanged) {
-        const nameExists = await checkSetupNameExists(form.name.trim(), form.symbol.trim());
-        if (nameExists) {
-          setErrors({ name: true });
-          formRef.current.scrollIntoView({ behavior: 'smooth' });
-          setSubmitting(false);
-          return;
-        }
+      const exists = await checkSetupNameExists(form.name.trim(), form.symbol.trim());
+      if (exists.exists) {
+        setErrors({ name: true });
+        formRef.current.scrollIntoView({ behavior: 'smooth' });
+        setSubmitting(false);
+        return;
       }
 
       const payload = {
         ...form,
         name: form.name.trim(),
+        symbol: form.symbol.trim(),
         indicators: form.indicators.trim(),
+        trend: form.trend,
         score_logic: form.score_logic?.trim() || '',
         account_type: form.account_type?.trim(),
         strategy_type: form.strategy_type?.trim(),
@@ -72,19 +79,37 @@ export default function EditSetupPopup({ setup, onClose }) {
           : [],
       };
 
-      await updateSetup(setup.id, payload);
+      await addSetup(payload);
       setSuccess(true);
+      setForm({
+        name: '',
+        symbol: '',
+        indicators: '',
+        trend: '',
+        score_logic: '',
+        account_type: '',
+        strategy_type: '',
+        min_investment: '',
+        tags: '',
+        dynamic: false,
+        favorite: false,
+      });
+      loadSetups();
       setTimeout(() => setSuccess(false), 3000);
-      if (onClose) onClose();
     } catch (err) {
-      console.error('❌ Setup bijwerken mislukt:', err);
+      console.error('❌ Setup toevoegen mislukt:', err);
       alert('Fout bij opslaan setup.');
     } finally {
       setSubmitting(false);
     }
   }
 
-  const isDisabled = !form.name || !form.indicators || !form.trend;
+  const isDisabled =
+    !form.name ||
+    !form.symbol ||
+    !form.indicators ||
+    !form.trend ||
+    submitting;
 
   return (
     <form
@@ -92,19 +117,19 @@ export default function EditSetupPopup({ setup, onClose }) {
       onSubmit={handleSubmit}
       className="space-y-4 border p-4 rounded bg-white shadow-sm"
     >
-      <h3 className="text-lg font-semibold">✏️ Setup bewerken</h3>
+      <h3 className="text-lg font-semibold">➕ Nieuwe Setup</h3>
 
       {success && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-2 rounded">
-          ✅ Setup succesvol bijgewerkt!
+          ✅ Setup succesvol toegevoegd!
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Naam */}
         <div>
           <label className="font-medium flex items-center">
-            Naam*
-            <InfoTooltip text="Unieke naam per symbool vereist." />
+            Naam* <InfoTooltip text="Unieke naam per symbool vereist." />
           </label>
           <input
             name="name"
@@ -115,16 +140,32 @@ export default function EditSetupPopup({ setup, onClose }) {
           {errors.name && (
             <p className="text-red-600 text-sm mt-1">
               {form.name?.trim().length < 3
-                ? 'Naam is verplicht (minimaal 3 tekens)'
+                ? 'Naam is verplicht (min. 3 tekens)'
                 : 'Deze naam bestaat al voor dit symbool'}
             </p>
           )}
         </div>
 
+        {/* Symbool */}
         <div>
           <label className="font-medium flex items-center">
-            Indicatoren*
-            <InfoTooltip text="Bijv. RSI, volume spike" />
+            Symbool* <InfoTooltip text="Bijv. BTC, SOL, AAPL" />
+          </label>
+          <input
+            name="symbol"
+            value={form.symbol}
+            onChange={handleChange}
+            className={`border p-2 rounded w-full ${errors.symbol ? 'border-red-500' : ''}`}
+          />
+          {errors.symbol && (
+            <p className="text-red-600 text-sm mt-1">Symbool is verplicht</p>
+          )}
+        </div>
+
+        {/* Indicatoren */}
+        <div>
+          <label className="font-medium flex items-center">
+            Indicatoren* <InfoTooltip text="Bijv. RSI, volume spike" />
           </label>
           <input
             name="indicators"
@@ -135,10 +176,10 @@ export default function EditSetupPopup({ setup, onClose }) {
           {errors.indicators && <p className="text-red-600 text-sm mt-1">Veld is verplicht</p>}
         </div>
 
+        {/* Trend */}
         <div>
           <label className="font-medium flex items-center">
-            Trend*
-            <InfoTooltip text="Bullish, Bearish of Neutraal?" />
+            Trend* <InfoTooltip text="Bullish, Bearish of Neutraal?" />
           </label>
           <select
             name="trend"
@@ -154,19 +195,21 @@ export default function EditSetupPopup({ setup, onClose }) {
           {errors.trend && <p className="text-red-600 text-sm mt-1">Trend is verplicht</p>}
         </div>
 
-        <input name="symbol" value={form.symbol} onChange={handleChange} className="border p-2 rounded" />
-        <input name="account_type" value={form.account_type} onChange={handleChange} className="border p-2 rounded" />
-        <input name="strategy_type" value={form.strategy_type} onChange={handleChange} className="border p-2 rounded" />
-        <input name="min_investment" value={form.min_investment} onChange={handleChange} className="border p-2 rounded" />
-        <input name="tags" value={form.tags} onChange={handleChange} className="border p-2 rounded" />
+        {/* Overige velden */}
+        <input name="account_type" value={form.account_type} onChange={handleChange} className="border p-2 rounded" placeholder="Account type (optioneel)" />
+        <input name="strategy_type" value={form.strategy_type} onChange={handleChange} className="border p-2 rounded" placeholder="Strategie type (optioneel)" />
+        <input name="min_investment" value={form.min_investment} onChange={handleChange} className="border p-2 rounded" placeholder="Minimale investering (optioneel)" />
+        <input name="tags" value={form.tags} onChange={handleChange} className="border p-2 rounded" placeholder="Tags (komma-gescheiden)" />
 
         <textarea
           name="score_logic"
           value={form.score_logic}
           onChange={handleChange}
           className="border p-2 rounded"
+          placeholder="Score logica (optioneel)"
         />
 
+        {/* Checkboxes */}
         <label className="flex items-center space-x-2">
           <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} className="w-4 h-4" />
           <span>Dynamische investering</span>
@@ -178,18 +221,15 @@ export default function EditSetupPopup({ setup, onClose }) {
         </label>
       </div>
 
-      <div className="flex space-x-2">
-        <button
-          type="submit"
-          disabled={isDisabled || submitting}
-          className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-            isDisabled || submitting ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {submitting ? 'Bezig met opslaan...' : 'Wijzigingen opslaan'}
-        </button>
-        <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Annuleren</button>
-      </div>
+      <button
+        type="submit"
+        disabled={isDisabled}
+        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
+          isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+      >
+        {submitting ? 'Bezig met opslaan...' : 'Setup toevoegen'}
+      </button>
     </form>
   );
 }

@@ -56,8 +56,8 @@ export default function SetupForm() {
     setSubmitting(true);
     setErrors({});
     try {
-      const exists = await checkSetupNameExists(form.name.trim(), form.symbol.trim());
-      if (exists.exists) {
+      const exists = await checkSetupNameExists(form.name.trim());
+      if (exists) {
         setErrors({ name: true });
         formRef.current.scrollIntoView({ behavior: 'smooth' });
         setSubmitting(false);
@@ -137,7 +137,7 @@ export default function SetupForm() {
           />
           {errors.name && (
             <p className="text-red-600 text-sm mt-1">
-              {form.name?.trim().length < 3 ? 'Naam is verplicht (min. 3 tekens)' : 'Deze naam bestaat al voor dit symbool'}
+              {form.name?.trim().length < 3 ? 'Naam is verplicht (min. 3 tekens)' : 'Deze naam bestaat al'}
             </p>
           )}
         </div>

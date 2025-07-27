@@ -57,10 +57,10 @@ export default function SetupForm({ onSubmitted }) {
     setSubmitting(true);
     setErrors({});
     try {
-      const nameExists = await checkSetupNameExists(form.name.trim());
+      const nameExists = await checkSetupNameExists(form.name.trim(), form.symbol);
       if (nameExists) {
         setErrors({ name: true });
-        alert('❌ Deze setup-naam bestaat al. Kies een andere naam.');
+        formRef.current.scrollIntoView({ behavior: 'smooth' });
         setSubmitting(false);
         return;
       }
@@ -69,10 +69,6 @@ export default function SetupForm({ onSubmitted }) {
         ...form,
         name: form.name.trim(),
         indicators: form.indicators.trim(),
-        trend: form.trend,
-        timeframe: form.timeframe,
-        symbol: form.symbol.trim(),
-        score_type: form.score_type,
         score_logic: form.score_logic?.trim() || '',
         account_type: form.account_type?.trim(),
         strategy_type: form.strategy_type?.trim(),
@@ -80,8 +76,6 @@ export default function SetupForm({ onSubmitted }) {
         tags: form.tags
           ? form.tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0)
           : [],
-        dynamic: form.dynamic,
-        favorite: form.favorite,
       };
 
       await addSetup(payload);
@@ -134,10 +128,11 @@ export default function SetupForm({ onSubmitted }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Naam veld met tooltip en foutmelding */}
         <div>
           <label className="font-medium flex items-center">
             Naam*
-            <InfoTooltip text="Bijv. 'RSI Breakout 4H'" />
+            <InfoTooltip text="De naam moet uniek zijn per symbool. Bijvoorbeeld: 'DCA BTC 4hr'" />
           </label>
           <input
             name="name"
@@ -145,9 +140,16 @@ export default function SetupForm({ onSubmitted }) {
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.name ? 'border-red-500' : ''}`}
           />
-          {errors.name && <p className="text-red-600 text-sm mt-1">Naam is verplicht</p>}
+          {errors.name && (
+            <p className="text-red-600 text-sm mt-1">
+              {form.name?.trim().length < 3
+                ? 'Naam is verplicht (minimaal 3 tekens)'
+                : 'Deze setup-naam bestaat al voor dit symbool'}
+            </p>
+          )}
         </div>
 
+        {/* Indicatoren */}
         <div>
           <label className="font-medium flex items-center">
             Indicatoren*
@@ -162,6 +164,7 @@ export default function SetupForm({ onSubmitted }) {
           {errors.indicators && <p className="text-red-600 text-sm mt-1">Minimaal 1 indicator vereist</p>}
         </div>
 
+        {/* Trend */}
         <div>
           <label className="font-medium flex items-center">
             Trend*
@@ -181,6 +184,7 @@ export default function SetupForm({ onSubmitted }) {
           {errors.trend && <p className="text-red-600 text-sm mt-1">Trend is verplicht</p>}
         </div>
 
+        {/* Timeframe */}
         <div>
           <label className="font-medium">Timeframe</label>
           <select
@@ -197,6 +201,7 @@ export default function SetupForm({ onSubmitted }) {
           </select>
         </div>
 
+        {/* Score type */}
         <div>
           <label className="font-medium">Scoretype</label>
           <select
@@ -212,6 +217,7 @@ export default function SetupForm({ onSubmitted }) {
           </select>
         </div>
 
+        {/* Scorelogica */}
         <div>
           <label className="font-medium">Scorelogica (optioneel)</label>
           <textarea

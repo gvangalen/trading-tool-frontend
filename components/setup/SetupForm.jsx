@@ -1,33 +1,22 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { checkSetupNameExists } from '@/lib/setupService';
 import { useSetupData } from '@/hooks/useSetupData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
-export default function SetupForm({ onSubmitted }) {
+export default function EditSetupPopup({ setup, onClose }) {
   const formRef = useRef(null);
-  const { addSetup } = useSetupData();
+  const { updateSetup } = useSetupData();
 
-  const [form, setForm] = useState({
-    name: '',
-    indicators: '',
-    trend: '',
-    timeframe: '4hr',
-    symbol: 'BTC',
-    dynamic: false,
-    score_type: 'macro_score',
-    score_logic: '',
-    account_type: '',
-    strategy_type: '',
-    min_investment: '',
-    tags: '',
-    favorite: false,
-  });
-
+  const [form, setForm] = useState({ ...setup });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setForm({ ...setup });
+  }, [setup]);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -57,12 +46,17 @@ export default function SetupForm({ onSubmitted }) {
     setSubmitting(true);
     setErrors({});
     try {
-      const nameExists = await checkSetupNameExists(form.name.trim(), form.symbol);
-      if (nameExists) {
-        setErrors({ name: true });
-        formRef.current.scrollIntoView({ behavior: 'smooth' });
-        setSubmitting(false);
-        return;
+      const nameChanged = form.name.trim() !== setup.name;
+      const symbolChanged = form.symbol.trim() !== setup.symbol;
+
+      if (nameChanged || symbolChanged) {
+        const nameExists = await checkSetupNameExists(form.name.trim(), form.symbol.trim());
+        if (nameExists) {
+          setErrors({ name: true });
+          formRef.current.scrollIntoView({ behavior: 'smooth' });
+          setSubmitting(false);
+          return;
+        }
       }
 
       const payload = {
@@ -78,37 +72,16 @@ export default function SetupForm({ onSubmitted }) {
           : [],
       };
 
-      await addSetup(payload);
-      resetForm();
+      await updateSetup(setup.id, payload);
       setSuccess(true);
-      if (onSubmitted) onSubmitted();
-      formRef.current.scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => setSuccess(false), 3000);
+      if (onClose) onClose();
     } catch (err) {
-      console.error('❌ Setup toevoegen mislukt:', err);
+      console.error('❌ Setup bijwerken mislukt:', err);
       alert('Fout bij opslaan setup.');
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function resetForm() {
-    setForm({
-      name: '',
-      indicators: '',
-      trend: '',
-      timeframe: '4hr',
-      symbol: 'BTC',
-      dynamic: false,
-      score_type: 'macro_score',
-      score_logic: '',
-      account_type: '',
-      strategy_type: '',
-      min_investment: '',
-      tags: '',
-      favorite: false,
-    });
-    setErrors({});
   }
 
   const isDisabled = !form.name || !form.indicators || !form.trend;
@@ -119,20 +92,19 @@ export default function SetupForm({ onSubmitted }) {
       onSubmit={handleSubmit}
       className="space-y-4 border p-4 rounded bg-white shadow-sm"
     >
-      <h3 className="text-lg font-semibold">➕ Nieuwe Setup</h3>
+      <h3 className="text-lg font-semibold">✏️ Setup bewerken</h3>
 
       {success && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-2 rounded">
-          ✅ Setup succesvol opgeslagen!
+          ✅ Setup succesvol bijgewerkt!
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Naam veld met tooltip en foutmelding */}
         <div>
           <label className="font-medium flex items-center">
             Naam*
-            <InfoTooltip text="De naam moet uniek zijn per symbool. Bijvoorbeeld: 'DCA BTC 4hr'" />
+            <InfoTooltip text="Unieke naam per symbool vereist." />
           </label>
           <input
             name="name"
@@ -144,16 +116,15 @@ export default function SetupForm({ onSubmitted }) {
             <p className="text-red-600 text-sm mt-1">
               {form.name?.trim().length < 3
                 ? 'Naam is verplicht (minimaal 3 tekens)'
-                : 'Deze setup-naam bestaat al voor dit symbool'}
+                : 'Deze naam bestaat al voor dit symbool'}
             </p>
           )}
         </div>
 
-        {/* Indicatoren */}
         <div>
           <label className="font-medium flex items-center">
             Indicatoren*
-            <InfoTooltip text="Bijv. RSI, volume spike, structuur" />
+            <InfoTooltip text="Bijv. RSI, volume spike" />
           </label>
           <input
             name="indicators"
@@ -161,10 +132,9 @@ export default function SetupForm({ onSubmitted }) {
             onChange={handleChange}
             className={`border p-2 rounded w-full ${errors.indicators ? 'border-red-500' : ''}`}
           />
-          {errors.indicators && <p className="text-red-600 text-sm mt-1">Minimaal 1 indicator vereist</p>}
+          {errors.indicators && <p className="text-red-600 text-sm mt-1">Veld is verplicht</p>}
         </div>
 
-        {/* Trend */}
         <div>
           <label className="font-medium flex items-center">
             Trend*
@@ -184,56 +154,18 @@ export default function SetupForm({ onSubmitted }) {
           {errors.trend && <p className="text-red-600 text-sm mt-1">Trend is verplicht</p>}
         </div>
 
-        {/* Timeframe */}
-        <div>
-          <label className="font-medium">Timeframe</label>
-          <select
-            name="timeframe"
-            value={form.timeframe}
-            onChange={handleChange}
-            className="border p-2 rounded w-full"
-          >
-            <option value="15m">15m</option>
-            <option value="1h">1h</option>
-            <option value="4hr">4hr</option>
-            <option value="1d">1d</option>
-            <option value="1w">1w</option>
-          </select>
-        </div>
+        <input name="symbol" value={form.symbol} onChange={handleChange} className="border p-2 rounded" />
+        <input name="account_type" value={form.account_type} onChange={handleChange} className="border p-2 rounded" />
+        <input name="strategy_type" value={form.strategy_type} onChange={handleChange} className="border p-2 rounded" />
+        <input name="min_investment" value={form.min_investment} onChange={handleChange} className="border p-2 rounded" />
+        <input name="tags" value={form.tags} onChange={handleChange} className="border p-2 rounded" />
 
-        {/* Score type */}
-        <div>
-          <label className="font-medium">Scoretype</label>
-          <select
-            name="score_type"
-            value={form.score_type}
-            onChange={handleChange}
-            className="border p-2 rounded w-full"
-          >
-            <option value="macro_score">Macro score</option>
-            <option value="technical_score">Technische score</option>
-            <option value="ai_score">AI-score</option>
-            <option value="combined">Gecombineerd</option>
-          </select>
-        </div>
-
-        {/* Scorelogica */}
-        <div>
-          <label className="font-medium">Scorelogica (optioneel)</label>
-          <textarea
-            name="score_logic"
-            value={form.score_logic}
-            onChange={handleChange}
-            placeholder='Bijv: { "macro": ">70", "rsi": "<30" }'
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
-        <input name="symbol" placeholder="Symbool (BTC, SOL...)" value={form.symbol} onChange={handleChange} className="border p-2 rounded" />
-        <input name="account_type" placeholder="Account type (Spot, Futures...)" value={form.account_type} onChange={handleChange} className="border p-2 rounded" />
-        <input name="strategy_type" placeholder="Strategietype (Breakout, Swing...)" value={form.strategy_type} onChange={handleChange} className="border p-2 rounded" />
-        <input name="min_investment" placeholder="Minimale investering (€)" value={form.min_investment} onChange={handleChange} className="border p-2 rounded" />
-        <input name="tags" placeholder="Tags (komma's)" value={form.tags} onChange={handleChange} className="border p-2 rounded" />
+        <textarea
+          name="score_logic"
+          value={form.score_logic}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
 
         <label className="flex items-center space-x-2">
           <input type="checkbox" name="dynamic" checked={form.dynamic} onChange={handleChange} className="w-4 h-4" />
@@ -246,15 +178,18 @@ export default function SetupForm({ onSubmitted }) {
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={isDisabled || submitting}
-        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-          isDisabled || submitting ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-      >
-        {submitting ? 'Bezig met opslaan...' : 'Setup opslaan'}
-      </button>
+      <div className="flex space-x-2">
+        <button
+          type="submit"
+          disabled={isDisabled || submitting}
+          className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
+            isDisabled || submitting ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {submitting ? 'Bezig met opslaan...' : 'Wijzigingen opslaan'}
+        </button>
+        <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Annuleren</button>
+      </div>
     </form>
   );
 }

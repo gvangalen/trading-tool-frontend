@@ -170,6 +170,25 @@ export default function SetupForm() {
           {errors.indicators && <p className="text-red-600 text-sm mt-1">Veld is verplicht</p>}
         </div>
 
+        <div className="form-group">
+  <label htmlFor="timeframe">Timeframe*</label>
+  <select
+    id="timeframe"
+    name="timeframe"
+    className="form-control"
+    value={formData.timeframe || ''}
+    onChange={(e) => setFormData({ ...formData, timeframe: e.target.value })}
+    required
+  >
+    <option value="">Kies een timeframe</option>
+    <option value="15m">15 minuten</option>
+    <option value="1H">1 uur</option>
+    <option value="4H">4 uur</option>
+    <option value="1D">1 dag</option>
+    <option value="1W">1 week</option>
+  </select>
+</div>
+
         <div>
           <label className="font-medium flex items-center">
             Trend* <InfoTooltip text="Bullish, Bearish of Neutraal?" />

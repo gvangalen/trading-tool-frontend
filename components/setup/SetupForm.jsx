@@ -80,6 +80,7 @@ export default function SetupForm() {
       };
 
       await addSetup(payload);
+      await loadSetups();
       setSuccess(true);
       setForm({
         name: '',

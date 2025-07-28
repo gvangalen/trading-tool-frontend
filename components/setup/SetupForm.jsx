@@ -178,9 +178,9 @@ export default function SetupForm() {
   <select
     id="timeframe"
     name="timeframe"
-    className="form-control"
-    value={formData.timeframe || ''}
-    onChange={(e) => setFormData({ ...formData, timeframe: e.target.value })}
+    className="form-control border p-2 rounded w-full"
+    value={form.timeframe || ''}
+    onChange={handleChange}
     required
   >
     <option value="">Kies een timeframe</option>

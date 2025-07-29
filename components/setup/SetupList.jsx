@@ -1,5 +1,5 @@
 'use client';
-
+import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
 import { generateExplanation } from '@/lib/setupService';

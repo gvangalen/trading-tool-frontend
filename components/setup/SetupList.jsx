@@ -47,15 +47,17 @@ export default function SetupList({ searchTerm = '' }) {
     setEditingValues({});
   }
 
-  async function handleGenerateExplanation(id) {
-    try {
-      await generateExplanation(id);
-      await loadSetups();
-    } catch (err) {
-      console.error('❌ Fout bij AI-explanation:', err);
-    }
+ async function handleGenerateExplanation(id) {
+  try {
+    await generateExplanation(id);
+    toast.success('Uitleg gegenereerd!');
+    await loadSetups();
+  } catch (err) {
+    console.error('❌ Fout bij AI-explanation:', err);
+    toast.error('Fout bij uitleg genereren.');
   }
-
+}
+  
   function toggleFavorite(id, current) {
     handleEditChange(id, 'favorite', !current);
     handleSave(id);

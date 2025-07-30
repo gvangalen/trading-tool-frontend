@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import StrategyList from '@/components/strategy/StrategyList';
-import StrategyForm from '@/components/strategy/StrategyForm';
+import StrategyForm from '@/components/strategy/StrategyFormTrading';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');

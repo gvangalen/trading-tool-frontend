@@ -112,8 +112,8 @@ export default function SetupList({ searchTerm = '' }) {
                       onChange={(e) => handleEditChange(setup.id, 'indicators', e.target.value)}
                     />
                     <textarea className="border p-2 rounded w-full mb-2"
-                      defaultValue={setup.description}
-                      onChange={(e) => handleEditChange(setup.id, 'description', e.target.value)}
+                      defaultValue={setup.explanation}
+                      onChange={(e) => handleEditChange(setup.id, 'explanation', e.target.value)}
                     />
                     <input className="border p-2 rounded w-full mb-2"
                       defaultValue={setup.min_investment}

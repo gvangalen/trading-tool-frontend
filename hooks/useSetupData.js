@@ -21,13 +21,20 @@ export function useSetupData() {
     loadTopSetups();
   }, []);
 
-  // 📥 Setuplijst ophalen
+  // 📥 Setuplijst ophalen met explanation fix
   async function loadSetups() {
     setLoading(true);
     setError('');
     try {
       const data = await fetchSetups();
-      setSetups(Array.isArray(data) ? data : []);
+      setSetups(
+        Array.isArray(data)
+          ? data.map((s) => ({
+              ...s,
+              explanation: s.explanation || '', // ✅ altijd explanation beschikbaar
+            }))
+          : []
+      );
     } catch (err) {
       console.error('❌ Fout bij laden setups:', err);
       setError('Kan setups niet laden.');
@@ -87,6 +94,6 @@ export function useSetupData() {
     loadTopSetups,
     saveSetup,
     removeSetup,
-    checkSetupNameExists, // ✅ beschikbaar in je component
+    checkSetupNameExists,
   };
 }

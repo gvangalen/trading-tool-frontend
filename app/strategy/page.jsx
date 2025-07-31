@@ -13,7 +13,7 @@ export default function StrategyPage() {
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-bold">📈 Strategieën</h1>
         <p className="text-gray-600 text-sm">
-          Bekijk en beheer je strategieën. De AI helpt bij uitleg, entry en risk management.
+          Bekijk en beheer je strategieën. Kies een methode: AI, DCA of handmatig.
         </p>
       </header>
 
@@ -34,11 +34,11 @@ export default function StrategyPage() {
         <StrategyList searchTerm={search} />
       </section>
 
-      {/* ➕ Formulier onderaan */}
-     <section className="pt-10 border-t">
-  <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-  <StrategyTabs />
-</section>
+      {/* ➕ Strategie toevoegen */}
+      <section className="pt-10 border-t">
+        <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
+        <StrategyTabs />
+      </section>
     </div>
   );
 }

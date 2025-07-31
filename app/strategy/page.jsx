@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import StrategyList from '@/components/strategy/StrategyList';
-import StrategyForm from '@/components/strategy/StrategyFormTrading';
+import StrategyTabs from '@/components/strategy/StrategyTabs';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
@@ -35,10 +35,10 @@ export default function StrategyPage() {
       </section>
 
       {/* ➕ Formulier onderaan */}
-      <section className="pt-10 border-t">
-        <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-        <StrategyForm />
-      </section>
+     <section className="pt-10 border-t">
+  <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
+  <StrategyTabs />
+</section>
     </div>
   );
 }

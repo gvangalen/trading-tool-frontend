@@ -10,7 +10,7 @@ export default function StrategyPage() {
 
   const handleSuccess = (message) => {
     setToast(message);
-    setTimeout(() => setToast(''), 4000); // Meldingen verdwijnen na 4s
+    setTimeout(() => setToast(''), 4000);
   };
 
   return (

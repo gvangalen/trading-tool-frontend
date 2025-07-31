@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import StrategyFormTrading from './StrategyFormTrading';
 import StrategyFormDCA from './StrategyFormDCA';
-import StrategyForm from './StrategyForm'; // ← handmatige strategie
 
 export default function StrategyTabs({ onSubmit }) {
   const [activeTab, setActiveTab] = useState('trading');

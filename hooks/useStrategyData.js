@@ -45,9 +45,18 @@ export function useStrategyData() {
     }
   }
 
+  // ✅ Bepaal vereiste velden per strategy_type
+  function getRequiredFields(strategy) {
+    if (strategy.strategy_type === 'dca') {
+      return ['setup_id', 'setup_name', 'asset', 'timeframe', 'amount', 'frequency'];
+    } else {
+      return ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'targets', 'stop_loss'];
+    }
+  }
+
   // 💾 Strategie bewerken (met validatie)
   async function saveStrategy(id, updatedData) {
-    const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'targets', 'stop_loss'];
+    const requiredFields = getRequiredFields(updatedData);
     const missing = requiredFields.filter((field) => !updatedData[field]);
 
     if (missing.length > 0) {
@@ -114,7 +123,7 @@ export function useStrategyData() {
 
   // ➕ Handmatig strategie toevoegen (met validatie)
   async function addStrategy(strategyData) {
-    const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'targets', 'stop_loss'];
+    const requiredFields = getRequiredFields(strategyData);
     const missing = requiredFields.filter((field) => !strategyData[field]);
 
     if (missing.length > 0) {

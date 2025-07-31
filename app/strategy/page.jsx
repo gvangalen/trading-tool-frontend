@@ -6,6 +6,12 @@ import StrategyTabs from '@/components/strategy/StrategyTabs';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
+  const [toast, setToast] = useState('');
+
+  const handleSuccess = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(''), 4000); // Meldingen verdwijnen na 4s
+  };
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-10">
@@ -34,10 +40,17 @@ export default function StrategyPage() {
         <StrategyList searchTerm={search} />
       </section>
 
+      {/* 🔔 Succesmelding */}
+      {toast && (
+        <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
+          {toast}
+        </div>
+      )}
+
       {/* ➕ Strategie toevoegen */}
       <section className="pt-10 border-t">
         <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-        <StrategyTabs />
+        <StrategyTabs onSuccess={handleSuccess} />
       </section>
     </div>
   );

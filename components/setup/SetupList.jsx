@@ -2,7 +2,7 @@
 import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
-import { generateExplanation } from '@/lib/setupService';
+import { generateExplanation } from from '@/lib/api/setups';
 
 export default function SetupList({ searchTerm = '' }) {
   const {

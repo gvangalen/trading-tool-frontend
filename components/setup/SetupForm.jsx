@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { addSetup, checkSetupNameExists } from '@/lib/setupService';
+import { addSetup, checkSetupNameExists } from '@/lib/api/setups';
 import { useSetupData } from '@/hooks/useSetupData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 

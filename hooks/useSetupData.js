@@ -6,7 +6,7 @@ import {
   fetchTopSetups,
   updateSetup,
   deleteSetup,
-} from '@/lib/setupService';
+} from '@/lib/api/setups';
 
 export function useSetupData() {
   const [setups, setSetups] = useState([]);

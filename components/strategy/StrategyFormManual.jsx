@@ -14,8 +14,14 @@ export default function StrategyFormManual({ onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const selectedSetup = setups.find((s) => s.id === parseInt(e.target.setup_id.value));
-    if (!selectedSetup) return;
+    const selectedId = parseInt(e.target.setup_id.value);
+    const selectedSetup = setups.find((s) => s.id === selectedId);
+
+    if (!selectedSetup) {
+      alert("⚠️ Je moet een geldige setup selecteren.");
+      console.warn("❌ Setup niet gevonden voor ID:", selectedId);
+      return;
+    }
 
     const strategy = {
       setup_id: selectedSetup.id,

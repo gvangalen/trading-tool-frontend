@@ -123,12 +123,14 @@ export default function StrategyForm() {
           className="w-full border p-2 rounded"
           required
         >
-          <option value="">-- Kies een setup --</option>
-          {setups.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
+          {Array.isArray(setups) &&
+  setups
+    .filter((s) => s && s.id && s.name)
+    .map((s) => (
+      <option key={s.id} value={s.id}>
+        {s.name}
+      </option>
+    ))}
         </select>
 
         <label className="block font-medium">Asset</label>

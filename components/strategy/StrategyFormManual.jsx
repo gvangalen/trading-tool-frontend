@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchSetups } from '@/lib/api/setup';
+import { fetchSetups } from '@/lib/setupService';
 
 export default function StrategyFormManual({ onSubmit }) {
   const [setups, setSetups] = useState([]);

@@ -15,7 +15,10 @@ export default function StrategyList({ searchTerm = '' }) {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    loadStrategies();
+    console.log('📦 Strategieën laden...');
+    loadStrategies().catch((err) => {
+      console.error('❌ Fout bij laden van strategieën:', err);
+    });
   }, []);
 
   const showToast = (message) => {
@@ -112,6 +115,14 @@ export default function StrategyList({ searchTerm = '' }) {
       setLoadingId(null);
     }
   };
+
+  if (!Array.isArray(strategies)) {
+    return (
+      <div className="text-red-600 bg-red-100 p-4 rounded">
+        ❌ Strategie-data is ongeldig of niet geladen. Controleer je backend.
+      </div>
+    );
+  }
 
   const filtered = strategies.filter((s) => {
     const matchesAsset = !filters.asset || s.asset === filters.asset;

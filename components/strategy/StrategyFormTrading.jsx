@@ -32,10 +32,17 @@ export default function StrategyForm() {
 
     if (name === 'setup_id') {
       const selected = setups.find((s) => String(s.id) === String(value));
+      console.log('🔗 Geselecteerde setup:', selected);
+
+      if (!selected) {
+        setError('❌ Ongeldige setup geselecteerd.');
+        return;
+      }
+
       setForm((prev) => ({
         ...prev,
         setup_id: value,
-        setup_name: selected?.name || '',
+        setup_name: selected.name || '',
       }));
     } else {
       setForm((prev) => ({
@@ -50,6 +57,7 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
+    // ✅ Basisvalidatie
     const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'target', 'stop_loss'];
     for (const field of requiredFields) {
       if (!form[field]) {
@@ -58,15 +66,25 @@ export default function StrategyForm() {
       }
     }
 
+    // ✅ Float parsing
+    const entry = parseFloat(form.entry);
+    const target = parseFloat(form.target);
+    const stop_loss = parseFloat(form.stop_loss);
+
+    if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
+      setError('❌ Entry, target en stop-loss moeten geldige getallen zijn.');
+      return;
+    }
+
     const payload = {
       setup_id: form.setup_id,
       setup_name: form.setup_name,
       asset: form.asset,
       timeframe: form.timeframe,
-      explanation: form.explanation,
-      entry: parseFloat(form.entry),
-      targets: [parseFloat(form.target)],
-      stop_loss: parseFloat(form.stop_loss),
+      explanation: form.explanation?.trim() || '',
+      entry,
+      targets: [target],
+      stop_loss,
       favorite: form.favorite,
       tags: form.tags
         .split(',')

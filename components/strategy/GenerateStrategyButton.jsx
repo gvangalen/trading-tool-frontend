@@ -8,24 +8,36 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
   const [status, setStatus] = useState('');
 
   const handleGenerate = async () => {
-    if (!setupId) return;
+    if (!setupId) {
+      setStatus('❌ Setup ID ontbreekt');
+      return;
+    }
+
     setLoading(true);
     setStatus('⏳ Strategie wordt gegenereerd...');
 
     try {
       const data = await generateStrategy(setupId, true); // 🔁 overwrite = true
-      if (data?.task_id) {
-        setStatus('✅ Strategie gegenereerd (AI gestart)');
-        if (onSuccess) onSuccess(); // 🚀 callback voor herladen
+
+      if (data && typeof data === 'object') {
+        if (data?.task_id) {
+          setStatus('✅ Strategie gegenereerd (AI gestart)');
+          if (onSuccess) onSuccess();
+        } else if (data?.status === 'completed') {
+          setStatus('✅ Strategie direct gegenereerd');
+          if (onSuccess) onSuccess();
+        } else {
+          setStatus('⚠️ Geen geldige response ontvangen');
+        }
       } else {
-        setStatus('⚠️ Geen task ID ontvangen');
+        setStatus('❌ Ongeldige respons van server');
       }
     } catch (err) {
       console.error('❌ Fout bij strategie-generatie:', err);
       setStatus('❌ Fout bij genereren');
     } finally {
       setLoading(false);
-      setTimeout(() => setStatus(''), 3000);
+      setTimeout(() => setStatus(''), 4000);
     }
   };
 

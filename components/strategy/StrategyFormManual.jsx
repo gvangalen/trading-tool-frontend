@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { fetchSetups } from '@/lib/api/setups';
 
 export default function StrategyFormManual({ onSubmit }) {
-  const [setups, setSetups] = useState(() => []);
+  const [setups, setSetups] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -24,12 +24,12 @@ export default function StrategyFormManual({ onSubmit }) {
     e.preventDefault();
     setError('');
 
-    const selectedId = parseInt(e.target.setup_id.value);
-    const selectedSetup = setups.find((s) => s.id === selectedId);
+    const selectedId = e.target.setup_id.value;
+    const selectedSetup = setups.find((s) => String(s.id) === String(selectedId));
 
     if (!selectedSetup) {
-      setError('⚠️ Je moet een geldige setup selecteren.');
       console.warn('❌ Setup niet gevonden voor ID:', selectedId);
+      setError('⚠️ Je moet een geldige setup selecteren.');
       return;
     }
 
@@ -39,9 +39,9 @@ export default function StrategyFormManual({ onSubmit }) {
       asset: selectedSetup.symbol,
       timeframe: selectedSetup.timeframe,
       strategy_type: 'manual',
-      entry: e.target.entry.value,
-      target: e.target.target.value,
-      stop_loss: e.target.stop_loss.value,
+      entry: parseFloat(e.target.entry.value),
+      target: parseFloat(e.target.target.value),
+      stop_loss: parseFloat(e.target.stop_loss.value),
       explanation: e.target.explanation.value,
     };
 
@@ -54,30 +54,29 @@ export default function StrategyFormManual({ onSubmit }) {
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Koppel aan Setup</label>
         <select name="setup_id" className="input w-full border p-2 rounded" required>
           <option value="">-- Kies een setup --</option>
-          {Array.isArray(setups) &&
-            setups
-              .filter((s) => s && s.id && s.name)
-              .map((setup) => (
-                <option key={setup.id} value={setup.id}>
-                  {setup.name} ({setup.symbol} – {setup.timeframe})
-                </option>
-              ))}
+          {setups
+            .filter((s) => s && s.id && s.name)
+            .map((setup) => (
+              <option key={setup.id} value={setup.id}>
+                {setup.name} ({setup.symbol} – {setup.timeframe})
+              </option>
+            ))}
         </select>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Entry prijs (€)</label>
-        <input name="entry" placeholder="Bijv. 27000" className="input w-full border p-2 rounded" required />
+        <input name="entry" type="number" step="any" placeholder="Bijv. 27000" className="input w-full border p-2 rounded" required />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target prijs (€)</label>
-        <input name="target" placeholder="Bijv. 31000" className="input w-full border p-2 rounded" required />
+        <input name="target" type="number" step="any" placeholder="Bijv. 31000" className="input w-full border p-2 rounded" required />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stop-loss (€)</label>
-        <input name="stop_loss" placeholder="Bijv. 25000" className="input w-full border p-2 rounded" required />
+        <input name="stop_loss" type="number" step="any" placeholder="Bijv. 25000" className="input w-full border p-2 rounded" required />
       </div>
 
       <div>

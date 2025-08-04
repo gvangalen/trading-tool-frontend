@@ -9,11 +9,13 @@ export default function StrategyFormManual({ onSubmit }) {
 
   useEffect(() => {
     const loadSetups = async () => {
+      console.log('📦 Setup ophalen gestart...');
       try {
         const data = await fetchSetups();
+        console.log('✅ Setups opgehaald:', data);
         setSetups(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('❌ Setup ophalen mislukt:', err);
+        console.error('❌ Fout bij ophalen van setups:', err);
         setSetups([]);
       }
     };
@@ -25,15 +27,19 @@ export default function StrategyFormManual({ onSubmit }) {
     setError('');
 
     const selectedId = e.target.setup_id.value?.trim();
+    console.log('🆔 Geselecteerde setup_id:', selectedId);
+
     if (!selectedId) {
+      console.warn('⚠️ Geen setup geselecteerd');
       setError('⚠️ Je moet een setup kiezen.');
       return;
     }
 
     const selectedSetup = setups.find((s) => String(s.id) === String(selectedId));
+    console.log('🔍 Gevonden setup:', selectedSetup);
 
     if (!selectedSetup) {
-      console.warn('❌ Setup niet gevonden voor ID:', selectedId);
+      console.warn('❌ Ongeldige setup geselecteerd:', selectedId);
       setError('⚠️ Ongeldige setup geselecteerd.');
       return;
     }
@@ -41,8 +47,10 @@ export default function StrategyFormManual({ onSubmit }) {
     const entry = parseFloat(e.target.entry.value);
     const target = parseFloat(e.target.target.value);
     const stop_loss = parseFloat(e.target.stop_loss.value);
+    console.log('📊 Waarden ingevoerd → Entry:', entry, 'Target:', target, 'Stop-loss:', stop_loss);
 
     if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
+      console.warn('⚠️ Ongeldige numerieke input');
       setError('⚠️ Vul geldige numerieke waarden in voor entry, target en stop-loss.');
       return;
     }
@@ -59,6 +67,7 @@ export default function StrategyFormManual({ onSubmit }) {
       explanation: e.target.explanation.value.trim(),
     };
 
+    console.log('📤 Strategie verstuurd naar parent:', strategy);
     onSubmit(strategy);
   };
 

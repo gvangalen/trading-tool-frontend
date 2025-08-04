@@ -28,14 +28,14 @@ export default function StrategyForm() {
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value, type, checked, selectedOptions } = e.target;
+    const { name, value, type, checked } = e.target;
 
     if (name === 'setup_id') {
-      const selectedName = selectedOptions?.[0]?.textContent || '';
+      const selected = setups.find((s) => String(s.id) === String(value));
       setForm((prev) => ({
         ...prev,
         setup_id: value,
-        setup_name: selectedName,
+        setup_name: selected?.name || '',
       }));
     } else {
       setForm((prev) => ({
@@ -123,14 +123,15 @@ export default function StrategyForm() {
           className="w-full border p-2 rounded"
           required
         >
+          <option value="">-- Kies een setup --</option>
           {Array.isArray(setups) &&
-  setups
-    .filter((s) => s && s.id && s.name)
-    .map((s) => (
-      <option key={s.id} value={s.id}>
-        {s.name}
-      </option>
-    ))}
+            setups
+              .filter((s) => s && s.id && s.name)
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.symbol} – {s.timeframe})
+                </option>
+              ))}
         </select>
 
         <label className="block font-medium">Asset</label>

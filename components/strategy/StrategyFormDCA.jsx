@@ -9,29 +9,36 @@ export default function StrategyFormDCA({ onSubmit }) {
     e.preventDefault();
     setError('');
 
-    const amount = e.target.amount.value.trim();
-    const frequency = e.target.frequency.value;
-    const rules = e.target.rules.value.trim();
+    const amountRaw = e.target.amount.value?.trim();
+    const frequency = e.target.frequency.value?.trim();
+    const rules = e.target.rules.value?.trim() || '';
 
-    // ✅ Validatie
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+    console.log('🧾 DCA Formulier ingestuurd:', { amountRaw, frequency, rules });
+
+    // ✅ Bedrag validatie
+    const amount = Number(amountRaw);
+    if (!amountRaw || isNaN(amount) || amount <= 0) {
+      console.warn('❌ Ongeldig bedrag ingevuld:', amountRaw);
       setError('❌ Voer een geldig bedrag in (bijv. 100).');
       return;
     }
 
+    // ✅ Frequentie validatie
     if (!frequency) {
+      console.warn('❌ Geen frequentie geselecteerd');
       setError('❌ Selecteer een koopfrequentie.');
       return;
     }
 
     const strategy = {
       strategy_type: 'dca',
-      amount: Number(amount),
+      amount,
       frequency,
       rules,
-      origin: 'DCA', // ➕ Voor duidelijkheid backend
+      origin: 'DCA',
     };
 
+    console.log('📤 DCA-strategie wordt verstuurd naar parent component:', strategy);
     onSubmit(strategy);
   };
 

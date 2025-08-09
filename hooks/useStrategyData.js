@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import {
   fetchStrategies,
-  fetchSetups,
   createStrategy,
   updateStrategy,
   deleteStrategy,
   generateStrategy,
   generateAllStrategies,
 } from '@/lib/api/strategy';
+import { fetchSetups } from '@/lib/api/setups';
 
 export function useStrategyData() {
   const [strategies, setStrategies] = useState([]);
@@ -18,34 +18,50 @@ export function useStrategyData() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // ✅ Strategieën laden
+  // Initieel setups laden
+  useEffect(() => {
+    console.log('🚀 useStrategyData mounted: setups laden gestart');
+    loadSetups();
+  }, []);
+
   async function loadStrategies(asset = '', timeframe = '') {
+    console.log(`🔍 loadStrategies gestart met asset='${asset}', timeframe='${timeframe}'`);
     setLoading(true);
     setError('');
     try {
       const data = await fetchStrategies(asset, timeframe);
+      console.log('✅ loadStrategies: data ontvangen', data);
       setStrategies(Array.isArray(data) ? data : []);
+      if (!Array.isArray(data) || data.length === 0) {
+        console.warn('⚠️ loadStrategies: lege lijst ontvangen');
+      }
     } catch (err) {
-      console.error('❌ Strategieën laden mislukt:', err);
+      console.error('❌ loadStrategies: strategieën laden mislukt:', err);
       setError('❌ Fout bij laden strategieën.');
       setStrategies([]);
     } finally {
       setLoading(false);
+      console.log('ℹ️ loadStrategies: klaar');
     }
   }
 
-  // ✅ Setups laden
-  async function loadSetups() {
+  async function loadSetups(strategyType = '') {
+    console.log(`🔍 loadSetups gestart met strategyType='${strategyType}'`);
     try {
-      const data = await fetchSetups();
-      setSetups(Array.isArray(data?.setups) ? data.setups : []);
+      const data = await fetchSetups(strategyType);
+      console.log('✅ loadSetups: data ontvangen', data);
+      setSetups(Array.isArray(data) ? data : []);
+      if (!Array.isArray(data) || data.length === 0) {
+        console.warn('⚠️ loadSetups: lege lijst ontvangen');
+      }
     } catch (err) {
-      console.error('❌ Setups laden mislukt:', err);
+      console.error('❌ loadSetups: setups laden mislukt:', err);
       setSetups([]);
+    } finally {
+      console.log('ℹ️ loadSetups: klaar');
     }
   }
 
-  // ✅ Bepaal vereiste velden per strategy_type
   function getRequiredFields(strategy) {
     if (strategy.strategy_type === 'dca') {
       return ['setup_id', 'setup_name', 'asset', 'timeframe', 'amount', 'frequency'];
@@ -54,8 +70,8 @@ export function useStrategyData() {
     }
   }
 
-  // 💾 Strategie bewerken (met validatie)
   async function saveStrategy(id, updatedData) {
+    console.log(`💾 saveStrategy gestart voor ID ${id} met data:`, updatedData);
     const requiredFields = getRequiredFields(updatedData);
     const missing = requiredFields.filter((field) => !updatedData[field]);
 
@@ -69,28 +85,31 @@ export function useStrategyData() {
     try {
       await updateStrategy(id, updatedData);
       setSuccessMessage('Strategie opgeslagen.');
+      console.log('✅ saveStrategy: strategie succesvol opgeslagen, laden strategieën');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ Strategie opslaan mislukt:', err);
+      console.error('❌ saveStrategy: strategie opslaan mislukt:', err);
       setError('Opslaan mislukt.');
     }
   }
 
-  // ❌ Strategie verwijderen
   async function removeStrategy(id) {
+    console.log(`🗑️ removeStrategy gestart voor ID ${id}`);
     try {
       await deleteStrategy(id);
+      console.log('✅ removeStrategy: strategie succesvol verwijderd, laden strategieën');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ Strategie verwijderen mislukt:', err);
+      console.error('❌ removeStrategy: strategie verwijderen mislukt:', err);
       setError('Verwijderen mislukt.');
     }
   }
 
-  // 🧠 Genereer AI-strategie voor één setup
   async function generateStrategyForSetup(setupId, overwrite = false) {
+    console.log(`🤖 generateStrategyForSetup gestart voor setupId ${setupId}, overwrite=${overwrite}`);
     try {
       const response = await generateStrategy(setupId, overwrite);
+      console.log('✅ generateStrategyForSetup: response ontvangen', response);
 
       if (response?.task_id) {
         setSuccessMessage(`Celery gestart (Task ID: ${response.task_id})`);
@@ -104,25 +123,26 @@ export function useStrategyData() {
 
       await loadStrategies();
     } catch (err) {
-      console.error('❌ AI-generatie mislukt:', err);
+      console.error('❌ generateStrategyForSetup: AI-generatie mislukt:', err);
       setError('Strategie genereren mislukt.');
     }
   }
 
-  // 🔁 Genereer AI-strategieën voor alle setups
   async function generateAll() {
+    console.log('🔁 generateAll gestart');
     try {
       await generateAllStrategies();
       setSuccessMessage('Alle strategieën opnieuw gegenereerd.');
+      console.log('✅ generateAll: bulk generatie succesvol, laden strategieën');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ Bulk-generatie mislukt:', err);
+      console.error('❌ generateAll: bulk-generatie mislukt:', err);
       setError('Bulkgeneratie mislukt.');
     }
   }
 
-  // ➕ Handmatig strategie toevoegen (met validatie)
   async function addStrategy(strategyData) {
+    console.log('➕ addStrategy gestart met data:', strategyData);
     const requiredFields = getRequiredFields(strategyData);
     const missing = requiredFields.filter((field) => !strategyData[field]);
 
@@ -136,9 +156,10 @@ export function useStrategyData() {
     try {
       await createStrategy(strategyData);
       setSuccessMessage('Strategie toegevoegd.');
+      console.log('✅ addStrategy: strategie toegevoegd, laden strategieën');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ Strategie toevoegen mislukt:', err);
+      console.error('❌ addStrategy: strategie toevoegen mislukt:', err);
       setError('Toevoegen mislukt.');
     }
   }

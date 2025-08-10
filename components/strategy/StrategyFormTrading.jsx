@@ -13,8 +13,8 @@ export default function StrategyForm() {
   const [form, setForm] = useState({
     setup_id: '',
     setup_name: '',
-    asset: 'BTC',
-    timeframe: '1D',
+    asset: '',
+    timeframe: '',
     explanation: '',
     entry: '',
     target: '',
@@ -30,12 +30,13 @@ export default function StrategyForm() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    console.log(`📝 Field changed: ${name} = ${type === 'checkbox' ? checked : value}`);
+
     if (name === 'setup_id') {
       const selected = setups.find((s) => String(s.id) === String(value));
-      console.log('🔗 Geselecteerde setup:', selected);
-
       if (!selected) {
         setError('❌ Ongeldige setup geselecteerd.');
+        console.warn(`❌ Ongeldige setup_id geselecteerd: ${value}`);
         return;
       }
 
@@ -43,12 +44,17 @@ export default function StrategyForm() {
         ...prev,
         setup_id: value,
         setup_name: selected.name || '',
+        asset: selected.symbol || '',
+        timeframe: selected.timeframe || '',
       }));
+      setError('');
+      console.log(`✅ Setup geselecteerd: ${selected.name} (${selected.symbol})`);
     } else {
       setForm((prev) => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : value,
       }));
+      setError('');
     }
   };
 
@@ -57,22 +63,26 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
-    // ✅ Basisvalidatie
+    console.log('🚀 Submit gestart met formulier:', form);
+
     const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'target', 'stop_loss'];
     for (const field of requiredFields) {
       if (!form[field]) {
-        setError(`❌ Veld "${field}" is verplicht.`);
+        const msg = `❌ Veld "${field}" is verplicht.`;
+        console.warn(msg);
+        setError(msg);
         return;
       }
     }
 
-    // ✅ Float parsing
     const entry = parseFloat(form.entry);
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
 
     if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
-      setError('❌ Entry, target en stop-loss moeten geldige getallen zijn.');
+      const msg = '❌ Entry, target en stop-loss moeten geldige getallen zijn.';
+      console.warn(msg);
+      setError(msg);
       return;
     }
 
@@ -98,11 +108,12 @@ export default function StrategyForm() {
     setLoading(true);
     try {
       await createStrategy(payload);
+      console.log('✅ Strategie succesvol opgeslagen.');
       setForm({
         setup_id: '',
         setup_name: '',
-        asset: 'BTC',
-        timeframe: '1D',
+        asset: '',
+        timeframe: '',
         explanation: '',
         entry: '',
         target: '',
@@ -117,6 +128,7 @@ export default function StrategyForm() {
       setError('Fout bij opslaan strategie.');
     } finally {
       setLoading(false);
+      console.log('⏳ Submit afgehandeld, loading uit.');
     }
   };
 
@@ -152,21 +164,16 @@ export default function StrategyForm() {
               ))}
         </select>
 
-        <label className="block font-medium">Asset</label>
-        <select name="asset" value={form.asset} onChange={handleChange} className="w-full border p-2 rounded">
-          <option value="BTC">BTC</option>
-          <option value="SOL">SOL</option>
-          <option value="ETH">ETH</option>
-        </select>
-
-        <label className="block font-medium">Timeframe</label>
-        <select name="timeframe" value={form.timeframe} onChange={handleChange} className="w-full border p-2 rounded">
-          <option value="15m">15m</option>
-          <option value="1H">1H</option>
-          <option value="4H">4H</option>
-          <option value="1D">1D</option>
-          <option value="1W">1W</option>
-        </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium">Asset</label>
+            <input value={form.asset} readOnly className="w-full border p-2 rounded bg-gray-100" />
+          </div>
+          <div>
+            <label className="block font-medium">Timeframe</label>
+            <input value={form.timeframe} readOnly className="w-full border p-2 rounded bg-gray-100" />
+          </div>
+        </div>
 
         <label className="block font-medium">Entry prijs (€)</label>
         <input name="entry" type="number" step="any" value={form.entry} onChange={handleChange} className="w-full border p-2 rounded" required />

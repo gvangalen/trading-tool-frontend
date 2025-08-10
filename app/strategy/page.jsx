@@ -1,16 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import StrategyList from '@/components/strategy/StrategyList';
 import StrategyTabs from '@/components/strategy/StrategyTabs';
+import { fetchSetups, fetchDcaSetups } from '@/lib/api/setups';
+import { createStrategy } from '@/lib/api/strategy';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
+  const [setups, setSetups] = useState([]);
+  const [dcaSetups, setDcaSetups] = useState([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [allSetups, dca] = await Promise.all([fetchSetups(), fetchDcaSetups()]);
+        setSetups(allSetups || []);
+        setDcaSetups(dca || []);
+      } catch (err) {
+        console.error('❌ Fout bij laden van setups:', err);
+      }
+    }
+    loadData();
+  }, []);
 
   const handleSuccess = (message) => {
     setToast(message);
     setTimeout(() => setToast(''), 4000);
+  };
+
+  const handleStrategySubmit = async (strategy) => {
+    try {
+      const setup = setups.find((s) => String(s.id) === String(strategy.setup_id));
+      if (!setup) {
+        setToast('❌ Geen geldige setup geselecteerd.');
+        return;
+      }
+
+      const payload = {
+        ...strategy,
+        setup_id: setup.id,
+        setup_name: setup.name,
+        asset: setup.symbol,
+        timeframe: setup.timeframe,
+        explanation: strategy.explanation || strategy.rules || '',
+        entry: strategy.entry || null,
+        targets: strategy.targets || [],
+        stop_loss: strategy.stop_loss || null,
+        favorite: false,
+        tags: [],
+      };
+
+      console.log('📤 Strategie opslaan:', payload);
+      await createStrategy(payload);
+      handleSuccess('✅ Strategie succesvol opgeslagen!');
+    } catch (err) {
+      console.error('❌ Fout bij opslaan strategie:', err);
+      setToast('❌ Strategie opslaan mislukt.');
+    }
   };
 
   return (
@@ -50,7 +98,7 @@ export default function StrategyPage() {
       {/* ➕ Strategie toevoegen */}
       <section className="pt-10 border-t">
         <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-        <StrategyTabs onSuccess={handleSuccess} />
+        <StrategyTabs onSubmit={handleStrategySubmit} setups={setups} dcaSetups={dcaSetups} />
       </section>
     </div>
   );

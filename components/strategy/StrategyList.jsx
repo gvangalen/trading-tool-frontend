@@ -15,10 +15,14 @@ export default function StrategyList({ searchTerm = '' }) {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    console.log('📦 Strategieën laden...');
-    loadStrategies().catch((err) => {
-      console.error('❌ Fout bij laden van strategieën:', err);
-    });
+    console.log('📦 Strategieën worden geladen...');
+    loadStrategies()
+      .then(() => {
+        console.log('✅ Strategieën geladen:', strategies);
+      })
+      .catch((err) => {
+        console.error('❌ Fout bij laden van strategieën:', err);
+      });
   }, []);
 
   const showToast = (message) => {
@@ -42,7 +46,7 @@ export default function StrategyList({ searchTerm = '' }) {
 
   const handleSave = async () => {
     if (!editingId) return;
-    const original = strategies.find((s) => s.id === editingId);
+    const original = strategies.find((s) => s && s.id === editingId);
     const changes = {};
 
     for (const key in editFields) {
@@ -124,16 +128,18 @@ export default function StrategyList({ searchTerm = '' }) {
     );
   }
 
-  const filtered = strategies.filter((s) => {
-    const matchesAsset = !filters.asset || s.asset === filters.asset;
-    const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
-    const matchesTag = !filters.tag || (s.tags || '').includes(filters.tag);
-    const matchesSearch =
-      !searchTerm ||
-      (s.asset || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (s.tags || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesAsset && matchesTimeframe && matchesTag && matchesSearch;
-  });
+  const filtered = strategies
+    .filter((s) => s && s.id) // ✅ voorkom nulls
+    .filter((s) => {
+      const matchesAsset = !filters.asset || s.asset === filters.asset;
+      const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
+      const matchesTag = !filters.tag || (s.tags || '').includes(filters.tag);
+      const matchesSearch =
+        !searchTerm ||
+        (s.asset || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.tags || '').toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesAsset && matchesTimeframe && matchesTag && matchesSearch;
+    });
 
   const sortedStrategies = [...filtered].sort((a, b) => {
     if (sort === 'score') return (b.score || 0) - (a.score || 0);

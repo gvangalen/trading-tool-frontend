@@ -1,46 +1,56 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchSetups } from '@/lib/api/setups';
+import { useSetupData } from '@/hooks/useSetupData';
 
 export default function StrategyFormManual({ onSubmit }) {
-  const [setups, setSetups] = useState([]);
+  const { setups, loadSetups } = useSetupData();
+
+  const [form, setForm] = useState({
+    setup_id: '',
+    entry: '',
+    target: '',
+    stop_loss: '',
+    explanation: '',
+  });
+
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const loadSetups = async () => {
-      console.log('📦 Setup ophalen gestart...');
-      try {
-        const data = await fetchSetups();
-        console.log('✅ Setups opgehaald:', data);
-        setSetups(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('❌ Fout bij ophalen van setups:', err);
-        setSetups([]);
-      }
-    };
     loadSetups();
-  }, []);
+  }, [loadSetups]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setError('');
+    setSuccess(false);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
+    setSuccess(false);
 
-    const selectedId = e.target.setup_id.value?.trim();
-    if (!selectedId) {
+    // Validatie
+    if (!form.setup_id) {
       setError('⚠️ Je moet een setup kiezen.');
       return;
     }
 
-    const selectedSetup = setups.find((s) => String(s.id) === String(selectedId));
+    const selectedSetup = setups.find((s) => String(s.id) === String(form.setup_id));
     if (!selectedSetup) {
       setError('⚠️ Ongeldige setup geselecteerd.');
       return;
     }
 
-    const entry = parseFloat(e.target.entry.value);
-    const target = parseFloat(e.target.target.value);
-    const stop_loss = parseFloat(e.target.stop_loss.value);
+    const entry = parseFloat(form.entry);
+    const target = parseFloat(form.target);
+    const stop_loss = parseFloat(form.stop_loss);
 
     if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
       setError('⚠️ Vul geldige numerieke waarden in voor entry, target en stop-loss.');
@@ -54,13 +64,23 @@ export default function StrategyFormManual({ onSubmit }) {
       timeframe: selectedSetup.timeframe,
       strategy_type: 'manual',
       entry,
-      target,
+      targets: [target],
       stop_loss,
-      explanation: e.target.explanation.value.trim(),
+      explanation: form.explanation.trim(),
+      origin: 'Handmatig',
     };
 
     console.log('📤 Strategie verstuurd naar parent:', strategy);
     onSubmit(strategy);
+    setSuccess(true);
+    // Reset form na succesvol submitten
+    setForm({
+      setup_id: '',
+      entry: '',
+      target: '',
+      stop_loss: '',
+      explanation: '',
+    });
   };
 
   return (
@@ -73,8 +93,9 @@ export default function StrategyFormManual({ onSubmit }) {
         <select
           name="setup_id"
           className="w-full border p-2 rounded"
+          value={form.setup_id}
+          onChange={handleChange}
           required
-          defaultValue=""
         >
           <option value="" disabled>
             -- Kies een setup --
@@ -100,6 +121,8 @@ export default function StrategyFormManual({ onSubmit }) {
           step="any"
           placeholder="Bijv. 27000"
           className="w-full border p-2 rounded"
+          value={form.entry}
+          onChange={handleChange}
           required
         />
       </div>
@@ -112,6 +135,8 @@ export default function StrategyFormManual({ onSubmit }) {
           step="any"
           placeholder="Bijv. 31000"
           className="w-full border p-2 rounded"
+          value={form.target}
+          onChange={handleChange}
           required
         />
       </div>
@@ -124,6 +149,8 @@ export default function StrategyFormManual({ onSubmit }) {
           step="any"
           placeholder="Bijv. 25000"
           className="w-full border p-2 rounded"
+          value={form.stop_loss}
+          onChange={handleChange}
           required
         />
       </div>
@@ -134,11 +161,17 @@ export default function StrategyFormManual({ onSubmit }) {
           name="explanation"
           placeholder="Waarom deze trade?"
           className="w-full border p-2 rounded"
-          rows="3"
+          rows={3}
+          value={form.explanation}
+          onChange={handleChange}
         />
       </div>
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
+
+      {success && (
+        <p className="text-green-600 text-sm">✅ Strategie succesvol toegevoegd!</p>
+      )}
 
       <button
         type="submit"

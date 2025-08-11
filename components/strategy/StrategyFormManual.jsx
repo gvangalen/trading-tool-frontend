@@ -16,16 +16,21 @@ export default function StrategyFormManual({ onSubmit }) {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadSetups();
-  }, [loadSetups]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // Trim alleen bij tekstvelden (niet numeriek)
+    const val = ['explanation', 'setup_id'].includes(name) ? value.trimStart() : value;
+
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: val,
     }));
     setError('');
     setSuccess(false);
@@ -71,38 +76,54 @@ export default function StrategyFormManual({ onSubmit }) {
     };
 
     console.log('📤 Strategie verstuurd naar parent:', strategy);
-    onSubmit(strategy);
-    setSuccess(true);
-    // Reset form na succesvol submitten
-    setForm({
-      setup_id: '',
-      entry: '',
-      target: '',
-      stop_loss: '',
-      explanation: '',
-    });
+    setLoading(true);
+
+    try {
+      onSubmit(strategy);
+      setSuccess(true);
+
+      // Reset form na succesvol submitten
+      setForm({
+        setup_id: '',
+        entry: '',
+        target: '',
+        stop_loss: '',
+        explanation: '',
+      });
+
+      // Successmelding na 3 seconden automatisch weg
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error('❌ Fout bij submit:', err);
+      setError('Er is iets misgegaan bij het opslaan.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
       className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded-md shadow"
+      aria-live="polite"
     >
       <div>
-        <label className="block text-sm font-medium mb-1">🔗 Koppel aan Setup</label>
+        <label htmlFor="setup_id" className="block text-sm font-medium mb-1">
+          🔗 Koppel aan Setup
+        </label>
         <select
+          id="setup_id"
           name="setup_id"
           className="w-full border p-2 rounded"
           value={form.setup_id}
           onChange={handleChange}
           required
+          aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
         >
           <option value="" disabled>
             -- Kies een setup --
           </option>
-          {setups.length === 0 && (
-            <option disabled>⚠️ Geen setups beschikbaar</option>
-          )}
+          {setups.length === 0 && <option disabled>⚠️ Geen setups beschikbaar</option>}
           {setups
             .filter((s) => s && s.id && s.name)
             .map((setup) => (
@@ -111,11 +132,19 @@ export default function StrategyFormManual({ onSubmit }) {
               </option>
             ))}
         </select>
+        {error.includes('setup') && (
+          <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">🎯 Entry prijs (€)</label>
+        <label htmlFor="entry" className="block text-sm font-medium mb-1">
+          🎯 Entry prijs (€)
+        </label>
         <input
+          id="entry"
           name="entry"
           type="number"
           step="any"
@@ -124,12 +153,16 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.entry}
           onChange={handleChange}
           required
+          aria-describedby={error.includes('entry') ? 'error-entry' : undefined}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">📈 Target prijs (€)</label>
+        <label htmlFor="target" className="block text-sm font-medium mb-1">
+          📈 Target prijs (€)
+        </label>
         <input
+          id="target"
           name="target"
           type="number"
           step="any"
@@ -138,12 +171,16 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.target}
           onChange={handleChange}
           required
+          aria-describedby={error.includes('target') ? 'error-target' : undefined}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">🛑 Stop-loss (€)</label>
+        <label htmlFor="stop_loss" className="block text-sm font-medium mb-1">
+          🛑 Stop-loss (€)
+        </label>
         <input
+          id="stop_loss"
           name="stop_loss"
           type="number"
           step="any"
@@ -152,12 +189,16 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.stop_loss}
           onChange={handleChange}
           required
+          aria-describedby={error.includes('stop-loss') ? 'error-stop_loss' : undefined}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">📝 Uitleg / notities</label>
+        <label htmlFor="explanation" className="block text-sm font-medium mb-1">
+          📝 Uitleg / notities
+        </label>
         <textarea
+          id="explanation"
           name="explanation"
           placeholder="Waarom deze trade?"
           className="w-full border p-2 rounded"
@@ -167,17 +208,25 @@ export default function StrategyFormManual({ onSubmit }) {
         />
       </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && !error.includes('setup') && (
+        <p className="text-red-600 text-sm" role="alert">
+          {error}
+        </p>
+      )}
 
       {success && (
-        <p className="text-green-600 text-sm">✅ Strategie succesvol toegevoegd!</p>
+        <p className="text-green-600 text-sm" role="alert">
+          ✅ Strategie succesvol toegevoegd!
+        </p>
       )}
 
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+        disabled={loading}
+        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 w-full`}
+        aria-busy={loading}
       >
-        💾 Strategie opslaan
+        {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
       </button>
     </form>
   );

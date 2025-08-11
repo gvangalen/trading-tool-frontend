@@ -30,31 +30,40 @@ export default function StrategyForm() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    console.log(`📝 Field changed: ${name} = ${type === 'checkbox' ? checked : value}`);
+    const val = type === 'checkbox' ? checked : value;
+
+    console.log(`📝 Field changed: ${name} = ${val}`);
+
+    // Reset error on any change except setup_id validation branch below
+    setError('');
 
     if (name === 'setup_id') {
-      const selected = setups.find((s) => String(s.id) === String(value));
+      const selected = setups.find((s) => String(s.id) === String(val));
       if (!selected) {
         setError('❌ Ongeldige setup geselecteerd.');
-        console.warn(`❌ Ongeldige setup_id geselecteerd: ${value}`);
+        console.warn(`❌ Ongeldige setup_id geselecteerd: ${val}`);
+        // Still update form for UX feedback, but error shown
+        setForm((prev) => ({ ...prev, setup_id: val }));
         return;
       }
 
+      // Vul automatisch overige velden in van geselecteerde setup
       setForm((prev) => ({
         ...prev,
-        setup_id: value,
-        setup_name: selected.name || '',
-        asset: selected.symbol || '',
-        timeframe: selected.timeframe || '',
+        setup_id: val,
+        setup_name: selected.name?.trim() || '',
+        asset: selected.symbol?.trim() || '',
+        timeframe: selected.timeframe?.trim() || '',
       }));
-      setError('');
+
       console.log(`✅ Setup geselecteerd: ${selected.name} (${selected.symbol})`);
     } else {
+      // Voor overige velden: trim strings behalve bij checkbox
       setForm((prev) => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value,
+        [name]:
+          type === 'checkbox' ? val : typeof val === 'string' ? val.trimStart() : val,
       }));
-      setError('');
     }
   };
 
@@ -65,6 +74,7 @@ export default function StrategyForm() {
 
     console.log('🚀 Submit gestart met formulier:', form);
 
+    // Verplichte velden controleren
     const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'target', 'stop_loss'];
     for (const field of requiredFields) {
       if (!form[field]) {
@@ -75,6 +85,7 @@ export default function StrategyForm() {
       }
     }
 
+    // Parseer numerieke velden
     const entry = parseFloat(form.entry);
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
@@ -86,12 +97,13 @@ export default function StrategyForm() {
       return;
     }
 
+    // Bouw payload
     const payload = {
       setup_id: form.setup_id,
-      setup_name: form.setup_name,
-      asset: form.asset,
-      timeframe: form.timeframe,
-      explanation: form.explanation?.trim() || '',
+      setup_name: form.setup_name.trim(),
+      asset: form.asset.trim(),
+      timeframe: form.timeframe.trim(),
+      explanation: form.explanation.trim() || '',
       entry,
       targets: [target],
       stop_loss,
@@ -109,6 +121,8 @@ export default function StrategyForm() {
     try {
       await createStrategy(payload);
       console.log('✅ Strategie succesvol opgeslagen.');
+
+      // Reset form naar initieel state
       setForm({
         setup_id: '',
         setup_name: '',
@@ -121,8 +135,12 @@ export default function StrategyForm() {
         favorite: false,
         tags: '',
       });
+
       await loadStrategies();
       setSuccess(true);
+
+      // Successmelding na korte tijd weer weg
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Strategie maken mislukt:', err);
       setError('Fout bij opslaan strategie.');
@@ -131,6 +149,17 @@ export default function StrategyForm() {
       console.log('⏳ Submit afgehandeld, loading uit.');
     }
   };
+
+  // Disable button als verplichte velden leeg zijn of laden
+  const isDisabled =
+    loading ||
+    !form.setup_id ||
+    !form.setup_name ||
+    !form.asset ||
+    !form.timeframe ||
+    !form.entry ||
+    !form.target ||
+    !form.stop_loss;
 
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
@@ -176,22 +205,64 @@ export default function StrategyForm() {
         </div>
 
         <label className="block font-medium">Entry prijs (€)</label>
-        <input name="entry" type="number" step="any" value={form.entry} onChange={handleChange} className="w-full border p-2 rounded" required />
+        <input
+          name="entry"
+          type="number"
+          step="any"
+          value={form.entry}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
 
         <label className="block font-medium">Target prijs (€)</label>
-        <input name="target" type="number" step="any" value={form.target} onChange={handleChange} className="w-full border p-2 rounded" required />
+        <input
+          name="target"
+          type="number"
+          step="any"
+          value={form.target}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
 
         <label className="block font-medium">Stop-loss (€)</label>
-        <input name="stop_loss" type="number" step="any" value={form.stop_loss} onChange={handleChange} className="w-full border p-2 rounded" required />
+        <input
+          name="stop_loss"
+          type="number"
+          step="any"
+          value={form.stop_loss}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
 
         <label className="block font-medium">Uitleg</label>
-        <textarea name="explanation" value={form.explanation} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
+        <textarea
+          name="explanation"
+          value={form.explanation}
+          onChange={handleChange}
+          rows="3"
+          className="w-full border p-2 rounded"
+        />
 
         <label className="block font-medium">Tags (gescheiden door komma's)</label>
-        <input name="tags" type="text" value={form.tags} onChange={handleChange} className="w-full border p-2 rounded" />
+        <input
+          name="tags"
+          type="text"
+          value={form.tags}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+        />
 
         <label className="inline-flex items-center space-x-2">
-          <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} className="w-4 h-4" />
+          <input
+            type="checkbox"
+            name="favorite"
+            checked={form.favorite}
+            onChange={handleChange}
+            className="w-4 h-4"
+          />
           <span>Favoriet</span>
         </label>
 
@@ -199,7 +270,7 @@ export default function StrategyForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isDisabled}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
         >
           {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}

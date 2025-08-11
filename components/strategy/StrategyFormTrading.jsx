@@ -270,7 +270,7 @@ export default function StrategyForm() {
         <button
           type="submit"
           disabled={isDisabled}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 ml-4"
         >
           {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
         </button>

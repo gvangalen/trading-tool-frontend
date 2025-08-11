@@ -20,17 +20,17 @@ export function useStrategyData() {
 
   // Initieel setups laden
   useEffect(() => {
-    console.log('🚀 useStrategyData mounted: setups laden gestart');
     loadSetups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadStrategies(asset = '', timeframe = '') {
     console.log(`🔍 loadStrategies gestart met asset='${asset}', timeframe='${timeframe}'`);
     setLoading(true);
     setError('');
+    setSuccessMessage('');
     try {
       const data = await fetchStrategies(asset, timeframe);
-      console.log('✅ loadStrategies: data ontvangen', data);
       setStrategies(Array.isArray(data) ? data : []);
       if (!Array.isArray(data) || data.length === 0) {
         console.warn('⚠️ loadStrategies: lege lijst ontvangen');
@@ -41,15 +41,15 @@ export function useStrategyData() {
       setStrategies([]);
     } finally {
       setLoading(false);
-      console.log('ℹ️ loadStrategies: klaar');
     }
   }
 
   async function loadSetups(strategyType = '') {
     console.log(`🔍 loadSetups gestart met strategyType='${strategyType}'`);
+    setError('');
+    setSuccessMessage('');
     try {
       const data = await fetchSetups(strategyType);
-      console.log('✅ loadSetups: data ontvangen', data);
       setSetups(Array.isArray(data) ? data : []);
       if (!Array.isArray(data) || data.length === 0) {
         console.warn('⚠️ loadSetups: lege lijst ontvangen');
@@ -57,8 +57,6 @@ export function useStrategyData() {
     } catch (err) {
       console.error('❌ loadSetups: setups laden mislukt:', err);
       setSetups([]);
-    } finally {
-      console.log('ℹ️ loadSetups: klaar');
     }
   }
 
@@ -72,6 +70,8 @@ export function useStrategyData() {
 
   async function saveStrategy(id, updatedData) {
     console.log(`💾 saveStrategy gestart voor ID ${id} met data:`, updatedData);
+    setError('');
+    setSuccessMessage('');
     const requiredFields = getRequiredFields(updatedData);
     const missing = requiredFields.filter((field) => !updatedData[field]);
 
@@ -85,7 +85,6 @@ export function useStrategyData() {
     try {
       await updateStrategy(id, updatedData);
       setSuccessMessage('Strategie opgeslagen.');
-      console.log('✅ saveStrategy: strategie succesvol opgeslagen, laden strategieën');
       await loadStrategies();
     } catch (err) {
       console.error('❌ saveStrategy: strategie opslaan mislukt:', err);
@@ -95,9 +94,11 @@ export function useStrategyData() {
 
   async function removeStrategy(id) {
     console.log(`🗑️ removeStrategy gestart voor ID ${id}`);
+    setError('');
+    setSuccessMessage('');
     try {
       await deleteStrategy(id);
-      console.log('✅ removeStrategy: strategie succesvol verwijderd, laden strategieën');
+      setSuccessMessage('Strategie verwijderd.');
       await loadStrategies();
     } catch (err) {
       console.error('❌ removeStrategy: strategie verwijderen mislukt:', err);
@@ -107,9 +108,10 @@ export function useStrategyData() {
 
   async function generateStrategyForSetup(setupId, overwrite = false) {
     console.log(`🤖 generateStrategyForSetup gestart voor setupId ${setupId}, overwrite=${overwrite}`);
+    setError('');
+    setSuccessMessage('');
     try {
       const response = await generateStrategy(setupId, overwrite);
-      console.log('✅ generateStrategyForSetup: response ontvangen', response);
 
       if (response?.task_id) {
         setSuccessMessage(`Celery gestart (Task ID: ${response.task_id})`);
@@ -130,10 +132,11 @@ export function useStrategyData() {
 
   async function generateAll() {
     console.log('🔁 generateAll gestart');
+    setError('');
+    setSuccessMessage('');
     try {
       await generateAllStrategies();
       setSuccessMessage('Alle strategieën opnieuw gegenereerd.');
-      console.log('✅ generateAll: bulk generatie succesvol, laden strategieën');
       await loadStrategies();
     } catch (err) {
       console.error('❌ generateAll: bulk-generatie mislukt:', err);
@@ -143,6 +146,8 @@ export function useStrategyData() {
 
   async function addStrategy(strategyData) {
     console.log('➕ addStrategy gestart met data:', strategyData);
+    setError('');
+    setSuccessMessage('');
     const requiredFields = getRequiredFields(strategyData);
     const missing = requiredFields.filter((field) => !strategyData[field]);
 
@@ -156,7 +161,6 @@ export function useStrategyData() {
     try {
       await createStrategy(strategyData);
       setSuccessMessage('Strategie toegevoegd.');
-      console.log('✅ addStrategy: strategie toegevoegd, laden strategieën');
       await loadStrategies();
     } catch (err) {
       console.error('❌ addStrategy: strategie toevoegen mislukt:', err);

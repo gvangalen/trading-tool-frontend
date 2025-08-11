@@ -21,12 +21,14 @@ export default function TopSetupsMini() {
     try {
       setLoading(true);
       let res;
+
       try {
         res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
         if (!res.ok) throw new Error('Top setups endpoint faalt');
       } catch {
         console.warn('⚠️ /api/setups/top faalt, fallback naar /api/setups');
         res = await fetch(`${API_BASE_URL}/api/setups`);
+        if (!res.ok) throw new Error('Fallback endpoint faalt ook');
       }
 
       const data = await res.json();
@@ -48,7 +50,7 @@ export default function TopSetupsMini() {
       console.error('❌ Fout bij laden setups:', error);
       setTopSetups([
         {
-          id: 'fallback',
+          id: 'fallback', // string ID, let op consistentie met backend data
           name: 'Voorbeeld Setup',
           trend: 'neutral',
           indicators: 'RSI, Volume',
@@ -60,9 +62,10 @@ export default function TopSetupsMini() {
     }
   }
 
+  // Filter op trend en top 3 per filter
   const filteredSetups = topSetups
     .filter((s) => trendFilter === 'all' || s.trend === trendFilter)
-    .slice(0, 3); // top 3 per trend
+    .slice(0, 3);
 
   if (loading) {
     return (
@@ -93,7 +96,9 @@ export default function TopSetupsMini() {
 
       {/* 🔍 Filter */}
       <div className="flex items-center gap-2">
-        <label htmlFor="trendFilter" className="text-xs">Filter:</label>
+        <label htmlFor="trendFilter" className="text-xs">
+          Filter:
+        </label>
         <select
           id="trendFilter"
           value={trendFilter}
@@ -114,14 +119,24 @@ export default function TopSetupsMini() {
         ) : (
           filteredSetups.map((setup) => {
             const trendIcon =
-              setup.trend === 'bullish' ? '📈' :
-              setup.trend === 'bearish' ? '📉' :
-              '⚖️';
+              setup.trend === 'bullish'
+                ? '📈'
+                : setup.trend === 'bearish'
+                ? '📉'
+                : '⚖️';
 
             const scoreColor =
-              setup.score >= 2 ? 'text-green-600' :
-              setup.score <= -2 ? 'text-red-600' :
-              'text-gray-600';
+              setup.score >= 2
+                ? 'text-green-600'
+                : setup.score <= -2
+                ? 'text-red-600'
+                : 'text-gray-600';
+
+            // Veilig eerste indicator pakken
+            const firstIndicator =
+              typeof setup.indicators === 'string' && setup.indicators.length > 0
+                ? setup.indicators.split(',')[0]
+                : '-';
 
             return (
               <li key={setup.id} className="hover:bg-gray-50 rounded px-1 py-1">
@@ -132,7 +147,7 @@ export default function TopSetupsMini() {
                       className="ml-2 text-xs text-gray-500"
                       title={`Indicators: ${setup.indicators || '-'}`}
                     >
-                      🧠 {setup.indicators?.split(',')[0] ?? '-'}
+                      🧠 {firstIndicator}
                     </span>
                   </div>
                   <span className={`font-semibold ${scoreColor}`}>

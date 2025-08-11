@@ -1,29 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import StrategyList from '@/components/strategy/StrategyList';
 import StrategyTabs from '@/components/strategy/StrategyTabs';
-import { fetchSetups, fetchDcaSetups } from '@/lib/api/setups';
+import { useSetupData } from '@/hooks/useSetupData';
 import { createStrategy } from '@/lib/api/strategy';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
-  const [setups, setSetups] = useState([]);
-  const [dcaSetups, setDcaSetups] = useState([]);
+  const { setups, dcaSetups, loadSetups } = useSetupData();
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [allSetups, dca] = await Promise.all([fetchSetups(), fetchDcaSetups()]);
-        setSetups(allSetups || []);
-        setDcaSetups(dca || []);
-      } catch (err) {
-        console.error('❌ Fout bij laden van setups:', err);
-      }
-    }
-    loadData();
-  }, []);
+  // Functie om setups te verversen
+  const reloadSetups = () => {
+    loadSetups();
+  };
 
   const handleSuccess = (message) => {
     setToast(message);
@@ -55,6 +46,9 @@ export default function StrategyPage() {
       console.log('📤 Strategie opslaan:', payload);
       await createStrategy(payload);
       handleSuccess('✅ Strategie succesvol opgeslagen!');
+
+      // Reload setups na toevoegen
+      reloadSetups();
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
       setToast('❌ Strategie opslaan mislukt.');
@@ -98,7 +92,12 @@ export default function StrategyPage() {
       {/* ➕ Strategie toevoegen */}
       <section className="pt-10 border-t">
         <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-        <StrategyTabs onSubmit={handleStrategySubmit} setups={setups} dcaSetups={dcaSetups} />
+        <StrategyTabs
+          onSubmit={handleStrategySubmit}
+          setups={setups}
+          dcaSetups={dcaSetups}
+          reloadSetups={reloadSetups}
+        />
       </section>
     </div>
   );

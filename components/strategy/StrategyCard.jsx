@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { updateStrategy, deleteStrategy } from '@/lib/api/strategy';
 import { generateStrategyForSetup } from '@/lib/api/strategy';
 
@@ -9,6 +9,11 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
   const [editFields, setEditFields] = useState({ ...strategy });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Sync editFields met strategy als die verandert
+  useEffect(() => {
+    setEditFields({ ...strategy });
+  }, [strategy]);
 
   if (!strategy) return null;
 
@@ -28,7 +33,16 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
     try {
       setLoading(true);
       setError('');
-      await updateStrategy(id, editFields);
+      // Cast numerieke velden correct
+      const payload = {
+        ...editFields,
+        entry: editFields.entry ? Number(editFields.entry) : null,
+        stop_loss: editFields.stop_loss ? Number(editFields.stop_loss) : null,
+        targets: Array.isArray(editFields.targets)
+          ? editFields.targets.map((t) => Number(t))
+          : [],
+      };
+      await updateStrategy(id, payload);
       setEditing(false);
       onEdit && onEdit();
     } catch (err) {
@@ -81,11 +95,12 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
             onClick={() => {
               setError('');
               setEditing(!editing);
-              setEditFields({ ...strategy });
+              // sync gebeurt nu via useEffect
             }}
             className="text-blue-500 text-sm"
             aria-label="Bewerken"
             title="Bewerken"
+            disabled={loading}
           >
             ✏️
           </button>
@@ -130,11 +145,13 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
               <input
                 className="border px-2 py-1 rounded"
                 placeholder="Entry"
-                value={editFields.entry || ''}
+                value={editFields.entry ?? ''}
                 onChange={(e) =>
                   setEditFields({ ...editFields, entry: e.target.value })
                 }
                 aria-label="Entry prijs"
+                type="number"
+                step="0.01"
               />
               <input
                 className="border px-2 py-1 rounded"
@@ -148,15 +165,19 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
                   setEditFields({ ...editFields, targets: [e.target.value] })
                 }
                 aria-label="Target prijs"
+                type="number"
+                step="0.01"
               />
               <input
                 className="border px-2 py-1 rounded"
                 placeholder="Stop-loss"
-                value={editFields.stop_loss || ''}
+                value={editFields.stop_loss ?? ''}
                 onChange={(e) =>
                   setEditFields({ ...editFields, stop_loss: e.target.value })
                 }
                 aria-label="Stop-loss prijs"
+                type="number"
+                step="0.01"
               />
             </div>
           )}

@@ -251,7 +251,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Tags (komma's)"
-                      defaultValue={(editingData.tags ?? setup.tags || []).join(', ')}
+                      defaultValue={((editingData.tags ?? setup.tags) || []).join(', ')}
                       onChange={(e) =>
                         handleEditChange(
                           setup.id,

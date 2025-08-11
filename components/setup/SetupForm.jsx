@@ -5,7 +5,7 @@ import { addSetup, checkSetupNameExists } from '@/lib/api/setups';
 import { useSetupData } from '@/hooks/useSetupData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
-export default function SetupForm() {
+export default function SetupForm({ onSubmitted }) {
   const { loadSetups } = useSetupData();
   const formRef = useRef(null);
 
@@ -120,6 +120,10 @@ export default function SetupForm() {
         dynamic: false,
         favorite: false,
       });
+
+      if (onSubmitted) {
+        onSubmitted();
+      }
 
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import { createStrategy } from '@/lib/api/strategy';
 import { useStrategyData } from '@/hooks/useStrategyData';
@@ -42,7 +43,6 @@ export default function StrategyForm() {
       if (!selected) {
         setError('❌ Ongeldige setup geselecteerd.');
         console.warn(`❌ Ongeldige setup_id geselecteerd: ${val}`);
-        // Still update form for UX feedback, but error shown
         setForm((prev) => ({ ...prev, setup_id: val }));
         return;
       }
@@ -61,8 +61,7 @@ export default function StrategyForm() {
       // Voor overige velden: trim strings behalve bij checkbox
       setForm((prev) => ({
         ...prev,
-        [name]:
-          type === 'checkbox' ? val : typeof val === 'string' ? val.trimStart() : val,
+        [name]: type === 'checkbox' ? val : typeof val === 'string' ? val.trimStart() : val,
       }));
     }
   };
@@ -185,7 +184,7 @@ export default function StrategyForm() {
           <option value="">-- Kies een setup --</option>
           {Array.isArray(setups) &&
             setups
-              .filter((s) => s && s.id && s.name)
+              .filter((s) => s && s.id && s.name && s.strategy_type !== 'dca') // DCA setups filteren
               .map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} ({s.symbol} – {s.timeframe})

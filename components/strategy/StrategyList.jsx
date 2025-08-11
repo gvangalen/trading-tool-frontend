@@ -8,7 +8,7 @@ import StrategyCard from '@/components/strategy/StrategyCard';
 export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies, updateStrategy, deleteStrategy } = useStrategyData();
   const [sort, setSort] = useState('created_at');
-  const [filters, setFilters] = useState({ asset: '', timeframe: '', tag: '' });
+  const [filters, setFilters] = useState({ symbol: '', timeframe: '', tag: '' });
   const [editingId, setEditingId] = useState(null);
   const [editFields, setEditFields] = useState({});
   const [loadingId, setLoadingId] = useState(null);
@@ -129,17 +129,17 @@ export default function StrategyList({ searchTerm = '' }) {
   const filtered = strategies
     .filter((s) => s && s.id)
     .filter((s) => {
-      const matchesAsset = !filters.asset || s.asset === filters.asset;
+      const matchesSymbol = !filters.symbol || s.symbol === filters.symbol;
       const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
       const matchesTag = !filters.tag || (s.tags || []).includes(filters.tag);
       const lowerSearch = searchTerm.toLowerCase();
       const matchesSearch =
         !searchTerm ||
-        (s.asset || '').toLowerCase().includes(lowerSearch) ||
+        (s.symbol || '').toLowerCase().includes(lowerSearch) ||
         (s.tags || [])
           .map((t) => t.toLowerCase())
           .some((t) => t.includes(lowerSearch));
-      return matchesAsset && matchesTimeframe && matchesTag && matchesSearch;
+      return matchesSymbol && matchesTimeframe && matchesTag && matchesSearch;
     });
 
   const sortedStrategies = [...filtered].sort((a, b) => {
@@ -154,14 +154,14 @@ export default function StrategyList({ searchTerm = '' }) {
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex gap-2">
           <select
-            value={filters.asset}
-            onChange={(e) => setFilters({ ...filters, asset: e.target.value })}
+            value={filters.symbol}
+            onChange={(e) => setFilters({ ...filters, symbol: e.target.value })}
             className="border p-2 rounded"
           >
-            <option value="">Asset</option>
+            <option value="">Symbol</option>
             <option value="BTC">BTC</option>
             <option value="ETH">ETH</option>
-            {/* Voeg andere assets toe indien nodig */}
+            {/* Voeg andere symbols toe indien nodig */}
           </select>
           <select
             value={filters.timeframe}

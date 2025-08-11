@@ -22,7 +22,9 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
 
   // Laad setups opnieuw als strategyType of searchTerm verandert
   useEffect(() => {
-    loadSetups(strategyType);
+    // Bij manual en trading strategy types sluiten we 'dca' uit
+    const excludeDca = (strategyType === 'manual' || strategyType === 'trading') ? ['dca'] : [];
+    loadSetups(strategyType, excludeDca);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strategyType, searchTerm]);
 

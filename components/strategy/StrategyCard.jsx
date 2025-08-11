@@ -20,7 +20,7 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
   const {
     id,
     setup_name,
-    asset,
+    symbol,
     timeframe,
     strategy_type,
     explanation,
@@ -122,7 +122,7 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
         {!editing ? (
           <>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              <span className="uppercase font-medium">{lowerStrategyType}</span> | {asset} {timeframe}
+              <span className="uppercase font-medium">{lowerStrategyType}</span> | {symbol} {timeframe}
             </p>
             {lowerStrategyType !== 'dca' && (
               <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300 mb-2">

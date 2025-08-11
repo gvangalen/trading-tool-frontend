@@ -23,12 +23,15 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
   // Laad setups opnieuw als strategyType of searchTerm verandert
   useEffect(() => {
     loadSetups(strategyType);
-  }, [loadSetups, strategyType]);
+  }, [strategyType]);
 
+  // Filter en sorteer setups
   const filteredSortedSetups = () => {
     let list = [...setups];
 
-    if (filter !== 'all') list = list.filter((s) => s.trend === filter);
+    if (filter !== 'all') {
+      list = list.filter((s) => s.trend === filter);
+    }
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
@@ -54,7 +57,11 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
     const updated = { ...original, ...editingValues[id] };
     await saveSetup(id, updated);
     setEditingId(null);
-    setEditingValues({});
+    setEditingValues((prev) => {
+      const newEditing = { ...prev };
+      delete newEditing[id];
+      return newEditing;
+    });
   }
 
   async function handleGenerateExplanation(id) {
@@ -69,6 +76,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
   }
 
   function toggleFavorite(id, current) {
+    // Let op: handleSave is async, maar hier niet awaited — kan oké zijn
     handleEditChange(id, 'favorite', !current);
     handleSave(id);
   }
@@ -110,6 +118,9 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
               setup.trend === 'bearish' ? 'text-red-500' :
               'text-yellow-500';
 
+            // Gebruik bewerkte waarden als die er zijn, anders originele
+            const editingData = editingValues[setup.id] || {};
+
             return (
               <div
                 key={setup.id}
@@ -119,6 +130,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => toggleFavorite(setup.id, setup.favorite)}
+                  aria-label="Toggle favoriet"
                 >
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
@@ -127,28 +139,28 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                   <>
                     <input
                       className="border p-2 rounded w-full mb-2 font-semibold"
-                      defaultValue={setup.name}
+                      defaultValue={editingData.name ?? setup.name}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'name', e.target.value)
                       }
                     />
                     <input
                       className="border p-2 rounded w-full mb-2"
-                      defaultValue={setup.indicators}
+                      defaultValue={editingData.indicators ?? setup.indicators}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'indicators', e.target.value)
                       }
                     />
                     <textarea
                       className="border p-2 rounded w-full mb-2"
-                      defaultValue={setup.explanation}
+                      defaultValue={editingData.explanation ?? setup.explanation}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'explanation', e.target.value)
                       }
                     />
                     <input
                       className="border p-2 rounded w-full mb-2"
-                      defaultValue={setup.min_investment}
+                      defaultValue={editingData.min_investment ?? setup.min_investment}
                       type="number"
                       onChange={(e) =>
                         handleEditChange(setup.id, 'min_investment', e.target.value)
@@ -157,7 +169,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <label className="text-sm flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
-                        defaultChecked={setup.dynamic_investment}
+                        defaultChecked={editingData.dynamic_investment ?? setup.dynamic_investment}
                         onChange={(e) =>
                           handleEditChange(setup.id, 'dynamic_investment', e.target.checked)
                         }
@@ -166,7 +178,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     </label>
                     <input
                       className="border p-2 rounded w-full mb-2"
-                      defaultValue={setup.score}
+                      defaultValue={editingData.score ?? setup.score}
                       type="number"
                       onChange={(e) =>
                         handleEditChange(setup.id, 'score', e.target.value)
@@ -175,7 +187,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Score logica"
-                      defaultValue={setup.score_logic}
+                      defaultValue={editingData.score_logic ?? setup.score_logic}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'score_logic', e.target.value)
                       }
@@ -183,7 +195,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Timeframe"
-                      defaultValue={setup.timeframe}
+                      defaultValue={editingData.timeframe ?? setup.timeframe}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'timeframe', e.target.value)
                       }
@@ -191,7 +203,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Symbol"
-                      defaultValue={setup.symbol}
+                      defaultValue={editingData.symbol ?? setup.symbol}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'symbol', e.target.value)
                       }
@@ -199,7 +211,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Strategy type"
-                      defaultValue={setup.strategy_type}
+                      defaultValue={editingData.strategy_type ?? setup.strategy_type}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'strategy_type', e.target.value)
                       }
@@ -207,7 +219,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Account type"
-                      defaultValue={setup.account_type}
+                      defaultValue={editingData.account_type ?? setup.account_type}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'account_type', e.target.value)
                       }
@@ -215,7 +227,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                     <input
                       className="border p-2 rounded w-full mb-2"
                       placeholder="Tags (komma's)"
-                      defaultValue={(setup.tags || []).join(', ')}
+                      defaultValue={(editingData.tags ?? setup.tags || []).join(', ')}
                       onChange={(e) =>
                         handleEditChange(
                           setup.id,

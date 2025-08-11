@@ -20,18 +20,19 @@ export function useSetupData() {
   // Initial load bij mount (zonder filter)
   useEffect(() => {
     console.log('🚀 useSetupData mounted: laden van setups, top setups en DCA setups gestart');
-    loadSetups();
+    loadSetups('', ['dca']);  // DCA setups uitsluiten bij generiek laden
     loadTopSetups();
     loadDcaSetups();
   }, []);
 
   // Setuplijst ophalen (generiek)
-  async function loadSetups(strategyType = '') {
-    console.log(`🔍 loadSetups gestart met strategyType='${strategyType}'`);
+  // Je kunt nu ook strategyTypes uitsluiten via excludeStrategyTypes array
+  async function loadSetups(strategyType = '', excludeStrategyTypes = []) {
+    console.log(`🔍 loadSetups gestart met strategyType='${strategyType}', excludeStrategyTypes=${excludeStrategyTypes}`);
     setLoading(true);
     setError('');
     try {
-      const data = await fetchSetups(strategyType);
+      const data = await fetchSetups(strategyType, excludeStrategyTypes);
       console.log('✅ loadSetups: data ontvangen', data);
       setSetups(
         Array.isArray(data)
@@ -103,7 +104,7 @@ export function useSetupData() {
       await updateSetup(id, updatedData);
       setSuccessMessage('Setup succesvol opgeslagen.');
       console.log('✅ saveSetup: setup succesvol opgeslagen, laden setups en dca setups');
-      await loadSetups();
+      await loadSetups('', ['dca']); // ook hier uitsluiten bij reload
       await loadDcaSetups();
     } catch (err) {
       console.error('❌ saveSetup: fout bij opslaan setup:', err);
@@ -117,7 +118,7 @@ export function useSetupData() {
     try {
       await deleteSetup(id);
       console.log('✅ removeSetup: setup succesvol verwijderd, laden setups en dca setups');
-      await loadSetups();
+      await loadSetups('', ['dca']); // ook hier uitsluiten bij reload
       await loadDcaSetups();
     } catch (err) {
       console.error('❌ removeSetup: fout bij verwijderen setup:', err);

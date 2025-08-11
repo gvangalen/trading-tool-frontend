@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   fetchStrategies,
   createStrategy,
@@ -24,16 +24,22 @@ export function useStrategyData() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadStrategies(asset = '', timeframe = '') {
+  const loadStrategies = useCallback(async (asset = '', timeframe = '') => {
     console.log(`🔍 loadStrategies gestart met asset='${asset}', timeframe='${timeframe}'`);
     setLoading(true);
     setError('');
     setSuccessMessage('');
     try {
       const data = await fetchStrategies(asset, timeframe);
-      setStrategies(Array.isArray(data) ? data : []);
-      if (!Array.isArray(data) || data.length === 0) {
-        console.warn('⚠️ loadStrategies: lege lijst ontvangen');
+      if (!Array.isArray(data)) {
+        console.warn('⚠️ loadStrategies: response is geen array', data);
+        setStrategies([]);
+      } else {
+        // Filter null of undefined uit de lijst
+        setStrategies(data.filter((item) => item != null));
+        if (data.length === 0) {
+          console.warn('⚠️ loadStrategies: lege lijst ontvangen');
+        }
       }
     } catch (err) {
       console.error('❌ loadStrategies: strategieën laden mislukt:', err);
@@ -42,7 +48,7 @@ export function useStrategyData() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function loadSetups(strategyType = '') {
     console.log(`🔍 loadSetups gestart met strategyType='${strategyType}'`);

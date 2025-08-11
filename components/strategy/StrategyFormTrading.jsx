@@ -14,7 +14,7 @@ export default function StrategyForm() {
   const [form, setForm] = useState({
     setup_id: '',
     setup_name: '',
-    asset: '',
+    symbol: '',        // aangepast van asset naar symbol
     timeframe: '',
     explanation: '',
     entry: '',
@@ -30,35 +30,27 @@ export default function StrategyForm() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     const val = type === 'checkbox' ? checked : value;
 
     console.log(`📝 Field changed: ${name} = ${val}`);
-
-    // Reset error on any change except setup_id validation branch below
     setError('');
 
     if (name === 'setup_id') {
       const selected = setups.find((s) => String(s.id) === String(val));
       if (!selected) {
         setError('❌ Ongeldige setup geselecteerd.');
-        console.warn(`❌ Ongeldige setup_id geselecteerd: ${val}`);
         setForm((prev) => ({ ...prev, setup_id: val }));
         return;
       }
-
-      // Vul automatisch overige velden in van geselecteerde setup
       setForm((prev) => ({
         ...prev,
         setup_id: val,
         setup_name: selected.name?.trim() || '',
-        asset: selected.symbol?.trim() || '',
+        symbol: selected.symbol?.trim() || '',   // hier symbol ipv asset
         timeframe: selected.timeframe?.trim() || '',
       }));
-
       console.log(`✅ Setup geselecteerd: ${selected.name} (${selected.symbol})`);
     } else {
-      // Voor overige velden: trim strings behalve bij checkbox
       setForm((prev) => ({
         ...prev,
         [name]: type === 'checkbox' ? val : typeof val === 'string' ? val.trimStart() : val,
@@ -73,8 +65,7 @@ export default function StrategyForm() {
 
     console.log('🚀 Submit gestart met formulier:', form);
 
-    // Verplichte velden controleren
-    const requiredFields = ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'target', 'stop_loss'];
+    const requiredFields = ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'target', 'stop_loss'];
     for (const field of requiredFields) {
       if (!form[field]) {
         const msg = `❌ Veld "${field}" is verplicht.`;
@@ -84,7 +75,6 @@ export default function StrategyForm() {
       }
     }
 
-    // Parseer numerieke velden
     const entry = parseFloat(form.entry);
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
@@ -96,21 +86,17 @@ export default function StrategyForm() {
       return;
     }
 
-    // Bouw payload
     const payload = {
       setup_id: form.setup_id,
       setup_name: form.setup_name.trim(),
-      asset: form.asset.trim(),
+      symbol: form.symbol.trim(),      // symbol ipv asset
       timeframe: form.timeframe.trim(),
       explanation: form.explanation.trim() || '',
       entry,
       targets: [target],
       stop_loss,
       favorite: form.favorite,
-      tags: form.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       origin: 'Handmatig',
     };
 
@@ -121,11 +107,10 @@ export default function StrategyForm() {
       await createStrategy(payload);
       console.log('✅ Strategie succesvol opgeslagen.');
 
-      // Reset form naar initieel state
       setForm({
         setup_id: '',
         setup_name: '',
-        asset: '',
+        symbol: '',
         timeframe: '',
         explanation: '',
         entry: '',
@@ -138,7 +123,6 @@ export default function StrategyForm() {
       await loadStrategies();
       setSuccess(true);
 
-      // Successmelding na korte tijd weer weg
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Strategie maken mislukt:', err);
@@ -149,12 +133,11 @@ export default function StrategyForm() {
     }
   };
 
-  // Disable button als verplichte velden leeg zijn of laden
   const isDisabled =
     loading ||
     !form.setup_id ||
     !form.setup_name ||
-    !form.asset ||
+    !form.symbol ||
     !form.timeframe ||
     !form.entry ||
     !form.target ||
@@ -194,8 +177,8 @@ export default function StrategyForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block font-medium">Asset</label>
-            <input value={form.asset} readOnly className="w-full border p-2 rounded bg-gray-100" />
+            <label className="block font-medium">Symbol</label>
+            <input value={form.symbol} readOnly className="w-full border p-2 rounded bg-gray-100" />
           </div>
           <div>
             <label className="block font-medium">Timeframe</label>
@@ -254,7 +237,7 @@ export default function StrategyForm() {
           className="w-full border p-2 rounded"
         />
 
-        <label className="inline-flex items-center space-x-2">
+        <label className="flex items-center space-x-4 mt-4">
           <input
             type="checkbox"
             name="favorite"
@@ -263,17 +246,16 @@ export default function StrategyForm() {
             className="w-4 h-4"
           />
           <span>Favoriet</span>
+          <button
+            type="submit"
+            disabled={isDisabled}
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+          >
+            {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
+          </button>
         </label>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={isDisabled}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 ml-4"
-        >
-          {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
-        </button>
+        {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
       </div>
     </form>
   );

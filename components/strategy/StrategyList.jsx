@@ -15,15 +15,10 @@ export default function StrategyList({ searchTerm = '' }) {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    console.log('📦 Strategieën worden geladen...');
-    loadStrategies()
-      .then(() => {
-        console.log('✅ Strategieën geladen:', strategies);
-      })
-      .catch((err) => {
-        console.error('❌ Fout bij laden van strategieën:', err);
-      });
-  }, []);
+    loadStrategies().catch((err) => {
+      console.error('❌ Fout bij laden van strategieën:', err);
+    });
+  }, [loadStrategies]);
 
   const showToast = (message) => {
     setToast(message);
@@ -32,7 +27,7 @@ export default function StrategyList({ searchTerm = '' }) {
 
   const handleEditToggle = (strategy) => {
     setEditingId(strategy.id);
-    setEditFields({ ...strategy });
+    setEditFields({ ...strategy }); // let op shallow copy
   };
 
   const handleFieldChange = (field, value) => {
@@ -47,8 +42,9 @@ export default function StrategyList({ searchTerm = '' }) {
   const handleSave = async () => {
     if (!editingId) return;
     const original = strategies.find((s) => s && s.id === editingId);
-    const changes = {};
+    if (!original) return;
 
+    const changes = {};
     for (const key in editFields) {
       if (editFields[key] !== original[key]) {
         changes[key] = editFields[key];
@@ -61,36 +57,38 @@ export default function StrategyList({ searchTerm = '' }) {
         await updateStrategy(editingId, changes);
         await loadStrategies();
         showToast('✅ Strategie opgeslagen!');
-      } catch (err) {
+      } catch {
         showToast('❌ Opslaan mislukt');
       } finally {
         setLoadingId(null);
       }
     }
-
     setEditingId(null);
     setEditFields({});
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) {
-      try {
-        setLoadingId(id);
-        await deleteStrategy(id);
-        await loadStrategies();
-        showToast('🗑️ Strategie verwijderd!');
-      } catch (err) {
-        showToast('❌ Verwijderen mislukt');
-      } finally {
-        setLoadingId(null);
-      }
+    if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
+    try {
+      setLoadingId(id);
+      await deleteStrategy(id);
+      await loadStrategies();
+      showToast('🗑️ Strategie verwijderd!');
+    } catch {
+      showToast('❌ Verwijderen mislukt');
+    } finally {
+      setLoadingId(null);
     }
   };
 
   const handleFavoriteToggle = async (id, currentFavorite) => {
-    await updateStrategy(id, { favorite: !currentFavorite });
-    await loadStrategies();
-    showToast(currentFavorite ? '⭐️ Verwijderd uit favorieten' : '⭐️ Toegevoegd aan favorieten');
+    try {
+      await updateStrategy(id, { favorite: !currentFavorite });
+      await loadStrategies();
+      showToast(currentFavorite ? '⭐️ Verwijderd uit favorieten' : '⭐️ Toegevoegd aan favorieten');
+    } catch {
+      showToast('❌ Favoriet toggelen mislukt');
+    }
   };
 
   const handleGenerateAI = async (setupId) => {
@@ -129,15 +127,18 @@ export default function StrategyList({ searchTerm = '' }) {
   }
 
   const filtered = strategies
-    .filter((s) => s && s.id) // ✅ voorkom nulls
+    .filter((s) => s && s.id)
     .filter((s) => {
       const matchesAsset = !filters.asset || s.asset === filters.asset;
       const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
-      const matchesTag = !filters.tag || (s.tags || '').includes(filters.tag);
+      const matchesTag = !filters.tag || (s.tags || []).includes(filters.tag);
+      const lowerSearch = searchTerm.toLowerCase();
       const matchesSearch =
         !searchTerm ||
-        (s.asset || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (s.tags || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (s.asset || '').toLowerCase().includes(lowerSearch) ||
+        (s.tags || [])
+          .map((t) => t.toLowerCase())
+          .some((t) => t.includes(lowerSearch));
       return matchesAsset && matchesTimeframe && matchesTag && matchesSearch;
     });
 
@@ -149,33 +150,52 @@ export default function StrategyList({ searchTerm = '' }) {
 
   return (
     <div className="space-y-6">
-      {/* 🔹 Filters & Sortering */}
+      {/* Filters & Sort */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex gap-2">
-          <select onChange={(e) => setFilters({ ...filters, asset: e.target.value })} className="border p-2 rounded">
+          <select
+            value={filters.asset}
+            onChange={(e) => setFilters({ ...filters, asset: e.target.value })}
+            className="border p-2 rounded"
+          >
             <option value="">Asset</option>
             <option value="BTC">BTC</option>
             <option value="ETH">ETH</option>
+            {/* Voeg andere assets toe indien nodig */}
           </select>
-          <select onChange={(e) => setFilters({ ...filters, timeframe: e.target.value })} className="border p-2 rounded">
+          <select
+            value={filters.timeframe}
+            onChange={(e) => setFilters({ ...filters, timeframe: e.target.value })}
+            className="border p-2 rounded"
+          >
             <option value="">Timeframe</option>
             <option value="1D">1D</option>
             <option value="4H">4H</option>
+            {/* Voeg andere timeframes toe indien nodig */}
           </select>
-          <select onChange={(e) => setFilters({ ...filters, tag: e.target.value })} className="border p-2 rounded">
+          <select
+            value={filters.tag}
+            onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
+            className="border p-2 rounded"
+          >
             <option value="">Tag</option>
             <option value="breakout">Breakout</option>
             <option value="retracement">Retracement</option>
+            {/* Voeg andere tags toe indien nodig */}
           </select>
         </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="border p-2 rounded">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="border p-2 rounded"
+        >
           <option value="created_at">📅 Laatste</option>
           <option value="score">📈 Score</option>
           <option value="favorite">⭐ Favoriet</option>
         </select>
       </div>
 
-      {/* 🔹 Strategiekaarten */}
+      {/* Strategiekaarten */}
       {strategies.length === 0 ? (
         <StrategyCard isEmpty={true} />
       ) : sortedStrategies.length === 0 ? (
@@ -200,7 +220,7 @@ export default function StrategyList({ searchTerm = '' }) {
         ))
       )}
 
-      {/* 🔹 Toast */}
+      {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 bg-black text-white px-4 py-2 rounded shadow-lg z-50">
           {toast}

@@ -23,7 +23,7 @@ export default function StrategyTabs({ onSubmit, setups = [], dcaSetups = [] }) 
       console.log('📤 Strategie opslaan:', strategy);
       await createStrategy(strategy);
       await loadStrategies();
-      onSubmit?.('✅ Strategie succesvol opgeslagen!');
+      if (onSubmit) onSubmit('✅ Strategie succesvol opgeslagen!');
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
       alert('❌ Fout bij opslaan strategie.');
@@ -39,7 +39,7 @@ export default function StrategyTabs({ onSubmit, setups = [], dcaSetups = [] }) 
       console.log('📤 DCA-strategie opslaan:', payload);
       await createStrategy(payload);
       await loadStrategies();
-      onSubmit?.('✅ DCA-strategie succesvol opgeslagen!');
+      if (onSubmit) onSubmit('✅ DCA-strategie succesvol opgeslagen!');
     } catch (err) {
       console.error('❌ Fout bij opslaan DCA-strategie:', err);
       alert('❌ Fout bij opslaan DCA-strategie.');
@@ -48,20 +48,32 @@ export default function StrategyTabs({ onSubmit, setups = [], dcaSetups = [] }) 
 
   return (
     <div>
-      {/* 🔘 Tab-knoppen */}
+      {/* Tab buttons */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <button className={tabStyle('trading')} onClick={() => setActiveTab('trading')}>
+        <button
+          className={tabStyle('trading')}
+          onClick={() => setActiveTab('trading')}
+          type="button"
+        >
           📈 Tradingstrategie (AI)
         </button>
-        <button className={tabStyle('dca')} onClick={() => setActiveTab('dca')}>
+        <button
+          className={tabStyle('dca')}
+          onClick={() => setActiveTab('dca')}
+          type="button"
+        >
           💰 DCA-strategie
         </button>
-        <button className={tabStyle('manual')} onClick={() => setActiveTab('manual')}>
+        <button
+          className={tabStyle('manual')}
+          onClick={() => setActiveTab('manual')}
+          type="button"
+        >
           ✍️ Handmatige strategie
         </button>
       </div>
 
-      {/* 🧠 Tab inhoud */}
+      {/* Tab content */}
       {activeTab === 'trading' && (
         <StrategyFormTrading onSubmit={handleStandardSubmit} setups={setups} />
       )}

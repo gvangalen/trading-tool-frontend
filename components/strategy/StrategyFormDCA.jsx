@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
+import { useSetupData } from '@/hooks/useSetupData';
 
 export default function StrategyFormDCA({ onSubmit, setups = [] }) {
+  const { loadSetups } = useSetupData();
+
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     setup_id: '',
@@ -15,10 +17,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     rules: '',
   });
 
-  // Log wanneer setups veranderen (optioneel)
   useEffect(() => {
-    console.log('ℹ️ setups prop gewijzigd:', setups);
-  }, [setups]);
+    loadSetups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,7 +34,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         setError(errMsg);
         return;
       }
-
       setForm((prev) => ({
         ...prev,
         setup_id: selected.id,
@@ -55,18 +56,9 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     const { setup_id, setup_name, asset, timeframe, amount, frequency } = form;
     const parsedAmount = Number(amount);
 
-    if (!setup_id || !setup_name || !asset || !timeframe) {
-      console.warn('⚠️ Validatie faalt: verplichte velden setup ontbreken');
-      return false;
-    }
-    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      console.warn('⚠️ Validatie faalt: ongeldig bedrag:', amount);
-      return false;
-    }
-    if (!frequency) {
-      console.warn('⚠️ Validatie faalt: frequentie niet ingevuld');
-      return false;
-    }
+    if (!setup_id || !setup_name || !asset || !timeframe) return false;
+    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) return false;
+    if (!frequency) return false;
     return true;
   };
 
@@ -75,8 +67,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     setError('');
     console.log('📝 Formulier verzonden met data:', form);
 
-    const valid = isFormValid();
-    if (!valid) {
+    if (!isFormValid()) {
       const errMsg = '❌ Vul alle verplichte velden correct in.';
       console.warn(errMsg);
       setError(errMsg);
@@ -95,13 +86,11 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       asset: form.asset,
       timeframe: form.timeframe,
       origin: 'DCA',
-      // Entry, targets en stop_loss worden hier niet meegegeven
     };
 
     try {
       console.log('🚀 Strategie object wordt doorgestuurd:', strategy);
       await onSubmit(strategy);
-      toast.success('💾 DCA-strategie succesvol opgeslagen!');
       setForm({
         setup_id: '',
         setup_name: '',
@@ -111,11 +100,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         frequency: '',
         rules: '',
       });
-      console.log('✅ Formulier gereset na succesvolle submit');
+      toast.success('💾 DCA-strategie succesvol opgeslagen!');
     } catch (err) {
       console.error('❌ Fout bij submit DCA-strategie:', err);
-      toast.error('❌ Fout bij opslaan strategie.');
-      setError('Fout bij opslaan strategie.');
+      setError('❌ Fout bij opslaan strategie.');
     }
   };
 
@@ -125,17 +113,24 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     <form
       onSubmit={handleSubmit}
       className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded shadow-md max-w-md"
+      aria-live="polite"
+      noValidate
     >
       <h2 className="text-lg font-bold mb-2">💰 Nieuwe DCA-strategie</h2>
 
       <div>
-        <label className="block mb-1 font-medium">🧩 Koppel aan Setup</label>
+        <label htmlFor="setup_id" className="block mb-1 font-medium">
+          🧩 Koppel aan Setup
+        </label>
         <select
+          id="setup_id"
           name="setup_id"
           value={form.setup_id}
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded"
           required
+          aria-invalid={error.includes('setup') ? 'true' : 'false'}
+          aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
         >
           <option value="">-- Kies een setup --</option>
           {Array.isArray(setups) &&
@@ -147,31 +142,47 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
                 </option>
               ))}
         </select>
+        {error.includes('setup') && (
+          <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">📈 Asset (automatisch)</label>
+        <label htmlFor="asset" className="block mb-1 font-medium">
+          📈 Asset (automatisch)
+        </label>
         <input
+          id="asset"
           name="asset"
           value={form.asset}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
+          aria-readonly="true"
         />
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">⏱️ Timeframe (automatisch)</label>
+        <label htmlFor="timeframe" className="block mb-1 font-medium">
+          ⏱️ Timeframe (automatisch)
+        </label>
         <input
+          id="timeframe"
           name="timeframe"
           value={form.timeframe}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
+          aria-readonly="true"
         />
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">💶 Bedrag per keer</label>
+        <label htmlFor="amount" className="block mb-1 font-medium">
+          💶 Bedrag per keer
+        </label>
         <input
+          id="amount"
           name="amount"
           type="number"
           min="1"
@@ -181,17 +192,24 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           placeholder="Bijv. 100"
           className="w-full border px-3 py-2 rounded"
           required
+          aria-invalid={error.includes('Bedrag') ? 'true' : 'false'}
+          aria-describedby={error.includes('Bedrag') ? 'error-amount' : undefined}
         />
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">⏰ Frequentie</label>
+        <label htmlFor="frequency" className="block mb-1 font-medium">
+          ⏰ Frequentie
+        </label>
         <select
+          id="frequency"
           name="frequency"
           value={form.frequency}
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded"
           required
+          aria-invalid={error.includes('frequentie') ? 'true' : 'false'}
+          aria-describedby={error.includes('frequentie') ? 'error-frequency' : undefined}
         >
           <option value="" disabled>
             Kies frequentie...
@@ -202,18 +220,25 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">📋 Koopregels (optioneel)</label>
+        <label htmlFor="rules" className="block mb-1 font-medium">
+          📋 Koopregels (optioneel)
+        </label>
         <textarea
+          id="rules"
           name="rules"
           value={form.rules}
           onChange={handleChange}
-          rows="3"
+          rows={3}
           placeholder="Bijv. koop alleen bij Fear & Greed < 30"
           className="w-full border px-3 py-2 rounded resize-none"
         />
       </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && !error.includes('setup') && (
+        <p className="text-red-600 text-sm" role="alert">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
@@ -221,6 +246,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full ${
           !isValid ? 'opacity-50 cursor-not-allowed' : ''
         }`}
+        aria-disabled={!isValid}
       >
         💾 DCA-strategie opslaan
       </button>

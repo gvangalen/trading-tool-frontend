@@ -25,6 +25,9 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
     strategy_type,
     explanation,
     favorite,
+    entry,
+    targets,
+    stop_loss,
   } = strategy;
 
   const lowerStrategyType = strategy_type?.toLowerCase() || '';
@@ -87,122 +90,124 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
     value !== null && value !== undefined && value !== '' ? value : '-';
 
   return (
-    <div className="border p-4 rounded shadow bg-white dark:bg-gray-900 dark:text-white space-y-2">
-      <div className="flex justify-between items-start">
-        <h3 className="font-semibold text-lg">{setup_name || '🛠️ Onbekende setup'}</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setError('');
-              setEditing(!editing);
-              // sync gebeurt nu via useEffect
-            }}
-            className="text-blue-500 text-sm"
-            aria-label="Bewerken"
-            title="Bewerken"
-            disabled={loading}
-          >
-            ✏️
-          </button>
-          <button
-            onClick={handleDelete}
-            className="text-red-500 text-sm"
-            aria-label="Verwijderen"
-            title="Verwijderen"
-            disabled={loading}
-          >
-            🗑️
-          </button>
+    <div className="border rounded-lg shadow-md bg-white dark:bg-gray-900 dark:text-white p-4 flex flex-col justify-between h-full">
+      <div>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-semibold text-lg truncate">{setup_name || '🛠️ Onbekende setup'}</h3>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setError('');
+                setEditing(!editing);
+              }}
+              className="text-blue-600 hover:text-blue-800 focus:outline-none"
+              aria-label="Bewerken"
+              title="Bewerken"
+              disabled={loading}
+            >
+              ✏️
+            </button>
+            <button
+              onClick={handleDelete}
+              className="text-red-600 hover:text-red-800 focus:outline-none"
+              aria-label="Verwijderen"
+              title="Verwijderen"
+              disabled={loading}
+            >
+              🗑️
+            </button>
+          </div>
         </div>
+
+        {!editing ? (
+          <>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <span className="uppercase font-medium">{lowerStrategyType}</span> | {asset} {timeframe}
+            </p>
+            {lowerStrategyType !== 'dca' && (
+              <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300 mb-2">
+                <p title="Entry prijs">🎯 Entry: €{displayValue(entry)}</p>
+                <p title="Target prijs">
+                  🎯 Target: {Array.isArray(targets) && targets.length > 0 ? targets[0] : '-'}
+                </p>
+                <p title="Stop-loss">🛡️ SL: €{displayValue(stop_loss)}</p>
+              </div>
+            )}
+            {explanation && (
+              <p className="text-xs italic text-gray-500 dark:text-gray-400 mb-2">🧠 {explanation}</p>
+            )}
+            {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+          </>
+        ) : (
+          <>
+            {lowerStrategyType !== 'dca' && (
+              <div className="grid grid-cols-3 gap-3 text-sm mb-2">
+                <input
+                  className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:text-white"
+                  placeholder="Entry"
+                  value={editFields.entry ?? ''}
+                  onChange={(e) =>
+                    setEditFields({ ...editFields, entry: e.target.value })
+                  }
+                  aria-label="Entry prijs"
+                  type="number"
+                  step="0.01"
+                />
+                <input
+                  className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:text-white"
+                  placeholder="Target"
+                  value={
+                    Array.isArray(editFields.targets) && editFields.targets.length > 0
+                      ? editFields.targets[0]
+                      : ''
+                  }
+                  onChange={(e) =>
+                    setEditFields({ ...editFields, targets: [e.target.value] })
+                  }
+                  aria-label="Target prijs"
+                  type="number"
+                  step="0.01"
+                />
+                <input
+                  className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:text-white"
+                  placeholder="Stop-loss"
+                  value={editFields.stop_loss ?? ''}
+                  onChange={(e) =>
+                    setEditFields({ ...editFields, stop_loss: e.target.value })
+                  }
+                  aria-label="Stop-loss prijs"
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+            )}
+            {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+            <button
+              onClick={handleSave}
+              className="w-full mt-1 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:bg-blue-300"
+              disabled={loading}
+              aria-label="Opslaan"
+            >
+              💾 Opslaan
+            </button>
+          </>
+        )}
       </div>
 
-      {!editing ? (
-        <>
-          <p className="text-sm text-gray-500">
-            {lowerStrategyType.toUpperCase()} | {asset} {timeframe}
-          </p>
-          {lowerStrategyType !== 'dca' && (
-            <div className="text-sm flex flex-col gap-1">
-              <span title="Entry prijs">🎯 Entry: €{displayValue(strategy.entry)}</span>
-              <span title="Target prijs">
-                🎯 Target:{' '}
-                {Array.isArray(strategy.targets) && strategy.targets.length > 0
-                  ? strategy.targets[0]
-                  : '-'}
-              </span>
-              <span title="Stop-loss">🛡️ SL: €{displayValue(strategy.stop_loss)}</span>
-            </div>
-          )}
-          {explanation && (
-            <p className="text-xs mt-2 italic text-gray-500">🧠 {explanation}</p>
-          )}
-          {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
-        </>
-      ) : (
-        <>
-          {lowerStrategyType !== 'dca' && (
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <input
-                className="border px-2 py-1 rounded"
-                placeholder="Entry"
-                value={editFields.entry ?? ''}
-                onChange={(e) =>
-                  setEditFields({ ...editFields, entry: e.target.value })
-                }
-                aria-label="Entry prijs"
-                type="number"
-                step="0.01"
-              />
-              <input
-                className="border px-2 py-1 rounded"
-                placeholder="Target"
-                value={
-                  Array.isArray(editFields.targets) && editFields.targets.length > 0
-                    ? editFields.targets[0]
-                    : ''
-                }
-                onChange={(e) =>
-                  setEditFields({ ...editFields, targets: [e.target.value] })
-                }
-                aria-label="Target prijs"
-                type="number"
-                step="0.01"
-              />
-              <input
-                className="border px-2 py-1 rounded"
-                placeholder="Stop-loss"
-                value={editFields.stop_loss ?? ''}
-                onChange={(e) =>
-                  setEditFields({ ...editFields, stop_loss: e.target.value })
-                }
-                aria-label="Stop-loss prijs"
-                type="number"
-                step="0.01"
-              />
-            </div>
-          )}
-          {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
-          <button
-            onClick={handleSave}
-            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            disabled={loading}
-            aria-label="Opslaan"
-          >
-            💾 Opslaan
-          </button>
-        </>
-      )}
-
-      <div className="flex justify-end mt-2">
+      <div className="flex justify-between items-center mt-4">
         <button
           onClick={handleGenerate}
-          className="text-xs text-purple-500 underline"
+          className="text-sm text-purple-600 underline hover:text-purple-800 focus:outline-none"
           disabled={loading}
           aria-label="Genereer strategie via AI"
           title="Genereer strategie via AI"
         >
           🔁 Genereer strategie (AI)
         </button>
+
+        <div className="text-yellow-500 text-xl select-none" title={favorite ? 'Favoriet' : 'Niet favoriet'}>
+          {favorite ? '⭐' : '☆'}
+        </div>
       </div>
     </div>
   );

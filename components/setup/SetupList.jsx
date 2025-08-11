@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
 import { generateExplanation } from '@/lib/api/setups';
 
-export default function SetupList({ searchTerm = '', strategyType = '' }) {
+export default function SetupList({ searchTerm = '', strategyType = '', onUpdated }) {
   const {
     setups,
     loading,
@@ -23,7 +23,8 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
   // Laad setups opnieuw als strategyType of searchTerm verandert
   useEffect(() => {
     loadSetups(strategyType);
-  }, [strategyType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strategyType, searchTerm]);
 
   // Filter en sorteer setups
   const filteredSortedSetups = () => {
@@ -55,13 +56,20 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
   async function handleSave(id) {
     const original = setups.find((s) => s.id === id);
     const updated = { ...original, ...editingValues[id] };
-    await saveSetup(id, updated);
-    setEditingId(null);
-    setEditingValues((prev) => {
-      const newEditing = { ...prev };
-      delete newEditing[id];
-      return newEditing;
-    });
+    try {
+      await saveSetup(id, updated);
+      setEditingId(null);
+      setEditingValues((prev) => {
+        const newEditing = { ...prev };
+        delete newEditing[id];
+        return newEditing;
+      });
+      if (onUpdated) await onUpdated();
+      toast.success('Setup succesvol opgeslagen');
+    } catch (error) {
+      toast.error('Opslaan mislukt');
+      console.error('❌ saveSetup error:', error);
+    }
   }
 
   async function handleGenerateExplanation(id) {
@@ -69,14 +77,26 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
       await generateExplanation(id);
       toast.success('Uitleg gegenereerd!');
       await loadSetups(strategyType); // forceer refresh van lijst met filter
+      if (onUpdated) await onUpdated();
     } catch (err) {
       console.error('❌ Fout bij AI-explanation:', err);
       toast.error('Fout bij uitleg genereren.');
     }
   }
 
+  async function handleRemove(id) {
+    try {
+      await removeSetup(id);
+      toast.success('Setup verwijderd');
+      if (onUpdated) await onUpdated();
+    } catch (err) {
+      toast.error('Verwijderen mislukt.');
+      console.error('❌ removeSetup error:', err);
+    }
+  }
+
   function toggleFavorite(id, current) {
-    // Let op: handleSave is async, maar hier niet awaited — kan oké zijn
+    // Let op: handleSave is async, hier niet awaited — dat kan oké zijn
     handleEditChange(id, 'favorite', !current);
     handleSave(id);
   }
@@ -90,6 +110,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="border p-2 rounded bg-white"
+          aria-label="Filter setups op trend"
         >
           <option value="all">🔁 Alle trends</option>
           <option value="bullish">📈 Bullish</option>
@@ -101,6 +122,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
           className="border p-2 rounded bg-white"
+          aria-label="Sorteer setups"
         >
           <option value="name">🔤 Sorteer op naam</option>
         </select>
@@ -114,9 +136,11 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
           setupsToShow.map((setup) => {
             const isEditing = editingId === setup.id;
             const trendColor =
-              setup.trend === 'bullish' ? 'text-green-600' :
-              setup.trend === 'bearish' ? 'text-red-500' :
-              'text-yellow-500';
+              setup.trend === 'bullish'
+                ? 'text-green-600'
+                : setup.trend === 'bearish'
+                ? 'text-red-500'
+                : 'text-yellow-500';
 
             // Gebruik bewerkte waarden als die er zijn, anders originele
             const editingData = editingValues[setup.id] || {};
@@ -130,7 +154,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => toggleFavorite(setup.id, setup.favorite)}
-                  aria-label="Toggle favoriet"
+                  aria-label={`Toggle favoriet voor ${setup.name}`}
                 >
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
@@ -288,7 +312,7 @@ export default function SetupList({ searchTerm = '', strategyType = '' }) {
                         ✏️ Bewerken
                       </button>
                       <button
-                        onClick={() => removeSetup(setup.id)}
+                        onClick={() => handleRemove(setup.id)}
                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
                       >
                         ❌ Verwijderen

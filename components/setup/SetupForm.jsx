@@ -131,6 +131,7 @@ export default function SetupForm() {
     }
   }
 
+  // Disabled als verplichte velden leeg zijn of formulier bezig is met verzenden
   const isDisabled =
     !form.name ||
     !form.symbol ||

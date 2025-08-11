@@ -65,7 +65,7 @@ export default function StrategyFormManual({ onSubmit }) {
     const strategy = {
       setup_id: selectedSetup.id,
       setup_name: selectedSetup.name,
-      asset: selectedSetup.symbol,
+      symbol: selectedSetup.symbol,
       timeframe: selectedSetup.timeframe,
       strategy_type: 'manual',
       entry,

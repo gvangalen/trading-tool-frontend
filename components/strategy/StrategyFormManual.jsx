@@ -125,7 +125,7 @@ export default function StrategyFormManual({ onSubmit }) {
           </option>
           {setups.length === 0 && <option disabled>⚠️ Geen setups beschikbaar</option>}
           {setups
-            .filter((s) => s && s.id && s.name)
+            .filter((s) => s && s.id && s.name && s.strategy_type !== 'dca') // DCA setups eruit filteren
             .map((setup) => (
               <option key={setup.id} value={setup.id}>
                 {setup.name} ({setup.symbol} – {setup.timeframe})

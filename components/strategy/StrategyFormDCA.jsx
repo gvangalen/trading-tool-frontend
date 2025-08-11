@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
 
@@ -10,7 +11,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
   const [form, setForm] = useState({
     setup_id: '',
     setup_name: '',
-    asset: '',
+    symbol: '',
     timeframe: '',
     amount: '',
     frequency: '',
@@ -38,7 +39,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         ...prev,
         setup_id: selected.id,
         setup_name: selected.name,
-        asset: selected.symbol || '',
+        symbol: selected.symbol || '',
         timeframe: selected.timeframe || '',
       }));
       setError('');
@@ -53,10 +54,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
   };
 
   const isFormValid = () => {
-    const { setup_id, setup_name, asset, timeframe, amount, frequency } = form;
+    const { setup_id, setup_name, symbol, timeframe, amount, frequency } = form;
     const parsedAmount = Number(amount);
 
-    if (!setup_id || !setup_name || !asset || !timeframe) return false;
+    if (!setup_id || !setup_name || !symbol || !timeframe) return false;
     if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) return false;
     if (!frequency) return false;
     return true;
@@ -83,7 +84,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       rules: form.rules?.trim() || '',
       setup_id: form.setup_id,
       setup_name: form.setup_name,
-      asset: form.asset,
+      symbol: form.symbol,
       timeframe: form.timeframe,
       origin: 'DCA',
     };
@@ -94,7 +95,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       setForm({
         setup_id: '',
         setup_name: '',
-        asset: '',
+        symbol: '',
         timeframe: '',
         amount: '',
         frequency: '',
@@ -150,13 +151,13 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       </div>
 
       <div>
-        <label htmlFor="asset" className="block mb-1 font-medium">
-          📈 Asset (automatisch)
+        <label htmlFor="symbol" className="block mb-1 font-medium">
+          📈 Symbol (automatisch)
         </label>
         <input
-          id="asset"
-          name="asset"
-          value={form.asset}
+          id="symbol"
+          name="symbol"
+          value={form.symbol}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
           aria-readonly="true"

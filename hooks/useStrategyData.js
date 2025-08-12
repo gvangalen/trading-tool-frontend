@@ -24,13 +24,13 @@ export function useStrategyData() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadStrategies = useCallback(async (asset = '', timeframe = '') => {
-    console.log(`🔍 loadStrategies gestart met asset='${asset}', timeframe='${timeframe}'`);
+  const loadStrategies = useCallback(async (symbol = '', timeframe = '') => {
+    console.log(`🔍 loadStrategies gestart met symbol='${symbol}', timeframe='${timeframe}'`);
     setLoading(true);
     setError('');
     setSuccessMessage('');
     try {
-      const data = await fetchStrategies(asset, timeframe);
+      const data = await fetchStrategies(symbol, timeframe);
       if (!Array.isArray(data)) {
         console.warn('⚠️ loadStrategies: response is geen array', data);
         setStrategies([]);
@@ -68,9 +68,9 @@ export function useStrategyData() {
 
   function getRequiredFields(strategy) {
     if (strategy.strategy_type === 'dca') {
-      return ['setup_id', 'setup_name', 'asset', 'timeframe', 'amount', 'frequency'];
+      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'amount', 'frequency'];  // asset → symbol
     } else {
-      return ['setup_id', 'setup_name', 'asset', 'timeframe', 'entry', 'targets', 'stop_loss'];
+      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'targets', 'stop_loss'];  // asset → symbol
     }
   }
 

@@ -50,7 +50,14 @@ export default function StrategyCard({ strategy, onEdit, onDelete }) {
       onEdit && onEdit();
     } catch (err) {
       console.error('❌ Strategie opslaan mislukt:', err);
-      setError('Opslaan mislukt. Probeer het later opnieuw.');
+      // Specifieke check voor duplicate error (status 409)
+      if (err.status === 409) {
+        setError('❌ Strategie bestaat al voor deze setup en type.');
+      } else if (err.message) {
+        setError(`Opslaan mislukt: ${err.message}`);
+      } else {
+        setError('Opslaan mislukt. Probeer het later opnieuw.');
+      }
     } finally {
       setLoading(false);
     }

@@ -21,18 +21,20 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
   useEffect(() => {
     loadSetups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 🔍 Filter setups zonder bestaande DCA-strategie
+  const availableSetups = setups.filter(
+    (s) => !s.strategy_type || s.strategy_type.toLowerCase() !== 'dca'
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`✍️ handleChange: veld '${name}' veranderd naar '${value}'`);
 
     if (name === 'setup_id') {
-      const selected = setups.find((s) => String(s.id) === String(value));
+      const selected = availableSetups.find((s) => String(s.id) === String(value));
       if (!selected) {
         const errMsg = '❌ Ongeldige setup geselecteerd.';
-        console.error(errMsg);
         setError(errMsg);
         return;
       }
@@ -44,7 +46,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         timeframe: selected.timeframe || '',
       }));
       setError('');
-      console.log('✅ Setup geselecteerd:', selected);
     } else {
       setForm((prev) => ({
         ...prev,
@@ -57,27 +58,28 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
   const isFormValid = () => {
     const { setup_id, setup_name, symbol, timeframe, amount, frequency } = form;
     const parsedAmount = Number(amount);
-
-    if (!setup_id || !setup_name || !symbol || !timeframe) return false;
-    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) return false;
-    if (!frequency) return false;
-    return true;
+    return (
+      setup_id &&
+      setup_name &&
+      symbol &&
+      timeframe &&
+      amount &&
+      !isNaN(parsedAmount) &&
+      parsedAmount > 0 &&
+      frequency
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    console.log('📝 Formulier verzonden met data:', form);
 
     if (!isFormValid()) {
-      const errMsg = '❌ Vul alle verplichte velden correct in.';
-      console.warn(errMsg);
-      setError(errMsg);
+      setError('❌ Vul alle verplichte velden correct in.');
       return;
     }
 
     const parsedAmount = Number(form.amount);
-
     const strategy = {
       strategy_type: 'dca',
       amount: parsedAmount,
@@ -91,7 +93,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     };
 
     try {
-      console.log('🚀 Strategie object wordt doorgestuurd:', strategy);
       await onSubmit(strategy);
       setForm({
         setup_id: '',
@@ -120,13 +121,13 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     >
       <h2 className="text-lg font-bold mb-2">💰 Nieuwe DCA-strategie</h2>
 
-      {/* 🧩 Setup-selectie */}
+      {/* Setup-selectie */}
       <div>
         <div className="flex items-center gap-2">
           <label htmlFor="setup_id" className="block mb-1 font-medium">
             🧩 Koppel aan Setup
           </label>
-          <InfoTooltip text="Alleen setups zonder bestaande strategie worden hier getoond." />
+          <InfoTooltip text="Alleen setups zonder bestaande DCA-strategie worden hier getoond." />
         </div>
         <select
           id="setup_id"
@@ -137,21 +138,18 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           required
           aria-invalid={error.includes('setup') ? 'true' : 'false'}
           aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
-          disabled={setups.length === 0}
+          disabled={availableSetups.length === 0}
         >
           <option value="">
-            {setups.length === 0
+            {availableSetups.length === 0
               ? '⚠️ Geen beschikbare setups (alle gekoppeld?)'
               : '-- Kies een setup --'}
           </option>
-          {Array.isArray(setups) &&
-            setups
-              .filter((s) => s && s.id && s.name)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.symbol} – {s.timeframe})
-                </option>
-              ))}
+          {availableSetups.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.symbol} – {s.timeframe})
+            </option>
+          ))}
         </select>
         {error.includes('setup') && (
           <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
@@ -171,7 +169,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           value={form.symbol}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
-          aria-readonly="true"
         />
       </div>
 
@@ -186,7 +183,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           value={form.timeframe}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
-          aria-readonly="true"
         />
       </div>
 

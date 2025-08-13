@@ -14,7 +14,7 @@ export default function StrategyForm() {
   const [form, setForm] = useState({
     setup_id: '',
     setup_name: '',
-    symbol: '',        // aangepast van asset naar symbol
+    symbol: '',
     timeframe: '',
     explanation: '',
     entry: '',
@@ -32,7 +32,6 @@ export default function StrategyForm() {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
 
-    console.log(`📝 Field changed: ${name} = ${val}`);
     setError('');
 
     if (name === 'setup_id') {
@@ -46,10 +45,9 @@ export default function StrategyForm() {
         ...prev,
         setup_id: val,
         setup_name: selected.name?.trim() || '',
-        symbol: selected.symbol?.trim() || '',   // hier symbol ipv asset
+        symbol: selected.symbol?.trim() || '',
         timeframe: selected.timeframe?.trim() || '',
       }));
-      console.log(`✅ Setup geselecteerd: ${selected.name} (${selected.symbol})`);
     } else {
       setForm((prev) => ({
         ...prev,
@@ -63,14 +61,10 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
-    console.log('🚀 Submit gestart met formulier:', form);
-
     const requiredFields = ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'target', 'stop_loss'];
     for (const field of requiredFields) {
       if (!form[field]) {
-        const msg = `❌ Veld "${field}" is verplicht.`;
-        console.warn(msg);
-        setError(msg);
+        setError(`❌ Veld "${field}" is verplicht.`);
         return;
       }
     }
@@ -80,16 +74,14 @@ export default function StrategyForm() {
     const stop_loss = parseFloat(form.stop_loss);
 
     if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
-      const msg = '❌ Entry, target en stop-loss moeten geldige getallen zijn.';
-      console.warn(msg);
-      setError(msg);
+      setError('❌ Entry, target en stop-loss moeten geldige getallen zijn.');
       return;
     }
 
     const payload = {
       setup_id: form.setup_id,
       setup_name: form.setup_name.trim(),
-      symbol: form.symbol.trim(),      // symbol ipv asset
+      symbol: form.symbol.trim(),
       timeframe: form.timeframe.trim(),
       explanation: form.explanation.trim() || '',
       entry,
@@ -100,12 +92,9 @@ export default function StrategyForm() {
       origin: 'Handmatig',
     };
 
-    console.log('🚀 Payload naar backend:', payload);
-
     setLoading(true);
     try {
       await createStrategy(payload);
-      console.log('✅ Strategie succesvol opgeslagen.');
 
       setForm({
         setup_id: '',
@@ -122,14 +111,12 @@ export default function StrategyForm() {
 
       await loadStrategies();
       setSuccess(true);
-
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Strategie maken mislukt:', err);
       setError('Fout bij opslaan strategie.');
     } finally {
       setLoading(false);
-      console.log('⏳ Submit afgehandeld, loading uit.');
     }
   };
 
@@ -143,6 +130,16 @@ export default function StrategyForm() {
     !form.target ||
     !form.stop_loss;
 
+  const availableSetups = Array.isArray(setups)
+    ? setups.filter(
+        (s) =>
+          s &&
+          s.id &&
+          s.name &&
+          !['manual', 'ai', 'dca'].includes(s.strategy_type)
+      )
+    : [];
+
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
       <h2 className="text-lg font-bold">➕ Nieuwe Strategie</h2>
@@ -155,8 +152,9 @@ export default function StrategyForm() {
 
       <div className="space-y-2">
         <label className="block font-medium">
-          Koppel aan Setup <InfoTooltip text="Je kunt alleen kiezen uit bestaande setups." />
+          Koppel aan Setup <InfoTooltip text="Je kunt alleen kiezen uit bestaande setups zonder gekoppelde strategie." />
         </label>
+
         <select
           name="setup_id"
           value={form.setup_id}
@@ -165,15 +163,18 @@ export default function StrategyForm() {
           required
         >
           <option value="">-- Kies een setup --</option>
-          {Array.isArray(setups) &&
-            setups
-              .filter((s) => s && s.id && s.name && s.strategy_type !== 'dca') // DCA setups filteren
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.symbol} – {s.timeframe})
-                </option>
-              ))}
+          {availableSetups.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.symbol} – {s.timeframe})
+            </option>
+          ))}
         </select>
+
+        {availableSetups.length === 0 && (
+          <p className="text-red-500 text-sm mt-2">
+            ⚠️ Geen geschikte setups beschikbaar om een strategie aan toe te voegen.
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>

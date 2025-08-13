@@ -1,3 +1,4 @@
+console.log('✅ ReportTabs component geladen');
 'use client';
 
 import { useState } from 'react';

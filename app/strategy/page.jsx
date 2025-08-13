@@ -1,19 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import StrategyList from '@/components/strategy/StrategyList';
 import StrategyTabs from '@/components/strategy/StrategyTabs';
 import { useSetupData } from '@/hooks/useSetupData';
+import { useStrategyData } from '@/hooks/useStrategyData';
 import { createStrategy } from '@/lib/api/strategy';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
-  const { setups, dcaSetups, loadSetups } = useSetupData();
+  const { setups, loadSetups } = useSetupData();
+  const { strategies, loadStrategies } = useStrategyData();
 
-  // Functie om setups te verversen
-  const reloadSetups = () => {
+  // 🔁 Herlaad alles na opslaan
+  const reloadAll = () => {
     loadSetups();
+    loadStrategies();
   };
 
   const handleSuccess = (message) => {
@@ -46,14 +49,46 @@ export default function StrategyPage() {
       console.log('📤 Strategie opslaan:', payload);
       await createStrategy(payload);
       handleSuccess('✅ Strategie succesvol opgeslagen!');
-
-      // Reload setups na toevoegen
-      reloadSetups();
+      reloadAll();
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
       setToast('❌ Strategie opslaan mislukt.');
     }
   };
+
+  // 🧠 Filter setups per strategie-type
+  const setupsWithoutDCA = useMemo(
+    () =>
+      setups.filter(
+        (s) =>
+          !strategies.some(
+            (strat) => strat.setup_id === s.id && strat.strategy_type === 'dca'
+          )
+      ),
+    [setups, strategies]
+  );
+
+  const setupsWithoutAI = useMemo(
+    () =>
+      setups.filter(
+        (s) =>
+          !strategies.some(
+            (strat) => strat.setup_id === s.id && strat.strategy_type === 'ai'
+          )
+      ),
+    [setups, strategies]
+  );
+
+  const setupsWithoutManual = useMemo(
+    () =>
+      setups.filter(
+        (s) =>
+          !strategies.some(
+            (strat) => strat.setup_id === s.id && strat.strategy_type === 'manual'
+          )
+      ),
+    [setups, strategies]
+  );
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-10">
@@ -94,9 +129,10 @@ export default function StrategyPage() {
         <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
         <StrategyTabs
           onSubmit={handleStrategySubmit}
-          setups={setups}
-          dcaSetups={dcaSetups}
-          reloadSetups={reloadSetups}
+          setupsDCA={setupsWithoutDCA}
+          setupsAI={setupsWithoutAI}
+          setupsManual={setupsWithoutManual}
+          reloadSetups={reloadAll}
         />
       </section>
     </div>

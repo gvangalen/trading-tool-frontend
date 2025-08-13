@@ -25,7 +25,6 @@ export default function StrategyFormManual({ onSubmit }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Trim alleen bij tekstvelden (niet numeriek)
     const val = ['explanation', 'setup_id'].includes(name) ? value.trimStart() : value;
 
     setForm((prev) => ({
@@ -41,7 +40,6 @@ export default function StrategyFormManual({ onSubmit }) {
     setError('');
     setSuccess(false);
 
-    // Validatie
     if (!form.setup_id) {
       setError('⚠️ Je moet een setup kiezen.');
       return;
@@ -81,8 +79,6 @@ export default function StrategyFormManual({ onSubmit }) {
     try {
       onSubmit(strategy);
       setSuccess(true);
-
-      // Reset form na succesvol submitten
       setForm({
         setup_id: '',
         entry: '',
@@ -90,8 +86,6 @@ export default function StrategyFormManual({ onSubmit }) {
         stop_loss: '',
         explanation: '',
       });
-
-      // Successmelding na 3 seconden automatisch weg
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Fout bij submit:', err);
@@ -100,6 +94,9 @@ export default function StrategyFormManual({ onSubmit }) {
       setLoading(false);
     }
   };
+
+  // 🔎 Filter alleen setups zonder gekoppelde strategie
+  const availableSetups = setups.filter((s) => !s.strategy_type);
 
   return (
     <form
@@ -118,19 +115,19 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.setup_id}
           onChange={handleChange}
           required
+          disabled={availableSetups.length === 0}
           aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
         >
-          <option value="" disabled>
-            -- Kies een setup --
+          <option value="">
+            {availableSetups.length === 0
+              ? '⚠️ Geen beschikbare setups (alle al gekoppeld)'
+              : '-- Kies een setup --'}
           </option>
-          {setups.length === 0 && <option disabled>⚠️ Geen setups beschikbaar</option>}
-          {setups
-            .filter((s) => s && s.id && s.name && s.strategy_type !== 'dca') // DCA setups eruit filteren
-            .map((setup) => (
-              <option key={setup.id} value={setup.id}>
-                {setup.name} ({setup.symbol} – {setup.timeframe})
-              </option>
-            ))}
+          {availableSetups.map((setup) => (
+            <option key={setup.id} value={setup.id}>
+              {setup.name} ({setup.symbol} – {setup.timeframe})
+            </option>
+          ))}
         </select>
         {error.includes('setup') && (
           <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
@@ -153,7 +150,6 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.entry}
           onChange={handleChange}
           required
-          aria-describedby={error.includes('entry') ? 'error-entry' : undefined}
         />
       </div>
 
@@ -171,7 +167,6 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.target}
           onChange={handleChange}
           required
-          aria-describedby={error.includes('target') ? 'error-target' : undefined}
         />
       </div>
 
@@ -189,7 +184,6 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.stop_loss}
           onChange={handleChange}
           required
-          aria-describedby={error.includes('stop-loss') ? 'error-stop_loss' : undefined}
         />
       </div>
 
@@ -222,7 +216,7 @@ export default function StrategyFormManual({ onSubmit }) {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || availableSetups.length === 0}
         className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 w-full`}
         aria-busy={loading}
       >

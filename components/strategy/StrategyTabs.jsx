@@ -7,7 +7,12 @@ import StrategyFormManual from './StrategyFormManual';
 import { createStrategy } from '@/lib/api/strategy';
 import { useStrategyData } from '@/hooks/useStrategyData';
 
-export default function StrategyTabs({ onSubmit, setups = [], dcaSetups = [] }) {
+export default function StrategyTabs({
+  onSubmit,
+  setupsDCA = [],
+  setupsAI = [],
+  setupsManual = [],
+}) {
   const [activeTab, setActiveTab] = useState('trading');
   const { loadStrategies } = useStrategyData();
 
@@ -18,31 +23,19 @@ export default function StrategyTabs({ onSubmit, setups = [], dcaSetups = [] }) 
         : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
     }`;
 
-  const handleStandardSubmit = async (strategy) => {
-    try {
-      console.log('📤 Strategie opslaan:', strategy);
-      await createStrategy(strategy);
-      await loadStrategies();
-      if (onSubmit) onSubmit('✅ Strategie succesvol opgeslagen!');
-    } catch (err) {
-      console.error('❌ Fout bij opslaan strategie:', err);
-      alert('❌ Fout bij opslaan strategie.');
-    }
-  };
-
-  const handleDcaSubmit = async (strategy) => {
+  const handleStandardSubmit = async (strategy, type = 'ai') => {
     try {
       const payload = {
         ...strategy,
-        strategy_type: 'dca',
+        strategy_type: type,
       };
-      console.log('📤 DCA-strategie opslaan:', payload);
+      console.log('📤 Strategie opslaan:', payload);
       await createStrategy(payload);
       await loadStrategies();
-      if (onSubmit) onSubmit('✅ DCA-strategie succesvol opgeslagen!');
+      if (onSubmit) onSubmit(`✅ ${type.toUpperCase()}-strategie succesvol opgeslagen!`);
     } catch (err) {
-      console.error('❌ Fout bij opslaan DCA-strategie:', err);
-      alert('❌ Fout bij opslaan DCA-strategie.');
+      console.error(`❌ Fout bij opslaan ${type}-strategie:`, err);
+      alert(`❌ Fout bij opslaan ${type}-strategie.`);
     }
   };
 
@@ -75,13 +68,22 @@ export default function StrategyTabs({ onSubmit, setups = [], dcaSetups = [] }) 
 
       {/* Tab content */}
       {activeTab === 'trading' && (
-        <StrategyFormTrading onSubmit={handleStandardSubmit} setups={setups} />
+        <StrategyFormTrading
+          onSubmit={(strategy) => handleStandardSubmit(strategy, 'ai')}
+          setups={setupsAI}
+        />
       )}
       {activeTab === 'dca' && (
-        <StrategyFormDCA onSubmit={handleDcaSubmit} setups={dcaSetups} />
+        <StrategyFormDCA
+          onSubmit={(strategy) => handleStandardSubmit(strategy, 'dca')}
+          setups={setupsDCA}
+        />
       )}
       {activeTab === 'manual' && (
-        <StrategyFormManual onSubmit={handleStandardSubmit} setups={setups} />
+        <StrategyFormManual
+          onSubmit={(strategy) => handleStandardSubmit(strategy, 'manual')}
+          setups={setupsManual}
+        />
       )}
     </div>
   );

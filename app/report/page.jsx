@@ -1,25 +1,57 @@
 'use client';
 
+import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 
-export default function ReportPage() {
-  const { report, dates, selectedDate, setSelectedDate, loading } = useReportData();
+const REPORT_TYPES = {
+  daily: 'Dag',
+  weekly: 'Week',
+  monthly: 'Maand',
+  quarterly: 'Kwartaal',
+};
 
-  // 📥 Bouw download-URL op basis van geselecteerde datum
+export default function ReportPage() {
+  const [reportType, setReportType] = useState('daily');
+  const {
+    report,
+    dates,
+    selectedDate,
+    setSelectedDate,
+    loading,
+    error,
+  } = useReportData(reportType);
+
   const downloadUrl =
     selectedDate === 'latest'
-      ? `/api/daily_report/export/pdf`
-      : `/api/daily_report/export/pdf?date=${selectedDate}`;
+      ? `/api/${reportType}_report/export/pdf`
+      : `/api/${reportType}_report/export/pdf?date=${selectedDate}`;
 
   const noRealData = !loading && (!report || dates.length === 0);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">📄 Dagrapport</h1>
+      <h1 className="text-2xl font-bold">📊 Rapportage ({REPORT_TYPES[reportType]})</h1>
 
-      {/* 🔽 Selectie + Download */}
+      {/* 🗂️ Tabs voor report type */}
+      <div className="flex flex-wrap gap-3">
+        {Object.entries(REPORT_TYPES).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setReportType(key)}
+            className={`px-4 py-2 rounded border ${
+              key === reportType
+                ? 'bg-blue-600 text-white'
+                : 'bg-white hover:bg-gray-100'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* 📅 Datumkeuze + Download */}
       <div className="flex flex-wrap items-center gap-4">
         <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
         <select
@@ -45,31 +77,15 @@ export default function ReportPage() {
 
       {/* 🔄 Laadindicator */}
       {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
+      {error && <p className="text-red-600">❌ {error}</p>}
 
-      {/* 🚫 Geen echte data */}
+      {/* 🟡 Geen echte data */}
       {noRealData && (
         <div className="space-y-6">
           <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
             ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
           </div>
-
-          <ReportContainer>
-            <ReportCard
-              title="🧠 Samenvatting BTC"
-              content="Bitcoin consolideert na een eerdere uitbraak. RSI neutraal. Volume lager dan gemiddeld."
-              full
-              color="blue"
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ReportCard title="📉 Macro Samenvatting" content="DXY stijgt licht. Fear & Greed Index toont 'Neutral'. Obligatierentes stabiel." color="gray" />
-              <ReportCard title="📋 Setup Checklist" content={`✅ RSI boven 50\n❌ Volume onder gemiddelde\n✅ 200MA support intact`} pre color="green" />
-              <ReportCard title="🎯 Dagelijkse Prioriteiten" content={`1. Breakout boven $70k monitoren\n2. Volume spikes volgen op 4H\n3. Setup 'Swing-BTC-Juni' valideren`} pre color="yellow" />
-              <ReportCard title="🔍 Wyckoff Analyse" content="BTC bevindt zich in Phase D. Mogelijke LPS-test voor nieuwe stijging. Bevestiging nodig via volume." pre color="blue" />
-              <ReportCard title="📈 Aanbevelingen" content={`• Accumulatie bij dips\n• Entry ladder tussen $66.000–$64.000\n• Alert op breakout $70.500`} pre color="red" />
-              <ReportCard title="✅ Conclusie" content="BTC blijft sterk, maar bevestiging nodig via volume en breakout." color="green" />
-              <ReportCard title="🔮 Vooruitblik" content="Mogelijke beweging richting $74k bij positieve macro. Anders her-test support rond $64k." pre color="gray" />
-            </div>
-          </ReportContainer>
+          <DummyReport />
         </div>
       )}
 
@@ -89,5 +105,27 @@ export default function ReportPage() {
         </ReportContainer>
       )}
     </div>
+  );
+}
+
+function DummyReport() {
+  return (
+    <ReportContainer>
+      <ReportCard
+        title="🧠 Samenvatting BTC"
+        content="Bitcoin consolideert na een eerdere uitbraak. RSI neutraal. Volume lager dan gemiddeld."
+        full
+        color="blue"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ReportCard title="📉 Macro Samenvatting" content="DXY stijgt licht. Fear & Greed Index toont 'Neutral'. Obligatierentes stabiel." color="gray" />
+        <ReportCard title="📋 Setup Checklist" content={`✅ RSI boven 50\n❌ Volume onder gemiddelde\n✅ 200MA support intact`} pre color="green" />
+        <ReportCard title="🎯 Dagelijkse Prioriteiten" content={`1. Breakout boven $70k monitoren\n2. Volume spikes volgen op 4H\n3. Setup 'Swing-BTC-Juni' valideren`} pre color="yellow" />
+        <ReportCard title="🔍 Wyckoff Analyse" content="BTC bevindt zich in Phase D. Mogelijke LPS-test voor nieuwe stijging. Bevestiging nodig via volume." pre color="blue" />
+        <ReportCard title="📈 Aanbevelingen" content={`• Accumulatie bij dips\n• Entry ladder tussen $66.000–$64.000\n• Alert op breakout $70.500`} pre color="red" />
+        <ReportCard title="✅ Conclusie" content="BTC blijft sterk, maar bevestiging nodig via volume en breakout." color="green" />
+        <ReportCard title="🔮 Vooruitblik" content="Mogelijke beweging richting $74k bij positieve macro. Anders her-test support rond $64k." pre color="gray" />
+      </div>
+    </ReportContainer>
   );
 }

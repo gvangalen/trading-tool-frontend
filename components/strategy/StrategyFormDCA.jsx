@@ -119,6 +119,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     >
       <h2 className="text-lg font-bold mb-2">💰 Nieuwe DCA-strategie</h2>
 
+      {/* 🧩 Setup-selectie */}
       <div>
         <label htmlFor="setup_id" className="block mb-1 font-medium">
           🧩 Koppel aan Setup
@@ -132,8 +133,13 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           required
           aria-invalid={error.includes('setup') ? 'true' : 'false'}
           aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
+          disabled={setups.length === 0}
         >
-          <option value="">-- Kies een setup --</option>
+          <option value="">
+            {setups.length === 0
+              ? '⚠️ Geen beschikbare setups (alle gekoppeld?)'
+              : '-- Kies een setup --'}
+          </option>
           {Array.isArray(setups) &&
             setups
               .filter((s) => s && s.id && s.name)
@@ -150,6 +156,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         )}
       </div>
 
+      {/* Symbol */}
       <div>
         <label htmlFor="symbol" className="block mb-1 font-medium">
           📈 Symbol (automatisch)
@@ -164,6 +171,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
+      {/* Timeframe */}
       <div>
         <label htmlFor="timeframe" className="block mb-1 font-medium">
           ⏱️ Timeframe (automatisch)
@@ -178,6 +186,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
+      {/* Bedrag */}
       <div>
         <label htmlFor="amount" className="block mb-1 font-medium">
           💶 Bedrag per keer
@@ -193,11 +202,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           placeholder="Bijv. 100"
           className="w-full border px-3 py-2 rounded"
           required
-          aria-invalid={error.includes('Bedrag') ? 'true' : 'false'}
-          aria-describedby={error.includes('Bedrag') ? 'error-amount' : undefined}
         />
       </div>
 
+      {/* Frequentie */}
       <div>
         <label htmlFor="frequency" className="block mb-1 font-medium">
           ⏰ Frequentie
@@ -209,8 +217,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded"
           required
-          aria-invalid={error.includes('frequentie') ? 'true' : 'false'}
-          aria-describedby={error.includes('frequentie') ? 'error-frequency' : undefined}
         >
           <option value="" disabled>
             Kies frequentie...
@@ -220,6 +226,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         </select>
       </div>
 
+      {/* Koopregels */}
       <div>
         <label htmlFor="rules" className="block mb-1 font-medium">
           📋 Koopregels (optioneel)
@@ -235,12 +242,14 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
+      {/* Foutmelding */}
       {error && !error.includes('setup') && (
         <p className="text-red-600 text-sm" role="alert">
           {error}
         </p>
       )}
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={!isValid}

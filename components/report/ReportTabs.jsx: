@@ -1,0 +1,30 @@
+'use client';
+
+import { useState } from 'react';
+
+const REPORT_TYPES = {
+  daily: 'Dag',
+  weekly: 'Week',
+  monthly: 'Maand',
+  quarterly: 'Kwartaal',
+};
+
+export default function ReportTabs({ selected, onChange }) {
+  return (
+    <div className="flex gap-3 border-b border-gray-300 pb-2 mb-6">
+      {Object.entries(REPORT_TYPES).map(([key, label]) => (
+        <button
+          key={key}
+          onClick={() => onChange(key)}
+          className={`px-4 py-2 text-sm font-medium border rounded-t ${
+            selected === key
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'bg-white text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}

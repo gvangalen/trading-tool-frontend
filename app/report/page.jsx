@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
+import ReportTabs from '@/components/report/ReportTabs'; // ✅ Nieuw
 
 const REPORT_TYPES = {
   daily: 'Dag',
@@ -34,42 +35,8 @@ export default function ReportPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">📊 Rapportage ({REPORT_TYPES[reportType]})</h1>
 
-      {/* 🐞 Debugversie tabs */}
-<div className="flex gap-2 border border-dashed border-red-400 p-3 bg-red-50 rounded-md">
-  <p className="text-sm text-red-700 font-semibold mr-4">🧪 Debug tabs:</p>
-  <button
-    onClick={() => setReportType('daily')}
-    className={`px-4 py-2 rounded border ${
-      reportType === 'daily' ? 'bg-blue-600 text-white' : 'bg-white text-black'
-    }`}
-  >
-    Dag
-  </button>
-  <button
-    onClick={() => setReportType('weekly')}
-    className={`px-4 py-2 rounded border ${
-      reportType === 'weekly' ? 'bg-blue-600 text-white' : 'bg-white text-black'
-    }`}
-  >
-    Week
-  </button>
-  <button
-    onClick={() => setReportType('monthly')}
-    className={`px-4 py-2 rounded border ${
-      reportType === 'monthly' ? 'bg-blue-600 text-white' : 'bg-white text-black'
-    }`}
-  >
-    Maand
-  </button>
-  <button
-    onClick={() => setReportType('quarterly')}
-    className={`px-4 py-2 rounded border ${
-      reportType === 'quarterly' ? 'bg-blue-600 text-white' : 'bg-white text-black'
-    }`}
-  >
-    Kwartaal
-  </button>
-</div>
+      {/* ✅ Mooie tabs voor selectie */}
+      <ReportTabs selected={reportType} onChange={setReportType} />
 
       {/* 📅 Datumkeuze + Download */}
       <div className="flex flex-wrap items-center gap-4">

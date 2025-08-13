@@ -3,6 +3,7 @@
 import { toast } from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyFormDCA({ onSubmit, setups = [] }) {
   const { loadSetups } = useSetupData();
@@ -121,9 +122,12 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
       {/* 🧩 Setup-selectie */}
       <div>
-        <label htmlFor="setup_id" className="block mb-1 font-medium">
-          🧩 Koppel aan Setup
-        </label>
+        <div className="flex items-center gap-2">
+          <label htmlFor="setup_id" className="block mb-1 font-medium">
+            🧩 Koppel aan Setup
+          </label>
+          <InfoTooltip text="Alleen setups zonder bestaande strategie worden hier getoond." />
+        </div>
         <select
           id="setup_id"
           name="setup_id"

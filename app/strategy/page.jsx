@@ -6,6 +6,7 @@ import StrategyTabs from '@/components/strategy/StrategyTabs';
 import { useSetupData } from '@/hooks/useSetupData';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { createStrategy } from '@/lib/api/strategy';
+import InfoTooltip from '@/components/ui/InfoTooltip'; 
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
@@ -127,6 +128,7 @@ export default function StrategyPage() {
       {/* ➕ Strategie toevoegen */}
       <section className="pt-10 border-t">
         <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
+        <InfoTooltip text="Setups die al een strategie hebben, worden automatisch verborgen." />
         <StrategyTabs
           onSubmit={handleStrategySubmit}
           setupsDCA={setupsWithoutDCA}

@@ -34,22 +34,42 @@ export default function ReportPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">📊 Rapportage ({REPORT_TYPES[reportType]})</h1>
 
-      {/* 🗂️ Tabs voor report type */}
-      <div className="flex flex-wrap gap-3">
-        {Object.entries(REPORT_TYPES).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setReportType(key)}
-            className={`px-4 py-2 rounded border ${
-              key === reportType
-                ? 'bg-blue-600 text-white'
-                : 'bg-white hover:bg-gray-100'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 🐞 Debugversie tabs */}
+<div className="flex gap-2 border border-dashed border-red-400 p-3 bg-red-50 rounded-md">
+  <p className="text-sm text-red-700 font-semibold mr-4">🧪 Debug tabs:</p>
+  <button
+    onClick={() => setReportType('daily')}
+    className={`px-4 py-2 rounded border ${
+      reportType === 'daily' ? 'bg-blue-600 text-white' : 'bg-white text-black'
+    }`}
+  >
+    Dag
+  </button>
+  <button
+    onClick={() => setReportType('weekly')}
+    className={`px-4 py-2 rounded border ${
+      reportType === 'weekly' ? 'bg-blue-600 text-white' : 'bg-white text-black'
+    }`}
+  >
+    Week
+  </button>
+  <button
+    onClick={() => setReportType('monthly')}
+    className={`px-4 py-2 rounded border ${
+      reportType === 'monthly' ? 'bg-blue-600 text-white' : 'bg-white text-black'
+    }`}
+  >
+    Maand
+  </button>
+  <button
+    onClick={() => setReportType('quarterly')}
+    className={`px-4 py-2 rounded border ${
+      reportType === 'quarterly' ? 'bg-blue-600 text-white' : 'bg-white text-black'
+    }`}
+  >
+    Kwartaal
+  </button>
+</div>
 
       {/* 📅 Datumkeuze + Download */}
       <div className="flex flex-wrap items-center gap-4">

@@ -25,7 +25,9 @@ export default function StrategyFormManual({ onSubmit }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const val = ['explanation', 'setup_id'].includes(name) ? value.trimStart() : value;
+    const val = ['explanation', 'setup_id'].includes(name)
+      ? value.trimStart()
+      : value;
 
     setForm((prev) => ({
       ...prev,
@@ -45,7 +47,9 @@ export default function StrategyFormManual({ onSubmit }) {
       return;
     }
 
-    const selectedSetup = setups.find((s) => String(s.id) === String(form.setup_id));
+    const selectedSetup = setups.find(
+      (s) => String(s.id) === String(form.setup_id)
+    );
     if (!selectedSetup) {
       setError('⚠️ Ongeldige setup geselecteerd.');
       return;
@@ -56,7 +60,9 @@ export default function StrategyFormManual({ onSubmit }) {
     const stop_loss = parseFloat(form.stop_loss);
 
     if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
-      setError('⚠️ Vul geldige numerieke waarden in voor entry, target en stop-loss.');
+      setError(
+        '⚠️ Vul geldige numerieke waarden in voor entry, target en stop-loss.'
+      );
       return;
     }
 
@@ -95,8 +101,9 @@ export default function StrategyFormManual({ onSubmit }) {
     }
   };
 
-  // 🔎 Filter alleen setups zonder gekoppelde strategie
-  const availableSetups = setups.filter((s) => !s.strategy_type);
+  const filteredSetups = setups.filter(
+    (s) => s && s.id && s.name && !['manual', 'ai', 'dca'].includes(s.strategy_type)
+  );
 
   return (
     <form
@@ -115,20 +122,29 @@ export default function StrategyFormManual({ onSubmit }) {
           value={form.setup_id}
           onChange={handleChange}
           required
-          disabled={availableSetups.length === 0}
           aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
         >
-          <option value="">
-            {availableSetups.length === 0
-              ? '⚠️ Geen beschikbare setups (alle al gekoppeld)'
-              : '-- Kies een setup --'}
+          <option value="" disabled>
+            -- Kies een setup --
           </option>
-          {availableSetups.map((setup) => (
+
+          {filteredSetups.map((setup) => (
             <option key={setup.id} value={setup.id}>
               {setup.name} ({setup.symbol} – {setup.timeframe})
             </option>
           ))}
+
+          {filteredSetups.length === 0 && (
+            <option disabled>⚠️ Geen geschikte setups beschikbaar</option>
+          )}
         </select>
+
+        {filteredSetups.length === 0 && (
+          <p className="text-red-600 text-sm mt-2" role="alert">
+            ⚠️ Geen geschikte setups beschikbaar om een strategie aan toe te voegen.
+          </p>
+        )}
+
         {error.includes('setup') && (
           <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
             {error}
@@ -216,8 +232,8 @@ export default function StrategyFormManual({ onSubmit }) {
 
       <button
         type="submit"
-        disabled={loading || availableSetups.length === 0}
-        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 w-full`}
+        disabled={loading || filteredSetups.length === 0}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 w-full"
         aria-busy={loading}
       >
         {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}

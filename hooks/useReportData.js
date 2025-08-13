@@ -10,15 +10,15 @@ export function useReportData(reportType = 'daily') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 🔄 Haal beschikbare datums op bij mount of wijziging van type
+  // 📆 Haal beschikbare datums op bij mount of bij wijziging reportType
   useEffect(() => {
     const controller = new AbortController();
     async function loadDates() {
       try {
-        const data = await fetchReportDates(reportType); // ⬅️ meegeven
+        const data = await fetchReportDates(reportType);
         setDates(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error(`⚠️ Datums ophalen (${reportType}) mislukt:`, err);
+        console.error(`⚠️ Datums ophalen mislukt (${reportType}):`, err);
         setDates([]);
       }
     }
@@ -26,17 +26,17 @@ export function useReportData(reportType = 'daily') {
     return () => controller.abort();
   }, [reportType]);
 
-  // 🔁 Haal rapport op bij wijziging van datum of type
+  // 📄 Haal rapport op bij wijziging van datum of reportType
   useEffect(() => {
     const controller = new AbortController();
     async function loadReport(date) {
       setLoading(true);
       setError('');
       try {
-        const data = await fetchReportByDate(reportType, date); // ⬅️ meegeven
+        const data = await fetchReportByDate(reportType, date);
         setReport(data || null);
       } catch (err) {
-        console.error(`❌ Rapport laden (${reportType}) mislukt:`, err);
+        console.error(`❌ Rapport laden mislukt (${reportType}):`, err);
         setError('Rapport kon niet geladen worden.');
         setReport(null);
       } finally {

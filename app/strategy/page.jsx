@@ -6,7 +6,7 @@ import StrategyTabs from '@/components/strategy/StrategyTabs';
 import { useSetupData } from '@/hooks/useSetupData';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { createStrategy } from '@/lib/api/strategy';
-import InfoTooltip from '@/components/ui/InfoTooltip'; 
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
@@ -127,8 +127,10 @@ export default function StrategyPage() {
 
       {/* ➕ Strategie toevoegen */}
       <section className="pt-10 border-t">
-        <h2 className="text-xl font-semibold mb-4">➕ Nieuwe Strategie Toevoegen</h2>
-        <InfoTooltip text="Setups die al een strategie hebben, worden automatisch verborgen." />
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-xl font-semibold">➕ Nieuwe Strategie Toevoegen</h2>
+          <InfoTooltip text="Alleen setups zonder bestaande strategie (AI, DCA of handmatig) zijn hier zichtbaar." />
+        </div>
         <StrategyTabs
           onSubmit={handleStrategySubmit}
           setupsDCA={setupsWithoutDCA}

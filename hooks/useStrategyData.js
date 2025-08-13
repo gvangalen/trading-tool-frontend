@@ -14,14 +14,15 @@ import { fetchSetups } from '@/lib/api/setups';
 export function useStrategyData() {
   const [strategies, setStrategies] = useState([]);
   const [setups, setSetups] = useState([]);
+  const [dcaSetups, setDcaSetups] = useState([]);
+  const [aiSetups, setAiSetups] = useState([]);
+  const [manualSetups, setManualSetups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Initieel setups laden
   useEffect(() => {
     loadSetups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStrategies = useCallback(async (symbol = '', timeframe = '') => {
@@ -31,16 +32,8 @@ export function useStrategyData() {
     setSuccessMessage('');
     try {
       const data = await fetchStrategies(symbol, timeframe);
-      if (!Array.isArray(data)) {
-        console.warn('⚠️ loadStrategies: response is geen array', data);
-        setStrategies([]);
-      } else {
-        // Filter null of undefined uit de lijst
-        setStrategies(data.filter((item) => item != null));
-        if (data.length === 0) {
-          console.warn('⚠️ loadStrategies: lege lijst ontvangen');
-        }
-      }
+      const filtered = Array.isArray(data) ? data.filter((s) => s != null) : [];
+      setStrategies(filtered);
     } catch (err) {
       console.error('❌ loadStrategies: strategieën laden mislukt:', err);
       setError('❌ Fout bij laden strategieën.');
@@ -50,41 +43,74 @@ export function useStrategyData() {
     }
   }, []);
 
-  async function loadSetups(strategyType = '') {
+  const loadSetups = async (strategyType = '') => {
     console.log(`🔍 loadSetups gestart met strategyType='${strategyType}'`);
     setError('');
     setSuccessMessage('');
     try {
-      const data = await fetchSetups(strategyType);
-      setSetups(Array.isArray(data) ? data : []);
-      if (!Array.isArray(data) || data.length === 0) {
-        console.warn('⚠️ loadSetups: lege lijst ontvangen');
+      const [setupData, strategyData] = await Promise.all([
+        fetchSetups(strategyType),
+        fetchStrategies(strategyType),
+      ]);
+
+      const setupsArray = Array.isArray(setupData) ? setupData : [];
+      const strategiesArray = Array.isArray(strategyData) ? strategyData : [];
+
+      // Maak per type een map van bestaande strategieën per setup_id
+      const hasStrategy = {
+        dca: new Set(),
+        ai: new Set(),
+        manual: new Set(),
+      };
+
+      for (const strat of strategiesArray) {
+        if (strat.setup_id && strat.strategy_type) {
+          const type = strat.strategy_type;
+          if (hasStrategy[type]) {
+            hasStrategy[type].add(strat.setup_id);
+          }
+        }
       }
+
+      // Voeg flags toe aan elke setup
+      const enrichedSetups = setupsArray.map((s) => ({
+        ...s,
+        has_dca_strategy: hasStrategy.dca.has(s.id),
+        has_ai_strategy: hasStrategy.ai.has(s.id),
+        has_manual_strategy: hasStrategy.manual.has(s.id),
+      }));
+
+      // Filter specifieke lijsten voor gebruik in tabs of forms
+      const dcaOnly = enrichedSetups.filter((s) => !s.has_dca_strategy);
+      const aiOnly = enrichedSetups.filter((s) => !s.has_ai_strategy);
+      const manualOnly = enrichedSetups.filter((s) => !s.has_manual_strategy);
+
+      // Opslaan in state
+      setSetups(enrichedSetups);
+      setDcaSetups(dcaOnly);
+      setAiSetups(aiOnly);
+      setManualSetups(manualOnly);
     } catch (err) {
       console.error('❌ loadSetups: setups laden mislukt:', err);
       setSetups([]);
+      setDcaSetups([]);
+      setAiSetups([]);
+      setManualSetups([]);
     }
-  }
+  };
 
   function getRequiredFields(strategy) {
     if (strategy.strategy_type === 'dca') {
-      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'amount', 'frequency'];  // asset → symbol
+      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'amount', 'frequency'];
     } else {
-      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'targets', 'stop_loss'];  // asset → symbol
+      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'targets', 'stop_loss'];
     }
   }
 
   async function saveStrategy(id, updatedData) {
-    console.log(`💾 saveStrategy gestart voor ID ${id} met data:`, updatedData);
-    setError('');
-    setSuccessMessage('');
-    const requiredFields = getRequiredFields(updatedData);
-    const missing = requiredFields.filter((field) => !updatedData[field]);
-
+    const missing = getRequiredFields(updatedData).filter((field) => !updatedData[field]);
     if (missing.length > 0) {
-      const message = `❌ Verplichte velden ontbreken: ${missing.join(', ')}`;
-      console.warn(message);
-      setError(message);
+      setError(`❌ Verplichte velden ontbreken: ${missing.join(', ')}`);
       return;
     }
 
@@ -93,74 +119,52 @@ export function useStrategyData() {
       setSuccessMessage('Strategie opgeslagen.');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ saveStrategy: strategie opslaan mislukt:', err);
+      console.error('❌ saveStrategy mislukt:', err);
       setError('Opslaan mislukt.');
     }
   }
 
   async function removeStrategy(id) {
-    console.log(`🗑️ removeStrategy gestart voor ID ${id}`);
-    setError('');
-    setSuccessMessage('');
     try {
       await deleteStrategy(id);
       setSuccessMessage('Strategie verwijderd.');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ removeStrategy: strategie verwijderen mislukt:', err);
+      console.error('❌ removeStrategy mislukt:', err);
       setError('Verwijderen mislukt.');
     }
   }
 
   async function generateStrategyForSetup(setupId, overwrite = false) {
-    console.log(`🤖 generateStrategyForSetup gestart voor setupId ${setupId}, overwrite=${overwrite}`);
-    setError('');
-    setSuccessMessage('');
     try {
       const response = await generateStrategy(setupId, overwrite);
-
       if (response?.task_id) {
         setSuccessMessage(`Celery gestart (Task ID: ${response.task_id})`);
-      } else if (response?.status === 'completed') {
-        setSuccessMessage('Strategie overschreven.');
-      } else if (Array.isArray(response)) {
-        setSuccessMessage(`${response.length} strategieën gegenereerd.`);
       } else {
-        setSuccessMessage('Strategie gegenereerd via AI.');
+        setSuccessMessage('Strategie gegenereerd.');
       }
-
       await loadStrategies();
     } catch (err) {
-      console.error('❌ generateStrategyForSetup: AI-generatie mislukt:', err);
-      setError('Strategie genereren mislukt.');
+      console.error('❌ AI-generatie mislukt:', err);
+      setError('Generatie mislukt.');
     }
   }
 
   async function generateAll() {
-    console.log('🔁 generateAll gestart');
-    setError('');
-    setSuccessMessage('');
     try {
       await generateAllStrategies();
       setSuccessMessage('Alle strategieën opnieuw gegenereerd.');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ generateAll: bulk-generatie mislukt:', err);
+      console.error('❌ Bulk AI-generatie mislukt:', err);
       setError('Bulkgeneratie mislukt.');
     }
   }
 
   async function addStrategy(strategyData) {
-    console.log('➕ addStrategy gestart met data:', strategyData);
-    setError('');
-    setSuccessMessage('');
-    const requiredFields = getRequiredFields(strategyData);
-    const missing = requiredFields.filter((field) => !strategyData[field]);
-
+    const missing = getRequiredFields(strategyData).filter((field) => !strategyData[field]);
     if (missing.length > 0) {
-      const message = `❌ Verplichte velden ontbreken: ${missing.join(', ')}`;
-      console.warn(message);
-      setError(message);
+      setError(`❌ Verplichte velden ontbreken: ${missing.join(', ')}`);
       return;
     }
 
@@ -169,7 +173,7 @@ export function useStrategyData() {
       setSuccessMessage('Strategie toegevoegd.');
       await loadStrategies();
     } catch (err) {
-      console.error('❌ addStrategy: strategie toevoegen mislukt:', err);
+      console.error('❌ addStrategy mislukt:', err);
       setError('Toevoegen mislukt.');
     }
   }
@@ -177,6 +181,9 @@ export function useStrategyData() {
   return {
     strategies,
     setups,
+    dcaSetups,
+    aiSetups,
+    manualSetups,
     loading,
     error,
     successMessage,

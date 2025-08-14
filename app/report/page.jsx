@@ -40,43 +40,50 @@ export default function ReportPage() {
       <ReportTabs selected={reportType} onChange={setReportType} />
 
       {/* 📅 Datumkeuze + Download */}
-      <div className="flex flex-wrap items-center gap-4">
-        <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
-        <select
-          id="reportDateSelect"
-          className="p-2 border rounded"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        >
-          <option value="latest">Laatste</option>
-          {dates.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
+<div className="flex flex-wrap items-center gap-4">
+  <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
+  <select
+    id="reportDateSelect"
+    className="p-2 border rounded"
+    value={selectedDate}
+    onChange={(e) => setSelectedDate(e.target.value)}
+  >
+    <option value="latest">Laatste</option>
+    {dates.map((d) => (
+      <option key={d} value={d}>{d}</option>
+    ))}
+  </select>
 
-        <a
-          href={downloadUrl}
-          download
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          📥 Download PDF
-        </a>
-      </div>
+  <a
+    href={downloadUrl}
+    download
+    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+  >
+    📥 Download PDF
+  </a>
+</div>
 
-      {/* 🔄 Laadindicator */}
-      {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
-      {error && <p className="text-red-600">❌ {error}</p>}
+{/* ⚠️ Fallback melding als latest niet beschikbaar was */}
+{selectedDate !== 'latest' && report && (
+  <div className="text-yellow-700 bg-yellow-100 border border-yellow-300 p-3 rounded text-sm">
+    ⚠️ Het laatste rapport was niet beschikbaar. Fallback gebruikt: <strong>{selectedDate}</strong>.
+  </div>
+)}
 
-      {/* 🟡 Geen echte data */}
-      {noRealData && (
-        <div className="space-y-6">
-          <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
-            ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
-          </div>
-          <DummyReport />
-        </div>
-      )}
+{/* 🔄 Laadindicator */}
+{loading && <p className="text-gray-500">📡 Rapport laden...</p>}
+{error && <p className="text-red-600">❌ {error}</p>}
 
+{/* 🟡 Geen echte data */}
+{noRealData && (
+  <div className="space-y-6">
+    <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
+      ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
+    </div>
+    <DummyReport />
+  </div>
+)}
+      
       {/* ✅ Echte data */}
       {!loading && report && (
         <ReportContainer>

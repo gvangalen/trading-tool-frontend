@@ -42,10 +42,11 @@ export function useReportData(reportType = 'daily') {
       try {
         const data = await fetchReportByDate(reportType, date);
 
-        if (!data && date === 'latest' && dates.length > 0) {
+        // ✅ Fallback als 'latest' niks oplevert → pak eerstvolgende datum
+        if (!data && date === 'latest' && dates.length > 0 && selectedDate !== dates[0]) {
           console.warn(`⚠️ Geen data bij 'latest', probeer fallback: ${dates[0]}`);
-          setSelectedDate(dates[0]); // ✅ Probeer meest recente echte datum
-          return; // wacht op nieuwe render
+          setSelectedDate(dates[0]);
+          return; // wacht nieuwe render af
         }
 
         setReport(data || null);
@@ -70,5 +71,6 @@ export function useReportData(reportType = 'daily') {
     setSelectedDate,
     loading,
     error,
+    hasReport: !!report && !loading, // ✅ Handig voor UI-condities
   };
 }

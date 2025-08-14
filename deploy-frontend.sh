@@ -40,9 +40,16 @@ if [ ! -f ".next/BUILD_ID" ]; then
   exit 1
 fi
 
-# ✅ 8. Start/Herstart frontend via PM2
-echo "🚀 Herstart frontend via PM2..."
-pm2 delete frontend || true
-pm2 start npm --name frontend -- start
+# ✅ 8. Start of herstart frontend via PM2
+echo "🚀 Start of herstart frontend via PM2..."
+
+pm2 describe frontend > /dev/null
+if [ $? -ne 0 ]; then
+  echo "🔁 Start frontend (eerste keer)"
+  pm2 start npm --name frontend -- start
+else
+  echo "🔁 Restart frontend"
+  pm2 restart frontend
+fi
 
 echo "✅ Frontend deployment succesvol afgerond op $(date)"

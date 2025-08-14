@@ -1,5 +1,5 @@
-console.log('✅ ReportTabs component geladen');
 'use client';
+console.log('✅ ReportTabs component geladen');
 
 import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';

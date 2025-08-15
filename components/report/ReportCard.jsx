@@ -1,3 +1,5 @@
+'use client';
+
 export default function ReportCard({
   title,
   content,
@@ -25,6 +27,14 @@ export default function ReportCard({
     return String(content ?? '–');
   }
 
+  // 🔍 Log de content (voor debug)
+  console.log('🧩 ReportCard content:', {
+    title,
+    contentType: typeof content,
+    rawContent: content,
+    stringified: safeContentToString(content),
+  });
+
   return (
     <div
       className={`
@@ -38,7 +48,6 @@ export default function ReportCard({
         {title}
       </h2>
 
-      {/* ✅ Altijd veilige rendering zonder <p> */}
       <div className="text-sm text-gray-800 dark:text-gray-200">
         {pre ? (
           <pre className="whitespace-pre-wrap">{safeContentToString(content)}</pre>

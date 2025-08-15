@@ -1,5 +1,9 @@
+'use client';
+
 export default function ReportCardGrid({ children }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">{children}</div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+      {children}
+    </div>
   );
 }

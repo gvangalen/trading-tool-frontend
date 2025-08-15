@@ -14,13 +14,6 @@ const REPORT_TYPES = {
   quarterly: 'Kwartaal',
 };
 
-// 🛡️ Veilig formatteren van content voor ReportCard
-function safeContent(value) {
-  if (!value) return '❌ Geen data beschikbaar';
-  if (typeof value === 'string') return value;
-  return JSON.stringify(value, null, 2); // Fallback voor objecten of arrays
-}
-
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const {
@@ -44,10 +37,8 @@ export default function ReportPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">📊 Rapportage ({fallbackLabel})</h1>
 
-      {/* ✅ Tabs voor typekeuze */}
       <ReportTabs selected={reportType} onChange={setReportType} />
 
-      {/* 📅 Datumkeuze en download */}
       <div className="flex flex-wrap items-center gap-4">
         <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
         <select
@@ -71,18 +62,15 @@ export default function ReportPage() {
         </a>
       </div>
 
-      {/* ⚠️ Fallback-melding bij fallback datum */}
       {selectedDate !== 'latest' && report && (
         <div className="text-yellow-700 bg-yellow-100 border border-yellow-300 p-3 rounded text-sm">
           ⚠️ Het laatste rapport was niet beschikbaar. Fallback gebruikt: <strong>{selectedDate}</strong>.
         </div>
       )}
 
-      {/* 🔄 Laden / Foutmeldingen */}
       {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
       {error && <p className="text-red-600">❌ {error}</p>}
 
-      {/* 🟡 Geen echte data → dummy tonen */}
       {noRealData && (
         <div className="space-y-6">
           <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
@@ -92,18 +80,17 @@ export default function ReportPage() {
         </div>
       )}
 
-      {/* ✅ Echte rapportdata */}
       {!loading && report && (
         <ReportContainer>
-          <ReportCard title="🧠 Samenvatting BTC" content={safeContent(report?.btc_summary)} full color="blue" />
+          <ReportCard title="🧠 Samenvatting BTC" content={report?.btc_summary} full color="blue" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ReportCard title="📉 Macro Samenvatting" content={safeContent(report?.macro_summary)} color="gray" />
-            <ReportCard title="📋 Setup Checklist" content={safeContent(report?.setup_checklist)} pre color="green" />
-            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={safeContent(report?.priorities)} pre color="yellow" />
-            <ReportCard title="🔍 Wyckoff Analyse" content={safeContent(report?.wyckoff_analysis)} pre color="blue" />
-            <ReportCard title="📈 Aanbevelingen" content={safeContent(report?.recommendations)} pre color="red" />
-            <ReportCard title="✅ Conclusie" content={safeContent(report?.conclusion)} color="green" />
-            <ReportCard title="🔮 Vooruitblik" content={safeContent(report?.outlook)} pre color="gray" />
+            <ReportCard title="📉 Macro Samenvatting" content={report?.macro_summary} color="gray" />
+            <ReportCard title="📋 Setup Checklist" content={report?.setup_checklist} pre color="green" />
+            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={report?.priorities} pre color="yellow" />
+            <ReportCard title="🔍 Wyckoff Analyse" content={report?.wyckoff_analysis} pre color="blue" />
+            <ReportCard title="📈 Aanbevelingen" content={report?.recommendations} pre color="red" />
+            <ReportCard title="✅ Conclusie" content={report?.conclusion} color="green" />
+            <ReportCard title="🔮 Vooruitblik" content={report?.outlook} pre color="gray" />
           </div>
         </ReportContainer>
       )}

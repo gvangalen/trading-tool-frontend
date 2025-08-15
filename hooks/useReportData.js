@@ -10,7 +10,7 @@ export function useReportData(reportType = 'daily') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 📆 Haal beschikbare datums op bij mount of wijziging reportType
+  // 📆 Haal beschikbare datums op bij wijziging van reportType
   useEffect(() => {
     const controller = new AbortController();
 
@@ -18,9 +18,10 @@ export function useReportData(reportType = 'daily') {
       try {
         const data = await fetchReportDates(reportType);
         const sortedDates = Array.isArray(data)
-          ? data.sort((a, b) => (a < b ? 1 : -1)) // ✅ Nieuwste eerst
+          ? data.sort((a, b) => (a < b ? 1 : -1))
           : [];
         setDates(sortedDates);
+        setSelectedDate('latest'); // ✅ Belangrijk
         console.log(`📅 Beschikbare datums (${reportType}):`, sortedDates);
       } catch (err) {
         console.error(`⚠️ Datums ophalen mislukt (${reportType}):`, err);
@@ -42,11 +43,10 @@ export function useReportData(reportType = 'daily') {
       try {
         const data = await fetchReportByDate(reportType, date);
 
-        // ✅ Fallback als 'latest' niks oplevert → pak eerstvolgende datum
         if (!data && date === 'latest' && dates.length > 0 && selectedDate !== dates[0]) {
           console.warn(`⚠️ Geen data bij 'latest', probeer fallback: ${dates[0]}`);
           setSelectedDate(dates[0]);
-          return; // wacht nieuwe render af
+          return;
         }
 
         setReport(data || null);
@@ -60,9 +60,14 @@ export function useReportData(reportType = 'daily') {
       }
     }
 
-    if (selectedDate) loadReport(selectedDate);
+    if (selectedDate === 'latest' || dates.length > 0) {
+      loadReport(selectedDate);
+    }
+
     return () => controller.abort();
   }, [selectedDate, reportType, dates]);
+
+  console.log('🧠 useReportData state:', { report, dates, selectedDate, loading, error });
 
   return {
     report,
@@ -71,6 +76,6 @@ export function useReportData(reportType = 'daily') {
     setSelectedDate,
     loading,
     error,
-    hasReport: !!report && !loading, // ✅ Handig voor UI-condities
+    hasReport: !!report && !loading,
   };
 }

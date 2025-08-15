@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
-import ReportTabs from '@/components/report/ReportTabs'; // ✅ Nieuw
+import ReportTabs from '@/components/report/ReportTabs';
 
 const REPORT_TYPES = {
   daily: 'Dag',
@@ -31,10 +31,11 @@ export default function ReportPage() {
       : `/api/${reportType}_report/export/pdf?date=${selectedDate}`;
 
   const noRealData = !loading && (!report || dates.length === 0);
+  const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">📊 Rapportage ({REPORT_TYPES[reportType]})</h1>
+      <h1 className="text-2xl font-bold">📊 Rapportage ({fallbackLabel})</h1>
 
       {/* ✅ Tabs voor typekeuze */}
       <ReportTabs selected={reportType} onChange={setReportType} />
@@ -78,7 +79,7 @@ export default function ReportPage() {
       {noRealData && (
         <div className="space-y-6">
           <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
-            ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
+            ⚠️ Er is nog geen {fallbackLabel.toLowerCase()}rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
           </div>
           <DummyReport />
         </div>
@@ -87,15 +88,15 @@ export default function ReportPage() {
       {/* ✅ Echte rapportdata */}
       {!loading && report && (
         <ReportContainer>
-          <ReportCard title="🧠 Samenvatting BTC" content={report?.btc_summary || '❌ Geen data'} full color="blue" />
+          <ReportCard title="🧠 Samenvatting BTC" content={String(report?.btc_summary ?? '❌ Geen data')} full color="blue" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ReportCard title="📉 Macro Samenvatting" content={report?.macro_summary || '❌ Geen data'} color="gray" />
-            <ReportCard title="📋 Setup Checklist" content={report?.setup_checklist || '❌ Geen data'} pre color="green" />
-            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={report?.priorities || '❌ Geen data'} pre color="yellow" />
-            <ReportCard title="🔍 Wyckoff Analyse" content={report?.wyckoff_analysis || '❌ Geen data'} pre color="blue" />
-            <ReportCard title="📈 Aanbevelingen" content={report?.recommendations || '❌ Geen data'} pre color="red" />
-            <ReportCard title="✅ Conclusie" content={report?.conclusion || '❌ Geen data'} color="green" />
-            <ReportCard title="🔮 Vooruitblik" content={report?.outlook || '❌ Geen data'} pre color="gray" />
+            <ReportCard title="📉 Macro Samenvatting" content={String(report?.macro_summary ?? '❌ Geen data')} color="gray" />
+            <ReportCard title="📋 Setup Checklist" content={String(report?.setup_checklist ?? '❌ Geen data')} pre color="green" />
+            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={String(report?.priorities ?? '❌ Geen data')} pre color="yellow" />
+            <ReportCard title="🔍 Wyckoff Analyse" content={String(report?.wyckoff_analysis ?? '❌ Geen data')} pre color="blue" />
+            <ReportCard title="📈 Aanbevelingen" content={String(report?.recommendations ?? '❌ Geen data')} pre color="red" />
+            <ReportCard title="✅ Conclusie" content={String(report?.conclusion ?? '❌ Geen data')} color="green" />
+            <ReportCard title="🔮 Vooruitblik" content={String(report?.outlook ?? '❌ Geen data')} pre color="gray" />
           </div>
         </ReportContainer>
       )}

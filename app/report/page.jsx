@@ -14,6 +14,13 @@ const REPORT_TYPES = {
   quarterly: 'Kwartaal',
 };
 
+// 🛡️ Veilig formatteren van content voor ReportCard
+function safeContent(value) {
+  if (!value) return '❌ Geen data beschikbaar';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value, null, 2); // Fallback voor objecten of arrays
+}
+
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const {
@@ -88,15 +95,15 @@ export default function ReportPage() {
       {/* ✅ Echte rapportdata */}
       {!loading && report && (
         <ReportContainer>
-          <ReportCard title="🧠 Samenvatting BTC" content={String(report?.btc_summary ?? '❌ Geen data')} full color="blue" />
+          <ReportCard title="🧠 Samenvatting BTC" content={safeContent(report?.btc_summary)} full color="blue" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ReportCard title="📉 Macro Samenvatting" content={String(report?.macro_summary ?? '❌ Geen data')} color="gray" />
-            <ReportCard title="📋 Setup Checklist" content={String(report?.setup_checklist ?? '❌ Geen data')} pre color="green" />
-            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={String(report?.priorities ?? '❌ Geen data')} pre color="yellow" />
-            <ReportCard title="🔍 Wyckoff Analyse" content={String(report?.wyckoff_analysis ?? '❌ Geen data')} pre color="blue" />
-            <ReportCard title="📈 Aanbevelingen" content={String(report?.recommendations ?? '❌ Geen data')} pre color="red" />
-            <ReportCard title="✅ Conclusie" content={String(report?.conclusion ?? '❌ Geen data')} color="green" />
-            <ReportCard title="🔮 Vooruitblik" content={String(report?.outlook ?? '❌ Geen data')} pre color="gray" />
+            <ReportCard title="📉 Macro Samenvatting" content={safeContent(report?.macro_summary)} color="gray" />
+            <ReportCard title="📋 Setup Checklist" content={safeContent(report?.setup_checklist)} pre color="green" />
+            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={safeContent(report?.priorities)} pre color="yellow" />
+            <ReportCard title="🔍 Wyckoff Analyse" content={safeContent(report?.wyckoff_analysis)} pre color="blue" />
+            <ReportCard title="📈 Aanbevelingen" content={safeContent(report?.recommendations)} pre color="red" />
+            <ReportCard title="✅ Conclusie" content={safeContent(report?.conclusion)} color="green" />
+            <ReportCard title="🔮 Vooruitblik" content={safeContent(report?.outlook)} pre color="gray" />
           </div>
         </ReportContainer>
       )}

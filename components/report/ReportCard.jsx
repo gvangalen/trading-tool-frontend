@@ -1,4 +1,11 @@
-export default function ReportCard({ title, content, icon = null, pre = false, color = 'default', full = false }) {
+export default function ReportCard({
+  title,
+  content,
+  icon = null,
+  pre = false,
+  color = 'default',
+  full = false,
+}) {
   const colors = {
     default: 'bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700',
     blue: 'bg-blue-50 border border-blue-200 dark:bg-blue-900 dark:border-blue-700',
@@ -9,6 +16,13 @@ export default function ReportCard({ title, content, icon = null, pre = false, c
   };
 
   const colorClasses = colors[color] || colors.default;
+
+  function safeContentToString(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) return content.join('\n');
+    if (typeof content === 'object' && content !== null) return JSON.stringify(content, null, 2);
+    return String(content ?? '–');
+  }
 
   return (
     <div
@@ -24,9 +38,9 @@ export default function ReportCard({ title, content, icon = null, pre = false, c
       </h2>
       <div className="text-sm text-gray-800 dark:text-gray-200">
         {pre ? (
-          <pre className="whitespace-pre-wrap">{content || '–'}</pre>
+          <pre className="whitespace-pre-wrap">{safeContentToString(content)}</pre>
         ) : (
-          <p>{content || '–'}</p>
+          <p>{safeContentToString(content)}</p>
         )}
       </div>
     </div>

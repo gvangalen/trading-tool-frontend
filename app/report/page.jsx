@@ -36,66 +36,66 @@ export default function ReportPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">📊 Rapportage ({REPORT_TYPES[reportType]})</h1>
 
-      {/* ✅ Mooie tabs voor selectie */}
+      {/* ✅ Tabs voor typekeuze */}
       <ReportTabs selected={reportType} onChange={setReportType} />
 
-      {/* 📅 Datumkeuze + Download */}
-<div className="flex flex-wrap items-center gap-4">
-  <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
-  <select
-    id="reportDateSelect"
-    className="p-2 border rounded"
-    value={selectedDate}
-    onChange={(e) => setSelectedDate(e.target.value)}
-  >
-    <option value="latest">Laatste</option>
-    {dates.map((d) => (
-      <option key={d} value={d}>{d}</option>
-    ))}
-  </select>
+      {/* 📅 Datumkeuze en download */}
+      <div className="flex flex-wrap items-center gap-4">
+        <label htmlFor="reportDateSelect" className="font-semibold">📅 Selecteer datum:</label>
+        <select
+          id="reportDateSelect"
+          className="p-2 border rounded"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        >
+          <option value="latest">Laatste</option>
+          {dates.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
 
-  <a
-    href={downloadUrl}
-    download
-    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-  >
-    📥 Download PDF
-  </a>
-</div>
+        <a
+          href={downloadUrl}
+          download
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        >
+          📥 Download PDF
+        </a>
+      </div>
 
-{/* ⚠️ Fallback melding als latest niet beschikbaar was */}
-{selectedDate !== 'latest' && report && (
-  <div className="text-yellow-700 bg-yellow-100 border border-yellow-300 p-3 rounded text-sm">
-    ⚠️ Het laatste rapport was niet beschikbaar. Fallback gebruikt: <strong>{selectedDate}</strong>.
-  </div>
-)}
+      {/* ⚠️ Fallback-melding bij fallback datum */}
+      {selectedDate !== 'latest' && report && (
+        <div className="text-yellow-700 bg-yellow-100 border border-yellow-300 p-3 rounded text-sm">
+          ⚠️ Het laatste rapport was niet beschikbaar. Fallback gebruikt: <strong>{selectedDate}</strong>.
+        </div>
+      )}
 
-{/* 🔄 Laadindicator */}
-{loading && <p className="text-gray-500">📡 Rapport laden...</p>}
-{error && <p className="text-red-600">❌ {error}</p>}
+      {/* 🔄 Laden / Foutmeldingen */}
+      {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
+      {error && <p className="text-red-600">❌ {error}</p>}
 
-{/* 🟡 Geen echte data */}
-{noRealData && (
-  <div className="space-y-6">
-    <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
-      ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
-    </div>
-    <DummyReport />
-  </div>
-)}
-      
-      {/* ✅ Echte data */}
+      {/* 🟡 Geen echte data → dummy tonen */}
+      {noRealData && (
+        <div className="space-y-6">
+          <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm dark:bg-yellow-900 dark:text-yellow-200">
+            ⚠️ Er is nog geen echt rapport beschikbaar. Hieronder zie je een voorbeeldrapport met dummy-data.
+          </div>
+          <DummyReport />
+        </div>
+      )}
+
+      {/* ✅ Echte rapportdata */}
       {!loading && report && (
         <ReportContainer>
-          <ReportCard title="🧠 Samenvatting BTC" content={report.btc_summary} full color="blue" />
+          <ReportCard title="🧠 Samenvatting BTC" content={report?.btc_summary || '❌ Geen data'} full color="blue" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ReportCard title="📉 Macro Samenvatting" content={report.macro_summary} color="gray" />
-            <ReportCard title="📋 Setup Checklist" content={report.setup_checklist} pre color="green" />
-            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={report.priorities} pre color="yellow" />
-            <ReportCard title="🔍 Wyckoff Analyse" content={report.wyckoff_analysis} pre color="blue" />
-            <ReportCard title="📈 Aanbevelingen" content={report.recommendations} pre color="red" />
-            <ReportCard title="✅ Conclusie" content={report.conclusion} color="green" />
-            <ReportCard title="🔮 Vooruitblik" content={report.outlook} pre color="gray" />
+            <ReportCard title="📉 Macro Samenvatting" content={report?.macro_summary || '❌ Geen data'} color="gray" />
+            <ReportCard title="📋 Setup Checklist" content={report?.setup_checklist || '❌ Geen data'} pre color="green" />
+            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={report?.priorities || '❌ Geen data'} pre color="yellow" />
+            <ReportCard title="🔍 Wyckoff Analyse" content={report?.wyckoff_analysis || '❌ Geen data'} pre color="blue" />
+            <ReportCard title="📈 Aanbevelingen" content={report?.recommendations || '❌ Geen data'} pre color="red" />
+            <ReportCard title="✅ Conclusie" content={report?.conclusion || '❌ Geen data'} color="green" />
+            <ReportCard title="🔮 Vooruitblik" content={report?.outlook || '❌ Geen data'} pre color="gray" />
           </div>
         </ReportContainer>
       )}
@@ -103,6 +103,7 @@ export default function ReportPage() {
   );
 }
 
+// 🔁 Dummy fallback voor als er geen echte data is
 function DummyReport() {
   return (
     <ReportContainer>

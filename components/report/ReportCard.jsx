@@ -17,6 +17,7 @@ export default function ReportCard({
 
   const colorClasses = colors[color] || colors.default;
 
+  // ✅ Veilig omzetten naar string
   function safeContentToString(content) {
     if (typeof content === 'string') return content;
     if (Array.isArray(content)) return content.join('\n');
@@ -36,11 +37,13 @@ export default function ReportCard({
         {icon && <span>{icon}</span>}
         {title}
       </h2>
+
+      {/* ✅ Altijd veilige rendering zonder <p> */}
       <div className="text-sm text-gray-800 dark:text-gray-200">
         {pre ? (
           <pre className="whitespace-pre-wrap">{safeContentToString(content)}</pre>
         ) : (
-          <p>{safeContentToString(content)}</p>
+          <div className="whitespace-pre-wrap">{safeContentToString(content)}</div>
         )}
       </div>
     </div>

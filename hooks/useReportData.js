@@ -1,8 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchReportDates, fetchReportByDate } from '@/lib/api/report';
+import {
+  fetchReportDates,
+  fetchReportLatest,
+} from '@/lib/api/report';
 
+/**
+ * Hook die rapporten laadt op basis van type ('daily', 'weekly', 'monthly', 'quarterly').
+ * Ondersteunt het ophalen van datums, het laatste rapport en fallback naar specifieke datum.
+ */
 export function useReportData(reportType = 'daily') {
   const [report, setReport] = useState(null);
   const [dates, setDates] = useState([]);
@@ -10,21 +17,21 @@ export function useReportData(reportType = 'daily') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 📆 Haal beschikbare datums op bij wijziging van reportType
+  // 📆 Laad beschikbare datums wanneer reportType verandert
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadDates() {
       try {
         const data = await fetchReportDates(reportType);
-        const sortedDates = Array.isArray(data)
+        const sorted = Array.isArray(data)
           ? data.sort((a, b) => (a < b ? 1 : -1))
           : [];
-        setDates(sortedDates);
-        setSelectedDate('latest'); // ✅ Belangrijk
-        console.log(`📅 Beschikbare datums (${reportType}):`, sortedDates);
+        setDates(sorted);
+        setSelectedDate('latest');
+        console.log(`📅 Beschikbare datums voor ${reportType}:`, sorted);
       } catch (err) {
-        console.error(`⚠️ Datums ophalen mislukt (${reportType}):`, err);
+        console.error(`⚠️ Fout bij ophalen datums (${reportType}):`, err);
         setDates([]);
       }
     }
@@ -33,26 +40,27 @@ export function useReportData(reportType = 'daily') {
     return () => controller.abort();
   }, [reportType]);
 
-  // 📄 Haal rapport op bij wijziging van datum of reportType
+  // 📄 Laad rapport bij wijziging van reportType of geselecteerde datum
   useEffect(() => {
     const controller = new AbortController();
 
-    async function loadReport(date) {
+    async function loadReport() {
       setLoading(true);
       setError('');
       try {
-        const data = await fetchReportByDate(reportType, date);
+        const data = await fetchReportLatest(reportType);
 
-        if (!data && date === 'latest' && dates.length > 0 && selectedDate !== dates[0]) {
-          console.warn(`⚠️ Geen data bij 'latest', probeer fallback: ${dates[0]}`);
+        if (!data && selectedDate === 'latest' && dates.length > 0) {
+          // Fallback naar eerste datum in lijst
+          console.warn(`⚠️ Geen rapport voor 'latest'. Fallback naar: ${dates[0]}`);
           setSelectedDate(dates[0]);
           return;
         }
 
         setReport(data || null);
-        console.log(`📄 Rapport geladen (${reportType} / ${date}):`, data);
+        console.log(`📄 Rapport geladen (${reportType} / ${selectedDate}):`, data);
       } catch (err) {
-        console.error(`❌ Rapport laden mislukt (${reportType}):`, err);
+        console.error(`❌ Fout bij laden rapport (${reportType}):`, err);
         setError('Rapport kon niet geladen worden.');
         setReport(null);
       } finally {
@@ -60,14 +68,12 @@ export function useReportData(reportType = 'daily') {
       }
     }
 
-    if (selectedDate === 'latest' || dates.length > 0) {
-      loadReport(selectedDate);
+    if (selectedDate === 'latest') {
+      loadReport();
     }
 
     return () => controller.abort();
   }, [selectedDate, reportType, dates]);
-
-  console.log('🧠 useReportData state:', { report, dates, selectedDate, loading, error });
 
   return {
     report,

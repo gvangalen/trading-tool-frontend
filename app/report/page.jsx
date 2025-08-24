@@ -3,6 +3,7 @@ console.log('✅ ReportPage component geladen');
 
 import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';
+import { generateReport } from '@/lib/api/report'; // ✅ Import toegevoegd
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
@@ -29,11 +30,10 @@ export default function ReportPage() {
   const downloadUrl = `/api/report/${reportType}/export/pdf?date=${selectedDate}`;
   const noRealData = !loading && (!report || dates.length === 0);
 
-  // 🧠 Handlers
+  // ✅ Gebruik de API-helper i.p.v. hardcoded fetch
   const handleGenerate = async () => {
     try {
-      const response = await fetch(`/api/report/${reportType}/generate`, { method: 'POST' });
-      if (!response.ok) throw new Error('Genereren mislukt');
+      await generateReport(reportType);
       alert('✅ Rapport gegenereerd. Ververs pagina over een paar seconden.');
     } catch (err) {
       alert('❌ Rapport genereren mislukt.');

@@ -1,5 +1,5 @@
 'use client';
-console.log('✅ ReportTabs component geladen');
+console.log('✅ ReportPage component geladen');
 
 import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';
@@ -25,13 +25,21 @@ export default function ReportPage() {
     error,
   } = useReportData(reportType);
 
-  const downloadUrl =
-    selectedDate === 'latest'
-      ? `/api/${reportType}_report/export/pdf`
-      : `/api/${reportType}_report/export/pdf?date=${selectedDate}`;
-
-  const noRealData = !loading && (!report || dates.length === 0);
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
+  const downloadUrl = `/api/report/${reportType}/export/pdf?date=${selectedDate}`;
+  const noRealData = !loading && (!report || dates.length === 0);
+
+  // 🧠 Handlers
+  const handleGenerate = async () => {
+    try {
+      const response = await fetch(`/api/report/${reportType}/generate`, { method: 'POST' });
+      if (!response.ok) throw new Error('Genereren mislukt');
+      alert('✅ Rapport gegenereerd. Ververs pagina over een paar seconden.');
+    } catch (err) {
+      alert('❌ Rapport genereren mislukt.');
+      console.error(err);
+    }
+  };
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -60,6 +68,13 @@ export default function ReportPage() {
         >
           📥 Download PDF
         </a>
+
+        <button
+          onClick={handleGenerate}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+        >
+          🔄 Genereer rapport
+        </button>
       </div>
 
       {selectedDate !== 'latest' && report && (

@@ -1,5 +1,7 @@
 'use client';
 
+import { useMarketData } from '@/hooks/useMarketData';
+import CardWrapper from '@/components/ui/CardWrapper';
 import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
@@ -22,19 +24,34 @@ const dummyForwardReturnData = {
 };
 
 export default function MarketPage() {
+  const { marketData, loading, error } = useMarketData();
+
+  const btc = marketData.find((item) => item.symbol === 'BTC');
+
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
-      {/* 🧠 Titel */}
       <h1 className="text-2xl font-bold">📊 Bitcoin Markt Overzicht</h1>
 
-      {/* 💰 Live prijs en trend */}
-      <MarketLiveCard />
+      {loading && <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>}
+      {error && <p className="text-sm text-red-500">❌ {error}</p>}
 
-      {/* 📆 Tabel met laatste 7 dagen */}
-      <MarketSevenDayTable />
+      {!loading && !error && btc && (
+        <>
+          {/* 💰 Live prijs en trend */}
+          <MarketLiveCard
+            price={btc.price}
+            change24h={btc.change_24h}
+            volume={btc.volume}
+            timestamp={btc.timestamp}
+          />
 
-      {/* 📈 Forward return tabs (week/maand/kwartaal/jaar) */}
-      <MarketForwardReturnTabs data={dummyForwardReturnData} />
+          {/* 📆 Tabel met laatste 7 dagen */}
+          <MarketSevenDayTable history={btc.history} />
+
+          {/* 📈 Forward return tabs (week/maand/kwartaal/jaar) */}
+          <MarketForwardReturnTabs data={dummyForwardReturnData} />
+        </>
+      )}
     </div>
   );
 }

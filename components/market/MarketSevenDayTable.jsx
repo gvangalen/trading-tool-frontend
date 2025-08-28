@@ -1,4 +1,5 @@
 import CardWrapper from '@/components/ui/CardWrapper';
+import { formatChange } from '@/components/market/utils';
 
 export default function MarketSevenDayTable({ history }) {
   if (!history || history.length === 0) {
@@ -21,19 +22,16 @@ export default function MarketSevenDayTable({ history }) {
             </tr>
           </thead>
           <tbody>
-            {history.map((day, idx) => {
-              const color = day.change >= 0 ? 'text-green-600' : 'text-red-600';
-              return (
-                <tr key={idx} className="border-t">
-                  <td className="p-2">{day.date}</td>
-                  <td className="p-2">${day.open.toFixed(2)}</td>
-                  <td className="p-2">${day.high.toFixed(2)}</td>
-                  <td className="p-2">${day.low.toFixed(2)}</td>
-                  <td className="p-2">${day.close.toFixed(2)}</td>
-                  <td className={`p-2 ${color}`}>{day.change.toFixed(2)}%</td>
-                </tr>
-              );
-            })}
+            {history.map((day, idx) => (
+              <tr key={idx} className="border-t">
+                <td className="p-2">{day.date}</td>
+                <td className="p-2">${day.open.toFixed(2)}</td>
+                <td className="p-2">${day.high.toFixed(2)}</td>
+                <td className="p-2">${day.low.toFixed(2)}</td>
+                <td className="p-2">${day.close.toFixed(2)}</td>
+                <td className="p-2">{formatChange(day.change)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

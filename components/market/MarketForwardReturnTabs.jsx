@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatChange, formatNumber } from '@/components/market/utils';
 
 export default function MarketForwardReturnTabs({ data = {} }) {
   const tabs = ['Week', 'Maand', 'Kwartaal', 'Jaar'];
@@ -44,16 +45,16 @@ export default function MarketForwardReturnTabs({ data = {} }) {
               <tr key={idx} className="border-t">
                 <td className="p-2">{row.start || '–'}</td>
                 <td className="p-2">{row.end || '–'}</td>
-                <td className={`p-2 font-medium ${row.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {row.change?.toFixed(2) ?? '–'}%
-                </td>
-                <td className="p-2">{row.avgDaily?.toFixed(2) ?? '–'}%</td>
+                <td className="p-2 font-medium">{formatChange(row.change)}</td>
+                <td className="p-2">{formatNumber(row.avgDaily)}%</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <div className="text-gray-500 text-sm">⚠️ Geen data beschikbaar voor <strong>{active}</strong>.</div>
+        <div className="text-gray-500 text-sm">
+          ⚠️ Geen data beschikbaar voor <strong>{active}</strong>.
+        </div>
       )}
     </div>
   );

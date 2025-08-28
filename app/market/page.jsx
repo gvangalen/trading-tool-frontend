@@ -24,7 +24,7 @@ const dummyForwardReturnData = {
 };
 
 export default function MarketPage() {
-  const { marketData, loading, error } = useMarketData();
+  const { marketData, loading, error, avgScore, advies } = useMarketData();
 
   const btc = marketData.find((item) => item.symbol === 'BTC');
 
@@ -37,6 +37,11 @@ export default function MarketPage() {
 
       {!loading && !error && btc && (
         <>
+          {/* 🔹 Markt Score */}
+          <div className="text-sm text-gray-700">
+            Markt Score: <strong>{avgScore}</strong> | Advies: <strong>{advies}</strong>
+          </div>
+
           {/* 💰 Live prijs en trend */}
           <MarketLiveCard
             price={btc.price}

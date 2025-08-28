@@ -3,13 +3,16 @@
 import { useEffect, useState } from 'react';
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-import MarketTable from '@/components/market/MarketTable';
 import TechnicalTable from '@/components/technical/TechnicalTable';
 import MacroTable from '@/components/macro/MacroTable';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
+
+import MarketLiveCard from '@/components/market/MarketLiveCard';
+import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
+import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
@@ -40,24 +43,32 @@ export default function DashboardPage() {
               <DashboardGauges />
             </section>
 
-            {/* 💰 Market Data + 📈 Technische Analyse */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 💰 Market Data */}
+            <section className="space-y-6">
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
-                <MarketTable />
+                <div className="space-y-4">
+                  <MarketLiveCard />
+                  <MarketSevenDayTable />
+                  <MarketForwardReturnTabs />
+                </div>
               </CardWrapper>
+            </section>
+
+            {/* 📈 Technische Analyse + 🌍 Macro */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
                 <TechnicalTable />
               </CardWrapper>
-            </section>
-
-            {/* 🌍 Macro + 🚀 AI Advies */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
                 <MacroTable />
               </CardWrapper>
+            </section>
+
+            {/* 🚀 AI Advies */}
+            <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
                 <TradingAdvice />

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 
-export function formatChange(change: number | null | undefined): JSX.Element | string {
+export function formatChange(change: number | null | undefined): ReactNode {
   if (change === null || change === undefined) return "–";
   const color = change >= 0 ? 'text-green-600' : 'text-red-600';
   return <span className={color}>{change.toFixed(2)}%</span>;

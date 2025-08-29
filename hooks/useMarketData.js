@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchMarketData, deleteMarketAsset } from '@/lib/api/market';
+import {
+  fetchMarketData,
+  fetchMarketData7d, // ✅ Nieuwe import
+  deleteMarketAsset,
+} from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
@@ -30,9 +34,8 @@ export function useMarketData() {
       setMarketData(validData);
       updateScore(validData);
 
-      // 📡 2. 7-daagse data ophalen via aparte API
-      const res = await fetch('/api/market_data/7d');
-      const historyData = await res.json();
+      // 📡 2. 7-daagse data ophalen via API helper
+      const historyData = await fetchMarketData7d();
       setSevenDayData(Array.isArray(historyData) ? historyData : []);
     } catch (err) {
       console.warn('⚠️ Marktdata ophalen mislukt:', err);

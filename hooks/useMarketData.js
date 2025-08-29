@@ -1,9 +1,11 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { fetchMarketData, deleteMarketAsset } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
+  const [sevenDayData, setSevenDayData] = useState([]); // 📅 extra hook state
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -14,7 +16,7 @@ export function useMarketData() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000);
+    const interval = setInterval(loadData, 60000); // ⏱️ elke minuut vernieuwen
     return () => clearInterval(interval);
   }, []);
 
@@ -22,14 +24,21 @@ export function useMarketData() {
     setLoading(true);
     setError('');
     try {
+      // 📡 1. Huidige marktdata ophalen
       const data = await fetchMarketData();
       const validData = Array.isArray(data) ? data : [];
       setMarketData(validData);
       updateScore(validData);
+
+      // 📡 2. 7-daagse data ophalen via aparte API
+      const res = await fetch('/api/market_data/7d');
+      const historyData = await res.json();
+      setSevenDayData(Array.isArray(historyData) ? historyData : []);
     } catch (err) {
       console.warn('⚠️ Marktdata ophalen mislukt:', err);
       setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
+      setSevenDayData([]);
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
     } finally {
@@ -75,6 +84,7 @@ export function useMarketData() {
 
   return {
     marketData,
+    sevenDayData,     // 📤 beschikbaar in je component
     avgScore,
     advies,
     loading,

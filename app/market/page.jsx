@@ -6,7 +6,7 @@ import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
-// 🔹 Dummy data voor forward return tabel
+// 🔹 Dummy data voor forward return tabel (later vervangen door echte berekening)
 const dummyForwardReturnData = {
   week: [
     { start: '2025-08-21', end: '2025-08-28', change: 2.3, avgDaily: 0.33 },
@@ -51,11 +51,15 @@ export default function MarketPage() {
           />
 
           {/* 📆 Tabel met laatste 7 dagen */}
-          <MarketSevenDayTable history={btc.history} />
+          <MarketSevenDayTable history={btc.history ?? []} />
 
           {/* 📈 Forward return tabs (week/maand/kwartaal/jaar) */}
           <MarketForwardReturnTabs data={dummyForwardReturnData} />
         </>
+      )}
+
+      {!loading && !error && !btc && (
+        <p className="text-sm text-yellow-600">⚠️ Geen BTC-data gevonden</p>
       )}
     </div>
   );

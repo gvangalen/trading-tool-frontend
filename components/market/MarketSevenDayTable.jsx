@@ -5,76 +5,75 @@ import { formatChange, formatNumber } from '@/components/market/utils';
 import { useMemo } from 'react';
 
 export default function MarketSevenDayTable({ history }) {
-  const today = new Date();
   const MAX_ROWS = 7;
 
-  // ⚙️ Genereer altijd 7 rijen met fallback
   const rows = useMemo(() => {
-    const data = [];
+    const today = new Date();
+    const result = [];
 
     for (let i = 0; i < MAX_ROWS; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
 
+      const isoDate = date.toISOString().slice(0, 10); // YYYY-MM-DD
       const formattedDate = date.toLocaleDateString('nl-NL', {
         day: '2-digit',
         month: 'short',
       });
 
-      const record = history?.find(
-        (d) => new Date(d.date).toDateString() === date.toDateString()
-      );
+      const record = history?.find((d) => d.date?.startsWith(isoDate));
 
-      data.push({
+      result.push({
         date: formattedDate,
-        open: record?.open ?? '…',
-        high: record?.high ?? '…',
-        low: record?.low ?? '…',
-        close: record?.close ?? '…',
-        change: record?.change ?? '…',
-        volume: record?.volume ?? '…',
+        open: record?.open ?? null,
+        high: record?.high ?? null,
+        low: record?.low ?? null,
+        close: record?.close ?? null,
+        change: record?.change ?? null,
+        volume: record?.volume ?? null,
       });
     }
 
-    return data;
+    return result;
   }, [history]);
 
   return (
     <CardWrapper>
-      <h2 className="text-lg font-semibold mb-2">🔷 2. Tabel: Laatste 7 dagen (Price Overview)</h2>
+      <h2 className="text-lg font-semibold mb-2">📅 Laatste 7 dagen (Prijs & Volume)</h2>
+
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-collapse">
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
-              <th className="p-2">Datum</th>
-              <th className="p-2">Open</th>
-              <th className="p-2">Hoog</th>
-              <th className="p-2">Laag</th>
-              <th className="p-2">Sluit</th>
-              <th className="p-2">% Dag</th>
-              <th className="p-2">Volume</th>
+              <th className="p-2 text-left">Datum</th>
+              <th className="p-2 text-right">Open</th>
+              <th className="p-2 text-right">Hoog</th>
+              <th className="p-2 text-right">Laag</th>
+              <th className="p-2 text-right">Sluit</th>
+              <th className="p-2 text-right">% Dag</th>
+              <th className="p-2 text-right">Volume</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((day, idx) => (
               <tr key={idx} className="border-t">
                 <td className="p-2">{day.date}</td>
-                <td className="p-2">
+                <td className="p-2 text-right">
                   {typeof day.open === 'number' ? formatNumber(day.open) : '…'}
                 </td>
-                <td className="p-2">
+                <td className="p-2 text-right">
                   {typeof day.high === 'number' ? formatNumber(day.high) : '…'}
                 </td>
-                <td className="p-2">
+                <td className="p-2 text-right">
                   {typeof day.low === 'number' ? formatNumber(day.low) : '…'}
                 </td>
-                <td className="p-2">
+                <td className="p-2 text-right">
                   {typeof day.close === 'number' ? formatNumber(day.close) : '…'}
                 </td>
-                <td className="p-2">
+                <td className="p-2 text-right">
                   {typeof day.change === 'number' ? formatChange(day.change) : '…'}
                 </td>
-                <td className="p-2">
+                <td className="p-2 text-right">
                   {typeof day.volume === 'number'
                     ? `$${(day.volume / 1e9).toFixed(1)}B`
                     : '…'}
@@ -85,8 +84,7 @@ export default function MarketSevenDayTable({ history }) {
         </table>
       </div>
 
-      {/* ✅ Slottekst */}
-      <p className="text-sm text-green-700 mt-3">✅ We tonen 7 rijen met de 7 meest recente dagen</p>
+      <p className="text-sm text-green-700 mt-3">✅ Altijd 7 rijen zichtbaar – ook bij ontbrekende data</p>
     </CardWrapper>
   );
 }

@@ -2,30 +2,51 @@
 
 import { useState } from 'react';
 
-// ✅ Hulpfunctie voor kleurcodering
+const tabs = ['Week', 'Maand', 'Kwartaal', 'Jaar'];
+const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
 const getCellStyle = (value) => {
   if (value === null || value === undefined) return 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500';
   return value >= 0 ? 'bg-green-200 text-green-800 dark:bg-green-700 dark:text-white' : 'bg-red-200 text-red-800 dark:bg-red-700 dark:text-white';
 };
 
-// ✅ Formatter voor getallen
 const formatPercentage = (value) => {
-  if (value === null || value === undefined) return '–';
-  return `${value.toFixed(2)}%`;
+  if (value === null || value === undefined || isNaN(value)) return '–';
+  return `${value.toFixed(1)}%`;
 };
-
-const tabs = ['Week', 'Maand', 'Kwartaal', 'Jaar'];
-const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 export default function MarketForwardReturnTabs({ data = {} }) {
   const [active, setActive] = useState('Maand');
-
-  const activeKey = active.toLowerCase(); // 'week', 'maand', etc.
+  const activeKey = active.toLowerCase();
   const activeData = data[activeKey] || [];
+
+  const calculateYearAvg = (values) => {
+    const valid = values.filter((v) => v !== null && v !== undefined);
+    const sum = valid.reduce((a, b) => a + b, 0);
+    return valid.length ? sum / valid.length : null;
+  };
+
+  const calculateMonthAvgs = () => {
+    const totals = new Array(12).fill(0);
+    const counts = new Array(12).fill(0);
+
+    activeData.forEach((row) => {
+      row.values.forEach((val, idx) => {
+        if (val !== null && val !== undefined) {
+          totals[idx] += val;
+          counts[idx] += 1;
+        }
+      });
+    });
+
+    return totals.map((total, i) => (counts[i] ? total / counts[i] : null));
+  };
+
+  const monthAverages = calculateMonthAvgs();
 
   return (
     <div className="p-4 border rounded bg-white dark:bg-gray-900 shadow">
-      {/* 🔹 Tabs */}
+      {/* Tabs */}
       <div className="flex gap-2 mb-4">
         {tabs.map((tab) => (
           <button
@@ -42,35 +63,54 @@ export default function MarketForwardReturnTabs({ data = {} }) {
         ))}
       </div>
 
-      {/* 🔹 Tabel */}
+      {/* Table */}
       {activeData.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
               <tr>
-                <th className="p-2">✅</th>
-                <th className="p-2">Jaar</th>
+                <th className="p-2 text-left">✅</th>
+                <th className="p-2 text-left">Jaar</th>
                 {months.map((m) => (
-                  <th key={m} className="p-2 text-xs">{m}</th>
+                  <th key={m} className="p-2 text-xs text-center">{m}</th>
                 ))}
+                <th className="p-2 text-center font-semibold">Gem.</th>
               </tr>
             </thead>
             <tbody>
               {activeData
                 .sort((a, b) => b.year - a.year)
-                .map((row, idx) => (
-                  <tr key={idx} className="border-t">
-                    <td className="p-2 text-center">
-                      <input type="checkbox" className="form-checkbox" defaultChecked />
-                    </td>
-                    <td className="p-2 font-semibold">{row.year}</td>
-                    {row.values.map((val, i) => (
-                      <td key={i} className={`p-2 text-center font-medium ${getCellStyle(val)}`}>
-                        {formatPercentage(val)}
+                .map((row, idx) => {
+                  const avg = calculateYearAvg(row.values);
+                  return (
+                    <tr key={idx} className="border-t">
+                      <td className="p-2 text-center">
+                        <input type="checkbox" className="form-checkbox" defaultChecked />
                       </td>
-                    ))}
-                  </tr>
+                      <td className="p-2 font-semibold">{row.year}</td>
+                      {row.values.map((val, i) => (
+                        <td key={i} className={`p-2 text-center font-medium ${getCellStyle(val)}`}>
+                          {formatPercentage(val)}
+                        </td>
+                      ))}
+                      <td className="p-2 text-center font-semibold">
+                        {formatPercentage(avg)}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+              {/* Onderste rij met maandgemiddelden */}
+              <tr className="border-t bg-gray-50 dark:bg-gray-800">
+                <td className="p-2 text-center">–</td>
+                <td className="p-2 font-semibold">Gemiddelde</td>
+                {monthAverages.map((val, i) => (
+                  <td key={i} className={`p-2 text-center font-semibold ${getCellStyle(val)}`}>
+                    {formatPercentage(val)}
+                  </td>
                 ))}
+                <td className="p-2 text-center font-semibold">–</td>
+              </tr>
             </tbody>
           </table>
         </div>

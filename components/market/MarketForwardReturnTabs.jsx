@@ -17,8 +17,18 @@ const formatPercentage = (value) => {
 
 export default function MarketForwardReturnTabs({ data = {} }) {
   const [active, setActive] = useState('Maand');
+  const [selectedYears, setSelectedYears] = useState(() =>
+    (data['maand'] || []).map((row) => row.year)
+  );
+
   const activeKey = active.toLowerCase();
   const activeData = data[activeKey] || [];
+
+  const toggleYear = (year) => {
+    setSelectedYears((prev) =>
+      prev.includes(year) ? prev.filter((y) => y !== year) : [...prev, year]
+    );
+  };
 
   const calculateYearAvg = (values) => {
     const valid = values.filter((v) => v !== null && v !== undefined);
@@ -44,6 +54,19 @@ export default function MarketForwardReturnTabs({ data = {} }) {
 
   const monthAverages = calculateMonthAvgs();
 
+  const selectedData = activeData.filter((row) => selectedYears.includes(row.year));
+
+  const forwardStats = months.map((_, monthIdx) => {
+    const values = selectedData.map((row) => row.values[monthIdx]);
+    const valid = values.filter((v) => v !== null && v !== undefined);
+    const wins = valid.filter((v) => v > 0).length;
+    const losses = valid.filter((v) => v <= 0).length;
+    const total = valid.length;
+    const returnRate = total ? (wins / total) * 100 : null;
+
+    return { total, wins, losses, returnRate };
+  });
+
   return (
     <div className="p-4 border rounded bg-white dark:bg-gray-900 shadow">
       {/* Tabs */}
@@ -66,7 +89,7 @@ export default function MarketForwardReturnTabs({ data = {} }) {
       {/* Table */}
       {activeData.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border">
+          <table className="w-full text-sm border mb-6">
             <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
               <tr>
                 <th className="p-2 text-left">✅</th>
@@ -85,7 +108,12 @@ export default function MarketForwardReturnTabs({ data = {} }) {
                   return (
                     <tr key={idx} className="border-t">
                       <td className="p-2 text-center">
-                        <input type="checkbox" className="form-checkbox" defaultChecked />
+                        <input
+                          type="checkbox"
+                          className="form-checkbox"
+                          checked={selectedYears.includes(row.year)}
+                          onChange={() => toggleYear(row.year)}
+                        />
                       </td>
                       <td className="p-2 font-semibold">{row.year}</td>
                       {row.values.map((val, i) => (
@@ -113,6 +141,49 @@ export default function MarketForwardReturnTabs({ data = {} }) {
               </tr>
             </tbody>
           </table>
+
+          {/* Forward Return Stats Table */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-bold mb-2">Forward Return Results (alleen geselecteerde jaren)</h3>
+            <table className="w-full text-sm border">
+              <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                <tr>
+                  <th className="p-2 text-left">Stat</th>
+                  {months.map((m) => (
+                    <th key={m} className="p-2 text-xs text-center">{m}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="p-2 font-semibold">Totals</td>
+                  {forwardStats.map((s, i) => (
+                    <td key={i} className="p-2 text-center">{s.total}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="p-2 font-semibold">Wins</td>
+                  {forwardStats.map((s, i) => (
+                    <td key={i} className="p-2 text-center text-green-700 dark:text-green-400">{s.wins}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="p-2 font-semibold">Losses</td>
+                  {forwardStats.map((s, i) => (
+                    <td key={i} className="p-2 text-center text-red-700 dark:text-red-400">{s.losses}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="p-2 font-semibold">Returns</td>
+                  {forwardStats.map((s, i) => (
+                    <td key={i} className="p-2 text-center font-semibold">
+                      {s.returnRate !== null ? `${s.returnRate.toFixed(1)}%` : '–'}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="text-gray-500 text-sm">

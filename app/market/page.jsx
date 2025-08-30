@@ -24,7 +24,14 @@ const dummyForwardReturnData = {
 };
 
 export default function MarketPage() {
-  const { marketData, loading, error, avgScore, advies } = useMarketData();
+  const {
+    marketData,
+    loading,
+    error,
+    avgScore,
+    advies,
+    sevenDayData, // ✅ toegevoegd
+  } = useMarketData();
 
   const btc = marketData.find((item) => item.symbol === 'BTC');
 
@@ -50,10 +57,10 @@ export default function MarketPage() {
             timestamp={btc.timestamp}
           />
 
-          {/* 📆 Tabel met laatste 7 dagen */}
-          <MarketSevenDayTable history={btc.history ?? []} />
+          {/* 📆 Tabel met laatste 7 dagen – ✅ FIX toegepast */}
+          <MarketSevenDayTable history={sevenDayData} />
 
-          {/* 📈 Forward return tabs (week/maand/kwartaal/jaar) */}
+          {/* 📈 Forward return tabs */}
           <MarketForwardReturnTabs data={dummyForwardReturnData} />
         </>
       )}

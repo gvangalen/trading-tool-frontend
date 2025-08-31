@@ -1,15 +1,17 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import {
   fetchMarketData,
-  fetchMarketData7d, // ✅ Nieuwe import
+  fetchMarketData7d,
+  fetchInterpretedMarketData, // ✅ NIEUW
+  fetchMarketReturnByPeriod,   // ✅ NIEUW
   deleteMarketAsset,
 } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
-  const [sevenDayData, setSevenDayData] = useState([]); // 📅 extra hook state
+  const [sevenDayData, setSevenDayData] = useState([]);
+  const [interpretedData, setInterpretedData] = useState([]);   // ✅ Live interpretatie
+  const [forwardReturns, setForwardReturns] = useState([]);     // ✅ Tabel voor vooruitblik
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -28,20 +30,26 @@ export function useMarketData() {
     setLoading(true);
     setError('');
     try {
-      // 📡 1. Huidige marktdata ophalen
       const data = await fetchMarketData();
       const validData = Array.isArray(data) ? data : [];
       setMarketData(validData);
       updateScore(validData);
 
-      // 📡 2. 7-daagse data ophalen via API helper
       const historyData = await fetchMarketData7d();
       setSevenDayData(Array.isArray(historyData) ? historyData : []);
+
+      const interpreted = await fetchInterpretedMarketData();
+      setInterpretedData(Array.isArray(interpreted) ? interpreted : []);
+
+      const returns = await fetchMarketReturnByPeriod('7d');
+      setForwardReturns(Array.isArray(returns) ? returns : []);
     } catch (err) {
       console.warn('⚠️ Marktdata ophalen mislukt:', err);
       setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
       setSevenDayData([]);
+      setInterpretedData([]);
+      setForwardReturns([]);
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
     } finally {
@@ -87,7 +95,9 @@ export function useMarketData() {
 
   return {
     marketData,
-    sevenDayData,     // 📤 beschikbaar in je component
+    sevenDayData,
+    interpretedData,   // ✅ Beschikbaar voor live inzichten
+    forwardReturns,    // ✅ Beschikbaar voor returns-tabel
     avgScore,
     advies,
     loading,

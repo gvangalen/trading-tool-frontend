@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import {
   fetchMarketData,
   fetchMarketData7d,
-  fetchInterpretedMarketData, // ✅ Toegevoegd
+  fetchInterpretedMarketData,
   deleteMarketAsset,
 } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
   const [sevenDayData, setSevenDayData] = useState([]);
-  const [liveData, setLiveData] = useState(null); // ✅ Nieuw voor interpretatie
+  const [liveData, setLiveData] = useState(null);
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -22,36 +22,59 @@ export function useMarketData() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000); // ⏱️ Elke minuut verversen
+    const interval = setInterval(loadData, 60000); // Elke minuut
     return () => clearInterval(interval);
   }, []);
 
   async function loadData() {
     setLoading(true);
     setError('');
-    console.log('🚀 loadData gestart');
+    console.group('📊 [MARKET HOOK] loadData gestart');
 
     try {
-      // 📡 1. Marktdata
+      // 🔹 1. Marktdata ophalen
       const data = await fetchMarketData();
-      const validData = Array.isArray(data) ? data : [];
-      console.log('✅ Marktdata ontvangen:', validData);
-      setMarketData(validData);
-      updateScore(validData);
+      console.log('✅ [MARKET HOOK] Marktdata ontvangen:', data);
 
-      // 📡 2. Historische 7d data
+      if (!Array.isArray(data)) {
+        console.warn('⛔️ [MARKET HOOK] Marktdata is geen array:', data);
+        throw new Error('Marktdata ongeldig');
+      }
+
+      if (data.length === 0) {
+        console.warn('⚠️ [MARKET HOOK] Marktdata is leeg');
+      }
+
+      setMarketData(data);
+      updateScore(data);
+
+      // 🔹 2. Historische data ophalen
       const historyData = await fetchMarketData7d();
-      const sevenDays = Array.isArray(historyData) ? historyData : [];
-      console.log('📅 Historische 7d data:', sevenDays);
-      setSevenDayData(sevenDays);
+      console.log('📅 [MARKET HOOK] Historische 7d data ontvangen:', historyData);
 
-      // 📡 3. Live interpretatie ophalen
+      if (!Array.isArray(historyData)) {
+        console.warn('⛔️ [MARKET HOOK] Historische data is geen array:', historyData);
+        throw new Error('Historische data ongeldig');
+      }
+
+      if (historyData.length === 0) {
+        console.warn('⚠️ [MARKET HOOK] Historische data is leeg');
+      }
+
+      setSevenDayData(historyData);
+
+      // 🔹 3. Interpretatie ophalen
       const interpreted = await fetchInterpretedMarketData();
-      console.log('📈 Live interpretatie ontvangen:', interpreted);
+      console.log('📈 [MARKET HOOK] Interpreteerde live data:', interpreted);
+
+      if (!interpreted || typeof interpreted !== 'object') {
+        console.warn('⚠️ [MARKET HOOK] Interpreteerde data ontbreekt of is ongeldig:', interpreted);
+      }
+
       setLiveData(interpreted ?? null);
 
     } catch (err) {
-      console.warn('❌ Fout bij ophalen marktdata:', err);
+      console.error('❌ [MARKET HOOK] Fout bij ophalen data:', err);
       setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
       setSevenDayData([]);
@@ -60,6 +83,7 @@ export function useMarketData() {
       setAdvies('⚖️ Neutraal');
     } finally {
       setLoading(false);
+      console.groupEnd();
     }
   }
 
@@ -77,6 +101,7 @@ export function useMarketData() {
 
   function updateScore(data) {
     if (!Array.isArray(data) || data.length === 0) {
+      console.warn('⚠️ [MARKET HOOK] updateScore: geen data om score te berekenen');
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
       return;
@@ -84,6 +109,7 @@ export function useMarketData() {
 
     const total = data.reduce((sum, asset) => sum + calculateMarketScore(asset), 0);
     const avg = (total / data.length).toFixed(1);
+    console.log(`📊 [MARKET HOOK] Gemiddelde markt score berekend: ${avg}`);
     setAvgScore(avg);
     setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
@@ -94,15 +120,16 @@ export function useMarketData() {
       const updated = marketData.filter((a) => a.id !== id);
       setMarketData(updated);
       updateScore(updated);
+      console.log(`🗑️ [MARKET HOOK] Asset verwijderd: ${id}`);
     } catch (err) {
-      console.error('❌ Verwijderen mislukt:', err);
+      console.error('❌ [MARKET HOOK] Fout bij verwijderen asset:', err);
     }
   }
 
   return {
     marketData,
     sevenDayData,
-    liveData,         // ✅ Nieuw veld in return
+    liveData,
     avgScore,
     advies,
     loading,

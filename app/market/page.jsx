@@ -6,21 +6,21 @@ import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
-// 🔹 Dummy data voor forward return tabel (kan later vervangen worden door echte API-call)
+// ✅ Correct dummy forward return data structure
 const dummyForwardReturnData = {
-  week: [
-    { start: '2025-08-21', end: '2025-08-28', change: 2.3, avgDaily: 0.33 },
-    { start: '2025-08-14', end: '2025-08-21', change: -1.2, avgDaily: -0.17 },
-  ],
   maand: [
-    { start: '2025-07-28', end: '2025-08-28', change: 5.8, avgDaily: 0.19 },
+    {
+      year: 2023,
+      values: [1.2, -0.4, 0.8, 2.1, 0.3, -0.9, 1.0, 2.5, 0.4, -0.2, 1.1, 0.7],
+    },
+    {
+      year: 2024,
+      values: [1.8, -0.6, 1.0, 1.5, 0.6, -1.2, 1.3, 2.1, 0.2, -0.5, 1.0, 0.6],
+    },
   ],
-  kwartaal: [
-    { start: '2025-05-28', end: '2025-08-28', change: 12.1, avgDaily: 0.13 },
-  ],
-  jaar: [
-    { start: '2024-08-28', end: '2025-08-28', change: 41.5, avgDaily: 0.11 },
-  ],
+  kwartaal: [],
+  jaar: [],
+  week: [],
 };
 
 // ✅ (optioneel) fallback BTC voor demo / debugging

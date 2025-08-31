@@ -23,7 +23,7 @@ const dummyForwardReturnData = {
   week: [],
 };
 
-// 🟡 Fallback BTC voor als data tijdelijk ontbreekt
+// 🟡 Fallback BTC
 const fallbackBTC = {
   symbol: 'BTC',
   price: 65000,
@@ -42,27 +42,37 @@ export default function MarketPage() {
     sevenDayData,
   } = useMarketData();
 
-  // 🧠 BTC data ophalen of fallback gebruiken
-  const btc = marketData.find((item) => item.symbol === 'BTC');
+  console.group('📊 [MarketPage] Render gestart');
+  console.log('🔁 loading:', loading);
+  console.log('❌ error:', error);
+  console.log('📊 marketData:', marketData);
+  console.log('📅 sevenDayData:', sevenDayData);
+  console.log('📈 avgScore:', avgScore);
+  console.log('🧠 advies:', advies);
+
+  const btc = marketData.find((item) => item.symbol?.toUpperCase() === 'BTC');
   const displayBTC = btc ?? fallbackBTC;
 
-  // 🪵 Extra debug logging
-  console.log('🟦 marketData:', marketData);
   console.log('🪙 BTC gevonden:', btc);
   console.log('📦 displayBTC:', displayBTC);
-  console.log('📅 sevenDayData:', sevenDayData);
-  console.log('🔮 dummyForwardReturnData:', dummyForwardReturnData);
+  console.groupEnd();
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
       <h1 className="text-2xl font-bold">📊 Bitcoin Markt Overzicht</h1>
 
       {loading && (
-        <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>
+        <>
+          <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>
+          {console.log('⏳ [MarketPage] Laden is actief')}
+        </>
       )}
 
       {error && (
-        <p className="text-sm text-red-500">❌ {error}</p>
+        <>
+          <p className="text-sm text-red-500">❌ {error}</p>
+          {console.log('❌ [MarketPage] Foutmelding weergegeven:', error)}
+        </>
       )}
 
       {!loading && !error && (
@@ -81,18 +91,22 @@ export default function MarketPage() {
             timestamp={displayBTC.timestamp}
           />
 
-          {/* ℹ️ Waarschuwing als BTC live ontbreekt */}
           {!btc && (
-            <p className="text-sm text-yellow-600 mt-2">
-              ⚠️ Live BTC-data ontbreekt, fallback wordt getoond.
-            </p>
+            <>
+              <p className="text-sm text-yellow-600 mt-2">
+                ⚠️ Live BTC-data ontbreekt, fallback wordt getoond.
+              </p>
+              {console.warn('⚠️ [MarketPage] BTC niet gevonden, fallback actief')}
+            </>
           )}
 
           {/* 📅 Laatste 7 dagen prijs en volume */}
           <MarketSevenDayTable history={sevenDayData} />
+          {console.log('📊 [MarketPage] 7d tabel gerenderd:', sevenDayData)}
 
           {/* 🔮 Forward return voorspelling */}
           <MarketForwardReturnTabs data={dummyForwardReturnData} />
+          {console.log('🔮 [MarketPage] Forward return tabs gerenderd')}
         </>
       )}
     </div>

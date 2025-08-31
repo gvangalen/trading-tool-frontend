@@ -6,7 +6,7 @@ import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
-// ✅ Correct dummy forward return data structure
+// 🔁 Dummy forward return data
 const dummyForwardReturnData = {
   maand: [
     {
@@ -23,7 +23,7 @@ const dummyForwardReturnData = {
   week: [],
 };
 
-// ✅ (optioneel) fallback BTC voor demo / debugging
+// 🟡 Fallback BTC voor als data tijdelijk ontbreekt
 const fallbackBTC = {
   symbol: 'BTC',
   price: 65000,
@@ -42,15 +42,16 @@ export default function MarketPage() {
     sevenDayData,
   } = useMarketData();
 
-  // 🔍 BTC uit marktdata ophalen (met fallback mogelijk)
+  // 🧠 BTC data ophalen of fallback gebruiken
   const btc = marketData.find((item) => item.symbol === 'BTC');
-  // const btc = marketData.find((item) => item.symbol === 'BTC') ?? fallbackBTC;
+  const displayBTC = btc ?? fallbackBTC;
 
-  // ✅ Debug logging (verwijder in productie)
-  console.log('✅ marketData:', marketData);
-  console.log('🔍 btc:', btc);
+  // 🪵 Extra debug logging
+  console.log('🟦 marketData:', marketData);
+  console.log('🪙 BTC gevonden:', btc);
+  console.log('📦 displayBTC:', displayBTC);
   console.log('📅 sevenDayData:', sevenDayData);
-  console.log('📈 dummyForwardReturnData:', dummyForwardReturnData);
+  console.log('🔮 dummyForwardReturnData:', dummyForwardReturnData);
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
@@ -64,7 +65,7 @@ export default function MarketPage() {
         <p className="text-sm text-red-500">❌ {error}</p>
       )}
 
-      {!loading && !error && btc && (
+      {!loading && !error && (
         <>
           {/* 🔹 Markt Score */}
           <div className="text-sm text-gray-700">
@@ -74,24 +75,25 @@ export default function MarketPage() {
 
           {/* 💰 Live prijs en trend */}
           <MarketLiveCard
-            price={btc.price}
-            change24h={btc.change_24h}
-            volume={btc.volume}
-            timestamp={btc.timestamp}
+            price={displayBTC.price}
+            change24h={displayBTC.change_24h}
+            volume={displayBTC.volume}
+            timestamp={displayBTC.timestamp}
           />
 
-          {/* 📆 7-daagse prijsgeschiedenis */}
+          {/* ℹ️ Waarschuwing als BTC live ontbreekt */}
+          {!btc && (
+            <p className="text-sm text-yellow-600 mt-2">
+              ⚠️ Live BTC-data ontbreekt, fallback wordt getoond.
+            </p>
+          )}
+
+          {/* 📅 Laatste 7 dagen prijs en volume */}
           <MarketSevenDayTable history={sevenDayData} />
 
-          {/* 🔮 Forward return voorspelling (dummy voorlopig) */}
+          {/* 🔮 Forward return voorspelling */}
           <MarketForwardReturnTabs data={dummyForwardReturnData} />
         </>
-      )}
-
-      {!loading && !error && !btc && (
-        <p className="text-sm text-yellow-600">
-          ⚠️ Geen BTC-data gevonden in marketData
-        </p>
       )}
     </div>
   );

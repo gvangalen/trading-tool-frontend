@@ -21,7 +21,17 @@ export default function MarketSevenDayTable({ history }) {
         month: 'short',
       });
 
-      const record = history?.find((d) => d.date?.startsWith(isoDate));
+      const record = history?.find((d) => {
+        const match = new Date(d.date).toISOString().slice(0, 10) === isoDate;
+        if (match) {
+          console.log(`✅ Match voor ${isoDate}:`, d);
+        }
+        return match;
+      });
+
+      if (!record) {
+        console.warn(`❌ Geen match voor datum ${isoDate}`);
+      }
 
       result.push({
         date: formattedDate,
@@ -84,7 +94,12 @@ export default function MarketSevenDayTable({ history }) {
         </table>
       </div>
 
-      <p className="text-sm text-green-700 mt-3">✅ Altijd 7 rijen zichtbaar – ook bij ontbrekende data</p>
+      <p className="text-sm text-green-700 mt-3">
+        ✅ Altijd 7 rijen zichtbaar – ook bij ontbrekende data
+      </p>
+      <p className="text-xs text-gray-500 mt-1">
+        🧪 Debug: {rows.filter(r => r.open !== null).length} van de 7 dagen gevuld
+      </p>
     </CardWrapper>
   );
 }

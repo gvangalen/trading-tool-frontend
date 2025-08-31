@@ -42,19 +42,18 @@ export default function MarketPage() {
     sevenDayData,
   } = useMarketData();
 
+  const btc = marketData.find((item) => item.symbol?.toUpperCase() === 'BTC');
+  const displayBTC = btc ?? fallbackBTC;
+
   console.group('📊 [MarketPage] Render gestart');
   console.log('🔁 loading:', loading);
   console.log('❌ error:', error);
   console.log('📊 marketData:', marketData);
+  console.log('🪙 BTC gevonden:', btc);
+  console.log('📦 displayBTC:', displayBTC);
   console.log('📅 sevenDayData:', sevenDayData);
   console.log('📈 avgScore:', avgScore);
   console.log('🧠 advies:', advies);
-
-  const btc = marketData.find((item) => item.symbol?.toUpperCase() === 'BTC');
-  const displayBTC = btc ?? fallbackBTC;
-
-  console.log('🪙 BTC gevonden:', btc);
-  console.log('📦 displayBTC:', displayBTC);
   console.groupEnd();
 
   return (
@@ -62,53 +61,41 @@ export default function MarketPage() {
       <h1 className="text-2xl font-bold">📊 Bitcoin Markt Overzicht</h1>
 
       {loading && (
-        <>
-          <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>
-          {console.log('⏳ [MarketPage] Laden is actief')}
-        </>
+        <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>
       )}
 
       {error && (
-        <>
-          <p className="text-sm text-red-500">❌ {error}</p>
-          {console.log('❌ [MarketPage] Foutmelding weergegeven:', error)}
-        </>
+        <p className="text-sm text-red-500">❌ {error}</p>
       )}
 
-      {!loading && !error && (
-        <>
-          {/* 🔹 Markt Score */}
-          <div className="text-sm text-gray-700">
-            Markt Score: <strong>{avgScore}</strong> | Advies:{' '}
-            <strong>{advies}</strong>
-          </div>
+      {/* ✅ Altijd tonen – zelfs als loading/error actief is */}
+      <div className="space-y-6 mt-4">
+        {/* 🔹 Markt Score */}
+        <div className="text-sm text-gray-700">
+          Markt Score: <strong>{avgScore}</strong> | Advies:{' '}
+          <strong>{advies}</strong>
+        </div>
 
-          {/* 💰 Live prijs en trend */}
+        {/* 💰 Live prijs en trend */}
+        {btc ? (
           <MarketLiveCard
             price={displayBTC.price}
             change24h={displayBTC.change_24h}
             volume={displayBTC.volume}
             timestamp={displayBTC.timestamp}
           />
+        ) : (
+          <p className="text-sm text-yellow-600">
+            ⚠️ Live BTC-data ontbreekt, fallback wordt getoond.
+          </p>
+        )}
 
-          {!btc && (
-            <>
-              <p className="text-sm text-yellow-600 mt-2">
-                ⚠️ Live BTC-data ontbreekt, fallback wordt getoond.
-              </p>
-              {console.warn('⚠️ [MarketPage] BTC niet gevonden, fallback actief')}
-            </>
-          )}
+        {/* 📅 Laatste 7 dagen prijs en volume */}
+        <MarketSevenDayTable history={sevenDayData} />
 
-          {/* 📅 Laatste 7 dagen prijs en volume */}
-          <MarketSevenDayTable history={sevenDayData} />
-          {console.log('📊 [MarketPage] 7d tabel gerenderd:', sevenDayData)}
-
-          {/* 🔮 Forward return voorspelling */}
-          <MarketForwardReturnTabs data={dummyForwardReturnData} />
-          {console.log('🔮 [MarketPage] Forward return tabs gerenderd')}
-        </>
-      )}
+        {/* 🔮 Forward return voorspelling */}
+        <MarketForwardReturnTabs data={dummyForwardReturnData} />
+      </div>
     </div>
   );
 }

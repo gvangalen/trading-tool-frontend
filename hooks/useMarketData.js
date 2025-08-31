@@ -1,17 +1,17 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import {
   fetchMarketData,
   fetchMarketData7d,
-  fetchInterpretedMarketData, // ✅ NIEUW
-  fetchMarketReturnByPeriod,   // ✅ NIEUW
+  fetchInterpretedMarketData, // ✅ Toegevoegd
   deleteMarketAsset,
 } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
   const [sevenDayData, setSevenDayData] = useState([]);
-  const [interpretedData, setInterpretedData] = useState([]);   // ✅ Live interpretatie
-  const [forwardReturns, setForwardReturns] = useState([]);     // ✅ Tabel voor vooruitblik
+  const [liveData, setLiveData] = useState(null); // ✅ Nieuw voor interpretatie
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -22,34 +22,40 @@ export function useMarketData() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000); // ⏱️ elke minuut vernieuwen
+    const interval = setInterval(loadData, 60000); // ⏱️ Elke minuut verversen
     return () => clearInterval(interval);
   }, []);
 
   async function loadData() {
     setLoading(true);
     setError('');
+    console.log('🚀 loadData gestart');
+
     try {
+      // 📡 1. Marktdata
       const data = await fetchMarketData();
       const validData = Array.isArray(data) ? data : [];
+      console.log('✅ Marktdata ontvangen:', validData);
       setMarketData(validData);
       updateScore(validData);
 
+      // 📡 2. Historische 7d data
       const historyData = await fetchMarketData7d();
-      setSevenDayData(Array.isArray(historyData) ? historyData : []);
+      const sevenDays = Array.isArray(historyData) ? historyData : [];
+      console.log('📅 Historische 7d data:', sevenDays);
+      setSevenDayData(sevenDays);
 
+      // 📡 3. Live interpretatie ophalen
       const interpreted = await fetchInterpretedMarketData();
-      setInterpretedData(Array.isArray(interpreted) ? interpreted : []);
+      console.log('📈 Live interpretatie ontvangen:', interpreted);
+      setLiveData(interpreted ?? null);
 
-      const returns = await fetchMarketReturnByPeriod('7d');
-      setForwardReturns(Array.isArray(returns) ? returns : []);
     } catch (err) {
-      console.warn('⚠️ Marktdata ophalen mislukt:', err);
+      console.warn('❌ Fout bij ophalen marktdata:', err);
       setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
       setSevenDayData([]);
-      setInterpretedData([]);
-      setForwardReturns([]);
+      setLiveData(null);
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
     } finally {
@@ -96,8 +102,7 @@ export function useMarketData() {
   return {
     marketData,
     sevenDayData,
-    interpretedData,   // ✅ Beschikbaar voor live inzichten
-    forwardReturns,    // ✅ Beschikbaar voor returns-tabel
+    liveData,         // ✅ Nieuw veld in return
     avgScore,
     advies,
     loading,

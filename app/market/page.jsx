@@ -30,6 +30,7 @@ export default function MarketPage() {
     avgScore,
     advies,
     sevenDayData,
+    liveBTC, // ✅ toegevoegd
   } = useMarketData();
 
   console.group('📊 [MarketPage] Render gestart');
@@ -39,6 +40,7 @@ export default function MarketPage() {
   console.log('📅 sevenDayData:', sevenDayData);
   console.log('📈 avgScore:', avgScore);
   console.log('🧠 advies:', advies);
+  console.log('💰 liveBTC:', liveBTC);
   console.groupEnd();
 
   return (
@@ -53,7 +55,6 @@ export default function MarketPage() {
         <p className="text-sm text-red-500">❌ {error}</p>
       )}
 
-      {/* ✅ Altijd tonen – zelfs als loading/error actief is */}
       <div className="space-y-6 mt-4">
         {/* 🔹 Markt Score */}
         <div className="text-sm text-gray-700">
@@ -62,7 +63,12 @@ export default function MarketPage() {
         </div>
 
         {/* 💰 Live BTC Prijs via API */}
-        <MarketLiveCard />
+        <MarketLiveCard
+          price={liveBTC?.price}
+          change24h={liveBTC?.change_24h}
+          volume={liveBTC?.volume}
+          timestamp={liveBTC?.timestamp}
+        />
 
         {/* 📅 Laatste 7 dagen prijs en volume */}
         <MarketSevenDayTable history={sevenDayData} />

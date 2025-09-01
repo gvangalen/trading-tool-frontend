@@ -1,7 +1,6 @@
 'use client';
 
 import { useMarketData } from '@/hooks/useMarketData';
-import CardWrapper from '@/components/ui/CardWrapper';
 import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
@@ -23,15 +22,6 @@ const dummyForwardReturnData = {
   week: [],
 };
 
-// 🟡 Fallback BTC
-const fallbackBTC = {
-  symbol: 'BTC',
-  price: 65000,
-  change_24h: 2.5,
-  volume: 32000000000,
-  timestamp: new Date().toISOString(),
-};
-
 export default function MarketPage() {
   const {
     marketData,
@@ -42,15 +32,10 @@ export default function MarketPage() {
     sevenDayData,
   } = useMarketData();
 
-  const btc = marketData.find((item) => item.symbol?.toUpperCase() === 'BTC');
-  const displayBTC = btc ?? fallbackBTC;
-
   console.group('📊 [MarketPage] Render gestart');
   console.log('🔁 loading:', loading);
   console.log('❌ error:', error);
   console.log('📊 marketData:', marketData);
-  console.log('🪙 BTC gevonden:', btc);
-  console.log('📦 displayBTC:', displayBTC);
   console.log('📅 sevenDayData:', sevenDayData);
   console.log('📈 avgScore:', avgScore);
   console.log('🧠 advies:', advies);
@@ -76,19 +61,8 @@ export default function MarketPage() {
           <strong>{advies}</strong>
         </div>
 
-        {/* 💰 Live prijs en trend */}
-        {btc ? (
-          <MarketLiveCard
-            price={displayBTC.price}
-            change24h={displayBTC.change_24h}
-            volume={displayBTC.volume}
-            timestamp={displayBTC.timestamp}
-          />
-        ) : (
-          <p className="text-sm text-yellow-600">
-            ⚠️ Live BTC-data ontbreekt, fallback wordt getoond.
-          </p>
-        )}
+        {/* 💰 Live BTC Prijs via API */}
+        <MarketLiveCard />
 
         {/* 📅 Laatste 7 dagen prijs en volume */}
         <MarketSevenDayTable history={sevenDayData} />

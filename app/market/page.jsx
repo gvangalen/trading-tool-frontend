@@ -30,8 +30,18 @@ export default function MarketPage() {
     avgScore,
     advies,
     sevenDayData,
-    liveBTC, // ✅ toegevoegd
+    liveBTC,
+    forwardReturns, // ✅ nieuw
   } = useMarketData();
+
+  const forwardData =
+    forwardReturns &&
+    (forwardReturns.maand?.length > 0 ||
+      forwardReturns.kwartaal?.length > 0 ||
+      forwardReturns.jaar?.length > 0 ||
+      forwardReturns.week?.length > 0)
+      ? forwardReturns
+      : dummyForwardReturnData;
 
   console.group('📊 [MarketPage] Render gestart');
   console.log('🔁 loading:', loading);
@@ -41,6 +51,7 @@ export default function MarketPage() {
   console.log('📈 avgScore:', avgScore);
   console.log('🧠 advies:', advies);
   console.log('💰 liveBTC:', liveBTC);
+  console.log('🔮 forwardReturns:', forwardReturns);
   console.groupEnd();
 
   return (
@@ -74,7 +85,7 @@ export default function MarketPage() {
         <MarketSevenDayTable history={sevenDayData} />
 
         {/* 🔮 Forward return voorspelling */}
-        <MarketForwardReturnTabs data={dummyForwardReturnData} />
+        <MarketForwardReturnTabs data={forwardData} />
       </div>
     </div>
   );

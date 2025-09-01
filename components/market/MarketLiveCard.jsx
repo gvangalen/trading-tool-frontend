@@ -7,12 +7,21 @@ import { formatChange, formatNumber } from '@/components/market/utils';
 export default function MarketLiveCard() {
   const { marketData, loading, error } = useMarketData();
 
-  // Alleen BTC tonen (of eerste asset als fallback)
+  // Debug
+  console.log("🔍 Gekregen marketData:", marketData);
+
+  if (loading || !marketData.length) {
+    return <CardWrapper><div className="p-4">📡 Marktdata wordt geladen...</div></CardWrapper>;
+  }
+
+  if (error) return <CardWrapper><div className="p-4 text-red-600">❌ Fout: {error}</div></CardWrapper>;
+
+  // Alleen BTC tonen (of fallback)
   const btc = marketData.find(a => a.symbol === 'BTC') || marketData[0];
 
-  if (loading) return <CardWrapper><div className="p-4">📡 Laden...</div></CardWrapper>;
-  if (error) return <CardWrapper><div className="p-4 text-red-600">❌ Fout: {error}</div></CardWrapper>;
-  if (!btc) return <CardWrapper><div className="p-4">⚠️ Geen BTC-data beschikbaar</div></CardWrapper>;
+  if (!btc) {
+    return <CardWrapper><div className="p-4">⚠️ Geen BTC-data beschikbaar</div></CardWrapper>;
+  }
 
   return (
     <CardWrapper>

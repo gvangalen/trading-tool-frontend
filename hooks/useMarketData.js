@@ -6,15 +6,16 @@ import {
   fetchMarketData7d,
   fetchInterpretedMarketData,
   deleteMarketAsset,
-  fetchLatestBTC, // ✅ nieuwe import
+  fetchLatestBTC,
+  fetchMarketReturnByPeriod, // ✅ Forward returns
 } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
   const [sevenDayData, setSevenDayData] = useState([]);
   const [liveData, setLiveData] = useState(null);
-  const [latestBTC, setLatestBTC] = useState(null); // ✅ voor lijst-data
-  const [liveBTC, setLiveBTC] = useState(null);      // ✅ voor live BTC data via aparte backend route
+  const [latestBTC, setLatestBTC] = useState(null);
+  const [liveBTC, setLiveBTC] = useState(null);
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -23,13 +24,23 @@ export function useMarketData() {
   const [sortField, setSortField] = useState('symbol');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  // 🔁 Initieel en elke minuut verversen
+  // ✅ Nieuw: Forward return data per periode
+  const [forwardReturns, setForwardReturns] = useState({
+    week: null,
+    maand: null,
+    kwartaal: null,
+    jaar: null,
+  });
+
   useEffect(() => {
     loadData();
-    loadLatestBTC(); // apart ophalen bij start
+    loadForwardReturns(); // ✅ Forward returns ophalen bij start
+    loadLatestBTC();
+
     const interval = setInterval(() => {
       loadLatestBTC();
     }, 60000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -55,7 +66,7 @@ export function useMarketData() {
       setMarketData(data);
       updateScore(data);
 
-      const btc = data.find(a => a.symbol === 'BTC');
+      const btc = data.find((a) => a.symbol === 'BTC');
       setLatestBTC(btc ?? null);
 
       const historyData = await fetchMarketData7d();
@@ -64,7 +75,6 @@ export function useMarketData() {
 
       const interpreted = await fetchInterpretedMarketData();
       setLiveData(interpreted ?? null);
-
     } catch (err) {
       console.error('❌ Fout bij loadData:', err);
       setError('❌ Fout bij laden van marktdata');
@@ -75,6 +85,29 @@ export function useMarketData() {
     } finally {
       setLoading(false);
       console.groupEnd();
+    }
+  }
+
+  async function loadForwardReturns() {
+    try {
+      const periods = ['week', 'maand', 'kwartaal', 'jaar'];
+      const results = {};
+
+      for (const period of periods) {
+        const data = await fetchMarketReturnByPeriod(period);
+        results[period] = data;
+      }
+
+      console.log('🔮 Forward returns ontvangen:', results);
+      setForwardReturns(results);
+    } catch (err) {
+      console.error('❌ Fout bij ophalen forward returns:', err);
+      setForwardReturns({
+        week: null,
+        maand: null,
+        kwartaal: null,
+        jaar: null,
+      });
     }
   }
 
@@ -107,7 +140,7 @@ export function useMarketData() {
       const updated = marketData.filter((a) => a.id !== id);
       setMarketData(updated);
       updateScore(updated);
-      const btc = updated.find(a => a.symbol === 'BTC');
+      const btc = updated.find((a) => a.symbol === 'BTC');
       setLatestBTC(btc ?? null);
     } catch (err) {
       console.error('❌ Fout bij verwijderen asset:', err);
@@ -118,8 +151,8 @@ export function useMarketData() {
     marketData,
     sevenDayData,
     liveData,
-    latestBTC,  // data uit markt_data lijst
-    liveBTC,    // live prijs via aparte route
+    latestBTC,
+    liveBTC,
     avgScore,
     advies,
     loading,
@@ -132,5 +165,6 @@ export function useMarketData() {
     setSortOrder,
     calculateMarketScore,
     deleteAsset,
+    forwardReturns, // ✅ NIEUW!
   };
 }

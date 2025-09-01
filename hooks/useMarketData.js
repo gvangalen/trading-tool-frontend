@@ -12,6 +12,7 @@ export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
   const [sevenDayData, setSevenDayData] = useState([]);
   const [liveData, setLiveData] = useState(null);
+  const [latestBTC, setLatestBTC] = useState(null); // ✅ Nieuw toegevoegd
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,15 @@ export function useMarketData() {
       setMarketData(data);
       updateScore(data);
 
+      // ✅ Extra: haal BTC eruit voor live card
+      const btc = data.find(a => a.symbol === 'BTC');
+      if (btc) {
+        setLatestBTC(btc);
+      } else {
+        console.warn('⚠️ [MARKET HOOK] BTC niet gevonden in marktdata');
+        setLatestBTC(null);
+      }
+
       // 🔹 2. Historische data ophalen
       const historyData = await fetchMarketData7d();
       console.log('📅 [MARKET HOOK] Historische 7d data ontvangen:', historyData);
@@ -79,6 +89,7 @@ export function useMarketData() {
       setMarketData([]);
       setSevenDayData([]);
       setLiveData(null);
+      setLatestBTC(null); // ✅ Reset BTC als fout
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
     } finally {
@@ -121,6 +132,11 @@ export function useMarketData() {
       setMarketData(updated);
       updateScore(updated);
       console.log(`🗑️ [MARKET HOOK] Asset verwijderd: ${id}`);
+
+      // ✅ BTC herberekenen als hij verwijderd wordt
+      const btc = updated.find(a => a.symbol === 'BTC');
+      setLatestBTC(btc ?? null);
+
     } catch (err) {
       console.error('❌ [MARKET HOOK] Fout bij verwijderen asset:', err);
     }
@@ -130,6 +146,7 @@ export function useMarketData() {
     marketData,
     sevenDayData,
     liveData,
+    latestBTC, // ✅ toegevoegd aan return
     avgScore,
     advies,
     loading,

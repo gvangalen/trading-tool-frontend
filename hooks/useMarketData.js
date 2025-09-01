@@ -6,13 +6,15 @@ import {
   fetchMarketData7d,
   fetchInterpretedMarketData,
   deleteMarketAsset,
+  fetchLatestBTC, // ✅ nieuwe import
 } from '@/lib/api/market';
 
 export function useMarketData() {
   const [marketData, setMarketData] = useState([]);
   const [sevenDayData, setSevenDayData] = useState([]);
   const [liveData, setLiveData] = useState(null);
-  const [latestBTC, setLatestBTC] = useState(null); // ✅ Nieuw toegevoegd
+  const [latestBTC, setLatestBTC] = useState(null); // ✅ voor lijst-data
+  const [liveBTC, setLiveBTC] = useState(null);      // ✅ voor live BTC data via aparte backend route
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -21,11 +23,26 @@ export function useMarketData() {
   const [sortField, setSortField] = useState('symbol');
   const [sortOrder, setSortOrder] = useState('asc');
 
+  // 🔁 Initieel en elke minuut verversen
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000); // Elke minuut
+    loadLatestBTC(); // apart ophalen bij start
+    const interval = setInterval(() => {
+      loadLatestBTC();
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  async function loadLatestBTC() {
+    try {
+      const data = await fetchLatestBTC();
+      console.log('🟢 [MARKET HOOK] Live BTC ontvangen:', data);
+      setLiveBTC(data);
+    } catch (err) {
+      console.error('❌ [MARKET HOOK] Fout bij ophalen live BTC:', err);
+      setLiveBTC(null);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -33,65 +50,28 @@ export function useMarketData() {
     console.group('📊 [MARKET HOOK] loadData gestart');
 
     try {
-      // 🔹 1. Marktdata ophalen
       const data = await fetchMarketData();
-      console.log('✅ [MARKET HOOK] Marktdata ontvangen:', data);
-
-      if (!Array.isArray(data)) {
-        console.warn('⛔️ [MARKET HOOK] Marktdata is geen array:', data);
-        throw new Error('Marktdata ongeldig');
-      }
-
-      if (data.length === 0) {
-        console.warn('⚠️ [MARKET HOOK] Marktdata is leeg');
-      }
-
+      console.log('✅ Marktdata:', data);
       setMarketData(data);
       updateScore(data);
 
-      // ✅ Extra: haal BTC eruit voor live card
       const btc = data.find(a => a.symbol === 'BTC');
-      if (btc) {
-        setLatestBTC(btc);
-      } else {
-        console.warn('⚠️ [MARKET HOOK] BTC niet gevonden in marktdata');
-        setLatestBTC(null);
-      }
+      setLatestBTC(btc ?? null);
 
-      // 🔹 2. Historische data ophalen
       const historyData = await fetchMarketData7d();
-      console.log('📅 [MARKET HOOK] Historische 7d data ontvangen:', historyData);
-
-      if (!Array.isArray(historyData)) {
-        console.warn('⛔️ [MARKET HOOK] Historische data is geen array:', historyData);
-        throw new Error('Historische data ongeldig');
-      }
-
-      if (historyData.length === 0) {
-        console.warn('⚠️ [MARKET HOOK] Historische data is leeg');
-      }
-
+      console.log('📅 Historische data:', historyData);
       setSevenDayData(historyData);
 
-      // 🔹 3. Interpretatie ophalen
       const interpreted = await fetchInterpretedMarketData();
-      console.log('📈 [MARKET HOOK] Interpreteerde live data:', interpreted);
-
-      if (!interpreted || typeof interpreted !== 'object') {
-        console.warn('⚠️ [MARKET HOOK] Interpreteerde data ontbreekt of is ongeldig:', interpreted);
-      }
-
       setLiveData(interpreted ?? null);
 
     } catch (err) {
-      console.error('❌ [MARKET HOOK] Fout bij ophalen data:', err);
+      console.error('❌ Fout bij loadData:', err);
       setError('❌ Fout bij laden van marktdata');
       setMarketData([]);
       setSevenDayData([]);
       setLiveData(null);
-      setLatestBTC(null); // ✅ Reset BTC als fout
-      setAvgScore('N/A');
-      setAdvies('⚖️ Neutraal');
+      setLatestBTC(null);
     } finally {
       setLoading(false);
       console.groupEnd();
@@ -101,18 +81,15 @@ export function useMarketData() {
   function calculateMarketScore(asset) {
     let score = 0;
     const change = asset.change_24h ?? 0;
-
     if (change > 5) score += 2;
     else if (change > 2) score += 1;
     else if (change < -5) score -= 2;
     else if (change < -2) score -= 1;
-
     return Math.max(-2, Math.min(2, score));
   }
 
   function updateScore(data) {
     if (!Array.isArray(data) || data.length === 0) {
-      console.warn('⚠️ [MARKET HOOK] updateScore: geen data om score te berekenen');
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
       return;
@@ -120,7 +97,6 @@ export function useMarketData() {
 
     const total = data.reduce((sum, asset) => sum + calculateMarketScore(asset), 0);
     const avg = (total / data.length).toFixed(1);
-    console.log(`📊 [MARKET HOOK] Gemiddelde markt score berekend: ${avg}`);
     setAvgScore(avg);
     setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
@@ -131,14 +107,10 @@ export function useMarketData() {
       const updated = marketData.filter((a) => a.id !== id);
       setMarketData(updated);
       updateScore(updated);
-      console.log(`🗑️ [MARKET HOOK] Asset verwijderd: ${id}`);
-
-      // ✅ BTC herberekenen als hij verwijderd wordt
       const btc = updated.find(a => a.symbol === 'BTC');
       setLatestBTC(btc ?? null);
-
     } catch (err) {
-      console.error('❌ [MARKET HOOK] Fout bij verwijderen asset:', err);
+      console.error('❌ Fout bij verwijderen asset:', err);
     }
   }
 
@@ -146,7 +118,8 @@ export function useMarketData() {
     marketData,
     sevenDayData,
     liveData,
-    latestBTC, // ✅ toegevoegd aan return
+    latestBTC,  // data uit markt_data lijst
+    liveBTC,    // live prijs via aparte route
     avgScore,
     advies,
     loading,

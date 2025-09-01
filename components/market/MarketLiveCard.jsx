@@ -1,27 +1,36 @@
 'use client';
 
-import { useMarketData } from '@/hooks/useMarketData';
+import { useEffect, useState } from 'react';
 import CardWrapper from '@/components/ui/CardWrapper';
 import { formatChange, formatNumber } from '@/components/market/utils';
+import { fetchLatestBTC } from '@/lib/api/market';
 
 export default function MarketLiveCard() {
-  const { marketData, loading, error } = useMarketData();
+  const [btc, setBtc] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Debug
-  console.log("🔍 Gekregen marketData:", marketData);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
-  if (loading || !marketData.length) {
-    return <CardWrapper><div className="p-4">📡 Marktdata wordt geladen...</div></CardWrapper>;
+  async function loadData() {
+    setLoading(true);
+    try {
+      const data = await fetchLatestBTC();
+      setBtc(data);
+    } catch (err) {
+      console.error("❌ Fout bij ophalen BTC:", err);
+      setError('Fout bij ophalen BTC');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (error) return <CardWrapper><div className="p-4 text-red-600">❌ Fout: {error}</div></CardWrapper>;
-
-  // Alleen BTC tonen (of fallback)
-  const btc = marketData.find(a => a.symbol === 'BTC') || marketData[0];
-
-  if (!btc) {
-    return <CardWrapper><div className="p-4">⚠️ Geen BTC-data beschikbaar</div></CardWrapper>;
-  }
+  if (loading) return <CardWrapper><div className="p-4">📡 Laden...</div></CardWrapper>;
+  if (error || !btc) return <CardWrapper><div className="p-4 text-red-600">❌ {error || 'Geen BTC data'}</div></CardWrapper>;
 
   return (
     <CardWrapper>

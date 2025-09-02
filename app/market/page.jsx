@@ -5,7 +5,7 @@ import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
-// 🔁 Dummy forward return data
+// 🔁 Dummy forward return data (fallback)
 const dummyForwardReturnData = {
   maand: [
     {
@@ -24,14 +24,13 @@ const dummyForwardReturnData = {
 
 export default function MarketPage() {
   const {
-    marketData,
     loading,
     error,
     avgScore,
     advies,
     sevenDayData,
-    liveBTC,
-    forwardReturns, // ✅ nieuw
+    btcLive, // ✅ renamed
+    forwardReturns,
   } = useMarketData();
 
   const forwardData =
@@ -46,11 +45,10 @@ export default function MarketPage() {
   console.group('📊 [MarketPage] Render gestart');
   console.log('🔁 loading:', loading);
   console.log('❌ error:', error);
-  console.log('📊 marketData:', marketData);
   console.log('📅 sevenDayData:', sevenDayData);
   console.log('📈 avgScore:', avgScore);
   console.log('🧠 advies:', advies);
-  console.log('💰 liveBTC:', liveBTC);
+  console.log('💰 btcLive:', btcLive);
   console.log('🔮 forwardReturns:', forwardReturns);
   console.groupEnd();
 
@@ -75,10 +73,10 @@ export default function MarketPage() {
 
         {/* 💰 Live BTC Prijs via API */}
         <MarketLiveCard
-          price={liveBTC?.price}
-          change24h={liveBTC?.change_24h}
-          volume={liveBTC?.volume}
-          timestamp={liveBTC?.timestamp}
+          price={btcLive?.price}
+          change24h={btcLive?.change_24h}
+          volume={btcLive?.volume}
+          timestamp={btcLive?.timestamp}
         />
 
         {/* 📅 Laatste 7 dagen prijs en volume */}

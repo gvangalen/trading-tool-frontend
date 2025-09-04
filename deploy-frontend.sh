@@ -46,10 +46,18 @@ echo "🚀 Start of herstart frontend via PM2..."
 pm2 describe frontend > /dev/null
 if [ $? -ne 0 ]; then
   echo "🔁 Start frontend (eerste keer)"
-  pm2 start npm --name frontend -- start
+  pm2 start "npm run start" \
+    --name frontend \
+    --cwd "$HOME/trading-tool-frontend" \
+    --interpreter bash \
+    --output "/var/log/pm2/frontend.log" \
+    --error "/var/log/pm2/frontend.err.log"
 else
   echo "🔁 Restart frontend"
   pm2 restart frontend
 fi
+
+# ✅ 9. PM2 configuratie opslaan
+pm2 save
 
 echo "✅ Frontend deployment succesvol afgerond op $(date)"

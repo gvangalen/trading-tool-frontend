@@ -15,8 +15,6 @@ export default function MacroTabs() {
 
   const {
     macroData,
-    avgScore,
-    advies,
     handleEdit,
     handleRemove,
     calculateMacroScore,
@@ -25,7 +23,6 @@ export default function MacroTabs() {
     error,
   } = useMacroData();
 
-  // ⬇️ Kies de juiste component per tab
   const renderTableBody = () => {
     if (loading) {
       return (
@@ -84,9 +81,7 @@ export default function MacroTabs() {
   };
 
   return (
-    <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
-      <h1 className="text-2xl font-bold">🌍 Macro Indicatoren</h1>
-
+    <>
       {/* 🔹 Tabs */}
       <div className="flex space-x-4 mb-4">
         {TABS.map((tab) => (
@@ -125,16 +120,6 @@ export default function MacroTabs() {
           </table>
         </div>
       </CardWrapper>
-
-      {/* 🔹 Samenvatting */}
-      <CardWrapper>
-        <h3 className="text-lg font-semibold">
-          🌍 Macro Score: <span className="text-green-600">{avgScore}</span>
-        </h3>
-        <h3 className="text-lg font-semibold">
-          📈 Advies: <span className="text-blue-600">{advies}</span>
-        </h3>
-      </CardWrapper>
-    </div>
+    </>
   );
 }

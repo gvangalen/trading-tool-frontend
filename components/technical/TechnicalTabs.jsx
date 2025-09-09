@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import CardWrapper from '@/components/ui/CardWrapper';
 import TechnicalDayTable from './TechnicalDayTable';
@@ -29,6 +29,15 @@ export default function TechnicalTabs() {
     calculateTechnicalScore,
   } = useTechnicalData();
 
+  // ✅ Update timeframe bij wisselen van tab
+  useEffect(() => {
+    if (activeTab === 'Dag') setTimeframe('1D');
+    else if (activeTab === 'Week') setTimeframe('1W');
+    else if (activeTab === 'Maand') setTimeframe('1M');
+    else if (activeTab === 'Kwartaal') setTimeframe('3M');
+  }, [activeTab, setTimeframe]);
+
+  // ✅ Render juiste tabel
   const renderTableBody = () => {
     if (loading) {
       return (
@@ -114,10 +123,10 @@ export default function TechnicalTabs() {
           <table className="w-full table-auto text-sm">
             <thead className="bg-gray-100 dark:bg-gray-800 text-left">
               <tr>
-                  <th className="p-2">Indicator</th>
-                  <th className="p-2">Waarde</th>
-                  <th className="p-2">Score</th>
-                  <th className="p-2">Uitleg</th>
+                <th className="p-2">Indicator</th>
+                <th className="p-2">Waarde</th>
+                <th className="p-2">Score</th>
+                <th className="p-2">Uitleg</th>
               </tr>
             </thead>
             <tbody>{renderTableBody()}</tbody>

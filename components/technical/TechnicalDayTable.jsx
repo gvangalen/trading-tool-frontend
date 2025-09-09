@@ -4,7 +4,7 @@ export default function TechnicalDayTable({ data, getExplanation, calculateScore
   return (
     <>
       {data.map((indicator) => {
-        const explanation = getExplanation(indicator);
+        const explanation = getExplanation(indicator.name);
         const score = calculateScore(indicator);
 
         return (
@@ -16,10 +16,7 @@ export default function TechnicalDayTable({ data, getExplanation, calculateScore
               {score < 0 && <span className="text-red-600">{score}</span>}
               {score === 0 && <span className="text-gray-600">0</span>}
             </td>
-            <td className="p-2 flex items-center gap-2">
-              <span>{explanation.icon}</span>
-              <span>{explanation.text}</span>
-            </td>
+            <td className="p-2">{explanation}</td>
           </tr>
         );
       })}

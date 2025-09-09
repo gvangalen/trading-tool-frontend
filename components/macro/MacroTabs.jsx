@@ -13,6 +13,7 @@ const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 export default function MacroTabs() {
   const [activeTab, setActiveTab] = useState('Dag');
 
+  // 🧠 Injecteer de actieve tab in de hook
   const {
     macroData,
     handleEdit,
@@ -21,7 +22,7 @@ export default function MacroTabs() {
     getExplanation,
     loading,
     error,
-  } = useMacroData();
+  } = useMacroData(activeTab); // <--- 🔁 aangepaste hook!
 
   const renderTableBody = () => {
     if (loading) {

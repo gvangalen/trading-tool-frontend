@@ -1,102 +1,45 @@
 'use client';
-import { useTechnicalData } from '@/hooks/useTechnicalData';
+
 import { useState } from 'react';
+import { useTechnicalData } from '@/hooks/useTechnicalData';
+import CardWrapper from '@/components/ui/CardWrapper';
+import SkeletonTable from '@/components/ui/SkeletonTable';
 
 export default function TechnicalPage() {
+  const [activeTimeframe, setActiveTimeframe] = useState('1d'); // Dag = 1d
   const {
     technicalData,
     avgScore,
     advies,
-    deleteAsset,
     loading,
     error,
-    calculateTechnicalScore,
+    deleteAsset,
   } = useTechnicalData();
 
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredData = technicalData.filter(item =>
-    item.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = technicalData.filter(
+    (item) => item.symbol === 'BTC' && item.timeframe === activeTimeframe
   );
 
-  function scoreColor(score) {
-    if (score >= 2) return 'text-green-600 font-bold';
-    if (score >= 1) return 'text-yellow-500 font-semibold';
-    if (score >= 0) return 'text-orange-500';
-    return 'text-red-500';
-  }
+  const TABS = [
+    { label: 'Dag', value: '1d' },
+    { label: 'Week', value: '1w' },
+    { label: 'Maand', value: '1mo' },
+    { label: 'Kwartaal', value: '3mo' },
+  ];
 
-  function trendEmoji(score) {
-    if (score >= 1.5) return '📈';
-    if (score <= -1.5) return '📉';
-    return '⚖️';
-  }
+  const scoreColor = (score) => {
+    if (score >= 1.5) return 'text-green-600';
+    if (score <= -1.5) return 'text-red-600';
+    return 'text-gray-600';
+  };
 
   return (
-    <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-bold">📉 Technische Analyse</h2>
-
-      {/* 🔍 Zoekveld */}
-      <input
-        type="text"
-        placeholder="🔍 Zoek asset"
-        className="border p-2 rounded w-full sm:w-64"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
-      {/* 🔄 Status */}
-      {loading && <p className="text-gray-600">⏳ Laden...</p>}
-      {error && <p className="text-red-500">❌ {error}</p>}
-      {!loading && filteredData.length === 0 && <p className="text-gray-500">Geen resultaten</p>}
-
-      {/* 📊 Tabel */}
-      {filteredData.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm table-auto border-collapse">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 text-left">Asset</th>
-                <th className="p-2 text-right">RSI</th>
-                <th className="p-2 text-right">Volume</th>
-                <th className="p-2 text-right">200MA</th>
-                <th className="p-2 text-right">Score</th>
-                <th className="p-2 text-center">Trend</th>
-                <th className="p-2 text-center">Actie</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((item) => {
-                const score = calculateTechnicalScore(item);
-                return (
-                  <tr key={item.id} className="border-t">
-                    <td className="p-2">{item.symbol}</td>
-                    <td className="p-2 text-right">{item.rsi ?? '–'}</td>
-                    <td className="p-2 text-right">
-                      {item.volume ? Number(item.volume).toLocaleString() : '–'}
-                    </td>
-                    <td className="p-2 text-right">{item.ma_200 ?? '–'}</td>
-                    <td className={`p-2 text-right ${scoreColor(score)}`}>{score}</td>
-                    <td className="p-2 text-center">{trendEmoji(score)}</td>
-                    <td className="p-2 text-center">
-                      <button
-                        onClick={() => deleteAsset(item.id)}
-                        className="text-red-600 hover:underline"
-                      >
-                        ❌
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <div className="max-w-screen-md mx-auto py-8 px-4 space-y-6">
+      <h1 className="text-2xl font-bold">📊 Technische Indicatoren – BTC</h1>
 
       {/* 📈 Samenvatting */}
       {!loading && (
-        <div className="pt-4 text-sm sm:text-base space-y-2">
+        <div className="pt-2 text-sm sm:text-base space-y-2">
           <p>
             <strong>📊 Gemiddelde Score:</strong>{' '}
             <span className={scoreColor(avgScore)}>{avgScore}</span>
@@ -107,6 +50,78 @@ export default function TechnicalPage() {
           </p>
         </div>
       )}
+
+      {/* 🔁 Tabs */}
+      <div className="flex gap-3 text-sm">
+        {TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTimeframe(tab.value)}
+            className={`px-4 py-2 rounded border font-medium ${
+              activeTimeframe === tab.value
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 📋 Tabel */}
+      <CardWrapper>
+        {loading ? (
+          <SkeletonTable rows={4} columns={4} />
+        ) : error ? (
+          <div className="text-red-500 text-sm">{error}</div>
+        ) : (
+          <table className="w-full text-sm border text-left">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2">Indicator</th>
+                <th className="p-2">Waarde</th>
+                <th className="p-2">Score</th>
+                <th className="p-2">Trend</th>
+                <th className="p-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((item) => {
+                const trend =
+                  item._score >= 1.5
+                    ? '🟢 Bullish'
+                    : item._score <= -1.5
+                    ? '🔴 Bearish'
+                    : '⚖️ Neutraal';
+
+                const color =
+                  item._score >= 1.5
+                    ? 'text-green-600'
+                    : item._score <= -1.5
+                    ? 'text-red-600'
+                    : 'text-gray-600';
+
+                return (
+                  <tr key={item.id} className="border-t">
+                    <td className="p-2 font-medium">{item.name}</td>
+                    <td className="p-2">{item.value}</td>
+                    <td className={`p-2 font-semibold ${color}`}>{item._score}</td>
+                    <td className="p-2">{trend}</td>
+                    <td className="p-2">
+                      <button
+                        className="text-red-500 text-xs hover:underline"
+                        onClick={() => deleteAsset(item.id)}
+                      >
+                        ❌
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </CardWrapper>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import CardWrapper from '@/components/ui/CardWrapper';
-import SkeletonTable from '@/components/ui/SkeletonTable';
 import TechnicalDayTable from './TechnicalDayTable';
 import TechnicalWeekTable from './TechnicalWeekTable';
 import TechnicalMonthTable from './TechnicalMonthTable';
@@ -16,8 +15,6 @@ export default function TechnicalTabs() {
 
   const {
     technicalData,
-    avgScore,
-    advies,
     loading,
     error,
     query,
@@ -27,47 +24,80 @@ export default function TechnicalTabs() {
     setSortField,
     setSortOrder,
     deleteAsset,
-    setTimeframe
+    setTimeframe,
+    getExplanation,
+    calculateTechnicalScore,
   } = useTechnicalData();
 
   const renderTableBody = () => {
-    if (loading) return <SkeletonTable rows={5} columns={7} />;
-    if (error) return <div className="text-sm text-red-500">{error}</div>;
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan={7} className="p-4 text-center text-gray-500">
+            ⏳ Laden...
+          </td>
+        </tr>
+      );
+    }
+
+    if (error) {
+      return (
+        <tr>
+          <td colSpan={7} className="p-4 text-center text-red-500">
+            ❌ {error}
+          </td>
+        </tr>
+      );
+    }
 
     switch (activeTab) {
       case 'Dag':
         return (
           <TechnicalDayTable
             data={technicalData}
-            query={query}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            setQuery={setQuery}
-            setSortField={setSortField}
-            setSortOrder={setSortOrder}
-            deleteAsset={deleteAsset}
+            onRemove={deleteAsset}
+            getExplanation={getExplanation}
+            calculateScore={calculateTechnicalScore}
           />
         );
       case 'Week':
-        return <TechnicalWeekTable data={technicalData} />;
+        return (
+          <TechnicalWeekTable
+            data={technicalData}
+            getExplanation={getExplanation}
+            calculateScore={calculateTechnicalScore}
+          />
+        );
       case 'Maand':
-        return <TechnicalMonthTable data={technicalData} />;
+        return (
+          <TechnicalMonthTable
+            data={technicalData}
+            getExplanation={getExplanation}
+            calculateScore={calculateTechnicalScore}
+          />
+        );
       case 'Kwartaal':
-        return <TechnicalQuarterTable data={technicalData} />;
+        return (
+          <TechnicalQuarterTable
+            data={technicalData}
+            getExplanation={getExplanation}
+            calculateScore={calculateTechnicalScore}
+          />
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="space-y-4">
+    <>
       {/* 🔹 Tabs */}
-      <div className="flex space-x-4 mb-2">
+      <div className="flex space-x-4 mb-4">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-semibold border text-sm ${
+            className={`px-4 py-2 rounded font-semibold border ${
               activeTab === tab
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
@@ -78,10 +108,22 @@ export default function TechnicalTabs() {
         ))}
       </div>
 
-      {/* 🔹 Tabel */}
+      {/* 🔹 Technical Tabel */}
       <CardWrapper>
-        <div className="overflow-x-auto">{renderTableBody()}</div>
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto text-sm">
+            <thead className="bg-gray-100 dark:bg-gray-800 text-left">
+              <tr>
+                  <th className="p-2">Indicator</th>
+                  <th className="p-2">Waarde</th>
+                  <th className="p-2">Score</th>
+                  <th className="p-2">Uitleg</th>
+              </tr>
+            </thead>
+            <tbody>{renderTableBody()}</tbody>
+          </table>
+        </div>
       </CardWrapper>
-    </div>
+    </>
   );
 }

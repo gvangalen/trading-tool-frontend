@@ -1,3 +1,5 @@
+'use client';
+
 import { useMacroData } from '@/hooks/useMacroData';
 
 export default function MacroDayTable() {

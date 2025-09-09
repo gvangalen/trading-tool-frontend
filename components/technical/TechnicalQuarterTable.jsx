@@ -25,7 +25,6 @@ export default function TechnicalQuarterTable({
         <tbody>
           {data.map((asset) => {
             const score = calculateScore(asset);
-            const explanation = getExplanation(asset);
             const scoreColor =
               score >= 2
                 ? 'text-green-600'
@@ -40,7 +39,13 @@ export default function TechnicalQuarterTable({
                 <td>{(asset.volume / 1e6).toFixed(1)}M</td>
                 <td>{asset.ma_200}</td>
                 <td className={`font-bold ${scoreColor}`}>{score}</td>
-                <td>{explanation}</td>
+                <td>
+                  <ul className="list-disc list-inside">
+                    <li>{getExplanation('rsi')}</li>
+                    <li>{getExplanation('volume')}</li>
+                    <li>{getExplanation('ma_200')}</li>
+                  </ul>
+                </td>
                 <td>
                   <button
                     className="text-red-600 hover:underline"

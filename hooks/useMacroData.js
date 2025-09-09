@@ -2,47 +2,46 @@
 
 import { useEffect, useState } from 'react';
 import {
-  fetchMacroData,
-  fetchMacroDataByDay,
-  fetchMacroDataByWeek,
-  fetchMacroDataByMonth,
-  fetchMacroDataByQuarter,
+  fetchMacroDataDay,
+  fetchMacroDataWeek,
+  fetchMacroDataMonth,
+  fetchMacroDataQuarter,
 } from '@/lib/api/macro';
 
-export function useMacroData(selectedTimeframe = 'default') {
+export function useMacroData(activeTab = 'Dag') {
   const [macroData, setMacroData] = useState([]);
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
-  }, [selectedTimeframe]); // 🔁 opnieuw laden bij verandering van timeframe
+  }, [activeTab]);
 
   async function loadData() {
+    setLoading(true);
+    setError('');
     try {
       let data;
-
-      switch (selectedTimeframe) {
-        case 'day':
-          data = await fetchMacroDataByDay();
+      switch (activeTab) {
+        case 'Dag':
+          data = await fetchMacroDataDay();
           break;
-        case 'week':
-          data = await fetchMacroDataByWeek();
+        case 'Week':
+          data = await fetchMacroDataWeek();
           break;
-        case 'month':
-          data = await fetchMacroDataByMonth();
+        case 'Maand':
+          data = await fetchMacroDataMonth();
           break;
-        case 'quarter':
-          data = await fetchMacroDataByQuarter();
+        case 'Kwartaal':
+          data = await fetchMacroDataQuarter();
           break;
         default:
-          data = await fetchMacroData();
-          break;
+          data = await fetchMacroDataDay();
       }
-
-      console.log(`📦 Binnengekomen macro (${selectedTimeframe}) response:`, data);
 
       const macro = data?.macro_data || data || [];
       if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
@@ -50,29 +49,31 @@ export function useMacroData(selectedTimeframe = 'default') {
       setMacroData(macro);
       updateScore(macro);
       markStepDone(3);
-    } catch (error) {
-      console.warn('⚠️ Macrodata kon niet worden geladen. Gebruik lege lijst.');
-      console.error(error);
+    } catch (err) {
+      console.warn('⚠️ Macrodata kon niet worden geladen:', err);
       setMacroData([]);
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
+      setError('Fout bij laden van macrodata');
+    } finally {
+      setLoading(false);
     }
   }
 
   function calculateMacroScore(name, value) {
-    if (name === 'fear_greed_index') return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;
-    if (name === 'btc_dominance') return value > 55 ? 2 : value > 50 ? 1 : value < 45 ? -2 : value < 48 ? -1 : 0;
-    if (name === 'dxy') return value < 100 ? 2 : value < 103 ? 1 : value > 107 ? -2 : value > 104 ? -1 : 0;
+    if (name === "fear_greed_index") return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;
+    if (name === "btc_dominance") return value > 55 ? 2 : value > 50 ? 1 : value < 45 ? -2 : value < 48 ? -1 : 0;
+    if (name === "dxy") return value < 100 ? 2 : value < 103 ? 1 : value > 107 ? -2 : value > 104 ? -1 : 0;
     return 0;
   }
 
   function getExplanation(name) {
     const uitleg = {
-      fear_greed_index: 'Lage waarde = angst, hoge waarde = hebzucht.',
-      btc_dominance: 'Hoge dominantie = minder altcoin-risico.',
-      dxy: 'Lage DXY = gunstig voor crypto.',
+      fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
+      btc_dominance: "Hoge dominantie = minder altcoin-risico.",
+      dxy: "Lage DXY = gunstig voor crypto."
     };
-    return uitleg[name] || 'Geen uitleg beschikbaar';
+    return uitleg[name] || "Geen uitleg beschikbaar";
   }
 
   function updateScore(data) {
@@ -124,5 +125,7 @@ export function useMacroData(selectedTimeframe = 'default') {
     handleRemove,
     calculateMacroScore,
     getExplanation,
+    loading,
+    error,
   };
 }

@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useMacroData } from '@/hooks/useMacroData';
 import CardWrapper from '@/components/ui/CardWrapper';
+import MacroDayTable from './MacroDayTable';
+import MacroWeekTable from './MacroWeekTable';
+import MacroMonthTable from './MacroMonthTable';
+import MacroQuarterTable from './MacroQuarterTable';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 
@@ -21,44 +25,62 @@ export default function MacroTabs() {
     error,
   } = useMacroData();
 
-  const renderTableRows = () => {
-    return macroData.map((item) => {
-      const score = calculateMacroScore(item.name, parseFloat(item.value));
-      const scoreColor =
-        score >= 2 ? 'text-green-600' :
-        score <= -2 ? 'text-red-600' :
-        'text-gray-600';
-
+  // ⬇️ Kies de juiste component per tab
+  const renderTableBody = () => {
+    if (loading) {
       return (
-        <tr key={item.name} className="border-t dark:border-gray-700">
-          <td className="p-2 font-medium" title={getExplanation(item.name)}>{item.name}</td>
-          <td className="p-2">
-            {activeTab === 'Dag' ? (
-              <input
-                type="number"
-                className="w-20 border px-1 py-0.5 rounded"
-                value={item.value}
-                onChange={(e) => handleEdit(item.name, e.target.value)}
-              />
-            ) : (
-              item.value ?? '–'
-            )}
-          </td>
-          <td className="p-2 italic text-gray-500">{item.trend ?? '–'}</td>
-          <td className="p-2 italic text-gray-500">{item.interpretation ?? '–'}</td>
-          <td className="p-2 italic text-gray-500">{item.action ?? '–'}</td>
-          <td className={`p-2 font-bold ${scoreColor}`}>{score}</td>
-          <td className="p-2">
-            <button
-              onClick={() => handleRemove(item.name)}
-              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              ❌
-            </button>
-          </td>
+        <tr>
+          <td colSpan={7} className="p-4 text-center text-gray-500">⏳ Laden...</td>
         </tr>
       );
-    });
+    }
+
+    if (error) {
+      return (
+        <tr>
+          <td colSpan={7} className="p-4 text-center text-red-500">❌ {error}</td>
+        </tr>
+      );
+    }
+
+    switch (activeTab) {
+      case 'Dag':
+        return (
+          <MacroDayTable
+            data={macroData}
+            onEdit={handleEdit}
+            onRemove={handleRemove}
+            getExplanation={getExplanation}
+            calculateScore={calculateMacroScore}
+          />
+        );
+      case 'Week':
+        return (
+          <MacroWeekTable
+            data={macroData}
+            calculateScore={calculateMacroScore}
+            getExplanation={getExplanation}
+          />
+        );
+      case 'Maand':
+        return (
+          <MacroMonthTable
+            data={macroData}
+            calculateScore={calculateMacroScore}
+            getExplanation={getExplanation}
+          />
+        );
+      case 'Kwartaal':
+        return (
+          <MacroQuarterTable
+            data={macroData}
+            calculateScore={calculateMacroScore}
+            getExplanation={getExplanation}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -98,17 +120,7 @@ export default function MacroTabs() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="p-4 text-center text-gray-500">⏳ Laden...</td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={7} className="p-4 text-center text-red-500">❌ {error}</td>
-                </tr>
-              ) : (
-                renderTableRows()
-              )}
+              {renderTableBody()}
             </tbody>
           </table>
         </div>

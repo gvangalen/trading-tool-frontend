@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchTechnicalData, deleteTechnicalIndicator } from '@/lib/api/technical';
+import {
+  fetchTechnicalData,
+  fetchTechnicalDayData,
+  fetchTechnicalWeekData,
+  fetchTechnicalMonthData,
+  fetchTechnicalQuarterData,
+  deleteTechnicalIndicator,
+} from '@/lib/api/technical';
 
 export function useTechnicalData() {
   const [technicalData, setTechnicalData] = useState([]);
@@ -13,20 +20,34 @@ export function useTechnicalData() {
   const [query, setQuery] = useState('');
   const [sortField, setSortField] = useState('score');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [timeframe, setTimeframe] = useState('1d');
+  const [timeframe, setTimeframe] = useState('1d'); // ⏱️ standaard '1d'
 
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 60000); // 🔁 elke 60 sec
     return () => clearInterval(interval);
-  }, []);
+  }, [timeframe]); // 🔁 opnieuw laden bij wijziging timeframe
 
   async function loadData() {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchTechnicalData();
-      const valid = Array.isArray(data) ? data : [];
+      let data = [];
+
+      // 🔁 Dynamisch ophalen o.b.v. timeframe
+      if (timeframe === '1d') {
+        data = await fetchTechnicalDayData();
+      } else if (timeframe === '1w') {
+        data = await fetchTechnicalWeekData();
+      } else if (timeframe === '1m') {
+        data = await fetchTechnicalMonthData();
+      } else if (timeframe === '1q') {
+        data = await fetchTechnicalQuarterData();
+      } else {
+        data = await fetchTechnicalData(); // fallback: alle data
+      }
+
+      const valid = Array.isArray(data?.indicators) ? data.indicators : [];
       setTechnicalData(valid);
       updateScore(valid);
     } catch (err) {

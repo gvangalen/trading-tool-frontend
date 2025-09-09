@@ -32,9 +32,9 @@ export default function MacroPage() {
                 <tr key={item.name} className="border-t dark:border-gray-700">
                   <td className="p-2 font-medium">{item.name}</td>
                   <td className="p-2">{item.value ?? 'N/A'}</td>
-                  <td className="p-2 italic text-gray-500">Coming soon</td>
-                  <td className="p-2 italic text-gray-500">Coming soon</td>
-                  <td className="p-2 italic text-gray-500">Coming soon</td>
+                  <td className="p-2 italic text-gray-500">{item.trend ?? 'Coming soon'}</td>
+                  <td className="p-2 italic text-gray-500">{item.interpretation ?? 'Coming soon'}</td>
+                  <td className="p-2 italic text-gray-500">{item.action ?? 'Coming soon'}</td>
                   <td className="p-2 font-bold">{item.score ?? '-'}</td>
                   <td className="p-2">
                     <button

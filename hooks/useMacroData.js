@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import {
-  fetchMacroDataDay,
-  fetchMacroDataWeek,
-  fetchMacroDataMonth,
-  fetchMacroDataQuarter,
+  fetchMacroDataByDay,
+  fetchMacroDataByWeek,
+  fetchMacroDataByMonth,
+  fetchMacroDataByQuarter,
 } from '@/lib/api/macro';
 
 export function useMacroData(activeTab = 'Dag') {

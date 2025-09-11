@@ -28,19 +28,19 @@ export function useMacroData(activeTab = 'Dag') {
       let data;
       switch (activeTab) {
         case 'Dag':
-          data = await fetchMacroDataDay();
+          data = await fetchMacroDataByDay();
           break;
         case 'Week':
-          data = await fetchMacroDataWeek();
+          data = await fetchMacroDataByWeek();
           break;
         case 'Maand':
-          data = await fetchMacroDataMonth();
+          data = await fetchMacroDataByMonth();
           break;
         case 'Kwartaal':
-          data = await fetchMacroDataQuarter();
+          data = await fetchMacroDataByQuarter();
           break;
         default:
-          data = await fetchMacroDataDay();
+          data = await fetchMacroDataByDay();
       }
 
       const macro = data?.macro_data || data || [];

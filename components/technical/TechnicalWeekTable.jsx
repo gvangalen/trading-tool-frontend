@@ -4,7 +4,7 @@ export default function TechnicalWeekTable({
   data,
   getExplanation,
   calculateScore,
-  onRemove,
+  onRemove = () => {}, // ✅ veilige fallback
 }) {
   return (
     <div className="space-y-2 text-sm text-gray-600">

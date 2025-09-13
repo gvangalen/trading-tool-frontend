@@ -4,7 +4,7 @@ export default function TechnicalMonthTable({
   data,
   getExplanation,
   calculateScore,
-  onRemove,
+  onRemove = () => {}, // ⛑️ fallback als niet meegegeven
 }) {
   return (
     <div className="space-y-2 text-sm text-gray-600">

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import {
-  fetchTechnicalData,
-  fetchTechnicalDataDay,
-  fetchTechnicalDataWeek,
-  fetchTechnicalDataMonth,
-  fetchTechnicalDataQuarter,
-  deleteTechnicalIndicator,
+  technicalDataAll,
+  technicalDataDay,
+  technicalDataWeek,
+  technicalDataMonth,
+  technicalDataQuarter,
+  technicalDataDelete,
 } from '@/lib/api/technical';
 
 export function useTechnicalData() {
@@ -37,15 +37,15 @@ export function useTechnicalData() {
 
       // 🔁 Ophalen o.b.v. juiste timeframe
       if (timeframe === 'day') {
-        data = await fetchTechnicalDataDay();
+        data = await technicalDataDay();
       } else if (timeframe === 'week') {
-        data = await fetchTechnicalDataWeek();
+        data = await technicalDataWeek();
       } else if (timeframe === 'month') {
-        data = await fetchTechnicalDataMonth();
+        data = await technicalDataMonth();
       } else if (timeframe === 'quarter') {
-        data = await fetchTechnicalDataQuarter();
+        data = await technicalDataQuarter();
       } else {
-        data = await fetchTechnicalData(); // fallback
+        data = await technicalDataAll(); // fallback
       }
 
       const valid = Array.isArray(data?.indicators) ? data.indicators : [];
@@ -97,7 +97,7 @@ export function useTechnicalData() {
 
   async function deleteAsset(id) {
     try {
-      await deleteTechnicalIndicator(id);
+      await technicalDataDelete(id);
       const updated = technicalData.filter((item) => item.id !== id);
       setTechnicalData(updated);
       updateScore(updated);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-import TechnicalTable from '@/components/technical/TechnicalTable';
+import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import MacroTable from '@/components/macro/MacroTable';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';

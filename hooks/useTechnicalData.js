@@ -20,13 +20,14 @@ export function useTechnicalData() {
   const [query, setQuery] = useState('');
   const [sortField, setSortField] = useState('score');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [timeframe, setTimeframe] = useState('1d'); // ⏱️ standaard '1d'
+  const [timeframe, setTimeframe] = useState('day'); // ✅ Gebruik 'day', 'week', etc.
 
   useEffect(() => {
+    console.log('⏱️ Timeframe gewijzigd:', timeframe);
     loadData();
     const interval = setInterval(loadData, 60000); // 🔁 elke 60 sec
     return () => clearInterval(interval);
-  }, [timeframe]); // 🔁 opnieuw laden bij wijziging timeframe
+  }, [timeframe]);
 
   async function loadData() {
     setLoading(true);
@@ -34,17 +35,17 @@ export function useTechnicalData() {
     try {
       let data = [];
 
-      // 🔁 Dynamisch ophalen o.b.v. timeframe
-      if (timeframe === '1d') {
+      // 🔁 Ophalen o.b.v. juiste timeframe
+      if (timeframe === 'day') {
         data = await fetchTechnicalDayData();
-      } else if (timeframe === '1w') {
+      } else if (timeframe === 'week') {
         data = await fetchTechnicalWeekData();
-      } else if (timeframe === '1m') {
+      } else if (timeframe === 'month') {
         data = await fetchTechnicalMonthData();
-      } else if (timeframe === '1q') {
+      } else if (timeframe === 'quarter') {
         data = await fetchTechnicalQuarterData();
       } else {
-        data = await fetchTechnicalData(); // fallback: alle data
+        data = await fetchTechnicalData(); // fallback
       }
 
       const valid = Array.isArray(data?.indicators) ? data.indicators : [];

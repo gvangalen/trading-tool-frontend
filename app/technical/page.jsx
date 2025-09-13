@@ -15,19 +15,24 @@ export default function TechnicalPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
+      {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">🧪 Technische Analyse</h1>
 
-      {/* ✅ Samenvatting in CardWrapper */}
+      {/* 🔹 Samenvatting */}
       <CardWrapper>
-        <h3 className="text-lg font-semibold">
-          📊 Technische Score: <span className={scoreColor(avgScore)}>{avgScore}</span>
-        </h3>
-        <h3 className="text-lg font-semibold">
-          🧠 Advies: <span className="text-blue-600">{advies}</span>
-        </h3>
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">
+            📊 Technische Score:{' '}
+            <span className={scoreColor(avgScore)}>{avgScore}</span>
+          </h3>
+          <h3 className="text-lg font-semibold">
+            🧠 Advies:{' '}
+            <span className="text-blue-600">{advies}</span>
+          </h3>
+        </div>
       </CardWrapper>
 
-      {/* 🔁 Tabs */}
+      {/* 🔹 Tabs met datatabellen */}
       <TechnicalTabs />
     </div>
   );

@@ -29,15 +29,14 @@ export default function TechnicalTabs() {
     calculateTechnicalScore,
   } = useTechnicalData();
 
-  // ✅ Update timeframe bij wisselen van tab
+  // ✅ Timeframe correct instellen op basis van actieve tab
   useEffect(() => {
-    if (activeTab === 'Dag') setTimeframe('1D');
-    else if (activeTab === 'Week') setTimeframe('1W');
-    else if (activeTab === 'Maand') setTimeframe('1M');
-    else if (activeTab === 'Kwartaal') setTimeframe('3M');
+    if (activeTab === 'Dag') setTimeframe('day');
+    else if (activeTab === 'Week') setTimeframe('week');
+    else if (activeTab === 'Maand') setTimeframe('month');
+    else if (activeTab === 'Kwartaal') setTimeframe('quarter');
   }, [activeTab, setTimeframe]);
 
-  // ✅ Render juiste tabel
   const renderTableBody = () => {
     if (loading) {
       return (
@@ -117,7 +116,7 @@ export default function TechnicalTabs() {
         ))}
       </div>
 
-      {/* 🔹 Technical Tabel */}
+      {/* 🔹 Tabel */}
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">

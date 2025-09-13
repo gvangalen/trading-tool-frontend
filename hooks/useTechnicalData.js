@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import {
   fetchTechnicalData,
-  fetchTechnicalDayData,
-  fetchTechnicalWeekData,
-  fetchTechnicalMonthData,
-  fetchTechnicalQuarterData,
+  fetchTechnicalDataDay,
+  fetchTechnicalDataWeek,
+  fetchTechnicalDataMonth,
+  fetchTechnicalDataQuarter,
   deleteTechnicalIndicator,
 } from '@/lib/api/technical';
 
@@ -37,13 +37,13 @@ export function useTechnicalData() {
 
       // 🔁 Ophalen o.b.v. juiste timeframe
       if (timeframe === 'day') {
-        data = await fetchTechnicalDayData();
+        data = await fetchTechnicalDataDay();
       } else if (timeframe === 'week') {
-        data = await fetchTechnicalWeekData();
+        data = await fetchTechnicalDataWeek();
       } else if (timeframe === 'month') {
-        data = await fetchTechnicalMonthData();
+        data = await fetchTechnicalDataMonth();
       } else if (timeframe === 'quarter') {
-        data = await fetchTechnicalQuarterData();
+        data = await fetchTechnicalDataQuarter();
       } else {
         data = await fetchTechnicalData(); // fallback
       }

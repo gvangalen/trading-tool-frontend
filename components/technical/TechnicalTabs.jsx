@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import CardWrapper from '@/components/ui/CardWrapper';
 import TechnicalDayTable from './TechnicalDayTable';
@@ -9,6 +9,18 @@ import TechnicalMonthTable from './TechnicalMonthTable';
 import TechnicalQuarterTable from './TechnicalQuarterTable';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
+const TIMEFRAME_MAP = {
+  Dag: 'day',
+  Week: 'week',
+  Maand: 'month',
+  Kwartaal: 'quarter',
+};
+const TABLE_COMPONENTS = {
+  Dag: TechnicalDayTable,
+  Week: TechnicalWeekTable,
+  Maand: TechnicalMonthTable,
+  Kwartaal: TechnicalQuarterTable,
+};
 
 export default function TechnicalTabs() {
   const [activeTab, setActiveTab] = useState('Dag');
@@ -17,85 +29,17 @@ export default function TechnicalTabs() {
     technicalData,
     loading,
     error,
-    query,
-    sortField,
-    sortOrder,
-    setQuery,
-    setSortField,
-    setSortOrder,
-    deleteAsset,
     setTimeframe,
+    deleteAsset,
     getExplanation,
     calculateTechnicalScore,
   } = useTechnicalData();
 
-  // ✅ Timeframe correct instellen op basis van actieve tab
   useEffect(() => {
-    if (activeTab === 'Dag') setTimeframe('day');
-    else if (activeTab === 'Week') setTimeframe('week');
-    else if (activeTab === 'Maand') setTimeframe('month');
-    else if (activeTab === 'Kwartaal') setTimeframe('quarter');
+    setTimeframe(TIMEFRAME_MAP[activeTab]);
   }, [activeTab, setTimeframe]);
 
-  const renderTableBody = () => {
-    if (loading) {
-      return (
-        <tr>
-          <td colSpan={7} className="p-4 text-center text-gray-500">
-            ⏳ Laden...
-          </td>
-        </tr>
-      );
-    }
-
-    if (error) {
-      return (
-        <tr>
-          <td colSpan={7} className="p-4 text-center text-red-500">
-            ❌ {error}
-          </td>
-        </tr>
-      );
-    }
-
-    switch (activeTab) {
-      case 'Dag':
-        return (
-          <TechnicalDayTable
-            data={technicalData}
-            onRemove={deleteAsset}
-            getExplanation={getExplanation}
-            calculateScore={calculateTechnicalScore}
-          />
-        );
-      case 'Week':
-        return (
-          <TechnicalWeekTable
-            data={technicalData}
-            getExplanation={getExplanation}
-            calculateScore={calculateTechnicalScore}
-          />
-        );
-      case 'Maand':
-        return (
-          <TechnicalMonthTable
-            data={technicalData}
-            getExplanation={getExplanation}
-            calculateScore={calculateTechnicalScore}
-          />
-        );
-      case 'Kwartaal':
-        return (
-          <TechnicalQuarterTable
-            data={technicalData}
-            getExplanation={getExplanation}
-            calculateScore={calculateTechnicalScore}
-          />
-        );
-      default:
-        return null;
-    }
-  };
+  const ActiveTable = TABLE_COMPONENTS[activeTab];
 
   return (
     <>
@@ -128,7 +72,28 @@ export default function TechnicalTabs() {
                 <th className="p-2">Uitleg</th>
               </tr>
             </thead>
-            <tbody>{renderTableBody()}</tbody>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-4 text-center text-gray-500">
+                    ⏳ Laden...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="p-4 text-center text-red-500">
+                    ❌ {error}
+                  </td>
+                </tr>
+              ) : (
+                <ActiveTable
+                  data={technicalData}
+                  onRemove={deleteAsset}
+                  getExplanation={getExplanation}
+                  calculateScore={calculateTechnicalScore}
+                />
+              )}
+            </tbody>
           </table>
         </div>
       </CardWrapper>

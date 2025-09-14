@@ -1,65 +1,38 @@
 'use client';
 
-export default function TechnicalWeekTable({
-  data,
-  getExplanation,
-  calculateScore,
-  onRemove = () => {}, // ✅ veilige fallback
-}) {
+export default function TechnicalWeekTable({ data = [], calculateScore }) {
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <tr>
+        <td colSpan={6} className="p-4 text-center text-gray-500">
+          Geen technische data beschikbaar.
+        </td>
+      </tr>
+    );
+  }
+
   return (
-    <div className="space-y-2 text-sm text-gray-600">
-      <p className="text-gray-700">📈 Weekdata</p>
+    <>
+      {data.map((item) => {
+        const score = calculateScore?.(item) ?? 0;
 
-      <table className="w-full border text-left text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2">Asset</th>
-            <th>RSI</th>
-            <th>Volume</th>
-            <th>200MA</th>
-            <th>Score</th>
-            <th>Uitleg</th>
-            <th>🗑️</th>
+        return (
+          <tr key={item.id || item.symbol} className="border-b">
+            <td className="p-2 font-medium">{item.symbol}</td>
+            <td className="p-2 text-center">{item.rsi}</td>
+            <td className="p-2 text-center">
+              {(item.volume / 1e6).toFixed(1)}M
+            </td>
+            <td className="p-2 text-center">{item.price}</td>
+            <td className="p-2 text-center">{item.ma_200}</td>
+            <td className="p-2 text-center font-semibold">
+              {score > 0 && <span className="text-green-600">+{score}</span>}
+              {score < 0 && <span className="text-red-600">{score}</span>}
+              {score === 0 && <span className="text-gray-600">0</span>}
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {data.map((asset) => {
-            const score = calculateScore(asset);
-            const scoreColor =
-              score >= 2
-                ? 'text-green-600'
-                : score <= -2
-                ? 'text-red-600'
-                : 'text-gray-600';
-
-            return (
-              <tr key={asset.id} className="border-t">
-                <td className="p-2 font-medium">{asset.symbol}</td>
-                <td>{asset.rsi}</td>
-                <td>{(asset.volume / 1e6).toFixed(1)}M</td>
-                <td>{asset.ma_200}</td>
-                <td className={`font-bold ${scoreColor}`}>{score}</td>
-                <td>
-                  <ul className="list-disc list-inside">
-                    <li>{getExplanation('rsi')}</li>
-                    <li>{getExplanation('volume')}</li>
-                    <li>{getExplanation('ma_200')}</li>
-                  </ul>
-                </td>
-                <td>
-                  <button
-                    className="text-red-600 hover:underline"
-                    onClick={() => onRemove(asset.id)}
-                    title="Verwijderen"
-                  >
-                    ❌
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+        );
+      })}
+    </>
   );
 }

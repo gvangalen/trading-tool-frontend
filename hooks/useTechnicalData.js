@@ -96,18 +96,18 @@ export function useTechnicalData() {
     return uitleg[field] || 'Geen uitleg beschikbaar';
   }
 
-  async function deleteAsset(id) {
-    try {
-      await technicalDataDelete(id);
-      const updated = technicalData.filter((item) => item.id !== id);
-      setTechnicalData(updated);
-      updateScore(updated);
-    } catch (err) {
-      console.error('❌ Verwijderen mislukt:', err);
-      setError('❌ Verwijderen mislukt');
-    }
+ async function deleteAsset(symbol) {
+  try {
+    await technicalDataDelete(symbol); // Let op: backend moet symbol ondersteunen!
+    const updated = technicalData.filter((item) => item.symbol !== symbol);
+    setTechnicalData(updated);
+    updateScore(updated);
+  } catch (err) {
+    console.error('❌ Verwijderen mislukt:', err);
+    setError('❌ Verwijderen mislukt');
   }
-
+}
+  
   return {
   technicalData,
   avgScore,

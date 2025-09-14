@@ -48,7 +48,8 @@ export function useTechnicalData() {
         data = await technicalDataAll(); // fallback
       }
 
-      const valid = Array.isArray(data?.indicators) ? data.indicators : [];
+      // ✅ FIX: backend geeft direct array terug
+      const valid = Array.isArray(data) ? data : [];
       setTechnicalData(valid);
       updateScore(valid);
     } catch (err) {

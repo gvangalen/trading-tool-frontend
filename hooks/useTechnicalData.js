@@ -109,21 +109,13 @@ export function useTechnicalData() {
   }
 
   return {
-    technicalData,
-    avgScore,
-    advies,
-    loading,
-    error,
-    query,
-    sortField,
-    sortOrder,
-    timeframe,
-    setQuery,
-    setSortField,
-    setSortOrder,
-    setTimeframe,
-    deleteAsset,
-    calculateTechnicalScore,
-    getExplanation,
-  };
+  technicalData,
+  avgScore,
+  advies,
+  loading,
+  error,
+  timeframe,
+  setTimeframe,
+  deleteAsset,
+};
 }

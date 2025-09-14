@@ -59,7 +59,7 @@ export default function DashboardPage() {
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
-                <TechnicalTable />
+                <TechnicalTabs />
               </CardWrapper>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>

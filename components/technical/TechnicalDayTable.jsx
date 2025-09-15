@@ -2,22 +2,10 @@
 
 import { useEffect } from 'react';
 
-export default function TechnicalDayTable({ data = [], onRemove }) {
-  // ✅ Debug logging naar console
+export default function TechnicalDayTable({ data = [], onRemove, showDebug = true }) {
   useEffect(() => {
     console.log('📊 TechnicalDayTable received data:', data);
   }, [data]);
-
-  // ✅ Visuele JSON-dump onder de tabel (tijdelijk)
-  const debugDump = (
-    <tr>
-      <td colSpan={6}>
-        <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      </td>
-    </tr>
-  );
 
   if (!Array.isArray(data) || data.length === 0) {
     return (
@@ -29,7 +17,6 @@ export default function TechnicalDayTable({ data = [], onRemove }) {
     );
   }
 
-  // ✨ Helpers: zoek per indicator
   const getValue = (indicator) => {
     const item = data.find((d) => d.indicator === indicator);
     return {
@@ -37,11 +24,18 @@ export default function TechnicalDayTable({ data = [], onRemove }) {
       score: item?.score ?? '–',
       advies: item?.advies ?? '–',
       uitleg: item?.uitleg ?? '–',
-      symbol: item?.symbol ?? '',
+      symbol: item?.symbol ?? indicator,
     };
   };
 
-  // ✨ Hier definieer je welke indicators je in de tabel wilt
+  const getScoreColor = (score) => {
+    const s = typeof score === 'number' ? score : parseFloat(score);
+    if (isNaN(s)) return 'text-gray-600';
+    if (s >= 2) return 'text-green-600';
+    if (s <= -2) return 'text-red-600';
+    return 'text-gray-600';
+  };
+
   const rows = [
     { label: 'RSI', ...getValue('RSI') },
     { label: 'Volume', ...getValue('Volume') },
@@ -50,35 +44,35 @@ export default function TechnicalDayTable({ data = [], onRemove }) {
 
   return (
     <>
-      {rows.map(({ label, value, score, advies, uitleg, symbol }) => {
-        const scoreColor =
-          score >= 2 ? 'text-green-600'
-          : score <= -2 ? 'text-red-600'
-          : 'text-gray-600';
+      {rows.map(({ label, value, score, advies, uitleg, symbol }) => (
+        <tr key={label} className="border-t dark:border-gray-700">
+          <td className="p-2 font-medium">{label}</td>
+          <td className="p-2 text-center">{value}</td>
+          <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+            {score}
+          </td>
+          <td className="p-2 text-center">{advies}</td>
+          <td className="p-2">{uitleg}</td>
+          <td className="p-2 text-center">
+            <button
+              onClick={() => onRemove?.(symbol)}
+              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              ❌
+            </button>
+          </td>
+        </tr>
+      ))}
 
-        return (
-          <tr key={label} className="border-t dark:border-gray-700">
-            <td className="p-2 font-medium">{label}</td>
-            <td className="p-2 text-center">{value}</td>
-            <td className={`p-2 text-center font-bold ${scoreColor}`}>
-              {score}
-            </td>
-            <td className="p-2 text-center">{advies}</td>
-            <td className="p-2">{uitleg}</td>
-            <td className="p-2 text-center">
-              <button
-                onClick={() => onRemove?.(symbol)}
-                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                ❌
-              </button>
-            </td>
-          </tr>
-        );
-      })}
-
-      {/* ✅ Visuele debug info */}
-      {debugDump}
+      {showDebug && (
+        <tr>
+          <td colSpan={6}>
+            <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          </td>
+        </tr>
+      )}
     </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTechnicalData } from '@/hooks/useTechnicalData';
+import { useEffect } from 'react';
+import TechnicalDayTable from '@/components/technical/TechnicalDayTable';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
@@ -12,41 +12,21 @@ const TIMEFRAME_MAP = {
   Kwartaal: 'quarter',
 };
 
-const INDICATORS = ['RSI', 'Volume', '200MA'];
-
-export default function TechnicalTabs() {
-  const [activeTab, setActiveTab] = useState('Dag');
-
-  const {
-    technicalData,
-    loading,
-    error,
-    setTimeframe,
-  } = useTechnicalData();
-
+export default function TechnicalTabs({
+  data = [],
+  loading,
+  error,
+  timeframe,
+  setTimeframe,
+  onRemove,
+}) {
   useEffect(() => {
-    setTimeframe(TIMEFRAME_MAP[activeTab]);
-  }, [activeTab, setTimeframe]);
+    console.log('🧪 TechnicalTabs mounted, timeframe:', timeframe);
+  }, [timeframe]);
 
-  const getIndicatorData = (indicator) => {
-    const item = technicalData.find((d) => d.indicator === indicator);
-    if (!item) return null;
-
-    return {
-      value: item.waarde ?? '-',
-      score: item.score ?? '-',
-      advice: item.advies ?? '-',
-      explanation: item.uitleg ?? '-',
-    };
-  };
-
-  const getScoreColor = (score) => {
-    const s = typeof score === 'number' ? score : parseFloat(score);
-    if (isNaN(s)) return 'text-gray-600';
-    if (s >= 2) return 'text-green-600';
-    if (s <= -2) return 'text-red-600';
-    return 'text-gray-600';
-  };
+  const activeTab = Object.entries(TIMEFRAME_MAP).find(
+    ([label, tf]) => tf === timeframe
+  )?.[0] || 'Dag';
 
   return (
     <>
@@ -55,7 +35,7 @@ export default function TechnicalTabs() {
         {TABS.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => setTimeframe(TIMEFRAME_MAP[tab])}
             className={`px-4 py-2 rounded font-semibold border ${
               activeTab === tab
                 ? 'bg-blue-600 text-white border-blue-600'
@@ -78,42 +58,24 @@ export default function TechnicalTabs() {
                 <th className="p-2 text-center">Score</th>
                 <th className="p-2 text-center">Advies</th>
                 <th className="p-2">Uitleg</th>
+                <th className="p-2 text-center">Actie</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-4 text-center text-gray-500">
+                  <td colSpan={6} className="p-4 text-center text-gray-500">
                     ⏳ Laden...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={5} className="p-4 text-center text-red-500">
+                  <td colSpan={6} className="p-4 text-center text-red-500">
                     ❌ {error}
                   </td>
                 </tr>
-              ) : technicalData.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-4 text-center text-gray-500">
-                    Geen technische data beschikbaar.
-                  </td>
-                </tr>
               ) : (
-                INDICATORS.map((name) => {
-                  const item = getIndicatorData(name);
-                  return (
-                    <tr key={name} className="border-t dark:border-gray-700">
-                      <td className="p-2 font-medium">{name}</td>
-                      <td className="p-2 text-center">{item?.value ?? '–'}</td>
-                      <td className={`p-2 text-center font-bold ${getScoreColor(item?.score)}`}>
-                        {item?.score ?? '–'}
-                      </td>
-                      <td className="p-2 text-center">{item?.advice ?? '–'}</td>
-                      <td className="p-2">{item?.explanation ?? '–'}</td>
-                    </tr>
-                  );
-                })
+                <TechnicalDayTable data={data} onRemove={onRemove} showDebug={false} />
               )}
             </tbody>
           </table>

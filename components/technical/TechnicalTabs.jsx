@@ -37,7 +37,9 @@ export default function TechnicalTabs() {
           value: item.rsi,
           score: calculateTechnicalScore({ ...item, rsi: item.rsi }),
           advice:
-            item.rsi < 30 ? '🟢 Oversold' : item.rsi > 70 ? '🔴 Overbought' : '⚖️ Neutraal',
+            item.rsi < 30 ? '🟢 Oversold' :
+            item.rsi > 70 ? '🔴 Overbought' :
+            '⚖️ Neutraal',
           explanation: 'Relative Strength Index (momentum indicator)',
         };
       case 'Volume':

@@ -62,20 +62,42 @@ export default function TechnicalTabs() {
 
       {/* 🔹 Inhoud */}
       <CardWrapper>
-        {loading ? (
-          <div className="p-4 text-center text-gray-500">⏳ Laden...</div>
-        ) : error ? (
-          <div className="p-4 text-center text-red-500">❌ {error}</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <ActiveTable
-              data={technicalData}
-              onRemove={deleteAsset}
-              getExplanation={getExplanation}
-              calculateScore={calculateTechnicalScore}
-            />
-          </div>
-        )}
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto text-sm">
+            <thead className="bg-gray-100 dark:bg-gray-800 text-left">
+              <tr>
+                <th className="p-2">Asset</th>
+                <th className="p-2 text-center">RSI</th>
+                <th className="p-2 text-center">Volume</th>
+                <th className="p-2 text-center">200MA</th>
+                <th className="p-2 text-center">Score</th>
+                <th className="p-2 text-center">Actie</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center text-gray-500">
+                    ⏳ Laden...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center text-red-500">
+                    ❌ {error}
+                  </td>
+                </tr>
+              ) : (
+                <ActiveTable
+                  data={technicalData}
+                  onRemove={deleteAsset}
+                  getExplanation={getExplanation}
+                  calculateScore={calculateTechnicalScore}
+                />
+              )}
+            </tbody>
+          </table>
+        </div>
       </CardWrapper>
     </>
   );

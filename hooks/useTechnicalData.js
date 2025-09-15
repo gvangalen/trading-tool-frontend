@@ -63,27 +63,24 @@ export function useTechnicalData() {
   }
 
   function updateScore(data) {
-    let total = 0;
-    let count = 0;
+  let total = 0;
+  let count = 0;
 
-    data.forEach((item) => {
-      const sumScore =
-        (item.rsi_score ?? 0) +
-        (item.volume_score ?? 0) +
-        (item.ma_200_score ?? 0);
-
-      total += sumScore;
+  data.forEach((item) => {
+    if (typeof item.score === 'number') {
+      total += item.score;
       count++;
-    });
+    }
+  });
 
-    const avg = count ? (total / count).toFixed(1) : 'N/A';
-    setAvgScore(avg);
-    setAdvies(
-      avg >= 1.5 ? '🟢 Bullish' :
-      avg <= -1.5 ? '🔴 Bearish' :
-      '⚖️ Neutraal'
-    );
-  }
+  const avg = count ? (total / count).toFixed(1) : 'N/A';
+  setAvgScore(avg);
+  setAdvies(
+    avg >= 1.5 ? '🟢 Bullish' :
+    avg <= -1.5 ? '🔴 Bearish' :
+    '⚖️ Neutraal'
+  );
+}
 
   async function deleteAsset(symbol) {
     try {

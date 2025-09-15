@@ -12,6 +12,8 @@ const TIMEFRAME_MAP = {
   Kwartaal: 'quarter',
 };
 
+const INDICATORS = ['RSI', 'Volume', '200MA'];
+
 export default function TechnicalTabs() {
   const [activeTab, setActiveTab] = useState('Dag');
 
@@ -38,7 +40,13 @@ export default function TechnicalTabs() {
     };
   };
 
-  const indicators = ['RSI', 'Volume', '200MA'];
+  const getScoreColor = (score) => {
+    const s = typeof score === 'number' ? score : parseFloat(score);
+    if (isNaN(s)) return 'text-gray-600';
+    if (s >= 2) return 'text-green-600';
+    if (s <= -2) return 'text-red-600';
+    return 'text-gray-600';
+  };
 
   return (
     <>
@@ -92,15 +100,17 @@ export default function TechnicalTabs() {
                   </td>
                 </tr>
               ) : (
-                indicators.map((name) => {
+                INDICATORS.map((name) => {
                   const item = getIndicatorData(name);
                   return (
-                    <tr key={name}>
+                    <tr key={name} className="border-t dark:border-gray-700">
                       <td className="p-2 font-medium">{name}</td>
-                      <td className="p-2 text-center">{item?.value}</td>
-                      <td className="p-2 text-center">{item?.score}</td>
-                      <td className="p-2 text-center">{item?.advice}</td>
-                      <td className="p-2">{item?.explanation}</td>
+                      <td className="p-2 text-center">{item?.value ?? '–'}</td>
+                      <td className={`p-2 text-center font-bold ${getScoreColor(item?.score)}`}>
+                        {item?.score ?? '–'}
+                      </td>
+                      <td className="p-2 text-center">{item?.advice ?? '–'}</td>
+                      <td className="p-2">{item?.explanation ?? '–'}</td>
                     </tr>
                   );
                 })

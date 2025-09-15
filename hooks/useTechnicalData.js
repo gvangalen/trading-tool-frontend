@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import {
-  technicalDataAll,
   technicalDataDay,
   technicalDataWeek,
   technicalDataMonth,
@@ -10,56 +9,55 @@ import {
   technicalDataDelete,
 } from '@/lib/api/technical';
 
-export function useTechnicalData() {
+export function useTechnicalData(activeTab = 'Dag') {
   const [technicalData, setTechnicalData] = useState([]);
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [timeframe, setTimeframe] = useState('day'); // 'day' | 'week' | 'month' | 'quarter'
 
   useEffect(() => {
-    console.log('⏱️ Timeframe gewijzigd:', timeframe);
     loadData();
-    const interval = setInterval(loadData, 60000); // 🔁 elke 60 sec refresh
+    const interval = setInterval(loadData, 60000); // 🔁 elke minuut
     return () => clearInterval(interval);
-  }, [timeframe]);
+  }, [activeTab]);
 
   async function loadData() {
     setLoading(true);
     setError('');
-
     try {
       let data;
 
-      switch (timeframe) {
-        case 'day':
+      switch (activeTab) {
+        case 'Dag':
           data = await technicalDataDay();
           break;
-        case 'week':
+        case 'Week':
           data = await technicalDataWeek();
           break;
-        case 'month':
+        case 'Maand':
           data = await technicalDataMonth();
           break;
-        case 'quarter':
+        case 'Kwartaal':
           data = await technicalDataQuarter();
           break;
         default:
-          data = await technicalDataAll(); // fallback
+          data = await technicalDataDay();
       }
 
-      console.log('📦 Ontvangen technische data:', data);
+      console.log(`📡 [useTechnicalData] Ontvangen (${activeTab}):`, data);
 
-      const items = Array.isArray(data) ? data : [];
-      setTechnicalData(items);
-      updateScore(items);
+      const list = Array.isArray(data) ? data : data?.technical_data || [];
+      if (!Array.isArray(list)) throw new Error('technical_data is geen array');
+
+      setTechnicalData(list);
+      updateScore(list);
     } catch (err) {
       console.error('❌ Technische data ophalen mislukt:', err);
       setTechnicalData([]);
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
-      setError('❌ Fout bij laden technische data');
+      setError('Fout bij laden technische data');
     } finally {
       setLoading(false);
     }
@@ -75,7 +73,7 @@ export function useTechnicalData() {
         total += score;
         count++;
       } else {
-        console.warn(`⚠️ Ongeldige score bij ${item.indicator || item.name}:`, item.score);
+        console.warn(`⚠️ Ongeldige score bij ${item.symbol || item.name}:`, item.score);
       }
     });
 
@@ -107,8 +105,6 @@ export function useTechnicalData() {
     advies,
     loading,
     error,
-    timeframe,
-    setTimeframe,
     deleteAsset,
   };
 }

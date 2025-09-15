@@ -11,25 +11,47 @@ export default function TechnicalWeekTable({ data = [], calculateScore }) {
     );
   }
 
+  const item = data[0]; // Alleen BTC
+  const indicators = [
+    {
+      name: 'RSI',
+      value: item.rsi,
+      score: calculateScore?.({ ...item, rsi: item.rsi }) ?? 0,
+      advice:
+        item.rsi < 30 ? '🟢 Oversold' :
+        item.rsi > 70 ? '🔴 Overbought' :
+        '⚖️ Neutraal',
+    },
+    {
+      name: 'Volume',
+      value: (item.volume / 1e6).toFixed(1) + 'M',
+      score: item.volume > 500_000_000 ? 1 : 0,
+      advice: item.volume > 500_000_000 ? '🔼 Hoog' : '🔽 Laag',
+    },
+    {
+      name: '200MA',
+      value: item.price > item.ma_200 ? 'Boven MA' : 'Onder MA',
+      score: item.price > item.ma_200 ? 1 : -1,
+      advice: item.price > item.ma_200 ? '✅ Bullish' : '⚠️ Bearish',
+    },
+  ];
+
   return (
     <>
-      {data.map((item) => {
-        const score = calculateScore?.(item) ?? 0;
+      {indicators.map((indicator) => {
+        const scoreColor =
+          indicator.score >= 2 ? 'text-green-600'
+          : indicator.score <= -2 ? 'text-red-600'
+          : 'text-gray-600';
 
         return (
-          <tr key={item.id || item.symbol} className="border-b">
-            <td className="p-2 font-medium">{item.symbol}</td>
-            <td className="p-2 text-center">{item.rsi}</td>
-            <td className="p-2 text-center">
-              {(item.volume / 1e6).toFixed(1)}M
+          <tr key={indicator.name} className="border-t dark:border-gray-700">
+            <td className="p-2 font-medium">{indicator.name}</td>
+            <td className="p-2 text-center">{indicator.value}</td>
+            <td className={`p-2 text-center font-bold ${scoreColor}`}>
+              {indicator.score}
             </td>
-            <td className="p-2 text-center">{item.price}</td>
-            <td className="p-2 text-center">{item.ma_200}</td>
-            <td className="p-2 text-center font-semibold">
-              {score > 0 && <span className="text-green-600">+{score}</span>}
-              {score < 0 && <span className="text-red-600">{score}</span>}
-              {score === 0 && <span className="text-gray-600">0</span>}
-            </td>
+            <td className="p-2 text-center">{indicator.advice}</td>
           </tr>
         );
       })}

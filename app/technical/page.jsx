@@ -1,25 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
-  // 🔹 State voor actieve timeframe/tab
-  const [timeframe, setTimeframe] = useState('Dag');
+  // ✅ 1. Mapping tab-namen naar backend timeframes
+  const [activeTab, setActiveTab] = useState('Dag');
+  const tabToTimeframe = {
+    Dag: '1D',
+    Week: '1W',
+    Maand: '1M',
+    Kwartaal: '1Q',
+  };
+  const timeframe = tabToTimeframe[activeTab] || '1D';
 
-  // 🔹 Data ophalen obv actieve tab
+  // ✅ 2. Data ophalen via hook
   const {
-    avgScore,
-    advies,
-    technicalData,
+    avgScore = 'N/A',
+    advies = 'Neutraal',
+    technicalData = [],
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData(timeframe); // ✅ timeframe wordt nu doorgegeven aan hook
+  } = useTechnicalData(timeframe);
 
-  // 🔹 Scorekleur bepalen
+  useEffect(() => {
+    console.log(`🔁 Opgehaald voor timeframe: ${timeframe}`);
+    console.log('📊 Technical data:', technicalData);
+  }, [technicalData, timeframe]);
+
+  // ✅ 3. Scorekleur
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -47,13 +59,13 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs + datatabel */}
+      {/* 🔹 Tabs + Data */}
       <TechnicalTabs
-        data={technicalData[timeframe] || []}     // ✅ Alleen de data van de actieve tab
+        data={technicalData}
         loading={loading}
         error={error}
-        timeframe={timeframe}
-        setTimeframe={setTimeframe}
+        timeframe={activeTab}
+        setTimeframe={setActiveTab}
         onRemove={deleteAsset}
       />
     </div>

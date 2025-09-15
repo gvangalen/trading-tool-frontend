@@ -5,11 +5,22 @@ import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
-  const { avgScore, advies } = useTechnicalData();
+  const {
+    avgScore,
+    advies,
+    technicalData,
+    loading,
+    error,
+    timeframe,
+    setTimeframe,
+    deleteAsset,
+  } = useTechnicalData();
 
   const scoreColor = (score) => {
-    if (score >= 1.5) return 'text-green-600';
-    if (score <= -1.5) return 'text-red-600';
+    const s = typeof score === 'number' ? score : parseFloat(score);
+    if (isNaN(s)) return 'text-gray-600';
+    if (s >= 1.5) return 'text-green-600';
+    if (s <= -1.5) return 'text-red-600';
     return 'text-gray-600';
   };
 
@@ -32,8 +43,15 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs met datatabellen */}
-      <TechnicalTabs />
+      {/* 🔹 Tabs + datatabel */}
+      <TechnicalTabs
+        data={technicalData}
+        loading={loading}
+        error={error}
+        timeframe={timeframe}
+        setTimeframe={setTimeframe}
+        onRemove={deleteAsset}
+      />
     </div>
   );
 }

@@ -50,7 +50,7 @@ export function useTechnicalData() {
 
       const items = Array.isArray(data) ? data : [];
       setTechnicalData(items);
-      updateScore(items);
+      updateScore(items); // 🔁 backend-score gebruiken
     } catch (err) {
       console.error('❌ Technische data ophalen mislukt:', err);
       setTechnicalData([]);
@@ -62,27 +62,18 @@ export function useTechnicalData() {
     }
   }
 
-  function calculateTechnicalScore(item) {
-    let score = 0;
-    if (item.rsi < 30) score += 1;
-    if (item.rsi > 70) score -= 1;
-    if (item.volume > 500000000) score += 1;
-    if (item.price > item.ma_200) score += 1;
-    else score -= 1;
-
-    return Math.max(-2, Math.min(2, score));
-  }
-
   function updateScore(data) {
     let total = 0;
     let count = 0;
 
     data.forEach((item) => {
-      const score = calculateTechnicalScore(item);
-      if (!isNaN(score)) {
-        total += score;
-        count++;
-      }
+      const sumScore =
+        (item.rsi_score ?? 0) +
+        (item.volume_score ?? 0) +
+        (item.ma_200_score ?? 0);
+
+      total += sumScore;
+      count++;
     });
 
     const avg = count ? (total / count).toFixed(1) : 'N/A';
@@ -115,6 +106,5 @@ export function useTechnicalData() {
     timeframe,
     setTimeframe,
     deleteAsset,
-    calculateTechnicalScore,
   };
 }

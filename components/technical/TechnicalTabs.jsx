@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import TechnicalDayTable from '@/components/technical/TechnicalDayTable';
 import CardWrapper from '@/components/ui/CardWrapper';
+import TechnicalDayTable from '@/components/technical/TechnicalDayTable';
+import TechnicalWeekTable from '@/components/technical/TechnicalWeekTable';
+import TechnicalMonthTable from '@/components/technical/TechnicalMonthTable';
+import TechnicalQuarterTable from '@/components/technical/TechnicalQuarterTable';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 const TIMEFRAME_MAP = {
@@ -27,6 +30,47 @@ export default function TechnicalTabs({
   const activeTab = Object.entries(TIMEFRAME_MAP).find(
     ([label, tf]) => tf === timeframe
   )?.[0] || 'Dag';
+
+  const renderTableBody = () => {
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan={6} className="p-4 text-center text-gray-500">
+            ⏳ Laden...
+          </td>
+        </tr>
+      );
+    }
+
+    if (error) {
+      return (
+        <tr>
+          <td colSpan={6} className="p-4 text-center text-red-500">
+            ❌ {error}
+          </td>
+        </tr>
+      );
+    }
+
+    switch (timeframe) {
+      case 'day':
+        return <TechnicalDayTable data={data} onRemove={onRemove} />;
+      case 'week':
+        return <TechnicalWeekTable data={data} onRemove={onRemove} />;
+      case 'month':
+        return <TechnicalMonthTable data={data} onRemove={onRemove} />;
+      case 'quarter':
+        return <TechnicalQuarterTable data={data} onRemove={onRemove} />;
+      default:
+        return (
+          <tr>
+            <td colSpan={6} className="p-4 text-center text-gray-500">
+              ⚠️ Ongeldige timeframe
+            </td>
+          </tr>
+        );
+    }
+  };
 
   return (
     <>
@@ -58,26 +102,10 @@ export default function TechnicalTabs({
                 <th className="p-2 text-center">Score</th>
                 <th className="p-2 text-center">Advies</th>
                 <th className="p-2">Uitleg</th>
-                <th className="p-2 text-center">Actie</th>
+                <th className="p-2 text-center">🗑️</th>
               </tr>
             </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-500">
-                    ⏳ Laden...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-red-500">
-                    ❌ {error}
-                  </td>
-                </tr>
-              ) : (
-                <TechnicalDayTable data={data} onRemove={onRemove} showDebug={false} />
-              )}
-            </tbody>
+            <tbody>{renderTableBody()}</tbody>
           </table>
         </div>
       </CardWrapper>

@@ -49,11 +49,11 @@ export default function TechnicalPage() {
 
       {/* 🔹 Tabs + datatabel */}
       <TechnicalTabs
-        data={technicalData}
+        data={technicalData[timeframe] || []}     // ✅ Alleen de data van de actieve tab
         loading={loading}
         error={error}
         timeframe={timeframe}
-        setTimeframe={setTimeframe} // ✅ tab clicks werken nu
+        setTimeframe={setTimeframe}
         onRemove={deleteAsset}
       />
     </div>

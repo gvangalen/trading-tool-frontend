@@ -20,8 +20,7 @@ export default function TechnicalTabs() {
     loading,
     error,
     setTimeframe,
-    calculateTechnicalScore,
-  } = useTechnicalData();
+  } = useTechnicalData(); // ⛔️ geen calculateTechnicalScore meer
 
   useEffect(() => {
     setTimeframe(TIMEFRAME_MAP[activeTab]);
@@ -35,7 +34,7 @@ export default function TechnicalTabs() {
       case 'RSI':
         return {
           value: item.rsi,
-          score: calculateTechnicalScore({ ...item, rsi: item.rsi }),
+          score: item.rsi_score,
           advice:
             item.rsi < 30 ? '🟢 Oversold' :
             item.rsi > 70 ? '🔴 Overbought' :
@@ -44,15 +43,15 @@ export default function TechnicalTabs() {
         };
       case 'Volume':
         return {
-          value: item.volume,
-          score: item.volume > 500000000 ? 1 : 0,
+          value: (item.volume / 1e6).toFixed(1) + 'M',
+          score: item.volume_score,
           advice: item.volume > 500000000 ? '🔼 Hoog' : '🔽 Laag',
           explanation: 'Handelsvolume in 24 uur',
         };
       case '200MA':
         return {
           value: item.price > item.ma_200 ? 'Boven MA' : 'Onder MA',
-          score: item.price > item.ma_200 ? 1 : -1,
+          score: item.ma_200_score,
           advice: item.price > item.ma_200 ? '✅ Bullish' : '⚠️ Bearish',
           explanation: '200-daags voortschrijdend gemiddelde',
         };

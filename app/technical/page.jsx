@@ -1,21 +1,25 @@
 'use client';
 
+import { useState } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
+  // 🔹 State voor actieve timeframe/tab
+  const [timeframe, setTimeframe] = useState('Dag');
+
+  // 🔹 Data ophalen obv actieve tab
   const {
     avgScore,
     advies,
     technicalData,
     loading,
     error,
-    timeframe,
-    setTimeframe,
     deleteAsset,
-  } = useTechnicalData();
+  } = useTechnicalData(timeframe); // ✅ timeframe wordt nu doorgegeven aan hook
 
+  // 🔹 Scorekleur bepalen
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -49,7 +53,7 @@ export default function TechnicalPage() {
         loading={loading}
         error={error}
         timeframe={timeframe}
-        setTimeframe={setTimeframe}
+        setTimeframe={setTimeframe} // ✅ tab clicks werken nu
         onRemove={deleteAsset}
       />
     </div>

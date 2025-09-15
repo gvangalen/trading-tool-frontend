@@ -1,6 +1,24 @@
 'use client';
 
+import { useEffect } from 'react';
+
 export default function TechnicalDayTable({ data = [], onRemove }) {
+  // ✅ Debug logging naar console
+  useEffect(() => {
+    console.log('📊 TechnicalDayTable received data:', data);
+  }, [data]);
+
+  // ✅ Visuele JSON-dump onder de tabel (tijdelijk)
+  const debugDump = (
+    <tr>
+      <td colSpan={6}>
+        <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </td>
+    </tr>
+  );
+
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <tr>
@@ -58,6 +76,9 @@ export default function TechnicalDayTable({ data = [], onRemove }) {
           </tr>
         );
       })}
+
+      {/* ✅ Visuele debug info */}
+      {debugDump}
     </>
   );
 }

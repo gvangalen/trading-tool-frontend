@@ -10,7 +10,12 @@ import {
 } from '@/lib/api/technical';
 
 export function useTechnicalData(activeTab = 'Dag') {
-  const [technicalData, setTechnicalData] = useState([]);
+  const [technicalData, setTechnicalData] = useState({
+    Dag: [],
+    Week: [],
+    Maand: [],
+    Kwartaal: [],
+  });
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
@@ -18,7 +23,7 @@ export function useTechnicalData(activeTab = 'Dag') {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000); // 🔁 elke minuut
+    const interval = setInterval(loadData, 60000); // elke minuut
     return () => clearInterval(interval);
   }, [activeTab]);
 
@@ -45,16 +50,24 @@ export function useTechnicalData(activeTab = 'Dag') {
           data = await technicalDataDay();
       }
 
-      console.log(`📡 [useTechnicalData] Ontvangen (${activeTab}):`, data);
-
       const list = Array.isArray(data) ? data : data?.technical_data || [];
       if (!Array.isArray(list)) throw new Error('technical_data is geen array');
 
-      setTechnicalData(list);
+      console.log(`📡 [useTechnicalData] ${activeTab} geladen:`, list);
+
+      // Update only the relevant tab's data
+      setTechnicalData((prev) => ({
+        ...prev,
+        [activeTab]: list,
+      }));
+
       updateScore(list);
     } catch (err) {
       console.error('❌ Technische data ophalen mislukt:', err);
-      setTechnicalData([]);
+      setTechnicalData((prev) => ({
+        ...prev,
+        [activeTab]: [],
+      }));
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
       setError('Fout bij laden technische data');
@@ -90,8 +103,11 @@ export function useTechnicalData(activeTab = 'Dag') {
     console.log('🗑️ Verzoek om te verwijderen:', symbol);
     try {
       await technicalDataDelete(symbol);
-      const updated = technicalData.filter((item) => item.symbol !== symbol);
-      setTechnicalData(updated);
+      const updated = technicalData[activeTab].filter((item) => item.symbol !== symbol);
+      setTechnicalData((prev) => ({
+        ...prev,
+        [activeTab]: updated,
+      }));
       updateScore(updated);
     } catch (err) {
       console.error('❌ Verwijderen mislukt:', err);

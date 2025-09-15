@@ -115,5 +115,6 @@ export function useTechnicalData() {
     timeframe,
     setTimeframe,
     deleteAsset,
+    calculateTechnicalScore,
   };
 }

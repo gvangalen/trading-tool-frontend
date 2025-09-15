@@ -7,7 +7,7 @@ import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
   // 🔹 State voor actieve timeframe/tab
-  const [timeframe, setTimeframe] = useState('Dag');
+  const [timeframe, setTimeframe] = useState('day');
 
   // 🔹 Data ophalen obv actieve tab
   const {

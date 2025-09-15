@@ -31,6 +31,7 @@ export function useTechnicalData() {
 
     try {
       let data;
+
       switch (timeframe) {
         case 'day':
           data = await technicalDataDay();
@@ -48,9 +49,11 @@ export function useTechnicalData() {
           data = await technicalDataAll(); // fallback
       }
 
+      console.log('📦 Ontvangen technische data:', data);
+
       const items = Array.isArray(data) ? data : [];
       setTechnicalData(items);
-      updateScore(items); // 🔁 backend-score gebruiken
+      updateScore(items);
     } catch (err) {
       console.error('❌ Technische data ophalen mislukt:', err);
       setTechnicalData([]);
@@ -63,26 +66,30 @@ export function useTechnicalData() {
   }
 
   function updateScore(data) {
-  let total = 0;
-  let count = 0;
+    let total = 0;
+    let count = 0;
 
-  data.forEach((item) => {
-    if (typeof item.score === 'number') {
-      total += item.score;
-      count++;
-    }
-  });
+    data.forEach((item) => {
+      const score = typeof item.score === 'number' ? item.score : parseFloat(item.score);
+      if (!isNaN(score)) {
+        total += score;
+        count++;
+      } else {
+        console.warn(`⚠️ Ongeldige score bij ${item.indicator || item.name}:`, item.score);
+      }
+    });
 
-  const avg = count ? (total / count).toFixed(1) : 'N/A';
-  setAvgScore(avg);
-  setAdvies(
-    avg >= 1.5 ? '🟢 Bullish' :
-    avg <= -1.5 ? '🔴 Bearish' :
-    '⚖️ Neutraal'
-  );
-}
+    const avg = count ? (total / count).toFixed(1) : 'N/A';
+    setAvgScore(avg);
+    setAdvies(
+      avg >= 1.5 ? '🟢 Bullish' :
+      avg <= -1.5 ? '🔴 Bearish' :
+      '⚖️ Neutraal'
+    );
+  }
 
   async function deleteAsset(symbol) {
+    console.log('🗑️ Verzoek om te verwijderen:', symbol);
     try {
       await technicalDataDelete(symbol);
       const updated = technicalData.filter((item) => item.symbol !== symbol);

@@ -3,10 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import CardWrapper from '@/components/ui/CardWrapper';
-import TechnicalDayTable from './TechnicalDayTable';
-import TechnicalWeekTable from './TechnicalWeekTable';
-import TechnicalMonthTable from './TechnicalMonthTable';
-import TechnicalQuarterTable from './TechnicalQuarterTable';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 const TIMEFRAME_MAP = {
@@ -14,12 +10,6 @@ const TIMEFRAME_MAP = {
   Week: 'week',
   Maand: 'month',
   Kwartaal: 'quarter',
-};
-const TABLE_COMPONENTS = {
-  Dag: TechnicalDayTable,
-  Week: TechnicalWeekTable,
-  Maand: TechnicalMonthTable,
-  Kwartaal: TechnicalQuarterTable,
 };
 
 export default function TechnicalTabs() {
@@ -30,8 +20,6 @@ export default function TechnicalTabs() {
     loading,
     error,
     setTimeframe,
-    deleteAsset,
-    getExplanation,
     calculateTechnicalScore,
   } = useTechnicalData();
 
@@ -39,7 +27,39 @@ export default function TechnicalTabs() {
     setTimeframe(TIMEFRAME_MAP[activeTab]);
   }, [activeTab, setTimeframe]);
 
-  const ActiveTable = TABLE_COMPONENTS[activeTab];
+  const getIndicatorData = (indicator) => {
+    const item = technicalData[0]; // alleen BTC
+    if (!item) return null;
+
+    switch (indicator) {
+      case 'RSI':
+        return {
+          value: item.rsi,
+          score: calculateTechnicalScore({ ...item, rsi: item.rsi }),
+          advice:
+            item.rsi < 30 ? '🟢 Oversold' : item.rsi > 70 ? '🔴 Overbought' : '⚖️ Neutraal',
+          explanation: 'Relative Strength Index (momentum indicator)',
+        };
+      case 'Volume':
+        return {
+          value: item.volume,
+          score: item.volume > 500000000 ? 1 : 0,
+          advice: item.volume > 500000000 ? '🔼 Hoog' : '🔽 Laag',
+          explanation: 'Handelsvolume in 24 uur',
+        };
+      case '200MA':
+        return {
+          value: item.price > item.ma_200 ? 'Boven MA' : 'Onder MA',
+          score: item.price > item.ma_200 ? 1 : -1,
+          advice: item.price > item.ma_200 ? '✅ Bullish' : '⚠️ Bearish',
+          explanation: '200-daags voortschrijdend gemiddelde',
+        };
+      default:
+        return null;
+    }
+  };
+
+  const indicators = ['RSI', 'Volume', '200MA'];
 
   return (
     <>
@@ -60,40 +80,51 @@ export default function TechnicalTabs() {
         ))}
       </div>
 
-      {/* 🔹 Inhoud */}
+      {/* 🔹 Tabel */}
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
             <thead className="bg-gray-100 dark:bg-gray-800 text-left">
               <tr>
-                <th className="p-2">Asset</th>
-                <th className="p-2 text-center">RSI</th>
-                <th className="p-2 text-center">Volume</th>
-                <th className="p-2 text-center">200MA</th>
+                <th className="p-2">📊 Indicator</th>
+                <th className="p-2 text-center">Waarde</th>
                 <th className="p-2 text-center">Score</th>
-                <th className="p-2 text-center">Actie</th>
+                <th className="p-2 text-center">Advies</th>
+                <th className="p-2">Uitleg</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-500">
+                  <td colSpan={5} className="p-4 text-center text-gray-500">
                     ⏳ Laden...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center text-red-500">
+                  <td colSpan={5} className="p-4 text-center text-red-500">
                     ❌ {error}
                   </td>
                 </tr>
+              ) : technicalData.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-4 text-center text-gray-500">
+                    Geen technische data beschikbaar.
+                  </td>
+                </tr>
               ) : (
-                <ActiveTable
-                  data={technicalData}
-                  onRemove={deleteAsset}
-                  getExplanation={getExplanation}
-                  calculateScore={calculateTechnicalScore}
-                />
+                indicators.map((name) => {
+                  const item = getIndicatorData(name);
+                  return (
+                    <tr key={name}>
+                      <td className="p-2 font-medium">{name}</td>
+                      <td className="p-2 text-center">{item?.value ?? '-'}</td>
+                      <td className="p-2 text-center">{item?.score ?? '-'}</td>
+                      <td className="p-2 text-center">{item?.advice ?? '-'}</td>
+                      <td className="p-2">{item?.explanation ?? '-'}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

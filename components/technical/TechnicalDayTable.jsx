@@ -21,7 +21,6 @@ export default function TechnicalDayTable({ data = [], calculateScore }) {
             <td className="p-2 font-medium">{item.symbol}</td>
             <td className="p-2 text-center">{item.rsi}</td>
             <td className="p-2 text-center">{item.volume}</td>
-            <td className="p-2 text-center">{item.price}</td>
             <td className="p-2 text-center">{item.ma_200}</td>
             <td className="p-2 text-center font-semibold">
               {score > 0 && <span className="text-green-600">+{score}</span>}

@@ -20,44 +20,22 @@ export default function TechnicalTabs() {
     loading,
     error,
     setTimeframe,
-  } = useTechnicalData(); // ⛔️ geen calculateTechnicalScore meer
+  } = useTechnicalData();
 
   useEffect(() => {
     setTimeframe(TIMEFRAME_MAP[activeTab]);
   }, [activeTab, setTimeframe]);
 
   const getIndicatorData = (indicator) => {
-    const item = technicalData[0]; // alleen BTC
+    const item = technicalData.find((d) => d.indicator === indicator);
     if (!item) return null;
 
-    switch (indicator) {
-      case 'RSI':
-        return {
-          value: item.rsi,
-          score: item.rsi_score,
-          advice:
-            item.rsi < 30 ? '🟢 Oversold' :
-            item.rsi > 70 ? '🔴 Overbought' :
-            '⚖️ Neutraal',
-          explanation: 'Relative Strength Index (momentum indicator)',
-        };
-      case 'Volume':
-        return {
-          value: (item.volume / 1e6).toFixed(1) + 'M',
-          score: item.volume_score,
-          advice: item.volume > 500000000 ? '🔼 Hoog' : '🔽 Laag',
-          explanation: 'Handelsvolume in 24 uur',
-        };
-      case '200MA':
-        return {
-          value: item.price > item.ma_200 ? 'Boven MA' : 'Onder MA',
-          score: item.ma_200_score,
-          advice: item.price > item.ma_200 ? '✅ Bullish' : '⚠️ Bearish',
-          explanation: '200-daags voortschrijdend gemiddelde',
-        };
-      default:
-        return null;
-    }
+    return {
+      value: item.waarde ?? '-',
+      score: item.score ?? '-',
+      advice: item.advies ?? '-',
+      explanation: item.uitleg ?? '-',
+    };
   };
 
   const indicators = ['RSI', 'Volume', '200MA'];
@@ -119,10 +97,10 @@ export default function TechnicalTabs() {
                   return (
                     <tr key={name}>
                       <td className="p-2 font-medium">{name}</td>
-                      <td className="p-2 text-center">{item?.value ?? '-'}</td>
-                      <td className="p-2 text-center">{item?.score ?? '-'}</td>
-                      <td className="p-2 text-center">{item?.advice ?? '-'}</td>
-                      <td className="p-2">{item?.explanation ?? '-'}</td>
+                      <td className="p-2 text-center">{item?.value}</td>
+                      <td className="p-2 text-center">{item?.score}</td>
+                      <td className="p-2 text-center">{item?.advice}</td>
+                      <td className="p-2">{item?.explanation}</td>
                     </tr>
                   );
                 })

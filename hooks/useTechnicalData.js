@@ -1,16 +1,16 @@
-// hooks/useTechnicalData.ts
 'use client';
 
 import { useEffect, useState } from 'react';
 
 export function useTechnicalData(timeframe = 'Dag') {
   const [technicalData, setTechnicalData] = useState([]);
-  const [avgScore, setAvgScore] = useState<number | null>(null);
-  const [advies, setAdvies] = useState<string>('Neutraal');
+  const [avgScore, setAvgScore] = useState(null);
+  const [advies, setAdvies] = useState('Neutraal');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const routeMap: Record<string, string> = {
+  // ✅ Gewone object-definitie zonder TypeScript
+  const routeMap = {
     Dag: 'day',
     Week: 'week',
     Maand: 'month',
@@ -62,10 +62,9 @@ export function useTechnicalData(timeframe = 'Dag') {
     }
 
     fetchData();
-  }, [timeframe]); // ✅ Let op: NIET 'route' als dependency gebruiken
+  }, [timeframe]);
 
-  // 🔁 Asset verwijderen uit lijst
-  const deleteAsset = (symbol: string) => {
+  const deleteAsset = (symbol) => {
     setTechnicalData((prev) => prev.filter((item) => item.symbol !== symbol));
   };
 

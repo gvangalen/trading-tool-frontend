@@ -6,17 +6,20 @@ import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
-  // ✅ 1. Mapping tab-namen naar backend timeframes
+  // ✅ Tijdelijk hardcoded tab om verwarring met mapping te voorkomen
   const [activeTab, setActiveTab] = useState('Dag');
+
+  // ✅ Mapping voor later (nu tijdelijk niet gebruikt)
   const tabToTimeframe = {
     Dag: '1D',
     Week: '1W',
     Maand: '1M',
     Kwartaal: '1Q',
   };
+
   const timeframe = tabToTimeframe[activeTab] || '1D';
 
-  // ✅ 2. Data ophalen via hook
+  // ✅ Data ophalen via hook (tijdelijk hardcoded op 'Dag')
   const {
     avgScore = 'N/A',
     advies = 'Neutraal',
@@ -24,14 +27,17 @@ export default function TechnicalPage() {
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData(timeframe);
+  } = useTechnicalData('Dag'); // ← ⏳ tijdelijk hardcoded om debug te vergemakkelijken
 
+  // ✅ Extra logging bij elke update
   useEffect(() => {
-    console.log(`🔁 Opgehaald voor timeframe: ${timeframe}`);
-    console.log('📊 Technical data:', technicalData);
-  }, [technicalData, timeframe]);
+    console.log(`🔁 [TechnicalPage] Timeframe: ${timeframe}`);
+    console.log('📊 [TechnicalPage] Technical data:', technicalData);
+    console.log('📉 [TechnicalPage] Loading:', loading);
+    console.log('⚠️ [TechnicalPage] Error:', error);
+  }, [technicalData, loading, error, timeframe]);
 
-  // ✅ 3. Scorekleur
+  // ✅ Scorekleur (eventueel niet gebruikt zolang samenvatting uitstaat)
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -45,7 +51,8 @@ export default function TechnicalPage() {
       {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">🧪 Technische Analyse</h1>
 
-      {/* 🔹 Samenvatting */}
+      {/* 🔹 Samenvatting tijdelijk uitgeschakeld om fouten te isoleren */}
+      {/*
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
@@ -58,6 +65,7 @@ export default function TechnicalPage() {
           </h3>
         </div>
       </CardWrapper>
+      */}
 
       {/* 🔹 Tabs + Data */}
       <TechnicalTabs

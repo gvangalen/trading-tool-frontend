@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-export default function TechnicalDayTable({ data = [], onRemove, showDebug = true }) {
+export default function TechnicalDayTable({ data = [], onRemove, showDebug = false }) {
   useEffect(() => {
     console.log('📊 [TechnicalDayTable] ontvangen data:', data);
   }, [data]);
@@ -11,7 +11,7 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = tru
     return (
       <tr>
         <td colSpan={6} className="p-4 text-center text-gray-500">
-          ⚠️ Geen technische data beschikbaar.
+          ⚠️ Geen technische dag-data beschikbaar.
         </td>
       </tr>
     );
@@ -28,11 +28,11 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = tru
   return (
     <>
       {data.map((item, index) => {
-        const indicator = item.indicator || '– missing –';
+        const indicator = item.indicator || '–';
         const waarde = item.waarde ?? '–';
         const score = item.score ?? '–';
-        const advies = item.advies || '– missing –';
-        const uitleg = item.uitleg || '– missing –';
+        const advies = item.advies || '–';
+        const uitleg = item.uitleg || '–';
         const symbol = item.symbol || `item-${index}`;
 
         return (
@@ -47,8 +47,8 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = tru
             <td className="p-2 text-center">
               <button
                 onClick={() => {
-                  console.log('🗑️ Verwijderen (debug symbol):', symbol);
-                  onRemove?.(symbol);
+                  console.log('🗑️ Verwijderen (symbol):', symbol);
+                  if (onRemove) onRemove(symbol);
                 }}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
               >

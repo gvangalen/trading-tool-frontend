@@ -5,60 +5,67 @@ import { useEffect, useState } from 'react';
 
 export function useTechnicalData(timeframe = 'Dag') {
   const [technicalData, setTechnicalData] = useState([]);
-  const [avgScore, setAvgScore] = useState(null);
-  const [advies, setAdvies] = useState('');
+  const [avgScore, setAvgScore] = useState<number | null>(null);
+  const [advies, setAdvies] = useState<string>('Neutraal');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Mapping van 'Dag' → 'day'
-  const routeMap = {
+  const routeMap: Record<string, string> = {
     Dag: 'day',
     Week: 'week',
     Maand: 'month',
     Kwartaal: 'quarter',
   };
 
-  const route = `/api/technical_data/${routeMap[timeframe] || 'day'}`; // fallback = day
+  const apiRoute = `/api/technical_data/${routeMap[timeframe] || 'day'}`;
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError('');
       try {
-        console.log('📡 Ophalen van technische data via:', route);
-        const res = await fetch(route);
+        console.log('📡 Ophalen van technische data via:', apiRoute);
+        const res = await fetch(apiRoute);
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = await res.json();
 
-        setTechnicalData(data || []);
+        if (!Array.isArray(data)) throw new Error('Ongeldig formaat');
 
-        // ⏳ Optioneel: samenvattende score berekenen
-        if (Array.isArray(data) && data.length > 0) {
-          const validScores = data.map(d => parseFloat(d.score)).filter(s => !isNaN(s));
-          const average = validScores.reduce((sum, val) => sum + val, 0) / validScores.length;
-          setAvgScore(average.toFixed(2));
+        setTechnicalData(data);
 
-          const advies =
+        // ✅ Score samenvatting
+        const validScores = data
+          .map((d) => parseFloat(d.score))
+          .filter((s) => !isNaN(s));
+
+        if (validScores.length > 0) {
+          const average = validScores.reduce((a, b) => a + b, 0) / validScores.length;
+          setAvgScore(average);
+          setAdvies(
             average >= 1.5 ? 'Bullish' :
-            average <= -1.5 ? 'Bearish' : 'Neutraal';
-          setAdvies(advies);
+            average <= -1.5 ? 'Bearish' : 'Neutraal'
+          );
         } else {
           setAvgScore(null);
           setAdvies('Neutraal');
         }
+
       } catch (err) {
         console.error('❌ Fout bij ophalen van technische data:', err);
         setError('Technische data kon niet geladen worden.');
+        setTechnicalData([]);
+        setAvgScore(null);
+        setAdvies('Neutraal');
       } finally {
         setLoading(false);
       }
     }
 
     fetchData();
-  }, [route]);
+  }, [timeframe]); // ✅ Let op: NIET 'route' als dependency gebruiken
 
-  // Asset verwijderen (optioneel)
-  const deleteAsset = (symbol) => {
+  // 🔁 Asset verwijderen uit lijst
+  const deleteAsset = (symbol: string) => {
     setTechnicalData((prev) => prev.filter((item) => item.symbol !== symbol));
   };
 

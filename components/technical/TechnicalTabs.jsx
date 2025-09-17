@@ -7,7 +7,7 @@ import TechnicalWeekTable from '@/components/technical/TechnicalWeekTable';
 import TechnicalMonthTable from '@/components/technical/TechnicalMonthTable';
 import TechnicalQuarterTable from '@/components/technical/TechnicalQuarterTable';
 
-const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
+// 🗂️ Mapping van labels → timeframe strings
 const TIMEFRAME_MAP = {
   Dag: 'day',
   Week: 'week',
@@ -26,10 +26,6 @@ export default function TechnicalTabs({
   useEffect(() => {
     console.log('🧪 TechnicalTabs mounted, timeframe:', timeframe);
   }, [timeframe]);
-
-  const activeTab = Object.entries(TIMEFRAME_MAP).find(
-    ([label, tf]) => tf === timeframe
-  )?.[0] || 'Dag';
 
   const renderTableBody = () => {
     if (loading) {
@@ -76,17 +72,17 @@ export default function TechnicalTabs({
     <>
       {/* 🔹 Tabs */}
       <div className="flex space-x-4 mb-4">
-        {TABS.map((tab) => (
+        {Object.entries(TIMEFRAME_MAP).map(([label, tf]) => (
           <button
-            key={tab}
-            onClick={() => setTimeframe(TIMEFRAME_MAP[tab])}
+            key={label}
+            onClick={() => setTimeframe(tf)}
             className={`px-4 py-2 rounded font-semibold border ${
-              activeTab === tab
+              timeframe === tf
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
             }`}
           >
-            {tab}
+            {label}
           </button>
         ))}
       </div>

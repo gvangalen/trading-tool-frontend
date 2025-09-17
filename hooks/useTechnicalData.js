@@ -1,6 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  fetchTechnicalDataDay,
+  fetchTechnicalDataWeek,
+  fetchTechnicalDataMonth,
+  fetchTechnicalDataQuarter,
+} from '@/lib/api/technical'; // ✅ Net als macro
 
 export function useTechnicalData(timeframe = 'Dag') {
   const [technicalData, setTechnicalData] = useState([]);
@@ -9,31 +15,28 @@ export function useTechnicalData(timeframe = 'Dag') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ Gewone object-definitie zonder TypeScript
-  const routeMap = {
-    Dag: 'day',
-    Week: 'week',
-    Maand: 'month',
-    Kwartaal: 'quarter',
+  const fetchMap = {
+    Dag: fetchTechnicalDataDay,
+    Week: fetchTechnicalDataWeek,
+    Maand: fetchTechnicalDataMonth,
+    Kwartaal: fetchTechnicalDataQuarter,
   };
-
-  const apiRoute = `/api/technical_data/${routeMap[timeframe] || 'day'}`;
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError('');
+
+      const fetchFn = fetchMap[timeframe] || fetchTechnicalDataDay;
+
       try {
-        console.log('📡 Ophalen van technische data via:', apiRoute);
-        const res = await fetch(apiRoute);
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        const data = await res.json();
+        console.log(`📡 Ophalen technische data (${timeframe}) via fetchFn...`);
+        const data = await fetchFn();
 
         if (!Array.isArray(data)) throw new Error('Ongeldig formaat');
-
         setTechnicalData(data);
 
-        // ✅ Score samenvatting
+        // ✅ Gemiddelde score berekenen
         const validScores = data
           .map((d) => parseFloat(d.score))
           .filter((s) => !isNaN(s));

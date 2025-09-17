@@ -15,7 +15,7 @@ export function useTechnicalData(timeframe = 'Dag') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ Kies juiste functie op basis van timeframe
+  // 🧭 Mapping voor juiste fetch-functie
   const fetchMap = {
     Dag: technicalDataDay,
     Week: technicalDataWeek,
@@ -31,35 +31,39 @@ export function useTechnicalData(timeframe = 'Dag') {
       const fetchFn = fetchMap[timeframe] || technicalDataDay;
 
       try {
-        console.log(`📡 Ophalen technische data (${timeframe}) via fetchFn...`);
+        console.log(`📡 Ophalen technische data voor '${timeframe}'...`);
         const data = await fetchFn();
 
-        if (!Array.isArray(data)) throw new Error('Ongeldig formaat');
+        if (!Array.isArray(data)) {
+          throw new Error('⚠️ Ongeldig dataformaat');
+        }
+
         setTechnicalData(data);
 
         // ✅ Gemiddelde score berekenen
         const validScores = data
-          .map((d) => parseFloat(d.score))
+          .map((item) => parseFloat(item.score))
           .filter((s) => !isNaN(s));
 
         if (validScores.length > 0) {
-          const average = validScores.reduce((a, b) => a + b, 0) / validScores.length;
-          setAvgScore(average);
+          const average =
+            validScores.reduce((acc, val) => acc + val, 0) / validScores.length;
+          setAvgScore(average.toFixed(2));
           setAdvies(
             average >= 1.5 ? 'Bullish' :
-            average <= -1.5 ? 'Bearish' : 'Neutraal'
+            average <= -1.5 ? 'Bearish' :
+            'Neutraal'
           );
         } else {
           setAvgScore(null);
           setAdvies('Neutraal');
         }
-
       } catch (err) {
-        console.error('❌ Fout bij ophalen van technische data:', err);
-        setError('Technische data kon niet geladen worden.');
+        console.error('❌ Fout bij ophalen technische data:', err);
         setTechnicalData([]);
         setAvgScore(null);
         setAdvies('Neutraal');
+        setError('Technische data kon niet geladen worden.');
       } finally {
         setLoading(false);
       }
@@ -68,7 +72,9 @@ export function useTechnicalData(timeframe = 'Dag') {
     fetchData();
   }, [timeframe]);
 
+  // ✅ Item verwijderen op basis van symbol
   const deleteAsset = (symbol) => {
+    console.log(`🗑️ Verwijder '${symbol}' uit lijst`);
     setTechnicalData((prev) => prev.filter((item) => item.symbol !== symbol));
   };
 

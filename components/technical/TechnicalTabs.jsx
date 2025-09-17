@@ -16,16 +16,24 @@ const TIMEFRAME_MAP = {
 };
 
 export default function TechnicalTabs({
-  data = [],
+  data = [],          // 🔹 Alle data voor alle timeframes
   loading,
   error,
-  timeframe,
+  timeframe,          // 🔹 Geselecteerde tab (Dag, Week, Maand, Kwartaal)
   setTimeframe,
   onRemove,
 }) {
   useEffect(() => {
-    console.log('🧪 TechnicalTabs mounted, timeframe:', timeframe);
-  }, [timeframe]);
+    console.log('🧪 [TechnicalTabs] Geselecteerde tab:', timeframe);
+    console.log('📊 [TechnicalTabs] Ontvangen data:', data);
+  }, [timeframe, data]);
+
+  const getFilteredData = () => {
+    const tfKey = TIMEFRAME_MAP[timeframe]; // 'day', 'week', ...
+    return data.filter((item) => item.timeframe === tfKey);
+  };
+
+  const filteredData = getFilteredData();
 
   const renderTableBody = () => {
     if (loading) {
@@ -49,14 +57,14 @@ export default function TechnicalTabs({
     }
 
     switch (timeframe) {
-      case 'day':
-        return <TechnicalDayTable data={data} onRemove={onRemove} />;
-      case 'week':
-        return <TechnicalWeekTable data={data} onRemove={onRemove} />;
-      case 'month':
-        return <TechnicalMonthTable data={data} onRemove={onRemove} />;
-      case 'quarter':
-        return <TechnicalQuarterTable data={data} onRemove={onRemove} />;
+      case 'Dag':
+        return <TechnicalDayTable data={filteredData} onRemove={onRemove} />;
+      case 'Week':
+        return <TechnicalWeekTable data={filteredData} onRemove={onRemove} />;
+      case 'Maand':
+        return <TechnicalMonthTable data={filteredData} onRemove={onRemove} />;
+      case 'Kwartaal':
+        return <TechnicalQuarterTable data={filteredData} onRemove={onRemove} />;
       default:
         return (
           <tr>
@@ -72,12 +80,12 @@ export default function TechnicalTabs({
     <>
       {/* 🔹 Tabs */}
       <div className="flex space-x-4 mb-4">
-        {Object.entries(TIMEFRAME_MAP).map(([label, tf]) => (
+        {Object.entries(TIMEFRAME_MAP).map(([label, tfKey]) => (
           <button
             key={label}
-            onClick={() => setTimeframe(tf)}
+            onClick={() => setTimeframe(label)} // Let op: we gebruiken hier 'Dag', 'Week', etc.
             className={`px-4 py-2 rounded font-semibold border ${
-              timeframe === tf
+              timeframe === label
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
             }`}

@@ -1,6 +1,6 @@
 'use client';
 
-export default function TechnicalWeekTable({ data = [] }) {
+export default function TechnicalWeekTable({ data = [], onRemove }) {
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <tr>
@@ -11,44 +11,49 @@ export default function TechnicalWeekTable({ data = [] }) {
     );
   }
 
-  const item = data[0]; // Alleen BTC
-  const indicators = [
+  const item = data[0]; // ✅ Alleen BTC gebruiken
+
+  const rows = [
     {
-      name: 'RSI',
+      label: 'RSI',
       value: item.rsi,
       score: item.rsi_score,
-      advice: item.rsi_advice,
     },
     {
-      name: 'Volume',
+      label: 'Volume',
       value: (item.volume / 1e6).toFixed(1) + 'M',
       score: item.volume_score,
-      advice: item.volume_advice,
     },
     {
-      name: '200MA',
+      label: '200MA',
       value: item.price > item.ma_200 ? 'Boven MA' : 'Onder MA',
       score: item.ma_200_score,
-      advice: item.ma_200_advice,
     },
   ];
 
   return (
     <>
-      {indicators.map((indicator) => {
+      {rows.map(({ label, value, score }) => {
         const scoreColor =
-          indicator.score >= 2 ? 'text-green-600'
-          : indicator.score <= -2 ? 'text-red-600'
+          score >= 2 ? 'text-green-600'
+          : score <= -2 ? 'text-red-600'
           : 'text-gray-600';
 
         return (
-          <tr key={indicator.name} className="border-t dark:border-gray-700">
-            <td className="p-2 font-medium">{indicator.name}</td>
-            <td className="p-2 text-center">{indicator.value}</td>
+          <tr key={label} className="border-t dark:border-gray-700">
+            <td className="p-2 font-medium">{label}</td>
+            <td className="p-2 text-center">{value ?? '–'}</td>
             <td className={`p-2 text-center font-bold ${scoreColor}`}>
-              {indicator.score ?? '–'}
+              {score ?? '–'}
             </td>
-            <td className="p-2 text-center">{indicator.advice ?? '–'}</td>
+            <td className="p-2 text-center">
+              <button
+                onClick={() => onRemove?.(item.symbol)}
+                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                ❌
+              </button>
+            </td>
           </tr>
         );
       })}

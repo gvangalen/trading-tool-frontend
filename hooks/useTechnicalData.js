@@ -1,100 +1,66 @@
+// hooks/useTechnicalData.ts
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  technicalDataDay,
-  technicalDataWeek,
-  technicalDataMonth,
-  technicalDataQuarter,
-  technicalDataDelete,
-} from '@/lib/api/technical';
 
-export function useTechnicalData(activeTab = 'Dag') {
-  const [technicalData, setTechnicalData] = useState({
-    Dag: [],
-    Week: [],
-    Maand: [],
-    Kwartaal: [],
-  });
-  const [avgScore, setAvgScore] = useState('N/A');
-  const [advies, setAdvies] = useState('⚖️ Neutraal');
-  const [loading, setLoading] = useState(true);
+export function useTechnicalData(timeframe = 'Dag') {
+  const [technicalData, setTechnicalData] = useState([]);
+  const [avgScore, setAvgScore] = useState(null);
+  const [advies, setAdvies] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Mapping van 'Dag' → 'day'
+  const routeMap = {
+    Dag: 'day',
+    Week: 'week',
+    Maand: 'month',
+    Kwartaal: 'quarter',
+  };
+
+  const route = `/api/technical_data/${routeMap[timeframe] || 'day'}`; // fallback = day
+
   useEffect(() => {
-    console.log(`🚀 useTechnicalData mounted voor tab: ${activeTab}`);
-    loadData();
-    const interval = setInterval(loadData, 60000);
-    return () => clearInterval(interval);
-  }, [activeTab]);
+    async function fetchData() {
+      setLoading(true);
+      setError('');
+      try {
+        console.log('📡 Ophalen van technische data via:', route);
+        const res = await fetch(route);
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
 
-  async function loadData() {
-    setLoading(true);
-    setError('');
-    try {
-      let data;
-      console.log(`📥 Ophalen technische data voor tab: ${activeTab}`);
+        setTechnicalData(data || []);
 
-      switch (activeTab) {
-        case 'Dag':
-          data = await technicalDataDay();
-          break;
-        case 'Week':
-          data = await technicalDataWeek();
-          break;
-        case 'Maand':
-          data = await technicalDataMonth();
-          break;
-        case 'Kwartaal':
-          data = await technicalDataQuarter();
-          break;
-        default:
-          data = await technicalDataDay();
+        // ⏳ Optioneel: samenvattende score berekenen
+        if (Array.isArray(data) && data.length > 0) {
+          const validScores = data.map(d => parseFloat(d.score)).filter(s => !isNaN(s));
+          const average = validScores.reduce((sum, val) => sum + val, 0) / validScores.length;
+          setAvgScore(average.toFixed(2));
+
+          const advies =
+            average >= 1.5 ? 'Bullish' :
+            average <= -1.5 ? 'Bearish' : 'Neutraal';
+          setAdvies(advies);
+        } else {
+          setAvgScore(null);
+          setAdvies('Neutraal');
+        }
+      } catch (err) {
+        console.error('❌ Fout bij ophalen van technische data:', err);
+        setError('Technische data kon niet geladen worden.');
+      } finally {
+        setLoading(false);
       }
-
-      const list = Array.isArray(data) ? data : data?.technical_data || [];
-
-      if (!Array.isArray(list)) {
-        console.error('❌ technical_data is geen array:', data);
-        throw new Error('technical_data is geen array');
-      }
-
-      console.log(`✅ ${activeTab} data succesvol geladen:`, list);
-
-      setTechnicalData((prev) => ({
-        ...prev,
-        [activeTab]: list,
-      }));
-
-      // ❌ Geen scoreberekening uitvoeren
-      // updateScore(list);
-      setAvgScore('N/A');
-      setAdvies('⚖️ Neutraal');
-    } catch (err) {
-      console.error('❌ Fout bij laden technische data:', err);
-      setTechnicalData((prev) => ({
-        ...prev,
-        [activeTab]: [],
-      }));
-      setAvgScore('N/A');
-      setAdvies('⚖️ Neutraal');
-      setError('Fout bij laden technische data');
-    } finally {
-      setLoading(false);
     }
-  }
 
-  // 🔇 Tijdelijk uitgezet
-  function updateScore(data) {
-    console.log('ℹ️ updateScore is tijdelijk uitgeschakeld');
-    // Niks doen
-  }
+    fetchData();
+  }, [route]);
 
-  // 🔇 Tijdelijk uitgezet
-  async function deleteAsset(symbol) {
-    console.log('ℹ️ deleteAsset is tijdelijk uitgeschakeld:', symbol);
-    // Niks doen
-  }
+  // Asset verwijderen (optioneel)
+  const deleteAsset = (symbol) => {
+    setTechnicalData((prev) => prev.filter((item) => item.symbol !== symbol));
+  };
 
   return {
     technicalData,

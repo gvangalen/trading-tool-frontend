@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 export default function TechnicalDayTable({ data = [], onRemove, showDebug = true }) {
   useEffect(() => {
-    console.log('📊 TechnicalDayTable received data:', data);
+    console.log('📊 [TechnicalDayTable] ontvangen data:', data);
   }, [data]);
 
   if (!Array.isArray(data) || data.length === 0) {
@@ -27,25 +27,37 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = tru
 
   return (
     <>
-      {data.map((item, index) => (
-        <tr key={index} className="border-t dark:border-gray-700">
-          <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
-          <td className="p-2 text-center">{item.waarde ?? '–'}</td>
-          <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
-            {item.score ?? '–'}
-          </td>
-          <td className="p-2 text-center">{item.advies ?? '–'}</td>
-          <td className="p-2">{item.uitleg ?? '–'}</td>
-          <td className="p-2 text-center">
-            <button
-              onClick={() => onRemove?.(item.symbol)}
-              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              ❌
-            </button>
-          </td>
-        </tr>
-      ))}
+      {data.map((item, index) => {
+        const indicator = item.indicator || '– missing –';
+        const waarde = item.waarde ?? '–';
+        const score = item.score ?? '–';
+        const advies = item.advies || '– missing –';
+        const uitleg = item.uitleg || '– missing –';
+        const symbol = item.symbol || `item-${index}`;
+
+        return (
+          <tr key={index} className="border-t dark:border-gray-700">
+            <td className="p-2 font-medium">{indicator}</td>
+            <td className="p-2 text-center">{waarde}</td>
+            <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+              {score}
+            </td>
+            <td className="p-2 text-center">{advies}</td>
+            <td className="p-2">{uitleg}</td>
+            <td className="p-2 text-center">
+              <button
+                onClick={() => {
+                  console.log('🗑️ Verwijderen (debug symbol):', symbol);
+                  onRemove?.(symbol);
+                }}
+                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                ❌
+              </button>
+            </td>
+          </tr>
+        );
+      })}
 
       {showDebug && (
         <tr>

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import {
-  fetchTechnicalDataDay,
-  fetchTechnicalDataWeek,
-  fetchTechnicalDataMonth,
-  fetchTechnicalDataQuarter,
-} from '@/lib/api/technical'; // ✅ Net als macro
+  technicalDataDay,
+  technicalDataWeek,
+  technicalDataMonth,
+  technicalDataQuarter,
+} from '@/lib/api/technical';
 
 export function useTechnicalData(timeframe = 'Dag') {
   const [technicalData, setTechnicalData] = useState([]);
@@ -15,11 +15,12 @@ export function useTechnicalData(timeframe = 'Dag') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // ✅ Kies juiste functie op basis van timeframe
   const fetchMap = {
-    Dag: fetchTechnicalDataDay,
-    Week: fetchTechnicalDataWeek,
-    Maand: fetchTechnicalDataMonth,
-    Kwartaal: fetchTechnicalDataQuarter,
+    Dag: technicalDataDay,
+    Week: technicalDataWeek,
+    Maand: technicalDataMonth,
+    Kwartaal: technicalDataQuarter,
   };
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export function useTechnicalData(timeframe = 'Dag') {
       setLoading(true);
       setError('');
 
-      const fetchFn = fetchMap[timeframe] || fetchTechnicalDataDay;
+      const fetchFn = fetchMap[timeframe] || technicalDataDay;
 
       try {
         console.log(`📡 Ophalen technische data (${timeframe}) via fetchFn...`);

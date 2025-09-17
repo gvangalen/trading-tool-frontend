@@ -22,8 +22,9 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log(`🚀 useTechnicalData mounted voor tab: ${activeTab}`);
     loadData();
-    const interval = setInterval(loadData, 60000); // elke minuut
+    const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
 
@@ -32,6 +33,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     setError('');
     try {
       let data;
+      console.log(`📥 Ophalen technische data voor tab: ${activeTab}`);
 
       switch (activeTab) {
         case 'Dag':
@@ -51,19 +53,25 @@ export function useTechnicalData(activeTab = 'Dag') {
       }
 
       const list = Array.isArray(data) ? data : data?.technical_data || [];
-      if (!Array.isArray(list)) throw new Error('technical_data is geen array');
 
-      console.log(`📡 [useTechnicalData] ${activeTab} geladen:`, list);
+      if (!Array.isArray(list)) {
+        console.error('❌ technical_data is geen array:', data);
+        throw new Error('technical_data is geen array');
+      }
 
-      // Update only the relevant tab's data
+      console.log(`✅ ${activeTab} data succesvol geladen:`, list);
+
       setTechnicalData((prev) => ({
         ...prev,
         [activeTab]: list,
       }));
 
-      updateScore(list);
+      // ❌ Geen scoreberekening uitvoeren
+      // updateScore(list);
+      setAvgScore('N/A');
+      setAdvies('⚖️ Neutraal');
     } catch (err) {
-      console.error('❌ Technische data ophalen mislukt:', err);
+      console.error('❌ Fout bij laden technische data:', err);
       setTechnicalData((prev) => ({
         ...prev,
         [activeTab]: [],
@@ -76,43 +84,16 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
+  // 🔇 Tijdelijk uitgezet
   function updateScore(data) {
-    let total = 0;
-    let count = 0;
-
-    data.forEach((item) => {
-      const score = typeof item.score === 'number' ? item.score : parseFloat(item.score);
-      if (!isNaN(score)) {
-        total += score;
-        count++;
-      } else {
-        console.warn(`⚠️ Ongeldige score bij ${item.symbol || item.name}:`, item.score);
-      }
-    });
-
-    const avg = count ? (total / count).toFixed(1) : 'N/A';
-    setAvgScore(avg);
-    setAdvies(
-      avg >= 1.5 ? '🟢 Bullish' :
-      avg <= -1.5 ? '🔴 Bearish' :
-      '⚖️ Neutraal'
-    );
+    console.log('ℹ️ updateScore is tijdelijk uitgeschakeld');
+    // Niks doen
   }
 
+  // 🔇 Tijdelijk uitgezet
   async function deleteAsset(symbol) {
-    console.log('🗑️ Verzoek om te verwijderen:', symbol);
-    try {
-      await technicalDataDelete(symbol);
-      const updated = technicalData[activeTab].filter((item) => item.symbol !== symbol);
-      setTechnicalData((prev) => ({
-        ...prev,
-        [activeTab]: updated,
-      }));
-      updateScore(updated);
-    } catch (err) {
-      console.error('❌ Verwijderen mislukt:', err);
-      setError('❌ Verwijderen mislukt');
-    }
+    console.log('ℹ️ deleteAsset is tijdelijk uitgeschakeld:', symbol);
+    // Niks doen
   }
 
   return {

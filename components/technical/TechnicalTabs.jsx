@@ -7,41 +7,25 @@ import TechnicalWeekTable from '@/components/technical/TechnicalWeekTable';
 import TechnicalMonthTable from '@/components/technical/TechnicalMonthTable';
 import TechnicalQuarterTable from '@/components/technical/TechnicalQuarterTable';
 
-// 🗂️ Mapping van labels → timeframe strings
-const TIMEFRAME_MAP = {
-  Dag: 'day',
-  Week: 'week',
-  Maand: 'month',
-  Kwartaal: 'quarter',
-};
+const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 
 export default function TechnicalTabs({
-  data = [],          // 🔹 Alle data voor alle timeframes
+  data = [],
   loading,
   error,
-  timeframe,          // 🔹 Geselecteerde tab (Dag, Week, Maand, Kwartaal)
+  timeframe,
   setTimeframe,
   onRemove,
 }) {
   useEffect(() => {
-    console.log('🧪 [TechnicalTabs] Geselecteerde tab:', timeframe);
-    console.log('📊 [TechnicalTabs] Ontvangen data:', data);
-  }, [timeframe, data]);
-
-  const getFilteredData = () => {
-    const tfKey = TIMEFRAME_MAP[timeframe]; // 'day', 'week', ...
-    return data.filter((item) => item.timeframe === tfKey);
-  };
-
-  const filteredData = getFilteredData();
+    console.log('🧪 TechnicalTabs mounted, timeframe:', timeframe);
+  }, [timeframe]);
 
   const renderTableBody = () => {
     if (loading) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-gray-500">
-            ⏳ Laden...
-          </td>
+          <td colSpan={6} className="p-4 text-center text-gray-500">⏳ Laden...</td>
         </tr>
       );
     }
@@ -49,28 +33,24 @@ export default function TechnicalTabs({
     if (error) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-red-500">
-            ❌ {error}
-          </td>
+          <td colSpan={6} className="p-4 text-center text-red-500">❌ {error}</td>
         </tr>
       );
     }
 
     switch (timeframe) {
       case 'Dag':
-        return <TechnicalDayTable data={filteredData} onRemove={onRemove} />;
+        return <TechnicalDayTable data={data} onRemove={onRemove} />;
       case 'Week':
-        return <TechnicalWeekTable data={filteredData} onRemove={onRemove} />;
+        return <TechnicalWeekTable data={data} onRemove={onRemove} />;
       case 'Maand':
-        return <TechnicalMonthTable data={filteredData} onRemove={onRemove} />;
+        return <TechnicalMonthTable data={data} onRemove={onRemove} />;
       case 'Kwartaal':
-        return <TechnicalQuarterTable data={filteredData} onRemove={onRemove} />;
+        return <TechnicalQuarterTable data={data} onRemove={onRemove} />;
       default:
         return (
           <tr>
-            <td colSpan={6} className="p-4 text-center text-gray-500">
-              ⚠️ Ongeldige timeframe
-            </td>
+            <td colSpan={6} className="p-4 text-center text-yellow-500">⚠️ Ongeldige timeframe</td>
           </tr>
         );
     }
@@ -78,24 +58,24 @@ export default function TechnicalTabs({
 
   return (
     <>
-      {/* 🔹 Tabs */}
+      {/* Tabs */}
       <div className="flex space-x-4 mb-4">
-        {Object.entries(TIMEFRAME_MAP).map(([label, tfKey]) => (
+        {TABS.map((tab) => (
           <button
-            key={label}
-            onClick={() => setTimeframe(label)} // Let op: we gebruiken hier 'Dag', 'Week', etc.
+            key={tab}
+            onClick={() => setTimeframe(tab)}
             className={`px-4 py-2 rounded font-semibold border ${
-              timeframe === label
+              timeframe === tab
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
             }`}
           >
-            {label}
+            {tab}
           </button>
         ))}
       </div>
 
-      {/* 🔹 Tabel */}
+      {/* Tabel */}
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">

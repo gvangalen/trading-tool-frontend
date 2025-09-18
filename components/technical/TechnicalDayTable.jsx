@@ -4,19 +4,21 @@ import { useEffect } from 'react';
 
 export default function TechnicalDayTable({ data = [], onRemove, showDebug = false }) {
   useEffect(() => {
-    console.log('📊 [TechnicalDayTable] ontvangen data:', data);
+    console.log('📊 [TechnicalDayTable] received data:', data);
   }, [data]);
 
+  // 🧠 Fallback voor geen data
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <tr>
         <td colSpan={6} className="p-4 text-center text-gray-500">
-          ⚠️ Geen technische dag-data beschikbaar.
+          ⚠️ No daily technical data available.
         </td>
       </tr>
     );
   }
 
+  // ✅ Kleur bepalen op basis van score
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -38,7 +40,7 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = fal
         } = item;
 
         return (
-          <tr key={symbol || index} className="border-t dark:border-gray-700">
+          <tr key={symbol || `row-${index}`} className="border-t dark:border-gray-700">
             <td className="p-2 font-medium">{indicator}</td>
             <td className="p-2 text-center">{waarde}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
@@ -49,7 +51,7 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = fal
             <td className="p-2 text-center">
               <button
                 onClick={() => {
-                  console.log('🗑️ Verwijderen (symbol):', symbol || `item-${index}`);
+                  console.log('🗑️ Removing:', symbol || `item-${index}`);
                   if (onRemove) onRemove(symbol || `item-${index}`);
                 }}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
@@ -61,6 +63,7 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = fal
         );
       })}
 
+      {/* 🧪 Optionele debug view */}
       {showDebug && (
         <tr>
           <td colSpan={6}>

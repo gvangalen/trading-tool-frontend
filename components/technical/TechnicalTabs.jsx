@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import CardWrapper from '@/components/ui/CardWrapper';
 
-const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
+const TABS = ['day', 'week', 'month', 'quarter'];
 
 export default function TechnicalTabs({
   timeframe,
@@ -22,13 +22,13 @@ export default function TechnicalTabs({
 
   const getActiveData = () => {
     switch (timeframe) {
-      case 'Week':
+      case 'week':
         return weekData;
-      case 'Maand':
+      case 'month':
         return monthData;
-      case 'Kwartaal':
+      case 'quarter':
         return quarterData;
-      case 'Dag':
+      case 'day':
       default:
         return dayData;
     }
@@ -39,7 +39,7 @@ export default function TechnicalTabs({
       return (
         <tr>
           <td colSpan={6} className="p-4 text-center text-gray-500">
-            ⏳ Laden...
+            ⏳ Loading...
           </td>
         </tr>
       );
@@ -61,7 +61,7 @@ export default function TechnicalTabs({
       return (
         <tr>
           <td colSpan={6} className="p-4 text-center text-gray-400">
-            Geen data gevonden
+            No data available
           </td>
         </tr>
       );
@@ -96,6 +96,13 @@ export default function TechnicalTabs({
     ));
   };
 
+  const labelMap = {
+    day: 'Dag',
+    week: 'Week',
+    month: 'Maand',
+    quarter: 'Kwartaal',
+  };
+
   return (
     <>
       {/* Tabs */}
@@ -110,7 +117,7 @@ export default function TechnicalTabs({
                 : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
             }`}
           >
-            {tab}
+            {labelMap[tab]} {/* Label in NL, value in EN */}
           </button>
         ))}
       </div>

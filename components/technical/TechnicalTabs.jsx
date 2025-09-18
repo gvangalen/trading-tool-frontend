@@ -2,19 +2,8 @@
 
 import { useEffect } from 'react';
 import CardWrapper from '@/components/ui/CardWrapper';
-import TechnicalDayTable from '@/components/technical/TechnicalDayTable';
-import TechnicalWeekTable from '@/components/technical/TechnicalWeekTable';
-import TechnicalMonthTable from '@/components/technical/TechnicalMonthTable';
-import TechnicalQuarterTable from '@/components/technical/TechnicalQuarterTable';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
-
-const TAB_COMPONENTS = {
-  Dag: TechnicalDayTable,
-  Week: TechnicalWeekTable,
-  Maand: TechnicalMonthTable,
-  Kwartaal: TechnicalQuarterTable,
-};
 
 export default function TechnicalTabs({
   data = [],
@@ -32,7 +21,9 @@ export default function TechnicalTabs({
     if (loading) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-gray-500">⏳ Laden...</td>
+          <td colSpan={6} className="p-4 text-center text-gray-500">
+            ⏳ Laden...
+          </td>
         </tr>
       );
     }
@@ -40,21 +31,50 @@ export default function TechnicalTabs({
     if (error) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-red-500">❌ {error}</td>
+          <td colSpan={6} className="p-4 text-center text-red-500">
+            ❌ {error}
+          </td>
         </tr>
       );
     }
 
-    const TableComponent = TAB_COMPONENTS[timeframe];
-    if (!TableComponent) {
+    if (!data.length) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-yellow-500">⚠️ Ongeldige timeframe</td>
+          <td colSpan={6} className="p-4 text-center text-gray-400">
+            Geen data gevonden
+          </td>
         </tr>
       );
     }
 
-    return <TableComponent data={data} onRemove={onRemove} />;
+    return data.map((item) => (
+      <tr key={item.id || item.symbol} className="border-t">
+        <td className="p-2 font-medium">{item.indicator}</td>
+        <td className="p-2 text-center">{item.value ?? '–'}</td>
+        <td
+          className={`p-2 text-center font-bold ${
+            item.score >= 2
+              ? 'text-green-600'
+              : item.score <= -2
+              ? 'text-red-600'
+              : 'text-gray-600'
+          }`}
+        >
+          {item.score ?? '–'}
+        </td>
+        <td className="p-2 text-center">{item.advice ?? '–'}</td>
+        <td className="p-2">{item.explanation ?? '–'}</td>
+        <td className="p-2 text-center">
+          <button
+            onClick={() => onRemove?.(item.symbol)}
+            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            ❌
+          </button>
+        </td>
+      </tr>
+    ));
   };
 
   return (

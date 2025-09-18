@@ -8,13 +8,13 @@ import {
   technicalDataQuarter,
 } from '@/lib/api/technical';
 
-export function useTechnicalData(activeTab = 'Dag') {
+export function useTechnicalData(activeTab = 'day') {
   const [dayData, setDayData] = useState([]);
   const [weekData, setWeekData] = useState([]);
   const [monthData, setMonthData] = useState([]);
   const [quarterData, setQuarterData] = useState([]);
   const [avgScore, setAvgScore] = useState(null);
-  const [advies, setAdvies] = useState('Neutraal');
+  const [advies, setAdvies] = useState('Neutral');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,7 +24,7 @@ export function useTechnicalData(activeTab = 'Dag') {
       setError('');
 
       try {
-        console.log('📡 Ophalen technische data (alle timeframes)...');
+        console.log('📡 Fetching all technical data...');
 
         const [day, week, month, quarter] = await Promise.all([
           technicalDataDay(),
@@ -38,11 +38,11 @@ export function useTechnicalData(activeTab = 'Dag') {
         setMonthData(Array.isArray(month) ? month : []);
         setQuarterData(Array.isArray(quarter) ? quarter : []);
 
-        console.log('✅ Alle technische data opgehaald');
+        console.log('✅ All technical data fetched');
 
       } catch (err) {
-        console.error('❌ Fout bij ophalen technische data:', err);
-        setError('Technische data kon niet geladen worden.');
+        console.error('❌ Error fetching technical data:', err);
+        setError('Technical data could not be loaded.');
       } finally {
         setLoading(false);
       }
@@ -52,12 +52,11 @@ export function useTechnicalData(activeTab = 'Dag') {
   }, []);
 
   useEffect(() => {
-    // 🎯 Bepaal score op basis van actieve tab
     const dataMap = {
-      Dag: dayData,
-      Week: weekData,
-      Maand: monthData,
-      Kwartaal: quarterData,
+      day: dayData,
+      week: weekData,
+      month: monthData,
+      quarter: quarterData,
     };
 
     const activeData = dataMap[activeTab] || [];
@@ -72,16 +71,16 @@ export function useTechnicalData(activeTab = 'Dag') {
       setAdvies(
         average >= 1.5 ? 'Bullish' :
         average <= -1.5 ? 'Bearish' :
-        'Neutraal'
+        'Neutral'
       );
     } else {
       setAvgScore(null);
-      setAdvies('Neutraal');
+      setAdvies('Neutral');
     }
   }, [activeTab, dayData, weekData, monthData, quarterData]);
 
   const deleteAsset = (symbol) => {
-    console.log(`🗑️ Verwijder '${symbol}' uit alle timeframes`);
+    console.log(`🗑️ Remove '${symbol}' from all timeframes`);
     setDayData((prev) => prev.filter((item) => item.symbol !== symbol));
     setWeekData((prev) => prev.filter((item) => item.symbol !== symbol));
     setMonthData((prev) => prev.filter((item) => item.symbol !== symbol));

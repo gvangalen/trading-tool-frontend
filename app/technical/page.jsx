@@ -4,8 +4,7 @@ import { useState } from 'react';
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
-// ✅ Lokale dummydata voor alle timeframes
-const dummyData = [
+const dayData = [
   {
     indicator: 'RSI',
     waarde: 28.4,
@@ -32,17 +31,52 @@ const dummyData = [
   },
 ];
 
+const weekData = [
+  {
+    indicator: 'RSI (Week)',
+    waarde: 65.2,
+    score: 2,
+    advies: 'Bullish',
+    uitleg: 'RSI boven 60 wijst op kracht.',
+    symbol: 'BTC',
+  },
+  {
+    indicator: 'Volume (Week)',
+    waarde: '12.4M',
+    score: 1,
+    advies: 'Neutraal',
+    uitleg: 'Volume gemiddeld op weekbasis.',
+    symbol: 'BTC',
+  },
+  {
+    indicator: '200MA (Week)',
+    waarde: 'Boven MA',
+    score: 2,
+    advies: 'Bullish',
+    uitleg: 'Prijs boven 200-week MA.',
+    symbol: 'BTC',
+  },
+];
+
+const monthData = dayData;     // Voor nu dezelfde
+const quarterData = dayData;   // Voor nu dezelfde
+
 export default function TechnicalPage() {
-  const [timeframe, setTimeframe] = useState('day'); // ✅ Engels
+  const [timeframe, setTimeframe] = useState('day');
 
-  // 🔧 Gebruik overal dezelfde dummydata (day/week/month/quarter)
-  const dayData = dummyData;
-  const weekData = dummyData;
-  const monthData = dummyData;
-  const quarterData = dummyData;
+  const activeData =
+    timeframe === 'day'
+      ? dayData
+      : timeframe === 'week'
+      ? weekData
+      : timeframe === 'month'
+      ? monthData
+      : quarterData;
 
-  const avgScore = -2;
-  const advies = 'Bearish';
+  const avgScore =
+    activeData.reduce((sum, item) => sum + item.score, 0) /
+    activeData.length;
+  const advies = avgScore >= 1.5 ? 'Bullish' : avgScore <= -1.5 ? 'Bearish' : 'Neutral';
 
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
@@ -64,7 +98,7 @@ export default function TechnicalPage() {
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
             📊 Technical Score:{' '}
-            <span className={scoreColor(avgScore)}>{avgScore ?? 'N/A'}</span>
+            <span className={scoreColor(avgScore)}>{avgScore.toFixed(1)}</span>
           </h3>
           <h3 className="text-lg font-semibold">
             🧠 Advice:{' '}

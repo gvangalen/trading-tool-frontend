@@ -6,19 +6,22 @@ import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
-  const [timeframe, setTimeframe] = useState('Dag'); // ⬅️ Dit is de juiste naam
+  const [timeframe, setTimeframe] = useState('day'); // ✅ Engels
 
   const {
-    technicalData,
+    dayData,
+    weekData,
+    monthData,
+    quarterData,
     avgScore,
     advies,
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData(timeframe); // ⬅️ Match met hook
+  } = useTechnicalData(timeframe);
 
   useEffect(() => {
-    console.log(`🧪 Actieve timeframe: ${timeframe}`);
+    console.log(`🧪 Active timeframe: ${timeframe}`);
   }, [timeframe]);
 
   const scoreColor = (score) => {
@@ -32,27 +35,30 @@ export default function TechnicalPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
       {/* 🔹 Titel */}
-      <h1 className="text-2xl font-bold">🧪 Technische Analyse</h1>
+      <h1 className="text-2xl font-bold">🧪 Technical Analysis</h1>
 
       {/* 🔹 Samenvatting */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
-            📊 Technische Score:{' '}
+            📊 Technical Score:{' '}
             <span className={scoreColor(avgScore)}>{avgScore ?? 'N/A'}</span>
           </h3>
           <h3 className="text-lg font-semibold">
-            🧠 Advies:{' '}
+            🧠 Advice:{' '}
             <span className="text-blue-600">{advies}</span>
           </h3>
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs + Tabel */}
+      {/* 🔹 Tabs + Table */}
       <TechnicalTabs
-        timeframe={timeframe} // ✅ Correcte prop
+        timeframe={timeframe}
         setTimeframe={setTimeframe}
-        data={technicalData}
+        dayData={dayData}
+        weekData={weekData}
+        monthData={monthData}
+        quarterData={quarterData}
         loading={loading}
         error={error}
         onRemove={deleteAsset}

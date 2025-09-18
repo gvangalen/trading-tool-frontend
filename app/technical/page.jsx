@@ -6,9 +6,8 @@ import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
-  const [activeTab, setActiveTab] = useState('Dag');
+  const [timeframe, setTimeframe] = useState('Dag'); // ⬅️ Dit is de juiste naam
 
-  // ✅ Haal alleen data op voor huidige timeframe
   const {
     technicalData,
     avgScore,
@@ -16,11 +15,11 @@ export default function TechnicalPage() {
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData(activeTab);
+  } = useTechnicalData(timeframe); // ⬅️ Match met hook
 
   useEffect(() => {
-    console.log(`🧪 Timeframe actief: ${activeTab}`);
-  }, [activeTab]);
+    console.log(`🧪 Actieve timeframe: ${timeframe}`);
+  }, [timeframe]);
 
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
@@ -51,8 +50,8 @@ export default function TechnicalPage() {
 
       {/* 🔹 Tabs + Tabel */}
       <TechnicalTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        timeframe={timeframe} // ✅ Correcte prop
+        setTimeframe={setTimeframe}
         data={technicalData}
         loading={loading}
         error={error}

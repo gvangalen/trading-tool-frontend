@@ -1,28 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTechnicalData } from '@/hooks/useTechnicalData';
+import { useState } from 'react';
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
+
+// ✅ Lokale dummydata voor alle timeframes
+const dummyData = [
+  {
+    indicator: 'RSI',
+    waarde: 28.4,
+    score: -3,
+    advies: 'Bearish',
+    uitleg: 'RSI onder 30 geeft oversold aan.',
+    symbol: 'BTC',
+  },
+  {
+    indicator: 'Volume',
+    waarde: '8.2M',
+    score: -2,
+    advies: 'Bearish',
+    uitleg: 'Volume is laag t.o.v. gemiddeld.',
+    symbol: 'BTC',
+  },
+  {
+    indicator: '200MA',
+    waarde: 'Onder MA',
+    score: -1,
+    advies: 'Bearish',
+    uitleg: 'Prijs zit onder 200-daags gemiddelde.',
+    symbol: 'BTC',
+  },
+];
 
 export default function TechnicalPage() {
   const [timeframe, setTimeframe] = useState('day'); // ✅ Engels
 
-  const {
-    dayData,
-    weekData,
-    monthData,
-    quarterData,
-    avgScore,
-    advies,
-    loading,
-    error,
-    deleteAsset,
-  } = useTechnicalData(timeframe);
+  // 🔧 Gebruik overal dezelfde dummydata (day/week/month/quarter)
+  const dayData = dummyData;
+  const weekData = dummyData;
+  const monthData = dummyData;
+  const quarterData = dummyData;
 
-  useEffect(() => {
-    console.log(`🧪 Active timeframe: ${timeframe}`);
-  }, [timeframe]);
+  const avgScore = -2;
+  const advies = 'Bearish';
 
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
@@ -32,12 +52,14 @@ export default function TechnicalPage() {
     return 'text-gray-600';
   };
 
+  const deleteAsset = (symbol) => {
+    console.log('🗑️ Simulatie: zou nu verwijderen', symbol);
+  };
+
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
-      {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">🧪 Technical Analysis</h1>
 
-      {/* 🔹 Samenvatting */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
@@ -51,7 +73,6 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs + Table */}
       <TechnicalTabs
         timeframe={timeframe}
         setTimeframe={setTimeframe}
@@ -59,8 +80,8 @@ export default function TechnicalPage() {
         weekData={weekData}
         monthData={monthData}
         quarterData={quarterData}
-        loading={loading}
-        error={error}
+        loading={false}
+        error={''}
         onRemove={deleteAsset}
       />
     </div>

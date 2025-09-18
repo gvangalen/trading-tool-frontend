@@ -28,15 +28,17 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = fal
   return (
     <>
       {data.map((item, index) => {
-        const indicator = item.indicator || '–';
-        const waarde = item.waarde ?? '–';
-        const score = item.score ?? '–';
-        const advies = item.advies || '–';
-        const uitleg = item.uitleg || '–';
-        const symbol = item.symbol || `item-${index}`;
+        const {
+          indicator = '–',
+          waarde = '–',
+          score = '–',
+          advies = '–',
+          uitleg = '–',
+          symbol,
+        } = item;
 
         return (
-          <tr key={index} className="border-t dark:border-gray-700">
+          <tr key={symbol || index} className="border-t dark:border-gray-700">
             <td className="p-2 font-medium">{indicator}</td>
             <td className="p-2 text-center">{waarde}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
@@ -47,8 +49,8 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = fal
             <td className="p-2 text-center">
               <button
                 onClick={() => {
-                  console.log('🗑️ Verwijderen (symbol):', symbol);
-                  if (onRemove) onRemove(symbol);
+                  console.log('🗑️ Verwijderen (symbol):', symbol || `item-${index}`);
+                  if (onRemove) onRemove(symbol || `item-${index}`);
                 }}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
               >

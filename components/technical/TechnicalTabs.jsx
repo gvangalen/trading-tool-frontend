@@ -9,6 +9,13 @@ import TechnicalQuarterTable from '@/components/technical/TechnicalQuarterTable'
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 
+const TAB_COMPONENTS = {
+  Dag: TechnicalDayTable,
+  Week: TechnicalWeekTable,
+  Maand: TechnicalMonthTable,
+  Kwartaal: TechnicalQuarterTable,
+};
+
 export default function TechnicalTabs({
   data = [],
   loading,
@@ -38,22 +45,16 @@ export default function TechnicalTabs({
       );
     }
 
-    switch (timeframe) {
-      case 'Dag':
-        return <TechnicalDayTable data={data} onRemove={onRemove} />;
-      case 'Week':
-        return <TechnicalWeekTable data={data} onRemove={onRemove} />;
-      case 'Maand':
-        return <TechnicalMonthTable data={data} onRemove={onRemove} />;
-      case 'Kwartaal':
-        return <TechnicalQuarterTable data={data} onRemove={onRemove} />;
-      default:
-        return (
-          <tr>
-            <td colSpan={6} className="p-4 text-center text-yellow-500">⚠️ Ongeldige timeframe</td>
-          </tr>
-        );
+    const TableComponent = TAB_COMPONENTS[timeframe];
+    if (!TableComponent) {
+      return (
+        <tr>
+          <td colSpan={6} className="p-4 text-center text-yellow-500">⚠️ Ongeldige timeframe</td>
+        </tr>
+      );
     }
+
+    return <TableComponent data={data} onRemove={onRemove} />;
   };
 
   return (

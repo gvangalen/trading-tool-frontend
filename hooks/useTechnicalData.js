@@ -16,19 +16,23 @@ export function useTechnicalData(timeframe = 'Dag') {
   const [error, setError] = useState('');
 
   // 🧭 Mapping voor juiste fetch-functie
-  const fetchMap = {
-    Dag: technicalDataDay,
-    Week: technicalDataWeek,
-    Maand: technicalDataMonth,
-    Kwartaal: technicalDataQuarter,
-  };
+ const timeframeKeyMap = {
+  Dag: 'day',
+  Week: 'week',
+  Maand: 'month',
+  Kwartaal: 'quarter',
+};
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError('');
+const key = timeframeKeyMap[timeframe] || 'day';
 
-      const fetchFn = fetchMap[timeframe] || technicalDataDay;
+const fetchMap = {
+  day: technicalDataDay,
+  week: technicalDataWeek,
+  month: technicalDataMonth,
+  quarter: technicalDataQuarter,
+};
+
+const fetchFn = fetchMap[key];
 
       try {
         console.log(`📡 Ophalen technische data voor '${timeframe}'...`);

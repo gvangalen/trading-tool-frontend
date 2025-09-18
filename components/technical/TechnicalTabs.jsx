@@ -6,16 +6,33 @@ import CardWrapper from '@/components/ui/CardWrapper';
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 
 export default function TechnicalTabs({
-  data = [],
-  loading,
-  error,
   timeframe,
   setTimeframe,
+  dayData,
+  weekData,
+  monthData,
+  quarterData,
+  loading,
+  error,
   onRemove,
 }) {
   useEffect(() => {
     console.log('🧪 TechnicalTabs mounted, timeframe:', timeframe);
   }, [timeframe]);
+
+  const getActiveData = () => {
+    switch (timeframe) {
+      case 'Week':
+        return weekData;
+      case 'Maand':
+        return monthData;
+      case 'Kwartaal':
+        return quarterData;
+      case 'Dag':
+      default:
+        return dayData;
+    }
+  };
 
   const renderTableBody = () => {
     if (loading) {
@@ -38,7 +55,9 @@ export default function TechnicalTabs({
       );
     }
 
-    if (!data.length) {
+    const data = getActiveData();
+
+    if (!data || !data.length) {
       return (
         <tr>
           <td colSpan={6} className="p-4 text-center text-gray-400">
@@ -48,10 +67,10 @@ export default function TechnicalTabs({
       );
     }
 
-    return data.map((item) => (
-      <tr key={item.id || item.symbol} className="border-t">
+    return data.map((item, index) => (
+      <tr key={item.symbol || index} className="border-t">
         <td className="p-2 font-medium">{item.indicator}</td>
-        <td className="p-2 text-center">{item.value ?? '–'}</td>
+        <td className="p-2 text-center">{item.waarde ?? '–'}</td>
         <td
           className={`p-2 text-center font-bold ${
             item.score >= 2
@@ -63,8 +82,8 @@ export default function TechnicalTabs({
         >
           {item.score ?? '–'}
         </td>
-        <td className="p-2 text-center">{item.advice ?? '–'}</td>
-        <td className="p-2">{item.explanation ?? '–'}</td>
+        <td className="p-2 text-center">{item.advies ?? '–'}</td>
+        <td className="p-2">{item.uitleg ?? '–'}</td>
         <td className="p-2 text-center">
           <button
             onClick={() => onRemove?.(item.symbol)}

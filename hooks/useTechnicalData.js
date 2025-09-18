@@ -15,33 +15,39 @@ export function useTechnicalData(timeframe = 'Dag') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 🧭 Mapping voor juiste fetch-functie
- const timeframeKeyMap = {
-  Dag: 'day',
-  Week: 'week',
-  Maand: 'month',
-  Kwartaal: 'quarter',
-};
+  // 🔄 Mapping van tab-labels → API keys
+  const timeframeKeyMap = {
+    Dag: 'day',
+    Week: 'week',
+    Maand: 'month',
+    Kwartaal: 'quarter',
+  };
 
-const key = timeframeKeyMap[timeframe] || 'day';
+  // 🧭 Mapping van API keys → fetch-functies
+  const fetchMap = {
+    day: technicalDataDay,
+    week: technicalDataWeek,
+    month: technicalDataMonth,
+    quarter: technicalDataQuarter,
+  };
 
-const fetchMap = {
-  day: technicalDataDay,
-  week: technicalDataWeek,
-  month: technicalDataMonth,
-  quarter: technicalDataQuarter,
-};
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError('');
 
-const fetchFn = fetchMap[key];
+      const key = timeframeKeyMap[timeframe] || 'day';
+      const fetchFn = fetchMap[key];
 
       try {
-        console.log(`📡 Ophalen technische data voor '${timeframe}'...`);
+        console.log(`📡 Ophalen technische data voor '${key}'...`);
         const data = await fetchFn();
 
         if (!Array.isArray(data)) {
           throw new Error('⚠️ Ongeldig dataformaat');
         }
 
+        console.log('📊 Ontvangen data:', data);
         setTechnicalData(data);
 
         // ✅ Gemiddelde score berekenen
@@ -76,7 +82,7 @@ const fetchFn = fetchMap[key];
     fetchData();
   }, [timeframe]);
 
-  // ✅ Item verwijderen op basis van symbol
+  // 🗑️ Verwijder een specifieke asset (op symbol)
   const deleteAsset = (symbol) => {
     console.log(`🗑️ Verwijder '${symbol}' uit lijst`);
     setTechnicalData((prev) => prev.filter((item) => item.symbol !== symbol));

@@ -8,25 +8,19 @@ import CardWrapper from '@/components/ui/CardWrapper';
 export default function TechnicalPage() {
   const [activeTab, setActiveTab] = useState('Dag');
 
-  // ✅ Haal alle timeframes tegelijk op (dag, week, maand, kwartaal)
+  // ✅ Haal alleen data op voor huidige timeframe
   const {
-    dayData = [],
-    weekData = [],
-    monthData = [],
-    quarterData = [],
-    avgScore = 'N/A',
-    advies = 'Neutraal',
+    technicalData,
+    avgScore,
+    advies,
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData();
+  } = useTechnicalData(activeTab);
 
-  // ✅ Logging per tab en dataset
   useEffect(() => {
-    console.log(`🔁 [TechnicalPage] Timeframe: ${activeTab}`);
-    console.log('📉 [TechnicalPage] Loading:', loading);
-    console.log('⚠️ [TechnicalPage] Error:', error);
-  }, [activeTab, loading, error]);
+    console.log(`🧪 Timeframe actief: ${activeTab}`);
+  }, [activeTab]);
 
   const scoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
@@ -46,7 +40,7 @@ export default function TechnicalPage() {
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
             📊 Technische Score:{' '}
-            <span className={scoreColor(avgScore)}>{avgScore}</span>
+            <span className={scoreColor(avgScore)}>{avgScore ?? 'N/A'}</span>
           </h3>
           <h3 className="text-lg font-semibold">
             🧠 Advies:{' '}
@@ -55,14 +49,11 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs + Data */}
+      {/* 🔹 Tabs + Tabel */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        dayData={dayData}
-        weekData={weekData}
-        monthData={monthData}
-        quarterData={quarterData}
+        data={technicalData}
         loading={loading}
         error={error}
         onRemove={deleteAsset}

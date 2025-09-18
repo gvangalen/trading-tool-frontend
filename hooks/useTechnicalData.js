@@ -25,7 +25,6 @@ export function useTechnicalData(activeTab = 'day') {
 
       try {
         console.log('📡 Fetching all technical data...');
-
         const [day, week, month, quarter] = await Promise.all([
           technicalDataDay(),
           technicalDataWeek(),
@@ -39,7 +38,6 @@ export function useTechnicalData(activeTab = 'day') {
         setQuarterData(Array.isArray(quarter) ? quarter : []);
 
         console.log('✅ All technical data fetched');
-
       } catch (err) {
         console.error('❌ Error fetching technical data:', err);
         setError('Technical data could not be loaded.');
@@ -51,6 +49,7 @@ export function useTechnicalData(activeTab = 'day') {
     fetchAll();
   }, []);
 
+  // Gemiddelde en advies berekenen voor actieve timeframe
   useEffect(() => {
     const dataMap = {
       day: dayData,
@@ -67,7 +66,7 @@ export function useTechnicalData(activeTab = 'day') {
 
     if (validScores.length > 0) {
       const average = validScores.reduce((acc, val) => acc + val, 0) / validScores.length;
-      setAvgScore(average.toFixed(2));
+      setAvgScore(Number(average.toFixed(2))); // ✨ number ipv string
       setAdvies(
         average >= 1.5 ? 'Bullish' :
         average <= -1.5 ? 'Bearish' :
@@ -80,6 +79,7 @@ export function useTechnicalData(activeTab = 'day') {
   }, [activeTab, dayData, weekData, monthData, quarterData]);
 
   const deleteAsset = (symbol) => {
+    if (!symbol) return;
     console.log(`🗑️ Remove '${symbol}' from all timeframes`);
     setDayData((prev) => prev.filter((item) => item.symbol !== symbol));
     setWeekData((prev) => prev.filter((item) => item.symbol !== symbol));

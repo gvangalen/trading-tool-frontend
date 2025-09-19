@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-// ⛔ Verwijderd: import TechnicalTabs
 import TechnicalTable from '@/components/technical/TechnicalTable'; // ✅ Nieuw
 import MacroTable from '@/components/macro/MacroTable';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';

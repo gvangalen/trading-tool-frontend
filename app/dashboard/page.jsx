@@ -16,7 +16,7 @@ import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
 // 🧠 Hooks
-import { useTechnicalData } from '@/lib/hooks/useTechnicalData';
+import { useTechnicalData } from '@/hooks/useTechnicalData';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);

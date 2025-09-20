@@ -1,21 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+// 📦 Components
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-import TechnicalDayTable from '@/components/technical/TechnicalDayTable'; // ⬅️ aangepaste import
+import TechnicalDayTable from '@/components/technical/TechnicalDayTable';
 import MacroTable from '@/components/macro/MacroTable';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
-
 import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 
+// 🧠 Hooks
+import { useTechnicalData } from '@/lib/hooks/useTechnicalData';
+
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
+
+  // ✅ Technical data ophalen
+  const { dayData, deleteAsset, loading } = useTechnicalData();
 
   useEffect(() => {
     const handleScroll = () => setShowScroll(window.scrollY > 300);
@@ -59,7 +66,11 @@ export default function DashboardPage() {
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
-                <TechnicalDayTable /> {/* ⬅️ tijdelijk alleen dagtabel */}
+                {loading ? (
+                  <p className="text-gray-500">⏳ Laden...</p>
+                ) : (
+                  <TechnicalDayTable data={dayData} onRemove={deleteAsset} />
+                )}
               </CardWrapper>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>

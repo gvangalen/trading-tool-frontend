@@ -6,22 +6,18 @@ import { useEffect, useState } from 'react';
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
 import TechnicalDayTableForDashboard from '@/components/technical/TechnicalDayTableForDashboard';
-import MacroSummaryTableForDashboard from '@/components/macro/MacroSummaryTableForDashboard'; // ✅ NIEUW
+import MacroSummaryTableForDashboard from '@/components/macro/MacroSummaryTableForDashboard';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
-import MarketLiveCard from '@/components/market/MarketLiveCard';
-import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
-import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
+import MarketSummaryForDashboard from '@/components/market/MarketSummaryForDashboard'; // ✅ NIEUW
 
 // 🧠 Hooks
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
-
-  // ✅ Technical data ophalen
   const { dayData, deleteAsset, loading } = useTechnicalData();
 
   useEffect(() => {
@@ -51,14 +47,10 @@ export default function DashboardPage() {
             </section>
 
             {/* 💰 Market Data */}
-            <section className="space-y-6">
+            <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
-                <div className="space-y-4">
-                  <MarketLiveCard />
-                  <MarketSevenDayTable />
-                  <MarketForwardReturnTabs />
-                </div>
+                <MarketSummaryForDashboard />
               </CardWrapper>
             </section>
 

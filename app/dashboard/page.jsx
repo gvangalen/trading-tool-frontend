@@ -69,7 +69,9 @@ export default function DashboardPage() {
                 {loading ? (
                   <p className="text-gray-500">⏳ Laden...</p>
                 ) : (
+                 <div className="overflow-x-auto">
                   <TechnicalDayTable data={dayData} onRemove={deleteAsset} />
+                </div>
                 )}
               </CardWrapper>
             </section>

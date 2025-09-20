@@ -62,8 +62,8 @@ export default function DashboardPage() {
               </CardWrapper>
             </section>
 
-            {/* 📈 Technische Analyse + 🌍 Macro */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 📈 Technische Analyse */}
+            <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
                 {loading ? (
@@ -72,6 +72,10 @@ export default function DashboardPage() {
                   <TechnicalDayTable data={dayData} onRemove={deleteAsset} />
                 )}
               </CardWrapper>
+            </section>
+
+            {/* 🌍 Macro Indicatoren */}
+            <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
                 <MacroTable />

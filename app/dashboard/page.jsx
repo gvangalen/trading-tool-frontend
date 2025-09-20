@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-import TechnicalTable from '@/components/technical/TechnicalDayTable'; // ✅ Nieuw
+import TechnicalDayTable from '@/components/technical/TechnicalDayTable'; // ⬅️ aangepaste import
 import MacroTable from '@/components/macro/MacroTable';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
@@ -58,8 +58,8 @@ export default function DashboardPage() {
             {/* 📈 Technische Analyse + 🌍 Macro */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse (Dag)</h2>
-                <TechnicalTable /> {/* ✅ Dagelijkse tabel */}
+                <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
+                <TechnicalDayTable /> {/* ⬅️ tijdelijk alleen dagtabel */}
               </CardWrapper>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>

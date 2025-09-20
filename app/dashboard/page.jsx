@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 // 📦 Components
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-import TechnicalDayTableForDashboard from '@/components/technical/TechnicalDayTableForDashboard'; // ✅ NIEUW
-import MacroTable from '@/components/macro/MacroTable';
+import TechnicalDayTableForDashboard from '@/components/technical/TechnicalDayTableForDashboard';
+import MacroSummaryTableForDashboard from '@/components/macro/MacroSummaryTableForDashboard'; // ✅ NIEUW
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
@@ -78,7 +78,7 @@ export default function DashboardPage() {
             <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
-                <MacroTable />
+                <MacroSummaryTableForDashboard />
               </CardWrapper>
             </section>
 

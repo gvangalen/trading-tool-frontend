@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 // 📦 Components
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
-import TechnicalDayTable from '@/components/technical/TechnicalDayTable';
+import TechnicalDayTableForDashboard from '@/components/technical/TechnicalDayTableForDashboard'; // ✅ NIEUW
 import MacroTable from '@/components/macro/MacroTable';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
@@ -69,9 +69,7 @@ export default function DashboardPage() {
                 {loading ? (
                   <p className="text-gray-500">⏳ Laden...</p>
                 ) : (
-                 <div className="overflow-x-auto">
-                  <TechnicalDayTable data={dayData} onRemove={deleteAsset} />
-                </div>
+                  <TechnicalDayTableForDashboard data={dayData} onRemove={deleteAsset} />
                 )}
               </CardWrapper>
             </section>

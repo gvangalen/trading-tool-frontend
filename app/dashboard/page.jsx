@@ -61,7 +61,7 @@ export default function DashboardPage() {
                 {loading ? (
                   <p className="text-gray-500">⏳ Laden...</p>
                 ) : (
-                  <TechnicalDayTableForDashboard data={dayData} onRemove={deleteAsset} />
+                  <TechnicalDayTableForDashboard data={dayData} loading={loading} onRemove={deleteAsset} />
                 )}
               </CardWrapper>
             </section>

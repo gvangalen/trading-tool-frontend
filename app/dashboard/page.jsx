@@ -11,14 +11,28 @@ import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import DashboardHighlights from '@/components/dashboard/DashboardHighlights';
 import RightSidebarCard from '@/components/cards/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
-import MarketSummaryForDashboard from '@/components/market/MarketSummaryForDashboard'; // ✅ NIEUW
+import MarketSummaryForDashboard from '@/components/market/MarketSummaryForDashboard';
 
 // 🧠 Hooks
 import { useTechnicalData } from '@/hooks/useTechnicalData';
+import { useMacroData } from '@/hooks/useMacroData'; // ✅ Toegevoegd
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
-  const { dayData, deleteAsset, loading } = useTechnicalData();
+
+  // Technische data
+  const { dayData, deleteAsset, loading: technicalLoading } = useTechnicalData();
+
+  // Macro data
+  const {
+    macroData,
+    loading: macroLoading,
+    error: macroError,
+    handleEdit,
+    handleRemove,
+    calculateMacroScore,
+    getExplanation,
+  } = useMacroData(); // standaard 'Dag'
 
   useEffect(() => {
     const handleScroll = () => setShowScroll(window.scrollY > 300);
@@ -58,10 +72,14 @@ export default function DashboardPage() {
             <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
-                {loading ? (
+                {technicalLoading ? (
                   <p className="text-gray-500">⏳ Laden...</p>
                 ) : (
-                  <TechnicalDayTableForDashboard data={dayData} loading={loading} onRemove={deleteAsset} />
+                  <TechnicalDayTableForDashboard
+                    data={dayData}
+                    loading={technicalLoading}
+                    onRemove={deleteAsset}
+                  />
                 )}
               </CardWrapper>
             </section>
@@ -70,7 +88,19 @@ export default function DashboardPage() {
             <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
-                <MacroSummaryTableForDashboard />
+                {macroLoading ? (
+                  <p className="text-gray-500">⏳ Laden...</p>
+                ) : macroError ? (
+                  <p className="text-red-600">{macroError}</p>
+                ) : (
+                  <MacroSummaryTableForDashboard
+                    data={macroData}
+                    calculateScore={calculateMacroScore}
+                    getExplanation={getExplanation}
+                    onEdit={handleEdit}
+                    onRemove={handleRemove}
+                  />
+                )}
               </CardWrapper>
             </section>
 

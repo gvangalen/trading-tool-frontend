@@ -1,53 +1,57 @@
 'use client';
 
-import { useMacroData } from '@/hooks/useMacroData';
+import { useEffect } from 'react';
 import SkeletonTable from '@/components/ui/SkeletonTable';
 
-export default function MacroSummaryTableForDashboard() {
-  const {
-    macroData,
-    calculateMacroScore,
-    getExplanation,
-    loading,
-    error,
-  } = useMacroData();
+export default function TechnicalDayTableForDashboard({ data = [], loading = false, error = '' }) {
+  useEffect(() => {
+    console.log('📊 [TechnicalDayTableForDashboard] ontvangen data:', data);
+  }, [data]);
 
   if (loading) return <SkeletonTable rows={5} columns={5} />;
   if (error) return <div className="text-sm text-red-500">{error}</div>;
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        Geen technische data beschikbaar.
+      </div>
+    );
+  }
 
-  // Alleen top 5 of recente macro indicators tonen
-  const displayedData = macroData.slice(0, 5);
+  const displayedData = data.slice(0, 5); // ⬅️ bijv. alleen BTC
+
+  const getScoreColor = (score) => {
+    const s = typeof score === 'number' ? score : parseFloat(score);
+    if (isNaN(s)) return 'text-gray-600';
+    if (s >= 2) return 'text-green-600';
+    if (s <= -2) return 'text-red-600';
+    return 'text-gray-600';
+  };
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full table-auto text-sm border">
-        <thead className="bg-gray-100 text-left">
+        <thead className="bg-gray-100 dark:bg-gray-800 text-left">
           <tr>
-            <th className="p-2">🌍 Indicator</th>
-            <th className="p-2">Waarde</th>
-            <th className="p-2">Trend</th>
-            <th className="p-2">Interpretatie</th>
+            <th className="p-2">📊 Indicator</th>
+            <th className="p-2 text-center">Waarde</th>
             <th className="p-2 text-center">Score</th>
+            <th className="p-2 text-center">Advies</th>
+            <th className="p-2">Uitleg</th>
           </tr>
         </thead>
         <tbody>
-          {displayedData.map((ind) => {
-            const score = calculateMacroScore(ind.name, parseFloat(ind.value));
-            const scoreColor =
-              score >= 2 ? 'text-green-600' :
-              score <= -2 ? 'text-red-600' :
-              'text-gray-600';
-
-            return (
-              <tr key={ind.name} className="border-t">
-                <td className="p-2" title={getExplanation(ind.name)}>{ind.name}</td>
-                <td className="p-2">{ind.value}</td>
-                <td className="p-2">{ind.trend || '–'}</td>
-                <td className="p-2">{ind.interpretation || '–'}</td>
-                <td className={`p-2 text-center font-semibold ${scoreColor}`}>{score}</td>
-              </tr>
-            );
-          })}
+          {displayedData.map((item, index) => (
+            <tr key={item.symbol || index} className="border-t">
+              <td className="p-2 font-medium">{item.indicator}</td>
+              <td className="p-2 text-center">{item.waarde ?? '–'}</td>
+              <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
+                {item.score ?? '–'}
+              </td>
+              <td className="p-2 text-center">{item.advies ?? '–'}</td>
+              <td className="p-2">{item.uitleg ?? '–'}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

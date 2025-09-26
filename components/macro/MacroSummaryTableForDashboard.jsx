@@ -18,8 +18,6 @@ export default function MacroSummaryTableForDashboard({ data = [], loading = fal
     );
   }
 
-  const displayedData = data.slice(0, 5); // Bijv. alleen BTC-gerelateerde macro's
-
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -35,21 +33,23 @@ export default function MacroSummaryTableForDashboard({ data = [], loading = fal
           <tr>
             <th className="p-2">🌍 Indicator</th>
             <th className="p-2 text-center">Waarde</th>
-            <th className="p-2 text-center">Score</th>
             <th className="p-2 text-center">Trend</th>
-            <th className="p-2">Toelichting</th>
+            <th className="p-2">Interpretatie</th>
+            <th className="p-2">Actie</th>
+            <th className="p-2 text-center">Score</th>
           </tr>
         </thead>
         <tbody>
-          {displayedData.map((item, index) => (
-            <tr key={item.indicator || index} className="border-t">
-              <td className="p-2 font-medium">{item.indicator}</td>
-              <td className="p-2 text-center">{item.waarde ?? '–'}</td>
+          {data.map((item, index) => (
+            <tr key={item.name || index} className="border-t dark:border-gray-700">
+              <td className="p-2 font-medium">{item.name}</td>
+              <td className="p-2 text-center">{item.value ?? '–'}</td>
+              <td className="p-2 text-center italic text-gray-500">{item.trend ?? '–'}</td>
+              <td className="p-2 italic text-gray-500">{item.interpretation ?? '–'}</td>
+              <td className="p-2 italic text-gray-500">{item.action ?? '–'}</td>
               <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
                 {item.score ?? '–'}
               </td>
-              <td className="p-2 text-center">{item.trend ?? '–'}</td>
-              <td className="p-2">{item.toelichting ?? '–'}</td>
             </tr>
           ))}
         </tbody>

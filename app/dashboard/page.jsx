@@ -15,15 +15,16 @@ import MarketSummaryForDashboard from '@/components/market/MarketSummaryForDashb
 
 // 🧠 Hooks
 import { useTechnicalData } from '@/hooks/useTechnicalData';
-import { useMacroData } from '@/hooks/useMacroData'; // ✅ Toegevoegd
+import { useMacroData } from '@/hooks/useMacroData';
+import { useMarketData } from '@/hooks/useMarketData'; // ✅ Toegevoegd
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  // Technische data
+  // ✅ Technische data
   const { dayData, deleteAsset, loading: technicalLoading } = useTechnicalData();
 
-  // Macro data
+  // ✅ Macro data
   const {
     macroData,
     loading: macroLoading,
@@ -32,7 +33,10 @@ export default function DashboardPage() {
     handleRemove,
     calculateMacroScore,
     getExplanation,
-  } = useMacroData(); // standaard 'Dag'
+  } = useMacroData();
+
+  // ✅ Market data (nieuw)
+  const { sevenDayData, btcLive } = useMarketData();
 
   useEffect(() => {
     const handleScroll = () => setShowScroll(window.scrollY > 300);
@@ -64,7 +68,10 @@ export default function DashboardPage() {
             <section>
               <CardWrapper>
                 <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
-                <MarketSummaryForDashboard />
+                <MarketSummaryForDashboard
+                  sevenDayData={sevenDayData}
+                  btcLive={btcLive}
+                />
               </CardWrapper>
             </section>
 

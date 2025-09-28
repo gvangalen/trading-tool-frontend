@@ -17,6 +17,10 @@ export function useMarketData() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.group('🚀 [useMarketData] Hook init');
+    console.log('⏳ Eerste loadData() wordt uitgevoerd...');
+    console.groupEnd();
+
     loadData();
     const interval = setInterval(loadLiveBTC, 60000);
     return () => clearInterval(interval);
@@ -26,18 +30,25 @@ export function useMarketData() {
     setLoading(true);
     setError('');
     try {
+      console.group('📥 [useMarketData] loadData() gestart');
       const history = await fetchMarketData7d();
+      console.log('📅 7d-data ontvangen:', history);
       setSevenDayData(history);
 
       const forward = await fetchForwardReturns();
+      console.log('🔮 Forward returns ontvangen:', forward);
       setForwardReturns(forward ?? null);
 
-      // Optioneel: simpele logica voor demo-doeleinden
+      // Simpele logica voor demo-doeleinden
       const score = calculateAverageScore(history);
+      console.log('🧮 Berekende avgScore:', score);
       setAvgScore(score);
-      setAdvies(score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
+      const adviesText = score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal';
+      console.log('📝 Advies bepaald:', adviesText);
+      setAdvies(adviesText);
+      console.groupEnd();
     } catch (err) {
-      console.error('❌ Fout bij laden:', err);
+      console.error('❌ Fout bij laden marktdata:', err);
       setError('❌ Fout bij laden van marktdata');
     } finally {
       setLoading(false);
@@ -46,8 +57,11 @@ export function useMarketData() {
 
   async function loadLiveBTC() {
     try {
+      console.group('💰 [useMarketData] loadLiveBTC() gestart');
       const live = await fetchLatestBTC();
+      console.log('💹 Live BTC data ontvangen:', live);
       setBtcLive(live);
+      console.groupEnd();
     } catch (err) {
       console.error('❌ Fout bij ophalen live BTC:', err);
       setBtcLive(null);
@@ -66,6 +80,17 @@ export function useMarketData() {
     }, 0);
     return (total / data.length).toFixed(1);
   }
+
+  // 🔁 Debug state telkens wanneer data verandert
+  useEffect(() => {
+    console.group('🔎 [useMarketData] State update');
+    console.log('📅 sevenDayData:', sevenDayData);
+    console.log('💰 btcLive:', btcLive);
+    console.log('🔮 forwardReturns:', forwardReturns);
+    console.log('🧮 avgScore:', avgScore);
+    console.log('📝 advies:', advies);
+    console.groupEnd();
+  }, [sevenDayData, btcLive, forwardReturns, avgScore, advies]);
 
   return {
     sevenDayData,

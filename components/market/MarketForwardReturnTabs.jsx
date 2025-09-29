@@ -74,6 +74,11 @@ export default function MarketForwardReturnTabs({ data = {} }) {
     return { total, wins, losses, returnRate };
   });
 
+  const displayData =
+    activeData.length > 0
+      ? activeData.sort((a, b) => b.year - a.year)
+      : [{ year: '–', values: Array(activeLabels.length).fill(null) }];
+
   return (
     <div className="p-4 border rounded bg-white dark:bg-gray-900 shadow">
       {/* Tabs */}
@@ -94,109 +99,102 @@ export default function MarketForwardReturnTabs({ data = {} }) {
       </div>
 
       {/* Table */}
-      {activeData.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className={`w-full text-sm border mb-6 ${active === 'Week' ? 'text-[11px]' : ''}`}>
+      <div className="overflow-x-auto">
+        <table className={`w-full text-sm border mb-6 ${active === 'Week' ? 'text-[11px]' : ''}`}>
+          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+            <tr>
+              <th className="p-2 text-left">✅</th>
+              <th className="p-2 text-left">Jaar</th>
+              {activeLabels.map((label) => (
+                <th key={label} className="p-2 text-xs text-center">{label}</th>
+              ))}
+              <th className="p-2 text-center font-semibold">Gem.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayData.map((row, idx) => {
+              const avg = calculateYearAvg(row.values);
+              return (
+                <tr key={idx} className="border-t">
+                  <td className="p-2 text-center">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox"
+                      checked={selectedYears.includes(row.year)}
+                      onChange={() => toggleYear(row.year)}
+                      disabled={row.year === '–'}
+                    />
+                  </td>
+                  <td className="p-2 font-semibold">{row.year}</td>
+                  {row.values.map((val, i) => (
+                    <td key={i} className={`p-2 text-center font-medium ${getCellStyle(val)}`}>
+                      {formatPercentage(val)}
+                    </td>
+                  ))}
+                  <td className="p-2 text-center font-semibold">
+                    {formatPercentage(avg)}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Onderste rij met kolomgemiddelden */}
+            <tr className="border-t bg-gray-50 dark:bg-gray-800">
+              <td className="p-2 text-center">–</td>
+              <td className="p-2 font-semibold">Gemiddelde</td>
+              {columnAverages.map((val, i) => (
+                <td key={i} className={`p-2 text-center font-semibold ${getCellStyle(val)}`}>
+                  {formatPercentage(val)}
+                </td>
+              ))}
+              <td className="p-2 text-center font-semibold">–</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Forward Return Stats Table */}
+        <div className="border-t pt-4">
+          <h3 className="text-sm font-bold mb-2">Forward Return Results (alleen geselecteerde jaren)</h3>
+          <table className={`w-full text-sm border ${active === 'Week' ? 'text-[11px]' : ''}`}>
             <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
               <tr>
-                <th className="p-2 text-left">✅</th>
-                <th className="p-2 text-left">Jaar</th>
+                <th className="p-2 text-left">Stat</th>
                 {activeLabels.map((label) => (
                   <th key={label} className="p-2 text-xs text-center">{label}</th>
                 ))}
-                <th className="p-2 text-center font-semibold">Gem.</th>
               </tr>
             </thead>
             <tbody>
-              {activeData
-                .sort((a, b) => b.year - a.year)
-                .map((row, idx) => {
-                  const avg = calculateYearAvg(row.values);
-                  return (
-                    <tr key={idx} className="border-t">
-                      <td className="p-2 text-center">
-                        <input
-                          type="checkbox"
-                          className="form-checkbox"
-                          checked={selectedYears.includes(row.year)}
-                          onChange={() => toggleYear(row.year)}
-                        />
-                      </td>
-                      <td className="p-2 font-semibold">{row.year}</td>
-                      {row.values.map((val, i) => (
-                        <td key={i} className={`p-2 text-center font-medium ${getCellStyle(val)}`}>
-                          {formatPercentage(val)}
-                        </td>
-                      ))}
-                      <td className="p-2 text-center font-semibold">
-                        {formatPercentage(avg)}
-                      </td>
-                    </tr>
-                  );
-                })}
-
-              {/* Onderste rij met kolomgemiddelden */}
-              <tr className="border-t bg-gray-50 dark:bg-gray-800">
-                <td className="p-2 text-center">–</td>
-                <td className="p-2 font-semibold">Gemiddelde</td>
-                {columnAverages.map((val, i) => (
-                  <td key={i} className={`p-2 text-center font-semibold ${getCellStyle(val)}`}>
-                    {formatPercentage(val)}
+              <tr>
+                <td className="p-2 font-semibold">Totals</td>
+                {forwardStats.map((s, i) => (
+                  <td key={i} className="p-2 text-center">{s.total}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-2 font-semibold">Wins</td>
+                {forwardStats.map((s, i) => (
+                  <td key={i} className="p-2 text-center text-green-700 dark:text-green-400">{s.wins}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-2 font-semibold">Losses</td>
+                {forwardStats.map((s, i) => (
+                  <td key={i} className="p-2 text-center text-red-700 dark:text-red-400">{s.losses}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-2 font-semibold">Returns</td>
+                {forwardStats.map((s, i) => (
+                  <td key={i} className="p-2 text-center font-semibold">
+                    {s.returnRate !== null ? `${s.returnRate.toFixed(1)}%` : '–'}
                   </td>
                 ))}
-                <td className="p-2 text-center font-semibold">–</td>
               </tr>
             </tbody>
           </table>
-
-          {/* Forward Return Stats Table */}
-          <div className="border-t pt-4">
-            <h3 className="text-sm font-bold mb-2">Forward Return Results (alleen geselecteerde jaren)</h3>
-            <table className={`w-full text-sm border ${active === 'Week' ? 'text-[11px]' : ''}`}>
-              <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-                <tr>
-                  <th className="p-2 text-left">Stat</th>
-                  {activeLabels.map((label) => (
-                    <th key={label} className="p-2 text-xs text-center">{label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="p-2 font-semibold">Totals</td>
-                  {forwardStats.map((s, i) => (
-                    <td key={i} className="p-2 text-center">{s.total}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="p-2 font-semibold">Wins</td>
-                  {forwardStats.map((s, i) => (
-                    <td key={i} className="p-2 text-center text-green-700 dark:text-green-400">{s.wins}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="p-2 font-semibold">Losses</td>
-                  {forwardStats.map((s, i) => (
-                    <td key={i} className="p-2 text-center text-red-700 dark:text-red-400">{s.losses}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="p-2 font-semibold">Returns</td>
-                  {forwardStats.map((s, i) => (
-                    <td key={i} className="p-2 text-center font-semibold">
-                      {s.returnRate !== null ? `${s.returnRate.toFixed(1)}%` : '–'}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
-      ) : (
-        <div className="text-gray-500 text-sm">
-          ⚠️ Geen data beschikbaar voor <strong>{active}</strong>.
-        </div>
-      )}
+      </div>
     </div>
   );
 }

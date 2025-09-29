@@ -4,13 +4,21 @@ import { useEffect, useState } from 'react';
 import {
   fetchMarketData7d,
   fetchLatestBTC,
-  fetchForwardReturns,
+  fetchForwardReturnsWeek,
+  fetchForwardReturnsMonth,
+  fetchForwardReturnsQuarter,
+  fetchForwardReturnsYear,
 } from '@/lib/api/market';
 
 export function useMarketData() {
   const [sevenDayData, setSevenDayData] = useState([]);
   const [btcLive, setBtcLive] = useState(null);
-  const [forwardReturns, setForwardReturns] = useState(null);
+  const [forwardReturns, setForwardReturns] = useState({
+    week: [],
+    maand: [],
+    kwartaal: [],
+    jaar: [],
+  });
   const [avgScore, setAvgScore] = useState('N/A');
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(false);
@@ -31,21 +39,37 @@ export function useMarketData() {
     setError('');
     try {
       console.group('📥 [useMarketData] loadData() gestart');
+
       const history = await fetchMarketData7d();
       console.log('📅 7d-data ontvangen:', history);
       setSevenDayData(history);
 
-      const forward = await fetchForwardReturns();
-      console.log('🔮 Forward returns ontvangen:', forward);
-      setForwardReturns(forward ?? null);
+      const [week, maand, kwartaal, jaar] = await Promise.all([
+        fetchForwardReturnsWeek(),
+        fetchForwardReturnsMonth(),
+        fetchForwardReturnsQuarter(),
+        fetchForwardReturnsYear(),
+      ]);
 
-      // Simpele logica voor demo-doeleinden
+      const grouped = {
+        week: week ?? [],
+        maand: maand ?? [],
+        kwartaal: kwartaal ?? [],
+        jaar: jaar ?? [],
+      };
+
+      console.log('🔮 Forward returns ontvangen:', grouped);
+      setForwardReturns(grouped);
+
       const score = calculateAverageScore(history);
       console.log('🧮 Berekende avgScore:', score);
       setAvgScore(score);
-      const adviesText = score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal';
+
+      const adviesText =
+        score >= 1.5 ? '🟢 Bullish' : score <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal';
       console.log('📝 Advies bepaald:', adviesText);
       setAdvies(adviesText);
+
       console.groupEnd();
     } catch (err) {
       console.error('❌ Fout bij laden marktdata:', err);

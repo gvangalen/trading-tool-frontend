@@ -3,7 +3,13 @@
 import { useState } from 'react';
 
 const tabs = ['Week', 'Maand', 'Kwartaal', 'Jaar'];
-const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+const labelsByTab = {
+  Week: Array.from({ length: 53 }, (_, i) => `W${i + 1}`),
+  Maand: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
+  Kwartaal: ['Q1', 'Q2', 'Q3', 'Q4'],
+  Jaar: ['Year'],
+};
 
 const getCellStyle = (value) => {
   if (value === null || value === undefined) return 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500';
@@ -23,6 +29,7 @@ export default function MarketForwardReturnTabs({ data = {} }) {
 
   const activeKey = active.toLowerCase();
   const activeData = data[activeKey] || [];
+  const activeLabels = labelsByTab[active] || [];
 
   const toggleYear = (year) => {
     setSelectedYears((prev) =>
@@ -36,9 +43,10 @@ export default function MarketForwardReturnTabs({ data = {} }) {
     return valid.length ? sum / valid.length : null;
   };
 
-  const calculateMonthAvgs = () => {
-    const totals = new Array(12).fill(0);
-    const counts = new Array(12).fill(0);
+  const calculateColumnAverages = () => {
+    const colCount = activeLabels.length;
+    const totals = new Array(colCount).fill(0);
+    const counts = new Array(colCount).fill(0);
 
     activeData.forEach((row) => {
       row.values.forEach((val, idx) => {
@@ -52,12 +60,11 @@ export default function MarketForwardReturnTabs({ data = {} }) {
     return totals.map((total, i) => (counts[i] ? total / counts[i] : null));
   };
 
-  const monthAverages = calculateMonthAvgs();
-
+  const columnAverages = calculateColumnAverages();
   const selectedData = activeData.filter((row) => selectedYears.includes(row.year));
 
-  const forwardStats = months.map((_, monthIdx) => {
-    const values = selectedData.map((row) => row.values[monthIdx]);
+  const forwardStats = activeLabels.map((_, colIdx) => {
+    const values = selectedData.map((row) => row.values[colIdx]);
     const valid = values.filter((v) => v !== null && v !== undefined);
     const wins = valid.filter((v) => v > 0).length;
     const losses = valid.filter((v) => v <= 0).length;
@@ -89,13 +96,13 @@ export default function MarketForwardReturnTabs({ data = {} }) {
       {/* Table */}
       {activeData.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border mb-6">
+          <table className={`w-full text-sm border mb-6 ${active === 'Week' ? 'text-[11px]' : ''}`}>
             <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
               <tr>
                 <th className="p-2 text-left">✅</th>
                 <th className="p-2 text-left">Jaar</th>
-                {months.map((m) => (
-                  <th key={m} className="p-2 text-xs text-center">{m}</th>
+                {activeLabels.map((label) => (
+                  <th key={label} className="p-2 text-xs text-center">{label}</th>
                 ))}
                 <th className="p-2 text-center font-semibold">Gem.</th>
               </tr>
@@ -128,11 +135,11 @@ export default function MarketForwardReturnTabs({ data = {} }) {
                   );
                 })}
 
-              {/* Onderste rij met maandgemiddelden */}
+              {/* Onderste rij met kolomgemiddelden */}
               <tr className="border-t bg-gray-50 dark:bg-gray-800">
                 <td className="p-2 text-center">–</td>
                 <td className="p-2 font-semibold">Gemiddelde</td>
-                {monthAverages.map((val, i) => (
+                {columnAverages.map((val, i) => (
                   <td key={i} className={`p-2 text-center font-semibold ${getCellStyle(val)}`}>
                     {formatPercentage(val)}
                   </td>
@@ -145,12 +152,12 @@ export default function MarketForwardReturnTabs({ data = {} }) {
           {/* Forward Return Stats Table */}
           <div className="border-t pt-4">
             <h3 className="text-sm font-bold mb-2">Forward Return Results (alleen geselecteerde jaren)</h3>
-            <table className="w-full text-sm border">
+            <table className={`w-full text-sm border ${active === 'Week' ? 'text-[11px]' : ''}`}>
               <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                 <tr>
                   <th className="p-2 text-left">Stat</th>
-                  {months.map((m) => (
-                    <th key={m} className="p-2 text-xs text-center">{m}</th>
+                  {activeLabels.map((label) => (
+                    <th key={label} className="p-2 text-xs text-center">{label}</th>
                   ))}
                 </tr>
               </thead>

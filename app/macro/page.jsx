@@ -20,7 +20,7 @@ export default function MacroPage() {
       {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">🌍 Macro Indicatoren</h1>
 
-      {/* 🔹 Samenvatting */}
+      {/* ✅ Eerst de Samenvatting */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
@@ -34,8 +34,8 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs met datatabellen */}
-      <MacroTabs />      
+      {/* 🔹 Daarna de Tabs met datatabellen */}
+      <MacroTabs />
 
       {/* 💬 Popup voor bewerken */}
       {editIndicator && (

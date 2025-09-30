@@ -4,23 +4,7 @@ import { useMarketData } from '@/hooks/useMarketData';
 import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
-
-// 🔁 Dummy forward return data (fallback)
-const dummyForwardReturnData = {
-  maand: [
-    {
-      year: 2023,
-      values: [1.2, -0.4, 0.8, 2.1, 0.3, -0.9, 1.0, 2.5, 0.4, -0.2, 1.1, 0.7],
-    },
-    {
-      year: 2024,
-      values: [1.8, -0.6, 1.0, 1.5, 0.6, -1.2, 1.3, 2.1, 0.2, -0.5, 1.0, 0.6],
-    },
-  ],
-  kwartaal: [],
-  jaar: [],
-  week: [],
-};
+import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function MarketPage() {
   const {
@@ -29,31 +13,19 @@ export default function MarketPage() {
     avgScore,
     advies,
     sevenDayData,
-    btcLive, // ✅ renamed
+    btcLive,
     forwardReturns,
   } = useMarketData();
 
-  const forwardData =
-    forwardReturns &&
-    (forwardReturns.maand?.length > 0 ||
-      forwardReturns.kwartaal?.length > 0 ||
-      forwardReturns.jaar?.length > 0 ||
-      forwardReturns.week?.length > 0)
-      ? forwardReturns
-      : dummyForwardReturnData;
-
-  console.group('📊 [MarketPage] Render gestart');
-  console.log('🔁 loading:', loading);
-  console.log('❌ error:', error);
-  console.log('📅 sevenDayData:', sevenDayData);
-  console.log('📈 avgScore:', avgScore);
-  console.log('🧠 advies:', advies);
-  console.log('💰 btcLive:', btcLive);
-  console.log('🔮 forwardReturns:', forwardReturns);
-  console.groupEnd();
+  const scoreColor = (score) => {
+    if (score >= 1.5) return 'text-green-600';
+    if (score <= -1.5) return 'text-red-600';
+    return 'text-gray-600';
+  };
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
+      {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">📊 Bitcoin Markt Overzicht</h1>
 
       {loading && (
@@ -64,27 +36,33 @@ export default function MarketPage() {
         <p className="text-sm text-red-500">❌ {error}</p>
       )}
 
-      <div className="space-y-6 mt-4">
-        {/* 🔹 Markt Score */}
-        <div className="text-sm text-gray-700">
-          Markt Score: <strong>{avgScore}</strong> | Advies:{' '}
-          <strong>{advies}</strong>
+      {/* 🔹 Score & Advies in Card */}
+      <CardWrapper>
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">
+            📊 Markt Score:{' '}
+            <span className={scoreColor(avgScore)}>{avgScore}</span>
+          </h3>
+          <h3 className="text-lg font-semibold">
+            📈 Advies:{' '}
+            <span className="text-blue-600">{advies}</span>
+          </h3>
         </div>
+      </CardWrapper>
 
-        {/* 💰 Live BTC Prijs via API */}
-        <MarketLiveCard
-          price={btcLive?.price}
-          change24h={btcLive?.change_24h}
-          volume={btcLive?.volume}
-          timestamp={btcLive?.timestamp}
-        />
+      {/* 🔹 Live Prijs */}
+      <MarketLiveCard
+        price={btcLive?.price}
+        change24h={btcLive?.change_24h}
+        volume={btcLive?.volume}
+        timestamp={btcLive?.timestamp}
+      />
 
-        {/* 📅 Laatste 7 dagen prijs en volume */}
-        <MarketSevenDayTable history={sevenDayData} />
+      {/* 🔹 Laatste 7 dagen */}
+      <MarketSevenDayTable history={sevenDayData} />
 
-        {/* 🔮 Forward return voorspelling */}
-        <MarketForwardReturnTabs data={forwardData} />
-      </div>
+      {/* 🔮 Forward Returns */}
+      <MarketForwardReturnTabs data={forwardReturns} />
     </div>
   );
 }

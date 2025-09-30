@@ -18,21 +18,29 @@ export default function MacroDayTable({
 
         return (
           <tr key={item.name} className="border-t dark:border-gray-700">
+            {/* 📌 Naam met uitleg bij hover */}
             <td className="p-2 font-medium" title={getExplanation(item.name)}>
               {item.name}
             </td>
-            <td className="p-2">
-              <input
-                type="number"
-                className="w-20 border px-1 py-0.5 rounded"
-                value={item.value}
-                onChange={(e) => onEdit(item.name, e.target.value)}
-              />
-            </td>
+
+            {/* 📌 Waarde als tekst */}
+            <td className="p-2">{item.value}</td>
+
+            {/* 📌 Trend */}
             <td className="p-2 italic text-gray-500">{item.trend ?? '–'}</td>
-            <td className="p-2 italic text-gray-500">{item.interpretation ?? '–'}</td>
+
+            {/* 📌 Interpretatie (met tooltip als extra uitleg gewenst) */}
+            <td className="p-2 italic text-gray-500" title={item.interpretation}>
+              {item.interpretation ?? '–'}
+            </td>
+
+            {/* 📌 Actie */}
             <td className="p-2 italic text-gray-500">{item.action ?? '–'}</td>
+
+            {/* 📌 Score met kleur */}
             <td className={`p-2 font-bold ${scoreColor}`}>{score}</td>
+
+            {/* 📌 Verwijderknop */}
             <td className="p-2">
               <button
                 onClick={() => onRemove(item.name)}

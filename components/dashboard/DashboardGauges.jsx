@@ -14,6 +14,9 @@ export default function DashboardGauges() {
     macroExplanation,
     technicalExplanation,
     setupExplanation,
+    macroTopContributors,
+    technicalTopContributors,
+    setupTopContributors,
     loading,
   } = useDashboardData();
 
@@ -46,18 +49,19 @@ export default function DashboardGauges() {
           title="🌍 Macro"
           score={macroScore}
           explanation={macroExplanation}
-          topContributors={['BTC', 'DXY', 'ETF inflows', 'Obligatierente', 'Inflatie']}
+          topContributors={macroTopContributors}
         />
         <GaugeCard
           title="📈 Technical"
           score={technicalScore}
           explanation={technicalExplanation}
-          topContributors={['RSI', 'ATR Model', 'Volume', '200MA', 'Stochastics']}
+          topContributors={technicalTopContributors}
         />
         <GaugeCard
           title="⚙️ Setup"
           score={setupScore}
           explanation={setupExplanation}
+          topContributors={setupTopContributors}
           showTopSetups
         />
       </div>

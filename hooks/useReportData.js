@@ -47,12 +47,26 @@ export function useReportData(reportType = 'daily') {
     async function loadReport() {
       setLoading(true);
       setError('');
+
       try {
-        const data = await fetchReportLatest(reportType);
+        let data;
 
-        // ✅ Fallback als data null of leeg object is
-        const isEmpty = !data || (typeof data === 'object' && Object.keys(data).length === 0);
+        // 🔄 Laad laatste rapport of specifiek op datum
+        if (selectedDate === 'latest') {
+          data = await fetchReportLatest(reportType);
+        } else {
+          const res = await fetch(
+            `/api/report/${reportType}?date=${encodeURIComponent(selectedDate)}`,
+          );
+          if (!res.ok) throw new Error(`Fout bij ophalen rapport: ${res.status}`);
+          data = await res.json();
+        }
 
+        // 🧩 Controleer of data leeg is
+        const isEmpty =
+          !data || (typeof data === 'object' && Object.keys(data).length === 0);
+
+        // ⚠️ Fallback: geen "latest" gevonden → gebruik recentste datum
         if (isEmpty && selectedDate === 'latest' && dates.length > 0) {
           console.warn(`⚠️ Geen rapport voor 'latest'. Fallback naar: ${dates[0]}`);
           setSelectedDate(dates[0]);
@@ -70,9 +84,8 @@ export function useReportData(reportType = 'daily') {
       }
     }
 
-    if (selectedDate === 'latest') {
-      loadReport();
-    }
+    // 📅 Laad telkens opnieuw bij wijziging
+    loadReport();
 
     return () => controller.abort();
   }, [selectedDate, reportType, dates]);

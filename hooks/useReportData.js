@@ -51,7 +51,6 @@ export function useReportData(reportType = 'daily') {
       try {
         let data;
 
-        // 🔄 Laad laatste rapport of specifiek op datum
         if (selectedDate === 'latest') {
           data = await fetchReportLatest(reportType);
         } else {
@@ -62,11 +61,9 @@ export function useReportData(reportType = 'daily') {
           data = await res.json();
         }
 
-        // 🧩 Controleer of data leeg is
         const isEmpty =
           !data || (typeof data === 'object' && Object.keys(data).length === 0);
 
-        // ⚠️ Fallback: geen "latest" gevonden → gebruik recentste datum
         if (isEmpty && selectedDate === 'latest' && dates.length > 0) {
           console.warn(`⚠️ Geen rapport voor 'latest'. Fallback naar: ${dates[0]}`);
           setSelectedDate(dates[0]);
@@ -84,7 +81,6 @@ export function useReportData(reportType = 'daily') {
       }
     }
 
-    // 📅 Laad telkens opnieuw bij wijziging
     loadReport();
 
     return () => controller.abort();

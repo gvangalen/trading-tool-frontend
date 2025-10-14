@@ -3,7 +3,7 @@ console.log('✅ ReportPage component geladen');
 
 import { useState } from 'react';
 import { useReportData } from '@/hooks/useReportData';
-import { generateReport } from '@/lib/api/report'; // ✅ Import toegevoegd
+import { generateReport } from '@/lib/api/report';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
@@ -27,16 +27,40 @@ export default function ReportPage() {
   } = useReportData(reportType);
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
-  const downloadUrl = `/api/report/${reportType}/export/pdf?date=${selectedDate}`;
   const noRealData = !loading && (!report || dates.length === 0);
 
-  // ✅ Gebruik de API-helper i.p.v. hardcoded fetch
   const handleGenerate = async () => {
     try {
       await generateReport(reportType);
       alert('✅ Rapport gegenereerd. Ververs pagina over een paar seconden.');
     } catch (err) {
       alert('❌ Rapport genereren mislukt.');
+      console.error(err);
+    }
+  };
+
+  const handleDownload = async () => {
+    const date = selectedDate === 'latest' ? dates[0] : selectedDate;
+    const url = `/api/report/${reportType}/export/pdf?date=${date}`;
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Fout bij downloaden: ${text}`);
+      }
+
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `report-${reportType}-${date}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert('❌ Download mislukt. Controleer of het rapport bestaat.');
       console.error(err);
     }
   };
@@ -61,13 +85,12 @@ export default function ReportPage() {
           ))}
         </select>
 
-        <a
-          href={downloadUrl}
-          download
+        <button
+          onClick={handleDownload}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
           📥 Download PDF
-        </a>
+        </button>
 
         <button
           onClick={handleGenerate}
@@ -113,7 +136,6 @@ export default function ReportPage() {
   );
 }
 
-// 🔁 Dummy fallback voor als er geen echte data is
 function DummyReport() {
   return (
     <ReportContainer>

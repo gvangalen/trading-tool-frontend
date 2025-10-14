@@ -50,8 +50,10 @@ export function useReportData(reportType = 'daily') {
       try {
         const data = await fetchReportLatest(reportType);
 
-        if (!data && selectedDate === 'latest' && dates.length > 0) {
-          // Fallback naar eerste datum in lijst
+        // ✅ Fallback als data null of leeg object is
+        const isEmpty = !data || (typeof data === 'object' && Object.keys(data).length === 0);
+
+        if (isEmpty && selectedDate === 'latest' && dates.length > 0) {
           console.warn(`⚠️ Geen rapport voor 'latest'. Fallback naar: ${dates[0]}`);
           setSelectedDate(dates[0]);
           return;

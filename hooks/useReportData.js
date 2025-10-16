@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   fetchReportDates,
   fetchReportLatest,
+  fetchReportByDate,
 } from '@/lib/api/report';
 
 /**
@@ -25,7 +26,7 @@ export function useReportData(reportType = 'daily') {
       try {
         const data = await fetchReportDates(reportType);
         const sorted = Array.isArray(data)
-          ? data.sort((a, b) => (a < b ? 1 : -1))
+          ? data.sort((a, b) => (a < b ? 1 : -1)) // nieuwste eerst
           : [];
         setDates(sorted);
         setSelectedDate('latest');
@@ -51,19 +52,17 @@ export function useReportData(reportType = 'daily') {
       try {
         let data;
 
+        // ✅ Gebruik nieuwe backend-routes
         if (selectedDate === 'latest') {
           data = await fetchReportLatest(reportType);
         } else {
-          const res = await fetch(
-            `/api/report/${reportType}?date=${encodeURIComponent(selectedDate)}`,
-          );
-          if (!res.ok) throw new Error(`Fout bij ophalen rapport: ${res.status}`);
-          data = await res.json();
+          data = await fetchReportByDate(reportType, selectedDate);
         }
 
         const isEmpty =
           !data || (typeof data === 'object' && Object.keys(data).length === 0);
 
+        // ⚠️ Fallback: als 'latest' geen rapport geeft, gebruik eerste datum
         if (isEmpty && selectedDate === 'latest' && dates.length > 0) {
           console.warn(`⚠️ Geen rapport voor 'latest'. Fallback naar: ${dates[0]}`);
           setSelectedDate(dates[0]);

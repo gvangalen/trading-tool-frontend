@@ -1,7 +1,7 @@
 'use client';
 console.log('✅ ReportPage component geladen');
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   fetchReportLatest,
   fetchReportByDate,
@@ -28,14 +28,14 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ⏱️ Rapport laden bij start of wijziging van type
-  useState(() => {
-    loadData(reportType);
-  }, [reportType]);
+  const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
+  const noRealData = !loading && (!report || dates.length === 0);
 
+  // 🧠 Data laadfunctie
   const loadData = async (type = reportType, date = selectedDate) => {
     setLoading(true);
     setError('');
+
     try {
       const dateList = await fetchReportDates(type);
       setDates(dateList);
@@ -56,10 +56,11 @@ export default function ReportPage() {
     }
   };
 
-  const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
-  const noRealData = !loading && (!report || dates.length === 0);
+  // ✅ Gebruik useEffect om data te laden na render
+  useEffect(() => {
+    loadData(reportType);
+  }, [reportType]);
 
-  // 🔄 Genereer nieuw rapport
   const handleGenerate = async () => {
     try {
       await generateReport(reportType);
@@ -70,7 +71,6 @@ export default function ReportPage() {
     }
   };
 
-  // 📥 Download PDF
   const handleDownload = async () => {
     try {
       const date = selectedDate === 'latest' ? dates[0] : selectedDate;

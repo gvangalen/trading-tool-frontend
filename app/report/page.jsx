@@ -3,12 +3,31 @@ console.log('✅ ReportPage component geladen');
 
 import { useState, useEffect } from 'react';
 import {
-  fetchReportLatest,
-  fetchReportByDate,
-  fetchReportDates,
-  generateReport,
-  fetchReportPDF,
-} from '@/lib/api/report';
+  // DAILY
+  fetchDailyReportLatest,
+  fetchDailyReportByDate,
+  fetchDailyReportDates,
+  generateDailyReport,
+  fetchDailyReportPDF,
+  // WEEKLY
+  fetchWeeklyReportLatest,
+  fetchWeeklyReportByDate,
+  fetchWeeklyReportDates,
+  generateWeeklyReport,
+  fetchWeeklyReportPDF,
+  // MONTHLY
+  fetchMonthlyReportLatest,
+  fetchMonthlyReportByDate,
+  fetchMonthlyReportDates,
+  generateMonthlyReport,
+  fetchMonthlyReportPDF,
+  // QUARTERLY
+  fetchQuarterlyReportLatest,
+  fetchQuarterlyReportByDate,
+  fetchQuarterlyReportDates,
+  generateQuarterlyReport,
+  fetchQuarterlyReportPDF,
+} from '@/lib/api/reportService';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
@@ -20,7 +39,6 @@ const REPORT_TYPES = {
   quarterly: 'Kwartaal',
 };
 
-// 🔧 Optie: automatisch genereren als er nog geen rapport is
 const AUTO_GENERATE_IF_EMPTY = true;
 
 export default function ReportPage() {
@@ -34,64 +52,93 @@ export default function ReportPage() {
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
   const noRealData = !loading && (!report || Object.keys(report || {}).length === 0);
 
-  /**
-   * 🧠 Hoofdfunctie: laadt lijst van datums + juiste rapport
-   */
-  const loadData = async (type = reportType, date = selectedDate) => {
+  // ✅ Helper om per type de juiste functies te kiezen
+  const reportFns = {
+    daily: {
+      getLatest: fetchDailyReportLatest,
+      getByDate: fetchDailyReportByDate,
+      getDates: fetchDailyReportDates,
+      generate: generateDailyReport,
+      pdf: fetchDailyReportPDF,
+    },
+    weekly: {
+      getLatest: fetchWeeklyReportLatest,
+      getByDate: fetchWeeklyReportByDate,
+      getDates: fetchWeeklyReportDates,
+      generate: generateWeeklyReport,
+      pdf: fetchWeeklyReportPDF,
+    },
+    monthly: {
+      getLatest: fetchMonthlyReportLatest,
+      getByDate: fetchMonthlyReportByDate,
+      getDates: fetchMonthlyReportDates,
+      generate: generateMonthlyReport,
+      pdf: fetchMonthlyReportPDF,
+    },
+    quarterly: {
+      getLatest: fetchQuarterlyReportLatest,
+      getByDate: fetchQuarterlyReportByDate,
+      getDates: fetchQuarterlyReportDates,
+      generate: generateQuarterlyReport,
+      pdf: fetchQuarterlyReportPDF,
+    },
+  };
+
+  const current = reportFns[reportType];
+
+  // 🔄 Hoofdfunctie voor data laden
+  const loadData = async (date = selectedDate) => {
     setLoading(true);
     setError('');
     setReport(null);
 
     try {
-      // 📅 1️⃣ Datums ophalen
-      const dateList = await fetchReportDates(type);
+      const dateList = await current.getDates();
       setDates(dateList || []);
 
-      // 🧾 2️⃣ Rapport ophalen
       let data = null;
       if (date === 'latest' || !date) {
-        data = await fetchReportLatest(type);
+        data = await current.getLatest();
       } else {
-        data = await fetchReportByDate(type, date);
+        data = await current.getByDate(date);
       }
 
-      // ⚠️ 3️⃣ Fallback naar eerste datum
-      if ((!data || Object.keys(data).length === 0) && date === 'latest' && dateList?.length > 0) {
+      // Fallback
+      if ((!data || Object.keys(data).length === 0) && dateList?.length > 0) {
         const fallback = dateList[0];
         console.warn(`⚠️ Geen 'latest' rapport. Fallback naar ${fallback}`);
-        const fallbackData = await fetchReportByDate(type, fallback);
+        const fallbackData = await current.getByDate(fallback);
         setSelectedDate(fallback);
         setReport(fallbackData || null);
         return;
       }
 
-      // ⚙️ 4️⃣ Optioneel automatisch genereren bij lege data
+      // Auto generate
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
-        console.warn(`⚙️ Geen ${type}-rapport beschikbaar. Start automatische generatie...`);
-        await generateReport(type);
-        setError(`Er was nog geen ${type}-rapport. Generatie is gestart — ververs over 1 minuut.`);
+        console.warn(`⚙️ Geen ${reportType}-rapport. Start automatische generatie...`);
+        await current.generate();
+        setError(`Er was nog geen ${reportType}-rapport. Generatie gestart — ververs over 1 minuut.`);
         return;
       }
 
       setReport(data || null);
-      console.log(`📄 Rapport geladen (${type} / ${date}):`, data);
     } catch (err) {
-      console.error(`❌ Fout bij laden ${type}-rapport:`, err);
+      console.error(`❌ Fout bij laden ${reportType}-rapport:`, err);
       setError('Rapport kon niet geladen worden.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Automatisch laden bij type-wijziging
+  // 📡 Laad rapport bij wijziging type
   useEffect(() => {
-    loadData(reportType);
+    loadData('latest');
   }, [reportType]);
 
-  // 📦 Rapport handmatig genereren
+  // 🔁 Handmatig genereren
   const handleGenerate = async () => {
     try {
-      await generateReport(reportType);
+      await current.generate();
       alert('✅ Rapportgeneratie gestart. Even wachten en daarna vernieuwen.');
     } catch (err) {
       console.error('❌ Rapportgeneratie mislukt:', err);
@@ -99,18 +146,15 @@ export default function ReportPage() {
     }
   };
 
-  // 📥 PDF-download
+  // 🧾 PDF Download
   const handleDownload = async () => {
     try {
       const date = selectedDate === 'latest' ? dates[0] : selectedDate;
-      if (!date) {
-        alert('⚠️ Geen datum geselecteerd of beschikbaar.');
-        return;
-      }
-      await fetchReportPDF(reportType, date);
+      if (!date) return alert('⚠️ Geen datum geselecteerd.');
+      await current.pdf(date);
     } catch (err) {
       console.error('❌ Download mislukt:', err);
-      alert('❌ Download mislukt. Controleer of het rapport bestaat.');
+      alert('❌ Download mislukt.');
     }
   };
 
@@ -131,7 +175,7 @@ export default function ReportPage() {
           onChange={async (e) => {
             const value = e.target.value;
             setSelectedDate(value);
-            await loadData(reportType, value);
+            await loadData(value);
           }}
         >
           <option value="latest">Laatste</option>
@@ -188,7 +232,7 @@ export default function ReportPage() {
   );
 }
 
-// Dummy fallback als er geen echt rapport is
+// Dummy fallback
 function DummyReport() {
   return (
     <ReportContainer>

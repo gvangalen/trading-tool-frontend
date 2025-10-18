@@ -27,7 +27,7 @@ import {
   fetchQuarterlyReportDates,
   generateQuarterlyReport,
   fetchQuarterlyReportPDF,
-} from '@/lib/api/reportService';
+} from '@/lib/api/report';
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';

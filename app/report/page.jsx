@@ -20,6 +20,9 @@ const REPORT_TYPES = {
   quarterly: 'Kwartaal',
 };
 
+// 🔧 Optie: automatisch genereren als er nog geen rapport is
+const AUTO_GENERATE_IF_EMPTY = true;
+
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const [report, setReport] = useState(null);
@@ -29,48 +32,74 @@ export default function ReportPage() {
   const [error, setError] = useState('');
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
-  const noRealData = !loading && (!report || dates.length === 0);
+  const noRealData = !loading && (!report || Object.keys(report || {}).length === 0);
 
-  // 🧠 Data laadfunctie
+  /**
+   * 🧠 Hoofdfunctie: laadt lijst van datums + juiste rapport
+   */
   const loadData = async (type = reportType, date = selectedDate) => {
     setLoading(true);
     setError('');
+    setReport(null);
 
     try {
+      // 📅 1️⃣ Datums ophalen
       const dateList = await fetchReportDates(type);
-      setDates(dateList);
+      setDates(dateList || []);
 
-      let data;
+      // 🧾 2️⃣ Rapport ophalen
+      let data = null;
       if (date === 'latest' || !date) {
         data = await fetchReportLatest(type);
       } else {
         data = await fetchReportByDate(type, date);
       }
 
-      setReport(data);
+      // ⚠️ 3️⃣ Fallback naar eerste datum
+      if ((!data || Object.keys(data).length === 0) && date === 'latest' && dateList?.length > 0) {
+        const fallback = dateList[0];
+        console.warn(`⚠️ Geen 'latest' rapport. Fallback naar ${fallback}`);
+        const fallbackData = await fetchReportByDate(type, fallback);
+        setSelectedDate(fallback);
+        setReport(fallbackData || null);
+        return;
+      }
+
+      // ⚙️ 4️⃣ Optioneel automatisch genereren bij lege data
+      if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
+        console.warn(`⚙️ Geen ${type}-rapport beschikbaar. Start automatische generatie...`);
+        await generateReport(type);
+        setError(`Er was nog geen ${type}-rapport. Generatie is gestart — ververs over 1 minuut.`);
+        return;
+      }
+
+      setReport(data || null);
+      console.log(`📄 Rapport geladen (${type} / ${date}):`, data);
     } catch (err) {
-      console.error('❌ Fout bij laden rapport:', err);
+      console.error(`❌ Fout bij laden ${type}-rapport:`, err);
       setError('Rapport kon niet geladen worden.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Gebruik useEffect om data te laden na render
+  // ✅ Automatisch laden bij type-wijziging
   useEffect(() => {
     loadData(reportType);
   }, [reportType]);
 
+  // 📦 Rapport handmatig genereren
   const handleGenerate = async () => {
     try {
       await generateReport(reportType);
-      alert('✅ Rapportgeneratie gestart. Even wachten en dan vernieuwen.');
+      alert('✅ Rapportgeneratie gestart. Even wachten en daarna vernieuwen.');
     } catch (err) {
+      console.error('❌ Rapportgeneratie mislukt:', err);
       alert('❌ Rapport genereren mislukt.');
-      console.error(err);
     }
   };
 
+  // 📥 PDF-download
   const handleDownload = async () => {
     try {
       const date = selectedDate === 'latest' ? dates[0] : selectedDate;
@@ -80,8 +109,8 @@ export default function ReportPage() {
       }
       await fetchReportPDF(reportType, date);
     } catch (err) {
+      console.error('❌ Download mislukt:', err);
       alert('❌ Download mislukt. Controleer of het rapport bestaat.');
-      console.error(err);
     }
   };
 
@@ -141,7 +170,7 @@ export default function ReportPage() {
         </div>
       )}
 
-      {!loading && report && (
+      {!loading && report && Object.keys(report).length > 0 && (
         <ReportContainer>
           <ReportCard title="🧠 Samenvatting BTC" content={report?.btc_summary} full color="blue" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

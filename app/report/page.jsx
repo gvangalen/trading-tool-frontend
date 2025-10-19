@@ -32,6 +32,14 @@ import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
 
+// 🔁 Valuta formatter
+const formatCurrency = (amount, currency = 'EUR') =>
+  new Intl.NumberFormat('nl-NL', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+  }).format(amount);
+
 const REPORT_TYPES = {
   daily: 'Dag',
   weekly: 'Week',
@@ -48,11 +56,11 @@ export default function ReportPage() {
   const [selectedDate, setSelectedDate] = useState('latest');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
   const noRealData = !loading && (!report || Object.keys(report || {}).length === 0);
 
-  // ✅ Helper om per type de juiste functies te kiezen
   const reportFns = {
     daily: {
       getLatest: fetchDailyReportLatest,
@@ -86,7 +94,6 @@ export default function ReportPage() {
 
   const current = reportFns[reportType];
 
-  // 🔄 Hoofdfunctie voor data laden
   const loadData = async (date = selectedDate) => {
     setLoading(true);
     setError('');
@@ -103,7 +110,6 @@ export default function ReportPage() {
         data = await current.getByDate(date);
       }
 
-      // Fallback
       if ((!data || Object.keys(data).length === 0) && dateList?.length > 0) {
         const fallback = dateList[0];
         console.warn(`⚠️ Geen 'latest' rapport. Fallback naar ${fallback}`);
@@ -113,11 +119,13 @@ export default function ReportPage() {
         return;
       }
 
-      // Auto generate
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
         console.warn(`⚙️ Geen ${reportType}-rapport. Start automatische generatie...`);
         await current.generate();
         setError(`Er was nog geen ${reportType}-rapport. Generatie gestart — ververs over 1 minuut.`);
+
+        // Optioneel automatisch herladen na 60 sec
+        // setTimeout(() => loadData('latest'), 60000);
         return;
       }
 
@@ -130,12 +138,10 @@ export default function ReportPage() {
     }
   };
 
-  // 📡 Laad rapport bij wijziging type
   useEffect(() => {
     loadData('latest');
   }, [reportType]);
 
-  // 🔁 Handmatig genereren
   const handleGenerate = async () => {
     try {
       await current.generate();
@@ -146,21 +152,28 @@ export default function ReportPage() {
     }
   };
 
-  // 🧾 PDF Download
   const handleDownload = async () => {
     try {
+      setPdfLoading(true);
       const date = selectedDate === 'latest' ? dates[0] : selectedDate;
       if (!date) return alert('⚠️ Geen datum geselecteerd.');
       await current.pdf(date);
     } catch (err) {
       console.error('❌ Download mislukt:', err);
       alert('❌ Download mislukt.');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">📊 Rapportage ({fallbackLabel})</h1>
+      <h1 className="text-2xl font-bold">
+        📊 Rapportage ({fallbackLabel}){' '}
+        {report?.report_date && (
+          <span className="text-gray-500 text-base font-normal">— {report.report_date}</span>
+        )}
+      </h1>
 
       <ReportTabs selected={reportType} onChange={setReportType} />
 
@@ -188,9 +201,12 @@ export default function ReportPage() {
 
         <button
           onClick={handleDownload}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          className={`px-4 py-2 rounded transition ${
+            pdfLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+          } text-white`}
+          disabled={pdfLoading}
         >
-          📥 Download PDF
+          {pdfLoading ? '📄 Downloaden...' : '📥 Download PDF'}
         </button>
 
         <button
@@ -232,7 +248,6 @@ export default function ReportPage() {
   );
 }
 
-// Dummy fallback
 function DummyReport() {
   return (
     <ReportContainer>
@@ -256,7 +271,7 @@ function DummyReport() {
         />
         <ReportCard
           title="🎯 Dagelijkse Prioriteiten"
-          content={`1. Breakout boven $70k monitoren\n2. Volume spikes volgen op 4H\n3. Setup 'Swing-BTC-Juni' valideren`}
+          content={`1. Breakout boven €70.000 monitoren\n2. Volume spikes volgen op 4H\n3. Setup 'Swing-BTC-Juni' valideren`}
           pre
           color="yellow"
         />
@@ -268,7 +283,7 @@ function DummyReport() {
         />
         <ReportCard
           title="📈 Aanbevelingen"
-          content={`• Accumulatie bij dips\n• Entry ladder tussen $66.000–$64.000\n• Alert op breakout $70.500`}
+          content={`• Accumulatie bij dips\n• Entry ladder tussen ${formatCurrency(64000)}–${formatCurrency(66000)}\n• Alert op breakout ${formatCurrency(70500)}`}
           pre
           color="red"
         />
@@ -279,7 +294,7 @@ function DummyReport() {
         />
         <ReportCard
           title="🔮 Vooruitblik"
-          content="Mogelijke beweging richting $74k bij positieve macro. Anders her-test support rond $64k."
+          content="Mogelijke beweging richting €74.000 bij positieve macro. Anders her-test support rond €64.000."
           pre
           color="gray"
         />

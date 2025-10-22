@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { useMacroData } from '@/hooks/useMacroData';
 import MacroTabs from '@/components/macro/MacroTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
+import { useScoresData } from '@/hooks/useScoresData'; // ✅ Nieuwe hook importeren
 
 export default function MacroPage() {
   const [editIndicator, setEditIndicator] = useState(null);
-  const { avgScore, advies } = useMacroData();
+
+  // ✅ Nieuwe hook gebruiken voor macroScore en advies
+  const { macroScore, macroExplanation, loading } = useScoresData();
 
   const scoreColor = (score) => {
-    if (score >= 1.5) return 'text-green-600';
-    if (score <= -1.5) return 'text-red-600';
+    if (score >= 75) return 'text-green-600';
+    if (score <= 25) return 'text-red-600';
     return 'text-gray-600';
   };
 
@@ -20,21 +22,25 @@ export default function MacroPage() {
       {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">🌍 Macro Indicatoren</h1>
 
-      {/* ✅ Eerst de Samenvatting */}
+      {/* ✅ Samenvatting */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
             🌍 Macro Score:{' '}
-            <span className={scoreColor(avgScore)}>{avgScore}</span>
+            <span className={scoreColor(macroScore)}>
+              {loading ? '⏳' : macroScore ?? '–'}
+            </span>
           </h3>
           <h3 className="text-lg font-semibold">
-            📈 Advies:{' '}
-            <span className="text-blue-600">{advies}</span>
+            📈 Uitleg:{' '}
+            <span className="text-gray-600 italic">
+              {macroExplanation ?? 'Geen uitleg beschikbaar'}
+            </span>
           </h3>
         </div>
       </CardWrapper>
 
-      {/* 🔹 Daarna de Tabs met datatabellen */}
+      {/* 🔹 Macro Tabs */}
       <MacroTabs />
 
       {/* 💬 Popup voor bewerken */}
@@ -42,7 +48,6 @@ export default function MacroPage() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
             <h3 className="text-lg font-bold">✏️ Bewerk {editIndicator.name}</h3>
-            {/* TODO: invulvelden en bewaarlogica */}
             <button
               onClick={() => setEditIndicator(null)}
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"

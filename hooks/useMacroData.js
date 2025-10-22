@@ -7,6 +7,7 @@ import {
   fetchMacroDataByMonth,
   fetchMacroDataByQuarter,
 } from '@/lib/api/macro';
+import { getDailyScores } from '@/lib/api/scores';
 
 export function useMacroData(activeTab = 'Dag') {
   const [macroData, setMacroData] = useState([]);
@@ -24,6 +25,7 @@ export function useMacroData(activeTab = 'Dag') {
   async function loadData() {
     setLoading(true);
     setError('');
+
     try {
       let data;
       switch (activeTab) {
@@ -47,7 +49,23 @@ export function useMacroData(activeTab = 'Dag') {
       if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
 
       setMacroData(macro);
-      updateScore(macro);
+
+      // ✅ Haal backend-score op voor de huidige dag
+      const scores = await getDailyScores();
+      const backendScore = scores?.macro_score ?? null;
+
+      if (backendScore !== null) {
+        const rounded = parseFloat(backendScore).toFixed(1);
+        setAvgScore(rounded);
+        setAdvies(
+          backendScore >= 75 ? '🟢 Bullish' :
+          backendScore <= 25 ? '🔴 Bearish' :
+          '⚖️ Neutraal'
+        );
+      } else {
+        updateScore(macro); // fallback naar frontend-score
+      }
+
       markStepDone(3);
     } catch (err) {
       console.warn('⚠️ Macrodata kon niet worden geladen:', err);
@@ -60,6 +78,7 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
+  // ✅ Oude frontend-score (fallback / alleen tijdelijk)
   function calculateMacroScore(name, value) {
     if (name === "fear_greed_index") return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;
     if (name === "btc_dominance") return value > 55 ? 2 : value > 50 ? 1 : value < 45 ? -2 : value < 48 ? -1 : 0;

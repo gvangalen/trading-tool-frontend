@@ -15,7 +15,7 @@ export default function DashboardGauges() {
     setup,
     sentiment,
     loading,
-  } = useScoreMeters();
+  } = useScoresData();
 
   return (
     <div className="space-y-6">

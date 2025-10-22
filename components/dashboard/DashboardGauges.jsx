@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useScoreMeters } from '@/hooks/useScoreMeters'; // ✅ nieuwe hook
+import { useScoresData } from '@/hooks/useScoresData'; // ✅ nieuwe hook
 import GaugeChart from '@/components/ui/GaugeChart';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import CardWrapper from '@/components/ui/CardWrapper';

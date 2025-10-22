@@ -2,16 +2,15 @@
 
 export default function MacroDayTable({
   data,
-  calculateScore,
   getExplanation,
   onEdit,
   onRemove,
 }) {
   return data.map((item) => {
-    const score = calculateScore(item.name, parseFloat(item.value));
+    const score = parseFloat(item.score);
     const scoreColor =
-      score >= 2 ? 'text-green-600'
-      : score <= -2 ? 'text-red-600'
+      score >= 75 ? 'text-green-600'
+      : score <= 25 ? 'text-red-600'
       : 'text-gray-600';
 
     return (
@@ -36,7 +35,9 @@ export default function MacroDayTable({
         <td className="p-2 italic text-gray-500">{item.action ?? '–'}</td>
 
         {/* 📌 Score */}
-        <td className={`p-2 font-bold ${scoreColor}`}>{score}</td>
+        <td className={`p-2 font-bold ${scoreColor}`}>
+          {isNaN(score) ? '–' : score}
+        </td>
 
         {/* 📌 Verwijderknop */}
         <td className="p-2">

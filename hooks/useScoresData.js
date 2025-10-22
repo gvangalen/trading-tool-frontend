@@ -10,7 +10,7 @@ export function useScoreMeters() {
     setup: null,
     sentiment: null,
   });
-  const [advies, setAdvies] = useState('Neutral');
+  const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,16 +19,36 @@ export function useScoreMeters() {
 
       if (res) {
         setScores({
-          macro: res?.macro_score ?? null,
-          technical: res?.technical_score ?? null,
-          setup: res?.setup_score ?? null,
-          sentiment: res?.sentiment_score ?? null,
+          macro: {
+            score: res?.macro_score ?? null,
+            trend: res?.macro_trend ?? null,
+            interpretation: res?.macro_interpretation ?? null,
+            action: res?.macro_action ?? null,
+          },
+          technical: {
+            score: res?.technical_score ?? null,
+            trend: res?.technical_trend ?? null,
+            interpretation: res?.technical_interpretation ?? null,
+            action: res?.technical_action ?? null,
+          },
+          setup: {
+            score: res?.setup_score ?? null,
+            trend: res?.setup_trend ?? null,
+            interpretation: res?.setup_interpretation ?? null,
+            action: res?.setup_action ?? null,
+          },
+          sentiment: {
+            score: res?.sentiment_score ?? null,
+            trend: res?.sentiment_trend ?? null,
+            interpretation: res?.sentiment_interpretation ?? null,
+            action: res?.sentiment_action ?? null,
+          },
         });
 
-        const tech = res?.technical_score ?? 0;
+        const techScore = res?.technical_score ?? 0;
         setAdvies(
-          tech >= 50 ? '📈 Bullish' :
-          tech <= 25 ? '📉 Bearish' :
+          techScore >= 75 ? '📈 Bullish' :
+          techScore <= 25 ? '📉 Bearish' :
           '⚖️ Neutraal'
         );
       }
@@ -39,5 +59,9 @@ export function useScoreMeters() {
     fetchScores();
   }, []);
 
-  return { ...scores, advies, loading };
+  return {
+    ...scores,  // geeft macro, technical, setup, sentiment als objecten
+    advies,
+    loading,
+  };
 }

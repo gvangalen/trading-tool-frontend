@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getDailyScores } from '@/lib/api/scores';
 
-export function useScoreMeters() {
+export function useScoresData() {
   const [scores, setScores] = useState({
     macro: null,
     technical: null,

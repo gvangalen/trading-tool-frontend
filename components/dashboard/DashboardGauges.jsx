@@ -1,26 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import { useScoreMeters } from '@/hooks/useScoreMeters'; // ✅ nieuwe hook
 import GaugeChart from '@/components/ui/GaugeChart';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function DashboardGauges() {
-  const {
-    macroScore,
-    technicalScore,
-    setupScore,
-    macroExplanation,
-    technicalExplanation,
-    setupExplanation,
-    macroTopContributors,
-    technicalTopContributors,
-    setupTopContributors,
-    loading,
-  } = useDashboardData();
-
   const [selectedAsset, setSelectedAsset] = useState('BTC');
+
+  const {
+    macro,
+    technical,
+    setup,
+    sentiment,
+    loading,
+  } = useScoreMeters();
 
   return (
     <div className="space-y-6">
@@ -33,6 +28,7 @@ export default function DashboardGauges() {
             value={selectedAsset}
             onChange={(e) => setSelectedAsset(e.target.value)}
             className="ml-2 p-2 border rounded"
+            disabled
           >
             <option value="BTC">BTC</option>
             <option value="SOL">SOL</option>
@@ -47,21 +43,21 @@ export default function DashboardGauges() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <GaugeCard
           title="🌍 Macro"
-          score={macroScore}
-          explanation={macroExplanation}
-          topContributors={macroTopContributors}
+          score={macro?.score}
+          explanation={macro?.interpretation}
+          topContributors={macro?.top_contributors}
         />
         <GaugeCard
           title="📈 Technical"
-          score={technicalScore}
-          explanation={technicalExplanation}
-          topContributors={technicalTopContributors}
+          score={technical?.score}
+          explanation={technical?.interpretation}
+          topContributors={technical?.top_contributors}
         />
         <GaugeCard
           title="⚙️ Setup"
-          score={setupScore}
-          explanation={setupExplanation}
-          topContributors={setupTopContributors}
+          score={setup?.score}
+          explanation={setup?.interpretation}
+          topContributors={setup?.top_contributors}
           showTopSetups
         />
       </div>

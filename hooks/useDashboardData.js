@@ -27,30 +27,28 @@ export function useDashboardData() {
         const data = await fetchDashboardData();
         if (!mounted || !data) return;
 
-        const scores = data.scores || {};
-        const explanation = data.explanation || {};
+        // ✅ DIRECTE velden gebruiken — geen nested 'scores' of 'explanation'
+        setMacroScore(data?.macro_score ?? 0);
+        setTechnicalScore(data?.technical_score ?? 0);
+        setSetupScore(data?.setup_score ?? 0);
 
-        setMacroScore(typeof scores.macro === 'number' ? scores.macro : 0);
-        setTechnicalScore(typeof scores.technical === 'number' ? scores.technical : 0);
-        setSetupScore(typeof scores.setup === 'number' ? scores.setup : 0);
+        setMacroExplanation(data?.macro_interpretation ?? '⚠️ Geen uitleg beschikbaar');
+        setTechnicalExplanation(data?.technical_interpretation ?? '⚠️ Geen uitleg beschikbaar');
+        setSetupExplanation(data?.setup_interpretation ?? '⚠️ Geen setupinformatie beschikbaar');
 
-        setMacroExplanation(explanation.macro || '⚠️ Geen uitleg beschikbaar');
-        setTechnicalExplanation(explanation.technical || '⚠️ Geen uitleg beschikbaar');
-        setSetupExplanation(explanation.setup || '⚠️ Geen setupinformatie beschikbaar');
-
-        // 🔁 Dynamische contributors instellen
+        // ✅ Dynamische contributors instellen
         const technicalData = data.technical_data || {};
         const macroData = data.macro_data || [];
         const setups = data.setups || [];
 
         const techKeys = Object.keys(technicalData).map((k) => k.toUpperCase());
-        setTechnicalTopContributors(techKeys.slice(0, 5)); // max 5
+        setTechnicalTopContributors(techKeys.slice(0, 5));
 
         const macroKeys = macroData.map((item) => item.name);
-        setMacroTopContributors(macroKeys.slice(0, 5)); // max 5
+        setMacroTopContributors(macroKeys.slice(0, 5));
 
         const setupNames = setups.map((s) => s.name);
-        setSetupTopContributors(setupNames.slice(0, 5)); // max 5
+        setSetupTopContributors(setupNames.slice(0, 5));
 
       } catch (err) {
         console.warn('⚠️ Dashboarddata niet geladen. Gebruik fallbackwaarden.');

@@ -15,22 +15,23 @@ export default function TechnicalPage() {
     quarterData,
     avgScore,
     advies,
+    overallScore,
+    overallAdvies,
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData(timeframe); // 📊 Hook met dynamische data
+  } = useTechnicalData(timeframe); // 📊 Hook met dynamische + totale data
 
   useEffect(() => {
     console.log(`🧪 Active timeframe: ${timeframe}`);
   }, [timeframe]);
 
-  // 🎨 Scorekleur bepalen
-  const scoreColor = (score) => {
+  const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
-    if (s >= 1.5) return 'text-green-600';
-    if (s <= -1.5) return 'text-red-600';
-    return 'text-gray-600';
+    if (s >= 70) return 'text-green-600';
+    if (s <= 40) return 'text-red-600';
+    return 'text-yellow-600';
   };
 
   return (
@@ -38,21 +39,39 @@ export default function TechnicalPage() {
       {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">🧪 Technical Analysis</h1>
 
-      {/* 🔹 Samenvatting */}
+      {/* 🔹 Totale technische score uit backend */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
-            📊 Technical Score:{' '}
-            <span className={scoreColor(avgScore)}>{avgScore ?? 'N/A'}</span>
+            🧮 Totale Technische Score:{' '}
+            <span className={getScoreColor(overallScore)}>
+              {overallScore ?? 'N/A'}
+            </span>
           </h3>
           <h3 className="text-lg font-semibold">
-            🧠 Advice:{' '}
+            🧠 Algemeen Advies:{' '}
+            <span className="text-blue-600">{overallAdvies}</span>
+          </h3>
+        </div>
+      </CardWrapper>
+
+      {/* 🔹 Timeframe-specifieke score */}
+      <CardWrapper>
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">
+            ⏱️ Score ({timeframe}):{' '}
+            <span className={getScoreColor(avgScore)}>
+              {avgScore ?? 'N/A'}
+            </span>
+          </h3>
+          <h3 className="text-lg font-semibold">
+            📉 Advies ({timeframe}):{' '}
             <span className="text-blue-600">{advies}</span>
           </h3>
         </div>
       </CardWrapper>
 
-      {/* 🔹 Tabs + Tabel per timeframe */}
+      {/* 🔹 Tabs + Tabel */}
       <TechnicalTabs
         timeframe={timeframe}
         setTimeframe={setTimeframe}

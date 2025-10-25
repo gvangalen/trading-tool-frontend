@@ -8,16 +8,24 @@ import {
   technicalDataQuarter,
 } from '@/lib/api/technical';
 
+import { getDailyScores } from '@/lib/api/scores'; // ⬅️ dit haalt totale technische score op
+
 export function useTechnicalData(activeTab = 'day') {
   const [dayData, setDayData] = useState([]);
   const [weekData, setWeekData] = useState([]);
   const [monthData, setMonthData] = useState([]);
   const [quarterData, setQuarterData] = useState([]);
-  const [avgScore, setAvgScore] = useState(null);
+
+  const [avgScore, setAvgScore] = useState(null); // ✅ gemiddelde per timeframe
   const [advies, setAdvies] = useState('Neutral');
+
+  const [overallScore, setOverallScore] = useState(null); // ✅ totale technical_score uit daily API
+  const [overallAdvies, setOverallAdvies] = useState('Neutral');
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ✅ Haal alle technische data per timeframe op
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
@@ -49,7 +57,31 @@ export function useTechnicalData(activeTab = 'day') {
     fetchAll();
   }, []);
 
-  // Gemiddelde en advies berekenen voor actieve timeframe
+  // ✅ Haal totale technical score uit daily-scores API
+  useEffect(() => {
+    async function fetchDailyScore() {
+      try {
+        const result = await getDailyScores();
+        if (result?.technical_score) {
+          setOverallScore(result.technical_score);
+
+          setOverallAdvies(
+            result.technical_score >= 70
+              ? 'Bullish'
+              : result.technical_score <= 40
+              ? 'Bearish'
+              : 'Neutral'
+          );
+        }
+      } catch (err) {
+        console.error('❌ Error fetching daily technical score:', err);
+      }
+    }
+
+    fetchDailyScore();
+  }, []);
+
+  // ✅ Bereken gemiddelde score binnen actieve timeframe (voor tabelgauge)
   useEffect(() => {
     const dataMap = {
       day: dayData,
@@ -66,10 +98,11 @@ export function useTechnicalData(activeTab = 'day') {
 
     if (validScores.length > 0) {
       const average = validScores.reduce((acc, val) => acc + val, 0) / validScores.length;
-      setAvgScore(Number(average.toFixed(2))); // ✨ number ipv string
+      setAvgScore(Number(average.toFixed(2)));
+
       setAdvies(
-        average >= 1.5 ? 'Bullish' :
-        average <= -1.5 ? 'Bearish' :
+        average >= 70 ? 'Bullish' :
+        average <= 40 ? 'Bearish' :
         'Neutral'
       );
     } else {
@@ -78,6 +111,7 @@ export function useTechnicalData(activeTab = 'day') {
     }
   }, [activeTab, dayData, weekData, monthData, quarterData]);
 
+  // ✅ Asset verwijderen uit alle lijsten
   const deleteAsset = (symbol) => {
     if (!symbol) return;
     console.log(`🗑️ Remove '${symbol}' from all timeframes`);
@@ -94,6 +128,8 @@ export function useTechnicalData(activeTab = 'day') {
     quarterData,
     avgScore,
     advies,
+    overallScore,
+    overallAdvies,
     loading,
     error,
     deleteAsset,

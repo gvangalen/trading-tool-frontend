@@ -8,7 +8,7 @@ import {
   technicalDataQuarter,
 } from '@/lib/api/technical';
 
-import { getDailyScores } from '@/lib/api/scores'; // ⬅️ dit haalt totale technische score op
+import { getDailyScores } from '@/lib/api/scores'; // ⬅️ haalt totale technische score op
 
 export function useTechnicalData(activeTab = 'day') {
   const [dayData, setDayData] = useState([]);
@@ -16,23 +16,23 @@ export function useTechnicalData(activeTab = 'day') {
   const [monthData, setMonthData] = useState([]);
   const [quarterData, setQuarterData] = useState([]);
 
-  const [avgScore, setAvgScore] = useState(null); // ✅ gemiddelde per timeframe
+  const [avgScore, setAvgScore] = useState(null); // ✅ gemiddelde binnen huidige timeframe
   const [advies, setAdvies] = useState('Neutral');
 
-  const [overallScore, setOverallScore] = useState(null); // ✅ totale technical_score uit daily API
+  const [overallScore, setOverallScore] = useState(null); // ✅ totale technical_score uit daily-scores API
   const [overallAdvies, setOverallAdvies] = useState('Neutral');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ✅ Haal alle technische data per timeframe op
+  // ✅ Haal technische data op per timeframe
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
       setError('');
 
       try {
-        console.log('📡 Fetching all technical data...');
+        console.log('📡 Fetching technical data...');
         const [day, week, month, quarter] = await Promise.all([
           technicalDataDay(),
           technicalDataWeek(),
@@ -45,10 +45,10 @@ export function useTechnicalData(activeTab = 'day') {
         setMonthData(Array.isArray(month) ? month : []);
         setQuarterData(Array.isArray(quarter) ? quarter : []);
 
-        console.log('✅ All technical data fetched');
+        console.log('✅ Technical data loaded');
       } catch (err) {
-        console.error('❌ Error fetching technical data:', err);
-        setError('Technical data could not be loaded.');
+        console.error('❌ Error loading technical data:', err);
+        setError('Technische data kon niet worden geladen.');
       } finally {
         setLoading(false);
       }
@@ -57,20 +57,18 @@ export function useTechnicalData(activeTab = 'day') {
     fetchAll();
   }, []);
 
-  // ✅ Haal totale technical score uit daily-scores API
+  // ✅ Haal totale technische score uit daily-scores API
   useEffect(() => {
     async function fetchDailyScore() {
       try {
         const result = await getDailyScores();
-        if (result?.technical_score) {
-          setOverallScore(result.technical_score);
-
+        if (result?.technical_score !== undefined) {
+          const score = parseFloat(result.technical_score);
+          setOverallScore(score);
           setOverallAdvies(
-            result.technical_score >= 70
-              ? 'Bullish'
-              : result.technical_score <= 40
-              ? 'Bearish'
-              : 'Neutral'
+            score >= 70 ? 'Bullish' :
+            score <= 40 ? 'Bearish' :
+            'Neutral'
           );
         }
       } catch (err) {
@@ -81,7 +79,7 @@ export function useTechnicalData(activeTab = 'day') {
     fetchDailyScore();
   }, []);
 
-  // ✅ Bereken gemiddelde score binnen actieve timeframe (voor tabelgauge)
+  // ✅ Bereken gemiddelde score van actieve timeframe (voor tab-tabel)
   useEffect(() => {
     const dataMap = {
       day: dayData,
@@ -111,10 +109,10 @@ export function useTechnicalData(activeTab = 'day') {
     }
   }, [activeTab, dayData, weekData, monthData, quarterData]);
 
-  // ✅ Asset verwijderen uit alle lijsten
+  // ✅ Verwijder asset uit alle timeframes
   const deleteAsset = (symbol) => {
     if (!symbol) return;
-    console.log(`🗑️ Remove '${symbol}' from all timeframes`);
+    console.log(`🗑️ Removing ${symbol} from all timeframes`);
     setDayData((prev) => prev.filter((item) => item.symbol !== symbol));
     setWeekData((prev) => prev.filter((item) => item.symbol !== symbol));
     setMonthData((prev) => prev.filter((item) => item.symbol !== symbol));

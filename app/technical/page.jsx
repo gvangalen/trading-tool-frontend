@@ -6,21 +6,19 @@ import TechnicalTabs from '@/components/technical/TechnicalTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
-  const [timeframe, setTimeframe] = useState('day'); // ⏱️ Standaard is 'day'
+  const [timeframe, setTimeframe] = useState('day');
 
   const {
     dayData,
     weekData,
     monthData,
     quarterData,
-    avgScore,
-    advies,
     overallScore,
     overallAdvies,
     loading,
     error,
     deleteAsset,
-  } = useTechnicalData(timeframe); // 📊 Hook met dynamische + totale data
+  } = useTechnicalData(timeframe);
 
   useEffect(() => {
     console.log(`🧪 Active timeframe: ${timeframe}`);
@@ -55,23 +53,7 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* 🔹 Timeframe-specifieke score */}
-      <CardWrapper>
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold">
-            ⏱️ Score ({timeframe}):{' '}
-            <span className={getScoreColor(avgScore)}>
-              {avgScore ?? 'N/A'}
-            </span>
-          </h3>
-          <h3 className="text-lg font-semibold">
-            📉 Advies ({timeframe}):{' '}
-            <span className="text-blue-600">{advies}</span>
-          </h3>
-        </div>
-      </CardWrapper>
-
-      {/* 🔹 Tabs + Tabel */}
+      {/* 🔹 Tabs + Tabel per timeframe */}
       <TechnicalTabs
         timeframe={timeframe}
         setTimeframe={setTimeframe}

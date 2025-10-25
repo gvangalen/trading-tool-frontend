@@ -2,10 +2,24 @@
 
 import { useEffect } from 'react';
 
-export default function TechnicalDayTable({ data = [], onRemove, showDebug = false }) {
+export default function TechnicalDayTable({
+  data = [],
+  onRemove,
+  showDebug = false,
+  overallScore = null,
+  overallAdvies = 'Neutral',
+}) {
   useEffect(() => {
     console.log('📊 [TechnicalDayTable] received data:', data);
   }, [data]);
+
+  const getScoreColor = (score) => {
+    const s = typeof score === 'number' ? score : parseFloat(score);
+    if (isNaN(s)) return 'text-gray-600';
+    if (s >= 70) return 'text-green-600';
+    if (s <= 40) return 'text-red-600';
+    return 'text-yellow-600';
+  };
 
   // 🧠 Fallback voor geen data
   if (!Array.isArray(data) || data.length === 0) {
@@ -18,17 +32,29 @@ export default function TechnicalDayTable({ data = [], onRemove, showDebug = fal
     );
   }
 
-  // ✅ Kleur bepalen op basis van score
-  const getScoreColor = (score) => {
-    const s = typeof score === 'number' ? score : parseFloat(score);
-    if (isNaN(s)) return 'text-gray-600';
-    if (s >= 2) return 'text-green-600';
-    if (s <= -2) return 'text-red-600';
-    return 'text-gray-600';
-  };
-
   return (
     <>
+      {/* 🔢 Totale technische score boven de tabel */}
+      <tr className="bg-gray-50 dark:bg-gray-800 border-t border-b dark:border-gray-700">
+        <td colSpan={6} className="p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="flex items-center justify-between">
+            <div>
+              📈 Totale Technische Score:{' '}
+              <span className={`font-bold ${getScoreColor(overallScore)}`}>
+                {overallScore !== null ? overallScore : '–'}
+              </span>
+            </div>
+            <div>
+              Advies:{' '}
+              <span className="font-semibold text-gray-800 dark:text-white">
+                {overallAdvies || 'Neutral'}
+              </span>
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      {/* 📋 Rijen per indicator */}
       {data.map((item, index) => {
         const {
           indicator = '–',

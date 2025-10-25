@@ -13,6 +13,7 @@ export default function TechnicalDayTable({
     console.log('📊 [TechnicalDayTable] received data:', data);
   }, [data]);
 
+  // 🎨 Scorekleur bepalen
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -21,12 +22,12 @@ export default function TechnicalDayTable({
     return 'text-yellow-600';
   };
 
-  // 🧠 Fallback voor geen data
+  // 🧠 Geen data fallback
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <tr>
         <td colSpan={6} className="p-4 text-center text-gray-500">
-          ⚠️ No daily technical data available.
+          ⚠️ Geen technische dagdata beschikbaar.
         </td>
       </tr>
     );
@@ -54,12 +55,12 @@ export default function TechnicalDayTable({
         </td>
       </tr>
 
-      {/* 📋 Rijen per indicator */}
+      {/* 📋 Indicator-rijen */}
       {data.map((item, index) => {
         const {
           indicator = '–',
           waarde = '–',
-          score = '–',
+          score = null,
           advies = '–',
           uitleg = '–',
           symbol,
@@ -70,7 +71,7 @@ export default function TechnicalDayTable({
             <td className="p-2 font-medium">{indicator}</td>
             <td className="p-2 text-center">{waarde}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
-              {score}
+              {score !== null ? score : '–'}
             </td>
             <td className="p-2 text-center">{advies}</td>
             <td className="p-2">{uitleg}</td>
@@ -78,7 +79,7 @@ export default function TechnicalDayTable({
               <button
                 onClick={() => {
                   console.log('🗑️ Removing:', symbol || `item-${index}`);
-                  if (onRemove) onRemove(symbol || `item-${index}`);
+                  onRemove?.(symbol || `item-${index}`);
                 }}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
               >
@@ -89,7 +90,7 @@ export default function TechnicalDayTable({
         );
       })}
 
-      {/* 🧪 Optionele debug view */}
+      {/* 🧪 Debugmodus */}
       {showDebug && (
         <tr>
           <td colSpan={6}>

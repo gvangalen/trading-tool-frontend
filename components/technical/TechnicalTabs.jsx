@@ -5,6 +5,15 @@ import CardWrapper from '@/components/ui/CardWrapper';
 
 const TABS = ['day', 'week', 'month', 'quarter'];
 
+// ✅ Nieuwe scorekleur-logica (10–100)
+const getScoreColor = (score) => {
+  const s = typeof score === 'number' ? score : parseFloat(score);
+  if (isNaN(s)) return 'text-gray-600';
+  if (s >= 70) return 'text-green-600';
+  if (s <= 40) return 'text-red-600';
+  return 'text-yellow-600';
+};
+
 export default function TechnicalTabs({
   timeframe,
   setTimeframe,
@@ -68,18 +77,10 @@ export default function TechnicalTabs({
     }
 
     return data.map((item, index) => (
-      <tr key={item.symbol || index} className="border-t">
+      <tr key={item.symbol || index} className="border-t dark:border-gray-700">
         <td className="p-2 font-medium">{item.indicator}</td>
         <td className="p-2 text-center">{item.waarde ?? '–'}</td>
-        <td
-          className={`p-2 text-center font-bold ${
-            item.score >= 2
-              ? 'text-green-600'
-              : item.score <= -2
-              ? 'text-red-600'
-              : 'text-gray-600'
-          }`}
-        >
+        <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
           {item.score ?? '–'}
         </td>
         <td className="p-2 text-center">{item.advies ?? '–'}</td>

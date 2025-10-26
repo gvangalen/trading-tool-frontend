@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useTechnicalData } from '@/hooks/useTechnicalData';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 import TechnicalDayTable from './TechnicalDayTable';
@@ -11,16 +9,14 @@ import TechnicalQuarterTable from './TechnicalQuarterTable';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 
-export default function TechnicalTabs() {
-  const [activeTab, setActiveTab] = useState('Dag');
-
-  const {
-    technicalData,
-    handleRemove,
-    loading,
-    error,
-  } = useTechnicalData(activeTab); // 👈 haalt automatisch juiste periode op uit DB
-
+export default function TechnicalTabs({
+  activeTab,
+  setActiveTab,
+  technicalData,
+  handleRemove,
+  loading,
+  error,
+}) {
   const renderTableBody = () => {
     if (loading) {
       return (

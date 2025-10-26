@@ -50,19 +50,15 @@ export function useTechnicalData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
-      // ✅ Filter alleen toegestane indicatoren (zoals in config)
-      const allowedIndicators = ['rsi', 'volume', 'ma_200'];
-
-      const enriched = data
-        .filter((item) => allowedIndicators.includes(item.indicator?.toLowerCase()))
-        .map((item) => ({
-          indicator: item.indicator || '–',
-          waarde: item.waarde ?? item.value ?? '–',
-          score: parseFloat(item.score) ?? null,
-          advies: item.advies || '–',
-          uitleg: item.uitleg || 'Geen uitleg beschikbaar',
-          symbol: item.symbol || '',
-        }));
+      // ✅ Alle indicatoren rechtstreeks meenemen
+      const enriched = data.map((item) => ({
+        indicator: item.indicator || '–',
+        waarde: item.waarde ?? item.value ?? '–',
+        score: parseFloat(item.score) ?? null,
+        advies: item.advies || '–',
+        uitleg: item.uitleg || 'Geen uitleg beschikbaar',
+        symbol: item.symbol || '',
+      }));
 
       setTechnicalData(enriched);
 

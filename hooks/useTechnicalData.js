@@ -23,6 +23,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     return () => clearInterval(interval);
   }, [activeTab]);
 
+  // ✅ Hoofdfunctie om data op te halen
   async function loadData() {
     setLoading(true);
     setError('');
@@ -49,7 +50,17 @@ export function useTechnicalData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
-      setTechnicalData(data);
+      // 🧩 Verrijk de data zodat de tabel altijd consistente velden heeft
+      const enriched = data.map((item) => ({
+        indicator: item.indicator || '–',
+        waarde: item.waarde ?? item.value ?? '–',
+        score: parseFloat(item.score) ?? null,
+        advies: item.advies || '–',
+        uitleg: item.uitleg || 'Geen uitleg beschikbaar',
+        symbol: item.symbol || '',
+      }));
+
+      setTechnicalData(enriched);
 
       // ✅ Haal backend-score op (totale technische score)
       const scores = await getDailyScores();
@@ -64,8 +75,8 @@ export function useTechnicalData(activeTab = 'Dag') {
           '⚖️ Neutraal'
         );
       } else {
-        // fallback naar lokale berekening
-        updateScore(data);
+        // Fallback naar lokale berekening
+        updateScore(enriched);
       }
 
     } catch (err) {

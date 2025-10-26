@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useTechnicalData } from '@/hooks/useTechnicalData';
 import CardWrapper from '@/components/ui/CardWrapper';
+
 import TechnicalDayTable from './TechnicalDayTable';
 import TechnicalWeekTable from './TechnicalWeekTable';
 import TechnicalMonthTable from './TechnicalMonthTable';
 import TechnicalQuarterTable from './TechnicalQuarterTable';
-import { useTechnicalData } from '@/hooks/useTechnicalData';
 
 const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 
@@ -18,7 +19,7 @@ export default function TechnicalTabs() {
     handleRemove,
     loading,
     error,
-  } = useTechnicalData(activeTab);
+  } = useTechnicalData(activeTab); // 👈 haalt automatisch juiste periode op uit DB
 
   const renderTableBody = () => {
     if (loading) {

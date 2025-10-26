@@ -1,135 +1,118 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   technicalDataDay,
   technicalDataWeek,
   technicalDataMonth,
   technicalDataQuarter,
 } from '@/lib/api/technical';
+import { getDailyScores } from '@/lib/api/scores';
 
-import { getDailyScores } from '@/lib/api/scores'; // ⬅️ haalt totale technische score op
-
-export function useTechnicalData(activeTab = 'day') {
-  const [dayData, setDayData] = useState([]);
-  const [weekData, setWeekData] = useState([]);
-  const [monthData, setMonthData] = useState([]);
-  const [quarterData, setQuarterData] = useState([]);
-
-  const [avgScore, setAvgScore] = useState(null); // ✅ gemiddelde binnen huidige timeframe
-  const [advies, setAdvies] = useState('Neutral');
-
-  const [overallScore, setOverallScore] = useState(null); // ✅ totale technical_score uit daily-scores API
-  const [overallAdvies, setOverallAdvies] = useState('Neutral');
-
+export function useTechnicalData(activeTab = 'Dag') {
+  const [technicalData, setTechnicalData] = useState([]);
+  const [avgScore, setAvgScore] = useState('N/A');
+  const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ✅ Haal technische data op per timeframe
+  // 🔁 Laad data bij mount of tabwissel
   useEffect(() => {
-    async function fetchAll() {
-      setLoading(true);
-      setError('');
+    loadData();
+    const interval = setInterval(loadData, 60000); // elke 60 sec refresh
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
-      try {
-        console.log('📡 Fetching technical data...');
-        const [day, week, month, quarter] = await Promise.all([
-          technicalDataDay(),
-          technicalDataWeek(),
-          technicalDataMonth(),
-          technicalDataQuarter(),
-        ]);
+  async function loadData() {
+    setLoading(true);
+    setError('');
 
-        setDayData(Array.isArray(day) ? day : []);
-        setWeekData(Array.isArray(week) ? week : []);
-        setMonthData(Array.isArray(month) ? month : []);
-        setQuarterData(Array.isArray(quarter) ? quarter : []);
+    try {
+      let data;
 
-        console.log('✅ Technical data loaded');
-      } catch (err) {
-        console.error('❌ Error loading technical data:', err);
-        setError('Technische data kon niet worden geladen.');
-      } finally {
-        setLoading(false);
+      switch (activeTab) {
+        case 'Dag':
+          data = await technicalDataDay();
+          break;
+        case 'Week':
+          data = await technicalDataWeek();
+          break;
+        case 'Maand':
+          data = await technicalDataMonth();
+          break;
+        case 'Kwartaal':
+          data = await technicalDataQuarter();
+          break;
+        default:
+          data = await technicalDataDay();
       }
-    }
 
-    fetchAll();
-  }, []);
+      if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
-  // ✅ Haal totale technische score uit daily-scores API
-  useEffect(() => {
-    async function fetchDailyScore() {
-      try {
-        const result = await getDailyScores();
-        if (result?.technical_score !== undefined) {
-          const score = parseFloat(result.technical_score);
-          setOverallScore(score);
-          setOverallAdvies(
-            score >= 70 ? 'Bullish' :
-            score <= 40 ? 'Bearish' :
-            'Neutral'
-          );
-        }
-      } catch (err) {
-        console.error('❌ Error fetching daily technical score:', err);
+      setTechnicalData(data);
+
+      // ✅ Haal backend-score op (totale technische score)
+      const scores = await getDailyScores();
+      const backendScore = scores?.technical_score ?? null;
+
+      if (backendScore !== null) {
+        const rounded = parseFloat(backendScore).toFixed(1);
+        setAvgScore(rounded);
+        setAdvies(
+          backendScore >= 75 ? '🟢 Bullish' :
+          backendScore <= 25 ? '🔴 Bearish' :
+          '⚖️ Neutraal'
+        );
+      } else {
+        // fallback naar lokale berekening
+        updateScore(data);
       }
+
+    } catch (err) {
+      console.warn('⚠️ Technische data kon niet worden geladen:', err);
+      setTechnicalData([]);
+      setAvgScore('N/A');
+      setAdvies('⚖️ Neutraal');
+      setError('Fout bij laden van technische data');
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchDailyScore();
-  }, []);
+  // 🧮 Fallback berekening (alleen als backend-score ontbreekt)
+  function updateScore(data) {
+    let total = 0;
+    let count = 0;
 
-  // ✅ Bereken gemiddelde score van actieve timeframe (voor tab-tabel)
-  useEffect(() => {
-    const dataMap = {
-      day: dayData,
-      week: weekData,
-      month: monthData,
-      quarter: quarterData,
-    };
+    data.forEach((ind) => {
+      const s = parseFloat(ind.score);
+      if (!isNaN(s)) {
+        total += s;
+        count++;
+      }
+    });
 
-    const activeData = dataMap[activeTab] || [];
+    const avg = count ? (total / count).toFixed(1) : 'N/A';
+    setAvgScore(avg);
+    setAdvies(
+      avg >= 70 ? '🟢 Bullish' :
+      avg <= 40 ? '🔴 Bearish' :
+      '⚖️ Neutraal'
+    );
+  }
 
-    const validScores = activeData
-      .map((item) => parseFloat(item.score))
-      .filter((s) => !isNaN(s));
-
-    if (validScores.length > 0) {
-      const average = validScores.reduce((acc, val) => acc + val, 0) / validScores.length;
-      setAvgScore(Number(average.toFixed(2)));
-
-      setAdvies(
-        average >= 70 ? 'Bullish' :
-        average <= 40 ? 'Bearish' :
-        'Neutral'
-      );
-    } else {
-      setAvgScore(null);
-      setAdvies('Neutral');
-    }
-  }, [activeTab, dayData, weekData, monthData, quarterData]);
-
-  // ✅ Verwijder asset uit alle timeframes
-  const deleteAsset = (symbol) => {
-    if (!symbol) return;
-    console.log(`🗑️ Removing ${symbol} from all timeframes`);
-    setDayData((prev) => prev.filter((item) => item.symbol !== symbol));
-    setWeekData((prev) => prev.filter((item) => item.symbol !== symbol));
-    setMonthData((prev) => prev.filter((item) => item.symbol !== symbol));
-    setQuarterData((prev) => prev.filter((item) => item.symbol !== symbol));
-  };
+  // 🧠 Verwijderen van indicator (frontend only)
+  function handleRemove(symbol) {
+    const updated = technicalData.filter((item) => item.symbol !== symbol);
+    setTechnicalData(updated);
+  }
 
   return {
-    dayData,
-    weekData,
-    monthData,
-    quarterData,
+    technicalData,
     avgScore,
     advies,
-    overallScore,
-    overallAdvies,
+    handleRemove,
     loading,
     error,
-    deleteAsset,
   };
 }

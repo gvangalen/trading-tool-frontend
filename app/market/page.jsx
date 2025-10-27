@@ -17,6 +17,11 @@ export default function MarketPage() {
     return 'text-gray-600';
   };
 
+  const score =
+    typeof market?.score === 'number' ? market.score.toFixed(1) : '–';
+
+  const advies = market?.advies || '⏳';
+
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
       {/* 🔹 Titel */}
@@ -35,13 +40,13 @@ export default function MarketPage() {
           <h3 className="text-lg font-semibold">
             📊 Markt Score:{' '}
             <span className={scoreColor(market?.score)}>
-              {market?.score !== null ? market.score.toFixed(1) : '–'}
+              {score}
             </span>
           </h3>
           <h3 className="text-lg font-semibold">
             📈 Advies:{' '}
             <span className="text-blue-600">
-              {market?.advies || '⏳'}
+              {advies}
             </span>
           </h3>
         </div>

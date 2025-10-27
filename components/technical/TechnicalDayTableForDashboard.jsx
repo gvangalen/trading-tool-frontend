@@ -3,6 +3,7 @@
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalDayTableForDashboard({ data = [] }) {
+  // 🧠 Geen data fallback
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -11,6 +12,7 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
     );
   }
 
+  // 🎨 Kleur voor score
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -19,6 +21,7 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
     return 'text-yellow-600';
   };
 
+  // 🧾 Tabel renderen
   return (
     <div className="overflow-x-auto">
       <table className="w-full table-auto text-sm">
@@ -33,14 +36,14 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
         </thead>
         <tbody>
           {data.map((item, index) => (
-            <tr key={item.symbol || index} className="border-t">
-              <td className="p-2 font-medium">{item.indicator}</td>
-              <td className="p-2 text-center">{item.waarde ?? '–'}</td>
+            <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
+              <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
+              <td className="p-2 text-center">{item.value ?? '–'}</td>
               <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
                 {item.score ?? '–'}
               </td>
               <td className="p-2 text-center">{item.advies ?? '–'}</td>
-              <td className="p-2">{item.uitleg ?? '–'}</td>
+              <td className="p-2">{item.uitleg ?? item.explanation ?? '–'}</td>
             </tr>
           ))}
         </tbody>

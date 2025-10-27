@@ -3,17 +3,21 @@
 import { useEffect, useState } from 'react';
 import { getDailyScores } from '@/lib/api/scores';
 
+// ✅ Adviesfunctie per score
+const getAdvies = (score) =>
+  score >= 75 ? '📈 Bullish' : score <= 25 ? '📉 Bearish' : '⚖️ Neutraal';
+
 export function useScoresData() {
   const [scores, setScores] = useState({
-    macro: { score: 0, trend: '', interpretation: '', action: '' },
-    technical: { score: 0, trend: '', interpretation: '', action: '' },
-    setup: { score: 0, trend: '', interpretation: '', action: '' },
-    sentiment: { score: 0, trend: '', interpretation: '', action: '' },
-    market: { score: 0 }, // ✅ nieuw toegevoegd
+    macro: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
+    technical: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
+    setup: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
+    sentiment: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
+    market: { score: 0, advies: '⚖️ Neutraal' },
   });
 
-  const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function fetchScores() {
@@ -28,46 +32,49 @@ export function useScoresData() {
 
         console.log('📊 Ontvangen daily scores:', res);
 
+        const macroScore = res?.macro_score || 0;
+        const techScore = res?.technical_score || 0;
+        const setupScore = res?.setup_score || 0;
+        const sentimentScore = res?.sentiment_score || 0;
+        const marketScore = res?.market_score || 0;
+
         setScores({
           macro: {
-            score: res?.macro_score || 0,
+            score: macroScore,
             trend: res?.macro_trend || '',
             interpretation: res?.macro_interpretation || '',
             action: res?.macro_action || '',
+            advies: getAdvies(macroScore),
           },
           technical: {
-            score: res?.technical_score || 0,
+            score: techScore,
             trend: res?.technical_trend || '',
             interpretation: res?.technical_interpretation || '',
             action: res?.technical_action || '',
+            advies: getAdvies(techScore),
           },
           setup: {
-            score: res?.setup_score || 0,
+            score: setupScore,
             trend: res?.setup_trend || '',
             interpretation: res?.setup_interpretation || '',
             action: res?.setup_action || '',
+            advies: getAdvies(setupScore),
           },
           sentiment: {
-            score: res?.sentiment_score || 0,
+            score: sentimentScore,
             trend: res?.sentiment_trend || '',
             interpretation: res?.sentiment_interpretation || '',
             action: res?.sentiment_action || '',
+            advies: getAdvies(sentimentScore),
           },
           market: {
-            score: res?.market_score || 0, // ✅ opgehaald uit API
+            score: marketScore,
+            advies: getAdvies(marketScore),
           },
         });
-
-        const techScore = res?.technical_score || 0;
-        setAdvies(
-          techScore >= 75
-            ? '📈 Bullish'
-            : techScore <= 25
-            ? '📉 Bearish'
-            : '⚖️ Neutraal'
-        );
       } catch (err) {
         console.error('❌ Fout bij ophalen daily scores:', err);
+        setError('Kon scores niet laden.');
       } finally {
         setLoading(false);
       }
@@ -78,7 +85,7 @@ export function useScoresData() {
 
   return {
     ...scores, // macro, technical, setup, sentiment, market
-    advies,
     loading,
+    error,
   };
 }

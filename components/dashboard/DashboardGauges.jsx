@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useScoresData } from '@/hooks/useScoresData'; // ✅ nieuwe hook
+import { useScoresData } from '@/hooks/useScoresData';
 import GaugeChart from '@/components/ui/GaugeChart';
 import TopSetupsMini from '@/components/setup/TopSetupsMini';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function DashboardGauges() {
-  const [selectedAsset, setSelectedAsset] = useState('BTC');
-
   const {
     macro,
     technical,
@@ -19,25 +16,6 @@ export default function DashboardGauges() {
 
   return (
     <div className="space-y-6">
-      {/* 🔁 Asset selector */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <label htmlFor="assetSelect" className="font-semibold">🔁 Select asset:</label>
-          <select
-            id="assetSelect"
-            value={selectedAsset}
-            onChange={(e) => setSelectedAsset(e.target.value)}
-            className="ml-2 p-2 border rounded"
-            disabled
-          >
-            <option value="BTC">BTC</option>
-            <option value="SOL">SOL</option>
-          </select>
-        </div>
-        <div className="text-sm text-green-600 dark:text-green-400 font-medium">
-          ✅ Live data
-        </div>
-      </div>
 
       {/* 📊 Gauges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

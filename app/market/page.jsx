@@ -1,27 +1,29 @@
 'use client';
 
 import { useMarketData } from '@/hooks/useMarketData';
+import { useScoresData } from '@/hooks/useScoresData';
 import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function MarketPage() {
-  const {
-    loading,
-    error,
-    avgScore,
-    advies,
-    sevenDayData,
-    btcLive,
-    forwardReturns,
-  } = useMarketData();
+  const { btcLive, sevenDayData, forwardReturns } = useMarketData();
+
+  const { market, loading, error } = useScoresData();
 
   const scoreColor = (score) => {
-    if (score >= 1.5) return 'text-green-600';
-    if (score <= -1.5) return 'text-red-600';
+    if (score >= 75) return 'text-green-600';
+    if (score <= 25) return 'text-red-600';
     return 'text-gray-600';
   };
+
+  const adviesText =
+    market.score >= 75
+      ? '📈 Bullish'
+      : market.score <= 25
+      ? '📉 Bearish'
+      : '⚖️ Neutraal';
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
@@ -31,26 +33,29 @@ export default function MarketPage() {
       {loading && (
         <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>
       )}
-
       {error && (
         <p className="text-sm text-red-500">❌ {error}</p>
       )}
 
-      {/* 🔹 Score & Advies in Card */}
+      {/* ✅ Markt Score */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
             📊 Markt Score:{' '}
-            <span className={scoreColor(avgScore)}>{avgScore}</span>
+            <span className={scoreColor(market.score)}>
+              {loading ? '⏳' : market.score?.toFixed(1) ?? '–'}
+            </span>
           </h3>
           <h3 className="text-lg font-semibold">
             📈 Advies:{' '}
-            <span className="text-blue-600">{advies}</span>
+            <span className="text-blue-600">
+              {loading ? '⏳' : adviesText}
+            </span>
           </h3>
         </div>
       </CardWrapper>
 
-      {/* 🔹 Live Prijs */}
+      {/* 🔹 Live BTC info */}
       <MarketLiveCard
         price={btcLive?.price}
         change24h={btcLive?.change_24h}
@@ -58,10 +63,10 @@ export default function MarketPage() {
         timestamp={btcLive?.timestamp}
       />
 
-      {/* 🔹 Laatste 7 dagen */}
+      {/* 🔹 Tabel 7 dagen */}
       <MarketSevenDayTable history={sevenDayData} />
 
-      {/* 🔮 Forward Returns */}
+      {/* 🔮 Forward returns tabs */}
       <MarketForwardReturnTabs data={forwardReturns} />
     </div>
   );

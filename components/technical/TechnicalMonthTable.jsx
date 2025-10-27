@@ -4,72 +4,43 @@ export default function TechnicalMonthTable({ data = [], onRemove }) {
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <tr>
-        <td colSpan={5} className="p-4 text-center text-gray-500">
-          ⚠️ No monthly technical data available.
+        <td colSpan={6} className="p-4 text-center text-gray-500">
+          ⚠️ Geen maandelijkse technische data beschikbaar.
         </td>
       </tr>
     );
   }
 
-  // 🎨 Scorekleur helper
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
-    if (s >= 2) return 'text-green-600';
-    if (s <= -2) return 'text-red-600';
-    return 'text-gray-600';
+    if (s >= 70) return 'text-green-600';
+    if (s <= 40) return 'text-red-600';
+    return 'text-yellow-600';
   };
 
   return (
     <>
-      {data.map((item, index) => {
-        const symbol = item?.symbol || `Asset ${index + 1}`;
-
-        const rows = [
-          {
-            label: 'RSI',
-            value: item?.rsi ?? '–',
-            score: item?.rsi_score,
-          },
-          {
-            label: 'Volume',
-            value:
-              typeof item?.volume === 'number'
-                ? (item.volume / 1e6).toFixed(1) + 'M'
-                : '–',
-            score: item?.volume_score,
-          },
-          {
-            label: '200MA',
-            value:
-              typeof item?.price === 'number' && typeof item?.ma_200 === 'number'
-                ? item.price > item.ma_200
-                  ? 'Boven MA'
-                  : 'Onder MA'
-                : '–',
-            score: item?.ma_200_score,
-          },
-        ];
-
-        return rows.map(({ label, value, score }) => (
-          <tr key={`${symbol}-${label}`} className="border-t dark:border-gray-700">
-            <td className="p-2">{symbol}</td>
-            <td className="p-2 font-medium">{label}</td>
-            <td className="p-2 text-center">{value}</td>
-            <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
-              {score ?? '–'}
-            </td>
-            <td className="p-2 text-center">
-              <button
-                onClick={() => onRemove?.(symbol)}
-                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                ❌
-              </button>
-            </td>
-          </tr>
-        ));
-      })}
+      {data.map((item, index) => (
+        <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
+          <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
+          <td className="p-2 text-center">{item.value ?? '–'}</td>
+          <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
+            {item.score ?? '–'}
+          </td>
+          <td className="p-2 text-center">{item.advies ?? '–'}</td>
+          <td className="p-2">{item.uitleg ?? item.explanation ?? '–'}</td>
+          <td className="p-2 text-center">
+            <button
+              onClick={() => onRemove?.(item.symbol || item.indicator)}
+              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              title="Verwijder indicator"
+            >
+              ❌
+            </button>
+          </td>
+        </tr>
+      ))}
     </>
   );
 }

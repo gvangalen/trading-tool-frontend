@@ -9,6 +9,7 @@ export function useScoresData() {
     technical: { score: 0, trend: '', interpretation: '', action: '' },
     setup: { score: 0, trend: '', interpretation: '', action: '' },
     sentiment: { score: 0, trend: '', interpretation: '', action: '' },
+    market: { score: 0 }, // ✅ nieuw toegevoegd
   });
 
   const [advies, setAdvies] = useState('⚖️ Neutraal');
@@ -52,6 +53,9 @@ export function useScoresData() {
             interpretation: res?.sentiment_interpretation || '',
             action: res?.sentiment_action || '',
           },
+          market: {
+            score: res?.market_score || 0, // ✅ opgehaald uit API
+          },
         });
 
         const techScore = res?.technical_score || 0;
@@ -73,7 +77,7 @@ export function useScoresData() {
   }, []);
 
   return {
-    ...scores, // macro, technical, setup, sentiment
+    ...scores, // macro, technical, setup, sentiment, market
     advies,
     loading,
   };

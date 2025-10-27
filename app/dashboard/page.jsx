@@ -21,8 +21,8 @@ import { useMarketData } from '@/hooks/useMarketData'; // ✅ Toegevoegd
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  // ✅ Technische data
-  const { dayData, deleteAsset, loading: technicalLoading } = useTechnicalData();
+  // ✅ Technische data (correct veldnamen)
+  const { technicalData, handleRemove, loading: technicalLoading } = useTechnicalData();
 
   // ✅ Macro data
   const {
@@ -30,12 +30,12 @@ export default function DashboardPage() {
     loading: macroLoading,
     error: macroError,
     handleEdit,
-    handleRemove,
+    handleRemove: handleMacroRemove,
     calculateMacroScore,
     getExplanation,
   } = useMacroData();
 
-  // ✅ Market data (nieuw)
+  // ✅ Market data
   const { sevenDayData, btcLive } = useMarketData();
 
   useEffect(() => {
@@ -83,9 +83,9 @@ export default function DashboardPage() {
                   <p className="text-gray-500">⏳ Laden...</p>
                 ) : (
                   <TechnicalDayTableForDashboard
-                    data={dayData}
+                    data={technicalData}
                     loading={technicalLoading}
-                    onRemove={deleteAsset}
+                    onRemove={handleRemove}
                   />
                 )}
               </CardWrapper>
@@ -105,7 +105,7 @@ export default function DashboardPage() {
                     calculateScore={calculateMacroScore}
                     getExplanation={getExplanation}
                     onEdit={handleEdit}
-                    onRemove={handleRemove}
+                    onRemove={handleMacroRemove}
                   />
                 )}
               </CardWrapper>

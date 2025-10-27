@@ -9,7 +9,6 @@ import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function MarketPage() {
   const { btcLive, sevenDayData, forwardReturns } = useMarketData();
-
   const { market, loading, error } = useScoresData();
 
   const scoreColor = (score) => {
@@ -18,10 +17,14 @@ export default function MarketPage() {
     return 'text-gray-600';
   };
 
+  const score = market?.score ?? null;
+
   const adviesText =
-    market.score >= 75
+    score === null
+      ? '⏳'
+      : score >= 75
       ? '📈 Bullish'
-      : market.score <= 25
+      : score <= 25
       ? '📉 Bearish'
       : '⚖️ Neutraal';
 
@@ -42,15 +45,13 @@ export default function MarketPage() {
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
             📊 Markt Score:{' '}
-            <span className={scoreColor(market.score)}>
-              {loading ? '⏳' : market.score?.toFixed(1) ?? '–'}
+            <span className={scoreColor(score)}>
+              {score !== null ? score.toFixed(1) : '–'}
             </span>
           </h3>
           <h3 className="text-lg font-semibold">
             📈 Advies:{' '}
-            <span className="text-blue-600">
-              {loading ? '⏳' : adviesText}
-            </span>
+            <span className="text-blue-600">{adviesText}</span>
           </h3>
         </div>
       </CardWrapper>

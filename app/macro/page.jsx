@@ -19,13 +19,6 @@ export default function MacroPage() {
     return 'text-gray-600';
   };
 
-  const adviesText =
-    macro.score >= 75
-      ? '📈 Bullish'
-      : macro.score <= 25
-      ? '📉 Bearish'
-      : '⚖️ Neutraal';
-
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
       {/* 🔹 Titel */}
@@ -43,7 +36,7 @@ export default function MacroPage() {
           <h3 className="text-lg font-semibold">
             🧠 Advies:{' '}
             <span className="text-blue-600">
-              {loading ? '⏳' : adviesText}
+              {loading ? '⏳' : macro.advies}
             </span>
           </h3>
         </div>

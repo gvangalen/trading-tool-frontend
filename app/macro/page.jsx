@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import MacroTabs from '@/components/macro/MacroTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
-import { useScoresData } from '@/hooks/useScoresData'; // ✅ Nieuwe hook importeren
+import { useScoresData } from '@/hooks/useScoresData'; // ✅ Hook importeren
 
 export default function MacroPage() {
   const [editIndicator, setEditIndicator] = useState(null);
 
-  // ✅ Nieuwe hook gebruiken voor macroScore en advies
-  const { macroScore, macroExplanation, loading } = useScoresData();
+  // ✅ Haal macro-score en uitleg uit de hook
+  const { macro, loading } = useScoresData();
 
   const scoreColor = (score) => {
     if (score >= 75) return 'text-green-600';
@@ -27,14 +27,14 @@ export default function MacroPage() {
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
             🌍 Macro Score:{' '}
-            <span className={scoreColor(macroScore)}>
-              {loading ? '⏳' : macroScore ?? '–'}
+            <span className={scoreColor(macro?.score)}>
+              {loading ? '⏳' : macro?.score ?? '–'}
             </span>
           </h3>
           <h3 className="text-lg font-semibold">
             📈 Uitleg:{' '}
             <span className="text-gray-600 italic">
-              {macroExplanation ?? 'Geen uitleg beschikbaar'}
+              {macro?.interpretation || 'Geen uitleg beschikbaar'}
             </span>
           </h3>
         </div>

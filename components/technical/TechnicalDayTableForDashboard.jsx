@@ -12,7 +12,7 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
     );
   }
 
-  // 🎨 Kleur voor score
+  // 🎨 Scorekleur bepalen
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -21,7 +21,6 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
     return 'text-yellow-600';
   };
 
-  // 🧾 Tabel renderen
   return (
     <div className="overflow-x-auto">
       <table className="w-full table-auto text-sm">
@@ -36,20 +35,28 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
         </thead>
         <tbody>
           {data.map((item, index) => {
-            const formattedValue =
-              typeof item.value === 'number'
-                ? item.value.toFixed(2)
-                : item.value ?? item.raw_value ?? item.value_today ?? '–';
+            const {
+              indicator = '–',
+              waarde,
+              value,
+              score = null,
+              advies = '–',
+              uitleg = '–',
+              explanation,
+              symbol,
+            } = item;
+
+            const displayValue = waarde ?? value ?? '–';
 
             return (
-              <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
-                <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
-                <td className="p-2 text-center">{formattedValue}</td>
-                <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
-                  {item.score ?? '–'}
+              <tr key={symbol || `${indicator}-${index}`} className="border-t dark:border-gray-700">
+                <td className="p-2 font-medium">{indicator}</td>
+                <td className="p-2 text-center">{displayValue}</td>
+                <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+                  {score !== null ? score : '–'}
                 </td>
-                <td className="p-2 text-center">{item.advies ?? '–'}</td>
-                <td className="p-2">{item.uitleg ?? item.explanation ?? '–'}</td>
+                <td className="p-2 text-center">{advies}</td>
+                <td className="p-2">{uitleg ?? explanation ?? '–'}</td>
               </tr>
             );
           })}

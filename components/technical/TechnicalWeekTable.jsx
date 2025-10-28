@@ -2,17 +2,19 @@
 
 import { useEffect } from 'react';
 import dayjs from 'dayjs';
-import 'dayjs/locale/nl'; // 🇳🇱 Nederlandse datums
+import 'dayjs/locale/nl';
 dayjs.locale('nl');
 
 export default function TechnicalWeekTable({ data = [], onRemove, showDebug = false }) {
-  // 🧠 Debug log bij binnenkomst
   useEffect(() => {
     console.log('📅 [TechnicalWeekTable] received data:', data);
-    console.log('🧪 timestamps:', data.map((d) => d.timestamp || d.date));
+    console.table(data.map((d) => ({
+      indicator: d.indicator,
+      score: d.score,
+      timestamp: d.timestamp,
+    })));
   }, [data]);
 
-  // ✅ Kleur op basis van score
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -21,16 +23,18 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     return 'text-yellow-600';
   };
 
-  // ✅ Groepeer per dag (YYYY-MM-DD) met fallback
+  // ✅ Groepeer op basis van timestamp (dag)
   const grouped = data.reduce((acc, item) => {
     let dateKey = 'onbekend';
     try {
-      const rawDate = item.timestamp || item.date;
-      const parsed = dayjs(rawDate);
+      if (!item.timestamp) {
+        console.warn('⚠️ Geen timestamp gevonden voor item:', item);
+      }
+      const parsed = dayjs(item.timestamp);
       if (parsed.isValid()) {
         dateKey = parsed.format('YYYY-MM-DD');
       } else {
-        console.warn('⚠️ Ongeldige datum:', rawDate);
+        console.warn('⚠️ Ongeldige datum:', item.timestamp);
       }
     } catch (e) {
       console.error('❌ Fout bij parsen datum:', e);
@@ -55,7 +59,6 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     <>
       {Object.entries(grouped).map(([dateKey, items]) => (
         <tbody key={dateKey}>
-          {/* 📅 Dagkopje */}
           <tr className="bg-gray-100 dark:bg-gray-800">
             <td colSpan={6} className="font-semibold p-2">
               📅{' '}
@@ -65,7 +68,6 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
             </td>
           </tr>
 
-          {/* 📊 Indicatorregels */}
           {items.map((item, index) => {
             const {
               indicator = '–',
@@ -104,7 +106,6 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
         </tbody>
       ))}
 
-      {/* 🧪 Debug */}
       {showDebug && (
         <tfoot>
           <tr>

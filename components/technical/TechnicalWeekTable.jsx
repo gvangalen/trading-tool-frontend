@@ -2,15 +2,17 @@
 
 import { useEffect } from 'react';
 import dayjs from 'dayjs';
-import 'dayjs/locale/nl'; // 🇳🇱 Voor Nederlandse datums
+import 'dayjs/locale/nl'; // 🇳🇱 Nederlandse datums
 dayjs.locale('nl');
 
 export default function TechnicalWeekTable({ data = [], onRemove, showDebug = false }) {
+  // 🧠 Debug log bij binnenkomst
   useEffect(() => {
     console.log('📅 [TechnicalWeekTable] received data:', data);
+    console.log('🧪 timestamps:', data.map((d) => d.timestamp || d.date));
   }, [data]);
 
-  // ✅ Scorekleur
+  // ✅ Kleur op basis van score
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -19,11 +21,21 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     return 'text-yellow-600';
   };
 
-  // ✅ Groepeer per dag (YYYY-MM-DD)
+  // ✅ Groepeer per dag (YYYY-MM-DD) met fallback
   const grouped = data.reduce((acc, item) => {
-    const rawDate = item.timestamp || item.date;
-    if (!rawDate) return acc;
-    const dateKey = dayjs(rawDate).format('YYYY-MM-DD');
+    let dateKey = 'onbekend';
+    try {
+      const rawDate = item.timestamp || item.date;
+      const parsed = dayjs(rawDate);
+      if (parsed.isValid()) {
+        dateKey = parsed.format('YYYY-MM-DD');
+      } else {
+        console.warn('⚠️ Ongeldige datum:', rawDate);
+      }
+    } catch (e) {
+      console.error('❌ Fout bij parsen datum:', e);
+    }
+
     if (!acc[dateKey]) acc[dateKey] = [];
     acc[dateKey].push(item);
     return acc;
@@ -46,7 +58,10 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
           {/* 📅 Dagkopje */}
           <tr className="bg-gray-100 dark:bg-gray-800">
             <td colSpan={6} className="font-semibold p-2">
-              📅 {dayjs(dateKey).format('dddd D MMMM YYYY')}
+              📅{' '}
+              {dateKey !== 'onbekend'
+                ? dayjs(dateKey).format('dddd D MMMM YYYY')
+                : '📁 Onbekende datum'}
             </td>
           </tr>
 
@@ -64,7 +79,10 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
             const waarde = value ?? item.waarde ?? '–';
 
             return (
-              <tr key={`${dateKey}-${symbol || index}`} className="border-t dark:border-gray-700">
+              <tr
+                key={`${dateKey}-${symbol || index}`}
+                className="border-t dark:border-gray-700"
+              >
                 <td className="p-2 font-medium">{indicator}</td>
                 <td className="p-2 text-center">{waarde}</td>
                 <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>

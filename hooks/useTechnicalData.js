@@ -16,14 +16,12 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 🔁 Laad data bij mount of tabwissel
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 60000); // elke 60 sec refresh
+    const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
 
-  // ✅ Hoofdfunctie om data op te halen
   async function loadData() {
     setLoading(true);
     setError('');
@@ -50,7 +48,7 @@ export function useTechnicalData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
-      // ✅ Alle indicatoren rechtstreeks meenemen
+      // ✅ Timestamp toevoegen zodat frontend kan groeperen
       const enriched = data.map((item) => ({
         indicator: item.indicator || '–',
         waarde: item.waarde ?? item.value ?? '–',
@@ -58,11 +56,11 @@ export function useTechnicalData(activeTab = 'Dag') {
         advies: item.advies || '–',
         uitleg: item.uitleg || 'Geen uitleg beschikbaar',
         symbol: item.symbol || '',
+        timestamp: item.timestamp || null, // ✅ toegevoegd
       }));
 
       setTechnicalData(enriched);
 
-      // ✅ Haal backend-score op (totale technische score)
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
@@ -70,15 +68,15 @@ export function useTechnicalData(activeTab = 'Dag') {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
         setAdvies(
-          backendScore >= 75 ? '🟢 Bullish' :
-          backendScore <= 25 ? '🔴 Bearish' :
-          '⚖️ Neutraal'
+          backendScore >= 75
+            ? '🟢 Bullish'
+            : backendScore <= 25
+            ? '🔴 Bearish'
+            : '⚖️ Neutraal'
         );
       } else {
-        // Fallback naar lokale berekening
         updateScore(enriched);
       }
-
     } catch (err) {
       console.warn('⚠️ Technische data kon niet worden geladen:', err);
       setTechnicalData([]);
@@ -90,7 +88,6 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  // 🧮 Fallback berekening (alleen als backend-score ontbreekt)
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -106,13 +103,10 @@ export function useTechnicalData(activeTab = 'Dag') {
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
     setAdvies(
-      avg >= 70 ? '🟢 Bullish' :
-      avg <= 40 ? '🔴 Bearish' :
-      '⚖️ Neutraal'
+      avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal'
     );
   }
 
-  // 🧠 Verwijderen van indicator (frontend only)
   function handleRemove(symbol) {
     const updated = technicalData.filter((item) => item.symbol !== symbol);
     setTechnicalData(updated);

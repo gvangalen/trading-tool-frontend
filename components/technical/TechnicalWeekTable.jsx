@@ -10,7 +10,7 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     console.log('📅 [TechnicalWeekTable] received data:', data);
   }, [data]);
 
-  // ✅ Kleur op basis van score
+  // ✅ Scorekleur
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -19,11 +19,13 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     return 'text-yellow-600';
   };
 
-  // ✅ Groepeer op datum (timestamp)
+  // ✅ Groepeer per dag (YYYY-MM-DD)
   const grouped = data.reduce((acc, item) => {
-    const date = dayjs(item.timestamp || item.date).format('dddd D MMMM YYYY');
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(item);
+    const rawDate = item.timestamp || item.date;
+    if (!rawDate) return acc;
+    const dateKey = dayjs(rawDate).format('YYYY-MM-DD');
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(item);
     return acc;
   }, {});
 
@@ -39,12 +41,12 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
 
   return (
     <>
-      {Object.entries(grouped).map(([date, items]) => (
-        <tbody key={date}>
+      {Object.entries(grouped).map(([dateKey, items]) => (
+        <tbody key={dateKey}>
           {/* 📅 Dagkopje */}
           <tr className="bg-gray-100 dark:bg-gray-800">
             <td colSpan={6} className="font-semibold p-2">
-              📅 {date}
+              📅 {dayjs(dateKey).format('dddd D MMMM YYYY')}
             </td>
           </tr>
 
@@ -52,15 +54,17 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
           {items.map((item, index) => {
             const {
               indicator = '–',
-              waarde = item.value ?? '–',
+              value,
               score = null,
               advies = '–',
               uitleg = item.uitleg ?? item.explanation ?? '–',
               symbol,
             } = item;
 
+            const waarde = value ?? item.waarde ?? '–';
+
             return (
-              <tr key={`${date}-${symbol || index}`} className="border-t dark:border-gray-700">
+              <tr key={`${dateKey}-${symbol || index}`} className="border-t dark:border-gray-700">
                 <td className="p-2 font-medium">{indicator}</td>
                 <td className="p-2 text-center">{waarde}</td>
                 <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>

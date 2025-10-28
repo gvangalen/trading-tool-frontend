@@ -60,12 +60,24 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     <>
       {Object.entries(grouped).map(([dateKey, items]) => (
         <tbody key={dateKey}>
-          <tr className="bg-gray-100 dark:bg-gray-800">
-            <td colSpan={6} className="font-semibold p-2">
+          {/* 📅 Datumrij */}
+          <tr className="bg-gray-100 dark:bg-gray-800 border-t border-b border-gray-300 dark:border-gray-700">
+            <td colSpan={6} className="font-semibold p-3 text-sm">
               📅 {dateKey !== 'onbekend' ? dayjs(dateKey).format('dddd D MMMM YYYY') : '📁 Onbekende datum'}
             </td>
           </tr>
 
+          {/* 🧾 Kolomkoppen */}
+          <tr className="bg-gray-50 dark:bg-gray-900 text-xs uppercase text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-700">
+            <th className="p-2 text-left">Indicator</th>
+            <th className="p-2 text-center">Waarde</th>
+            <th className="p-2 text-center">Score</th>
+            <th className="p-2 text-center">Advies</th>
+            <th className="p-2 text-left">Uitleg</th>
+            <th className="p-2 text-center">Verwijder</th>
+          </tr>
+
+          {/* 🔢 Indicatorgegevens */}
           {items.map((item, index) => {
             const {
               indicator = '–',
@@ -81,7 +93,7 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
             return (
               <tr
                 key={`${dateKey}-${symbol || index}`}
-                className="border-t dark:border-gray-700"
+                className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 <td className="p-2 font-medium">{indicator}</td>
                 <td className="p-2 text-center">{waarde}</td>
@@ -104,6 +116,7 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
         </tbody>
       ))}
 
+      {/* 🔍 Debug info (optioneel) */}
       {showDebug && (
         <tfoot>
           <tr>

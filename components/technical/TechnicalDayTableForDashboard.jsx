@@ -35,17 +35,24 @@ export default function TechnicalDayTableForDashboard({ data = [] }) {
           </tr>
         </thead>
         <tbody>
-          {data.map((item, index) => (
-            <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
-              <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
-              <td className="p-2 text-center">{item.value ?? '–'}</td>
-              <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
-                {item.score ?? '–'}
-              </td>
-              <td className="p-2 text-center">{item.advies ?? '–'}</td>
-              <td className="p-2">{item.uitleg ?? item.explanation ?? '–'}</td>
-            </tr>
-          ))}
+          {data.map((item, index) => {
+            const formattedValue =
+              typeof item.value === 'number'
+                ? item.value.toFixed(2)
+                : item.value ?? item.raw_value ?? item.value_today ?? '–';
+
+            return (
+              <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
+                <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
+                <td className="p-2 text-center">{formattedValue}</td>
+                <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
+                  {item.score ?? '–'}
+                </td>
+                <td className="p-2 text-center">{item.advies ?? '–'}</td>
+                <td className="p-2">{item.uitleg ?? item.explanation ?? '–'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

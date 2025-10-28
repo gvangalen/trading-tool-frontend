@@ -1,17 +1,16 @@
 'use client';
 
-export default function TechnicalWeekTable({ data = [], onRemove }) {
-  if (!Array.isArray(data) || data.length === 0) {
-    return (
-      <tr>
-        <td colSpan={5} className="p-4 text-center text-gray-500">
-          ⚠️ Geen technische week-data beschikbaar.
-        </td>
-      </tr>
-    );
-  }
+import { useEffect } from 'react';
+import dayjs from 'dayjs';
+import 'dayjs/locale/nl'; // 🇳🇱 Voor Nederlandse datums
+dayjs.locale('nl');
 
-  // 🔵 Scorekleur op basis van 0–100 schaal
+export default function TechnicalWeekTable({ data = [], onRemove, showDebug = false }) {
+  useEffect(() => {
+    console.log('📅 [TechnicalWeekTable] received data:', data);
+  }, [data]);
+
+  // ✅ Kleur op basis van score
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -20,28 +19,81 @@ export default function TechnicalWeekTable({ data = [], onRemove }) {
     return 'text-yellow-600';
   };
 
+  // ✅ Groepeer op datum (timestamp)
+  const grouped = data.reduce((acc, item) => {
+    const date = dayjs(item.timestamp || item.date).format('dddd D MMMM YYYY');
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(item);
+    return acc;
+  }, {});
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <tr>
+        <td colSpan={6} className="p-4 text-center text-gray-500">
+          ⚠️ Geen technische weekdata beschikbaar.
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <>
-      {data.map((item, index) => (
-        <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
-          <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
-          <td className="p-2 text-center">{item.value ?? '–'}</td>
-          <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
-            {item.score ?? '–'}
-          </td>
-          <td className="p-2 text-center">{item.advies ?? '–'}</td>
-          <td className="p-2">{item.uitleg ?? item.explanation ?? '–'}</td>
-          <td className="p-2 text-center">
-            <button
-              onClick={() => onRemove?.(item.symbol || item.indicator)}
-              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              title="Verwijder indicator"
-            >
-              ❌
-            </button>
-          </td>
-        </tr>
+      {Object.entries(grouped).map(([date, items]) => (
+        <tbody key={date}>
+          {/* 📅 Dagkopje */}
+          <tr className="bg-gray-100 dark:bg-gray-800">
+            <td colSpan={6} className="font-semibold p-2">
+              📅 {date}
+            </td>
+          </tr>
+
+          {/* 📊 Indicatorregels */}
+          {items.map((item, index) => {
+            const {
+              indicator = '–',
+              waarde = item.value ?? '–',
+              score = null,
+              advies = '–',
+              uitleg = item.uitleg ?? item.explanation ?? '–',
+              symbol,
+            } = item;
+
+            return (
+              <tr key={`${date}-${symbol || index}`} className="border-t dark:border-gray-700">
+                <td className="p-2 font-medium">{indicator}</td>
+                <td className="p-2 text-center">{waarde}</td>
+                <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+                  {score !== null ? score : '–'}
+                </td>
+                <td className="p-2 text-center">{advies}</td>
+                <td className="p-2">{uitleg}</td>
+                <td className="p-2 text-center">
+                  <button
+                    onClick={() => onRemove?.(symbol || `item-${index}`)}
+                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    ❌
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
       ))}
+
+      {/* 🧪 Debug */}
+      {showDebug && (
+        <tfoot>
+          <tr>
+            <td colSpan={6}>
+              <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
+                {JSON.stringify(data, null, 2)}
+              </pre>
+            </td>
+          </tr>
+        </tfoot>
+      )}
     </>
   );
 }

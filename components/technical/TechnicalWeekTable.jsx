@@ -8,11 +8,13 @@ dayjs.locale('nl');
 export default function TechnicalWeekTable({ data = [], onRemove, showDebug = false }) {
   useEffect(() => {
     console.log('📅 [TechnicalWeekTable] received data:', data);
-    console.table(data.map((d) => ({
-      indicator: d.indicator,
-      score: d.score,
-      timestamp: d.timestamp,
-    })));
+    console.table(
+      data.map((d) => ({
+        indicator: d.indicator,
+        score: d.score,
+        timestamp: d.timestamp,
+      }))
+    );
   }, [data]);
 
   const getScoreColor = (score) => {
@@ -23,21 +25,20 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
     return 'text-yellow-600';
   };
 
-  // ✅ Groepeer op basis van timestamp (dag)
+  // ✅ Groepeer op basis van geldige timestamp (YYYY-MM-DD)
   const grouped = data.reduce((acc, item) => {
+    const raw = item.timestamp;
     let dateKey = 'onbekend';
-    try {
-      if (!item.timestamp) {
-        console.warn('⚠️ Geen timestamp gevonden voor item:', item);
-      }
-      const parsed = dayjs(item.timestamp);
+
+    if (raw) {
+      const parsed = dayjs(raw);
       if (parsed.isValid()) {
         dateKey = parsed.format('YYYY-MM-DD');
       } else {
-        console.warn('⚠️ Ongeldige datum:', item.timestamp);
+        console.warn('⚠️ Ongeldige datum:', raw);
       }
-    } catch (e) {
-      console.error('❌ Fout bij parsen datum:', e);
+    } else {
+      console.warn('⚠️ Geen timestamp gevonden voor item:', item);
     }
 
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -61,10 +62,7 @@ export default function TechnicalWeekTable({ data = [], onRemove, showDebug = fa
         <tbody key={dateKey}>
           <tr className="bg-gray-100 dark:bg-gray-800">
             <td colSpan={6} className="font-semibold p-2">
-              📅{' '}
-              {dateKey !== 'onbekend'
-                ? dayjs(dateKey).format('dddd D MMMM YYYY')
-                : '📁 Onbekende datum'}
+              📅 {dateKey !== 'onbekend' ? dayjs(dateKey).format('dddd D MMMM YYYY') : '📁 Onbekende datum'}
             </td>
           </tr>
 

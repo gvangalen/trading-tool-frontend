@@ -5,16 +5,6 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
 /**
- * ✅ Hulpfunctie: geef een weeklabel zoals "📅 Week 43 – 2025"
- */
-function getWeekLabel(timestamp) {
-  const date = new Date(timestamp);
-  const weekNumber = parseInt(format(date, 'I', { locale: nl }));
-  const year = format(date, 'yyyy', { locale: nl });
-  return `📅 Week ${weekNumber} – ${year}`;
-}
-
-/**
  * ✅ Scorekleur bepalen op basis van scorewaarde
  */
 function getScoreColor(score) {
@@ -27,7 +17,8 @@ function getScoreColor(score) {
 
 /**
  * 🧩 TechnicalMonthTable
- * Groepeert maanddata in 4 weken (per weeklabel)
+ * Data is gegroepeerd per maand (zoals: 📅 September 2025)
+ * Binnen elke maand worden alle rijen normaal weergegeven
  */
 export default function TechnicalMonthTable({ data = [], onRemove }) {
   if (!Array.isArray(data) || data.length === 0) {
@@ -40,39 +31,26 @@ export default function TechnicalMonthTable({ data = [], onRemove }) {
     );
   }
 
-  // ✅ Groepeer items per weeklabel (bijv. Week 43 – 2025)
-  const grouped = data.reduce((acc, item) => {
-    const label = item.timestamp ? getWeekLabel(item.timestamp) : '📅 Onbekende week';
-    if (!acc[label]) acc[label] = [];
-    acc[label].push(item);
-    return acc;
-  }, {});
-
   return (
     <>
-      {Object.entries(grouped).map(([weekLabel, items]) => (
-        <React.Fragment key={weekLabel}>
-          {/* 🟦 Weekheader */}
+      {data.map((groep) => (
+        <React.Fragment key={groep.label}>
+          {/* 📅 Maandheader */}
           <tr className="bg-blue-50 dark:bg-blue-900">
-            <td
-              colSpan={6}
-              className="p-2 font-semibold text-blue-800 dark:text-blue-200"
-            >
-              {weekLabel}
+            <td colSpan={6} className="p-2 font-semibold text-blue-800 dark:text-blue-200">
+              {groep.label}
             </td>
           </tr>
 
-          {/* 🔁 Indicatoren per week */}
-          {items.map((item, index) => (
+          {/* 🔁 Indicatoren in deze maandgroep */}
+          {groep.data.map((item, index) => (
             <tr
               key={item.symbol || `${item.indicator}-${index}`}
               className="border-t dark:border-gray-700"
             >
               <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
               <td className="p-2 text-center">{item.waarde ?? item.value ?? '–'}</td>
-              <td
-                className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}
-              >
+              <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
                 {item.score ?? '–'}
               </td>
               <td className="p-2 text-center">{item.advies ?? '–'}</td>

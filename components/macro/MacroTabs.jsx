@@ -13,7 +13,6 @@ const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
 export default function MacroTabs() {
   const [activeTab, setActiveTab] = useState('Dag');
 
-  // 🧠 Injecteer de actieve tab in de hook
   const {
     macroData,
     handleEdit,
@@ -22,13 +21,15 @@ export default function MacroTabs() {
     getExplanation,
     loading,
     error,
-  } = useMacroData(activeTab); // <--- 🔁 aangepaste hook!
+  } = useMacroData(activeTab);
 
   const renderTableBody = () => {
     if (loading) {
       return (
         <tr>
-          <td colSpan={7} className="p-4 text-center text-gray-500">⏳ Laden...</td>
+          <td colSpan={7} className="p-4 text-center text-gray-500">
+            ⏳ Laden...
+          </td>
         </tr>
       );
     }
@@ -36,7 +37,9 @@ export default function MacroTabs() {
     if (error) {
       return (
         <tr>
-          <td colSpan={7} className="p-4 text-center text-red-500">❌ {error}</td>
+          <td colSpan={7} className="p-4 text-center text-red-500">
+            ❌ {error}
+          </td>
         </tr>
       );
     }
@@ -58,6 +61,7 @@ export default function MacroTabs() {
             data={macroData}
             calculateScore={calculateMacroScore}
             getExplanation={getExplanation}
+            onRemove={handleRemove}
           />
         );
       case 'Maand':
@@ -66,6 +70,7 @@ export default function MacroTabs() {
             data={macroData}
             calculateScore={calculateMacroScore}
             getExplanation={getExplanation}
+            onRemove={handleRemove}
           />
         );
       case 'Kwartaal':
@@ -74,6 +79,7 @@ export default function MacroTabs() {
             data={macroData}
             calculateScore={calculateMacroScore}
             getExplanation={getExplanation}
+            onRemove={handleRemove}
           />
         );
       default:
@@ -104,20 +110,22 @@ export default function MacroTabs() {
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-              <tr>
-                <th className="p-2">Indicator</th>
-                <th className="p-2">Waarde</th>
-                <th className="p-2">Trend</th>
-                <th className="p-2">Interpretatie</th>
-                <th className="p-2">Actie</th>
-                <th className="p-2">Score</th>
-                <th className="p-2">🗑️</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderTableBody()}
-            </tbody>
+            {/* ✅ Alleen header tonen bij Dag-tab */}
+            {activeTab === 'Dag' && (
+              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
+                <tr>
+                  <th className="p-2">Indicator</th>
+                  <th className="p-2">Waarde</th>
+                  <th className="p-2">Trend</th>
+                  <th className="p-2">Interpretatie</th>
+                  <th className="p-2">Actie</th>
+                  <th className="p-2">Score</th>
+                  <th className="p-2">🗑️</th>
+                </tr>
+              </thead>
+            )}
+
+            <tbody>{renderTableBody()}</tbody>
           </table>
         </div>
       </CardWrapper>

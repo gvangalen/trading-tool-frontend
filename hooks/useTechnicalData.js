@@ -48,7 +48,6 @@ export function useTechnicalData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
-      // ✅ Timestamp toevoegen zodat frontend kan groeperen
       const enriched = data.map((item) => ({
         indicator: item.indicator || '–',
         waarde: item.waarde ?? item.value ?? '–',
@@ -56,10 +55,17 @@ export function useTechnicalData(activeTab = 'Dag') {
         advies: item.advies || '–',
         uitleg: item.uitleg || 'Geen uitleg beschikbaar',
         symbol: item.symbol || '',
-        timestamp: item.timestamp || null, // ✅ toegevoegd
+        timestamp: item.timestamp || null,
+        dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      setTechnicalData(enriched);
+      // ✅ Voor week, maand, kwartaal: groepeer per week
+      if (['Week', 'Maand', 'Kwartaal'].includes(activeTab)) {
+        const grouped = groupByWeek(enriched);
+        setTechnicalData(grouped);
+      } else {
+        setTechnicalData(enriched);
+      }
 
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
@@ -105,6 +111,37 @@ export function useTechnicalData(activeTab = 'Dag') {
     setAdvies(
       avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal'
     );
+  }
+
+  function groupByWeek(data) {
+    const grouped = {};
+
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const year = item.dateObj.getUTCFullYear();
+      const week = getWeekNumber(item.dateObj);
+      const key = `${year}-W${week}`;
+
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    // Zet om naar gesorteerde lijst met label
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => ({
+        label: `Week ${key.split('-W')[1]} – ${key.split('-W')[0]}`,
+        data: items,
+      }));
+  }
+
+  function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return weekNo;
   }
 
   function handleRemove(symbol) {

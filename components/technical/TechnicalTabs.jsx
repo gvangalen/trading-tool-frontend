@@ -21,7 +21,9 @@ export default function TechnicalTabs({
     if (loading) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-gray-500">⏳ Laden...</td>
+          <td colSpan={6} className="p-4 text-center text-gray-500">
+            ⏳ Laden...
+          </td>
         </tr>
       );
     }
@@ -29,7 +31,9 @@ export default function TechnicalTabs({
     if (error) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-red-500">❌ {error}</td>
+          <td colSpan={6} className="p-4 text-center text-red-500">
+            ❌ {error}
+          </td>
         </tr>
       );
     }
@@ -50,16 +54,16 @@ export default function TechnicalTabs({
 
   return (
     <>
-      {/* Tabs */}
+      {/* 🔹 Tabs */}
       <div className="flex space-x-4 mb-4">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-semibold border ${
+            className={`px-4 py-2 rounded font-semibold border transition ${
               activeTab === tab
                 ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200'
             }`}
           >
             {tab}
@@ -67,20 +71,23 @@ export default function TechnicalTabs({
         ))}
       </div>
 
-      {/* Tabel */}
+      {/* 🔹 Tabel */}
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-              <tr>
-                <th className="p-2">📊 Indicator</th>
-                <th className="p-2 text-center">Waarde</th>
-                <th className="p-2 text-center">Score</th>
-                <th className="p-2 text-center">Advies</th>
-                <th className="p-2">Uitleg</th>
-                <th className="p-2 text-center">🗑️</th>
-              </tr>
-            </thead>
+            {/* ❌ Laat de algemene header weg bij de Week-tab */}
+            {activeTab !== 'Week' && (
+              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
+                <tr>
+                  <th className="p-2">📊 Indicator</th>
+                  <th className="p-2 text-center">Waarde</th>
+                  <th className="p-2 text-center">Score</th>
+                  <th className="p-2 text-center">Advies</th>
+                  <th className="p-2">Uitleg</th>
+                  <th className="p-2 text-center">🗑️</th>
+                </tr>
+              </thead>
+            )}
             <tbody>{renderTableBody()}</tbody>
           </table>
         </div>

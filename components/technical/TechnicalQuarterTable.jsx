@@ -1,15 +1,20 @@
 'use client';
 
+import React from 'react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
-// ✅ Maandlabel uit timestamp halen
+/**
+ * ✅ Hulpfunctie: geef een maandlabel zoals "📅 Oktober 2025"
+ */
 function getMonthLabel(timestamp) {
   const date = new Date(timestamp);
-  return `📅 ${format(date, 'LLLL yyyy', { locale: nl })}`; // bijv. "📅 September 2025"
+  return `📅 ${format(date, 'LLLL yyyy', { locale: nl })}`; // bijv. "📅 Oktober 2025"
 }
 
-// ✅ Scorekleur
+/**
+ * ✅ Scorekleur bepalen op basis van scorewaarde
+ */
 function getScoreColor(score) {
   const s = typeof score === 'number' ? score : parseFloat(score);
   if (isNaN(s)) return 'text-gray-600';
@@ -18,6 +23,10 @@ function getScoreColor(score) {
   return 'text-yellow-600';
 }
 
+/**
+ * 🧩 TechnicalQuarterTable
+ * Groepeert kwartaaldata per maand binnen het kwartaal
+ */
 export default function TechnicalQuarterTable({ data = [], onRemove }) {
   if (!Array.isArray(data) || data.length === 0) {
     return (
@@ -29,9 +38,11 @@ export default function TechnicalQuarterTable({ data = [], onRemove }) {
     );
   }
 
-  // ✅ Groepeer per maandlabel
+  // ✅ Groepeer items per maandlabel (bijv. Oktober 2025, September 2025)
   const grouped = data.reduce((acc, item) => {
-    const label = item.timestamp ? getMonthLabel(item.timestamp) : '📅 Onbekende maand';
+    const label = item.timestamp
+      ? getMonthLabel(item.timestamp)
+      : '📅 Onbekende maand';
     if (!acc[label]) acc[label] = [];
     acc[label].push(item);
     return acc;
@@ -41,18 +52,27 @@ export default function TechnicalQuarterTable({ data = [], onRemove }) {
     <>
       {Object.entries(grouped).map(([monthLabel, items]) => (
         <React.Fragment key={monthLabel}>
-          {/* 🟦 Header per maand */}
+          {/* 🟦 Maandheader */}
           <tr className="bg-blue-50 dark:bg-blue-900">
-            <td colSpan={6} className="p-2 font-semibold text-blue-800 dark:text-blue-200">
+            <td
+              colSpan={6}
+              className="p-2 font-semibold text-blue-800 dark:text-blue-200"
+            >
               {monthLabel}
             </td>
           </tr>
+
           {/* 🔁 Indicatoren per maand */}
           {items.map((item, index) => (
-            <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
+            <tr
+              key={item.symbol || `${item.indicator}-${index}`}
+              className="border-t dark:border-gray-700"
+            >
               <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
               <td className="p-2 text-center">{item.waarde ?? item.value ?? '–'}</td>
-              <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
+              <td
+                className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}
+              >
                 {item.score ?? '–'}
               </td>
               <td className="p-2 text-center">{item.advies ?? '–'}</td>

@@ -61,9 +61,12 @@ export function useTechnicalData(activeTab = 'Dag') {
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      // ✅ Alleen groepeer bij maand/kwartaal, niet bij week!
-      if (['Maand', 'Kwartaal'].includes(activeTab)) {
-        const grouped = groupByWeek(enriched);
+      // ✅ Alleen groepeer bij maand of kwartaal
+      if (activeTab === 'Maand') {
+        const grouped = groupByMonth(enriched);
+        setTechnicalData(grouped);
+      } else if (activeTab === 'Kwartaal') {
+        const grouped = groupByQuarter(enriched);
         setTechnicalData(grouped);
       } else {
         setTechnicalData(enriched);
@@ -117,29 +120,6 @@ export function useTechnicalData(activeTab = 'Dag') {
     );
   }
 
-  // 🔹 Data per week groeperen (voor Maand en Kwartaal)
-  function groupByWeek(data) {
-    const grouped = {};
-
-    for (const item of data) {
-      if (!item.dateObj) continue;
-      const year = item.dateObj.getUTCFullYear();
-      const week = getWeekNumber(item.dateObj);
-      const key = `${year}-W${week}`;
-
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(item);
-    }
-
-    // Sorteer en maak nette labels
-    return Object.entries(grouped)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([key, items]) => ({
-        label: `Week ${key.split('-W')[1]} – ${key.split('-W')[0]}`,
-        data: items,
-      }));
-  }
-
   // 🔹 Weeknummer berekenen
   function getWeekNumber(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -148,6 +128,56 @@ export function useTechnicalData(activeTab = 'Dag') {
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
     return weekNo;
+  }
+
+  // 🔹 Data groeperen per maand
+  function groupByMonth(data) {
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const year = item.dateObj.getFullYear();
+      const month = item.dateObj.getMonth() + 1;
+      const key = `${year}-${month}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => {
+        const [year, month] = key.split('-');
+        const label = `📅 ${getMonthName(month)} ${year}`;
+        return { label, data: items };
+      });
+  }
+
+  // 🔹 Data groeperen per kwartaal
+  function groupByQuarter(data) {
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const year = item.dateObj.getFullYear();
+      const quarter = Math.floor(item.dateObj.getMonth() / 3) + 1;
+      const key = `${year}-Q${quarter}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => ({
+        label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
+        data: items,
+      }));
+  }
+
+  // 🔹 Nederlandse maandnamen
+  function getMonthName(monthNum) {
+    const maanden = [
+      'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+      'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
+    ];
+    return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
   }
 
   // 🔹 Verwijderen

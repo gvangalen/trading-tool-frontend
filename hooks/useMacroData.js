@@ -45,12 +45,32 @@ export function useMacroData(activeTab = 'Dag') {
           data = await fetchMacroDataByDay();
       }
 
-      const macro = data?.macro_data || data || [];
-      if (!Array.isArray(macro)) throw new Error('macro_data is geen lijst');
+      if (!Array.isArray(data)) throw new Error('Macrodata is geen lijst');
 
-      setMacroData(macro);
+      const enriched = data.map((item) => ({
+        indicator: item.indicator || item.name || '–',
+        waarde: item.waarde ?? item.value ?? '–',
+        score: parseFloat(item.score) ?? null,
+        advies: item.advies || '–',
+        uitleg: item.uitleg || 'Geen uitleg beschikbaar',
+        symbol: item.symbol || '',
+        timestamp: item.timestamp || null,
+        dateObj: item.timestamp ? new Date(item.timestamp) : null,
+      }));
 
-      // ✅ Haal backend-score op voor de huidige dag
+      if (activeTab === 'Week') {
+        const grouped = groupByDay(enriched);
+        setMacroData(grouped);
+      } else if (activeTab === 'Maand') {
+        const grouped = groupByMonth(enriched);
+        setMacroData(grouped);
+      } else if (activeTab === 'Kwartaal') {
+        const grouped = groupByQuarter(enriched);
+        setMacroData(grouped);
+      } else {
+        setMacroData(enriched);
+      }
+
       const scores = await getDailyScores();
       const backendScore = scores?.macro_score ?? null;
 
@@ -58,15 +78,15 @@ export function useMacroData(activeTab = 'Dag') {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
         setAdvies(
-          backendScore >= 75 ? '🟢 Bullish' :
-          backendScore <= 25 ? '🔴 Bearish' :
-          '⚖️ Neutraal'
+          backendScore >= 75
+            ? '🟢 Bullish'
+            : backendScore <= 25
+            ? '🔴 Bearish'
+            : '⚖️ Neutraal'
         );
       } else {
-        updateScore(macro); // fallback naar frontend-score
+        updateScore(enriched);
       }
-
-      markStepDone(3);
     } catch (err) {
       console.warn('⚠️ Macrodata kon niet worden geladen:', err);
       setMacroData([]);
@@ -78,72 +98,104 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
-  // ✅ Oude frontend-score (fallback / alleen tijdelijk)
-  function calculateMacroScore(name, value) {
-    if (name === "fear_greed_index") return value > 75 ? 2 : value > 55 ? 1 : value < 30 ? -2 : value < 45 ? -1 : 0;
-    if (name === "btc_dominance") return value > 55 ? 2 : value > 50 ? 1 : value < 45 ? -2 : value < 48 ? -1 : 0;
-    if (name === "dxy") return value < 100 ? 2 : value < 103 ? 1 : value > 107 ? -2 : value > 104 ? -1 : 0;
-    return 0;
-  }
-
-  function getExplanation(name) {
-    const uitleg = {
-      fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
-      btc_dominance: "Hoge dominantie = minder altcoin-risico.",
-      dxy: "Lage DXY = gunstig voor crypto."
-    };
-    return uitleg[name] || "Geen uitleg beschikbaar";
-  }
-
   function updateScore(data) {
     let total = 0;
     let count = 0;
+
     data.forEach((ind) => {
-      const score = calculateMacroScore(ind.name, parseFloat(ind.value));
-      if (!isNaN(score)) {
-        total += score;
+      const s = parseFloat(ind.score);
+      if (!isNaN(s)) {
+        total += s;
         count++;
       }
     });
+
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
-    setAdvies(avg >= 1.5 ? '🟢 Bullish' : avg <= -1.5 ? '🔴 Bearish' : '⚖️ Neutraal');
-  }
-
-  function markStepDone(step) {
-    const userId = localStorage.getItem('user_id');
-    if (!userId) return;
-    fetch(`/api/onboarding_progress/${userId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ step }),
-    }).catch(() => {
-      console.warn('⚠️ Onboarding progress kon niet worden opgeslagen');
-    });
-  }
-
-  function handleEdit(name, newValue) {
-    const updated = macroData.map((ind) =>
-      ind.name === name ? { ...ind, value: parseFloat(newValue) } : ind
+    setAdvies(
+      avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal'
     );
-    setMacroData(updated);
-    updateScore(updated);
   }
 
-  function handleRemove(name) {
-    const updated = macroData.filter((ind) => ind.name !== name);
+  function groupByDay(data) {
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const dag = item.dateObj.toLocaleDateString('nl-NL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      if (!grouped[dag]) grouped[dag] = [];
+      grouped[dag].push(item);
+    }
+
+    return Object.entries(grouped)
+      .sort((a, b) => new Date(b[1][0].timestamp) - new Date(a[1][0].timestamp))
+      .map(([label, items]) => ({
+        label: `📅 ${label}`,
+        data: items,
+      }));
+  }
+
+  function groupByMonth(data) {
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const year = item.dateObj.getFullYear();
+      const month = item.dateObj.getMonth() + 1;
+      const key = `${year}-${month}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => {
+        const [year, month] = key.split('-');
+        const label = `📅 ${getMonthName(month)} ${year}`;
+        return { label, data: items };
+      });
+  }
+
+  function groupByQuarter(data) {
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const year = item.dateObj.getFullYear();
+      const quarter = Math.floor(item.dateObj.getMonth() / 3) + 1;
+      const key = `${year}-Q${quarter}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => ({
+        label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
+        data: items,
+      }));
+  }
+
+  function getMonthName(monthNum) {
+    const maanden = [
+      'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+      'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
+    ];
+    return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
+  }
+
+  function handleRemove(symbol) {
+    const updated = macroData.filter((item) => item.symbol !== symbol);
     setMacroData(updated);
-    updateScore(updated);
   }
 
   return {
     macroData,
     avgScore,
     advies,
-    handleEdit,
     handleRemove,
-    calculateMacroScore,
-    getExplanation,
     loading,
     error,
   };

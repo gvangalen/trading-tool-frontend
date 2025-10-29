@@ -29,6 +29,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     try {
       let data;
 
+      // 🔹 Data ophalen per timeframe
       switch (activeTab) {
         case 'Dag':
           data = await technicalDataDay();
@@ -48,6 +49,7 @@ export function useTechnicalData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
+      // 🔹 Data verrijken met fallbackwaarden
       const enriched = data.map((item) => ({
         indicator: item.indicator || '–',
         waarde: item.waarde ?? item.value ?? '–',
@@ -59,14 +61,15 @@ export function useTechnicalData(activeTab = 'Dag') {
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      // ✅ Voor week, maand, kwartaal: groepeer per week
-      if (['Week', 'Maand', 'Kwartaal'].includes(activeTab)) {
+      // ✅ Alleen groepeer bij maand/kwartaal, niet bij week!
+      if (['Maand', 'Kwartaal'].includes(activeTab)) {
         const grouped = groupByWeek(enriched);
         setTechnicalData(grouped);
       } else {
         setTechnicalData(enriched);
       }
 
+      // 🔹 Score ophalen uit backend
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
@@ -94,6 +97,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
+  // 🔹 Bereken gemiddelde score
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -113,6 +117,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     );
   }
 
+  // 🔹 Data per week groeperen (voor Maand en Kwartaal)
   function groupByWeek(data) {
     const grouped = {};
 
@@ -126,7 +131,7 @@ export function useTechnicalData(activeTab = 'Dag') {
       grouped[key].push(item);
     }
 
-    // Zet om naar gesorteerde lijst met label
+    // Sorteer en maak nette labels
     return Object.entries(grouped)
       .sort((a, b) => (a[0] < b[0] ? 1 : -1))
       .map(([key, items]) => ({
@@ -135,6 +140,7 @@ export function useTechnicalData(activeTab = 'Dag') {
       }));
   }
 
+  // 🔹 Weeknummer berekenen
   function getWeekNumber(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -144,6 +150,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     return weekNo;
   }
 
+  // 🔹 Verwijderen
   function handleRemove(symbol) {
     const updated = technicalData.filter((item) => item.symbol !== symbol);
     setTechnicalData(updated);

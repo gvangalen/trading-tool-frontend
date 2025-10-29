@@ -75,8 +75,8 @@ export default function TechnicalTabs({
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            {/* ❌ Laat de algemene header weg bij de Week-tab */}
-            {activeTab !== 'Week' && (
+            {/* ❌ Geen vaste header bij Week, Maand of Kwartaal */}
+            {activeTab === 'Dag' && (
               <thead className="bg-gray-100 dark:bg-gray-800 text-left">
                 <tr>
                   <th className="p-2">📊 Indicator</th>

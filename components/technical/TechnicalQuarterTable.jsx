@@ -1,16 +1,6 @@
 'use client';
 
 import React from 'react';
-import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
-
-/**
- * ✅ Hulpfunctie: geef een maandlabel zoals "📅 Oktober 2025"
- */
-function getMonthLabel(timestamp) {
-  const date = new Date(timestamp);
-  return `📅 ${format(date, 'LLLL yyyy', { locale: nl })}`; // bijv. "📅 Oktober 2025"
-}
 
 /**
  * ✅ Scorekleur bepalen op basis van scorewaarde
@@ -25,7 +15,12 @@ function getScoreColor(score) {
 
 /**
  * 🧩 TechnicalQuarterTable
- * Groepeert kwartaaldata per maand binnen het kwartaal
+ * Ontvangt een gegroepeerde dataset in dit formaat:
+ * [
+ *   { label: '📅 Q3 2025', data: [...] },
+ *   { label: '📅 Q2 2025', data: [...] },
+ *   ...
+ * ]
  */
 export default function TechnicalQuarterTable({ data = [], onRemove }) {
   if (!Array.isArray(data) || data.length === 0) {
@@ -38,41 +33,26 @@ export default function TechnicalQuarterTable({ data = [], onRemove }) {
     );
   }
 
-  // ✅ Groepeer items per maandlabel (bijv. Oktober 2025, September 2025)
-  const grouped = data.reduce((acc, item) => {
-    const label = item.timestamp
-      ? getMonthLabel(item.timestamp)
-      : '📅 Onbekende maand';
-    if (!acc[label]) acc[label] = [];
-    acc[label].push(item);
-    return acc;
-  }, {});
-
   return (
     <>
-      {Object.entries(grouped).map(([monthLabel, items]) => (
-        <React.Fragment key={monthLabel}>
-          {/* 🟦 Maandheader */}
+      {data.map((groep) => (
+        <React.Fragment key={groep.label}>
+          {/* 📅 Kwartaalheader */}
           <tr className="bg-blue-50 dark:bg-blue-900">
-            <td
-              colSpan={6}
-              className="p-2 font-semibold text-blue-800 dark:text-blue-200"
-            >
-              {monthLabel}
+            <td colSpan={6} className="p-2 font-semibold text-blue-800 dark:text-blue-200">
+              {groep.label}
             </td>
           </tr>
 
-          {/* 🔁 Indicatoren per maand */}
-          {items.map((item, index) => (
+          {/* 🔁 Indicatoren in deze kwartaalgroep */}
+          {groep.data.map((item, index) => (
             <tr
               key={item.symbol || `${item.indicator}-${index}`}
               className="border-t dark:border-gray-700"
             >
               <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
               <td className="p-2 text-center">{item.waarde ?? item.value ?? '–'}</td>
-              <td
-                className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}
-              >
+              <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
                 {item.score ?? '–'}
               </td>
               <td className="p-2 text-center">{item.advies ?? '–'}</td>

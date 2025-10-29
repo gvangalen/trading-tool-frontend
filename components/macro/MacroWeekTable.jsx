@@ -2,9 +2,6 @@
 
 import React from 'react';
 
-/**
- * ✅ Kleur op basis van scorewaarde
- */
 function getScoreColor(score) {
   const s = typeof score === 'number' ? score : parseFloat(score);
   if (isNaN(s)) return 'text-gray-600';
@@ -13,13 +10,6 @@ function getScoreColor(score) {
   return 'text-yellow-600';
 }
 
-/**
- * 📅 MacroWeekTable
- * data: [
- *   { label: '📅 woensdag 29 oktober 2025', data: [...] },
- *   { label: '📅 dinsdag 28 oktober 2025', data: [...] },
- * ]
- */
 export default function MacroWeekTable({ data = [], getExplanation, onRemove }) {
   if (!Array.isArray(data) || data.length === 0) {
     return (
@@ -42,19 +32,32 @@ export default function MacroWeekTable({ data = [], getExplanation, onRemove }) 
             </td>
           </tr>
 
-          {/* 📊 Indicatoren voor deze dag */}
+          {/* 📊 Indicatoren */}
           {groep.data.map((item, index) => (
             <tr key={item.symbol || `${item.indicator}-${index}`} className="border-t dark:border-gray-700">
-              <td className="p-2 font-medium" title={getExplanation?.(item.indicator)}>
+              {/* 📌 Indicatornaam met hover-uitleg */}
+              <td className="p-2 font-medium" title={getExplanation?.(item.indicator) || ''}>
                 {item.indicator ?? '–'}
               </td>
+
+              {/* 📌 Waarde */}
               <td className="p-2 text-gray-500">{item.waarde ?? item.value ?? '–'}</td>
+
+              {/* 📌 Trend */}
+              <td className="p-2 italic text-gray-500">{item.trend ?? '–'}</td>
+
+              {/* 📌 Interpretatie */}
+              <td className="p-2 italic text-gray-500">{item.uitleg ?? '–'}</td>
+
+              {/* 📌 Actie */}
+              <td className="p-2 italic text-gray-500">{item.advies ?? '–'}</td>
+
+              {/* 📌 Score */}
               <td className={`p-2 font-bold text-center ${getScoreColor(item.score)}`}>
                 {isNaN(item.score) ? '–' : item.score}
               </td>
-              <td className="p-2 italic text-gray-500">{item.advies ?? '–'}</td>
-              <td className="p-2 italic text-gray-500">{item.uitleg ?? '–'}</td>
-              <td className="p-2 italic text-gray-500">{item.trend ?? '–'}</td>
+
+              {/* 📌 Verwijderknop */}
               <td className="p-2 text-center">
                 {onRemove ? (
                   <button

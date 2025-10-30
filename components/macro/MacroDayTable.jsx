@@ -1,54 +1,83 @@
 'use client';
 
+import { useEffect } from 'react';
+
 export default function MacroDayTable({
-  data,
-  getExplanation,
-  onEdit,
+  data = [],
   onRemove,
+  showDebug = false,
 }) {
-  return data.map((item) => {
-    const score = parseFloat(item.score);
-    const scoreColor =
-      score >= 75 ? 'text-green-600'
-      : score <= 25 ? 'text-red-600'
-      : 'text-gray-600';
+  useEffect(() => {
+    console.log('📊 [MacroDayTable] received data:', data);
+  }, [data]);
 
+  // 🎨 Scorekleur bepalen
+  const getScoreColor = (score) => {
+    const s = typeof score === 'number' ? score : parseFloat(score);
+    if (isNaN(s)) return 'text-gray-600';
+    if (s >= 70) return 'text-green-600';
+    if (s <= 40) return 'text-red-600';
+    return 'text-yellow-600';
+  };
+
+  // 🧠 Geen data fallback
+  if (!Array.isArray(data) || data.length === 0) {
     return (
-      <tr key={item.name} className="border-t dark:border-gray-700">
-        {/* 📌 Naam met uitleg bij hover */}
-        <td className="p-2 font-medium" title={getExplanation(item.name)}>
-          {item.name}
-        </td>
-
-        {/* 📌 Waarde als tekst */}
-        <td className="p-2">{item.value}</td>
-
-        {/* 📌 Trend */}
-        <td className="p-2 italic text-gray-500">{item.trend ?? '–'}</td>
-
-        {/* 📌 Interpretatie */}
-        <td className="p-2 italic text-gray-500" title={item.interpretation}>
-          {item.interpretation ?? '–'}
-        </td>
-
-        {/* 📌 Actie */}
-        <td className="p-2 italic text-gray-500">{item.action ?? '–'}</td>
-
-        {/* 📌 Score */}
-        <td className={`p-2 font-bold ${scoreColor}`}>
-          {isNaN(score) ? '–' : score}
-        </td>
-
-        {/* 📌 Verwijderknop */}
-        <td className="p-2">
-          <button
-            onClick={() => onRemove(item.name)}
-            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            ❌
-          </button>
+      <tr>
+        <td colSpan={6} className="p-4 text-center text-gray-500">
+          ⚠️ Geen macro dagdata beschikbaar.
         </td>
       </tr>
     );
-  });
+  }
+
+  return (
+    <>
+      {/* 📋 Indicator-rijen */}
+      {data.map((item, index) => {
+        const {
+          indicator = '–',
+          waarde = '–',
+          score = null,
+          advies = '–',
+          uitleg = '–',
+          symbol,
+        } = item;
+
+        return (
+          <tr key={symbol || `row-${index}`} className="border-t dark:border-gray-700">
+            <td className="p-2 font-medium">{indicator}</td>
+            <td className="p-2 text-center">{waarde}</td>
+            <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+              {score !== null ? score : '–'}
+            </td>
+            <td className="p-2 text-center">{advies}</td>
+            <td className="p-2">{uitleg}</td>
+            <td className="p-2 text-center">
+              <button
+                onClick={() => {
+                  console.log('🗑️ Removing:', symbol || `item-${index}`);
+                  onRemove?.(symbol || `item-${index}`);
+                }}
+                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                ❌
+              </button>
+            </td>
+          </tr>
+        );
+      })}
+
+      {/* 🧪 Debugmodus */}
+      {showDebug && (
+        <tr>
+          <td colSpan={6}>
+            <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          </td>
+        </tr>
+      )}
+    </>
+  );
 }

@@ -58,19 +58,18 @@ export function useMacroData(activeTab = 'Dag') {
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
+      // 🔹 Data groeperen per tijdseenheid
       if (activeTab === 'Week') {
-        const grouped = groupByDay(enriched);
-        setMacroData(grouped);
+        setMacroData(groupByDay(enriched));
       } else if (activeTab === 'Maand') {
-        const grouped = groupByMonth(enriched);
-        setMacroData(grouped);
+        setMacroData(groupByMonth(enriched));
       } else if (activeTab === 'Kwartaal') {
-        const grouped = groupByQuarter(enriched);
-        setMacroData(grouped);
+        setMacroData(groupByQuarter(enriched));
       } else {
         setMacroData(enriched);
       }
 
+      // 🔹 Gemiddelde score ophalen
       const scores = await getDailyScores();
       const backendScore = scores?.macro_score ?? null;
 
@@ -98,6 +97,7 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
+  // ✅ Gemiddelde berekening fallback
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -117,6 +117,7 @@ export function useMacroData(activeTab = 'Dag') {
     );
   }
 
+  // ✅ Weekdata -> per dag groeperen
   function groupByDay(data) {
     const grouped = {};
     for (const item of data) {
@@ -139,6 +140,7 @@ export function useMacroData(activeTab = 'Dag') {
       }));
   }
 
+  // ✅ Maanddata -> per maand groeperen
   function groupByMonth(data) {
     const grouped = {};
     for (const item of data) {
@@ -159,6 +161,7 @@ export function useMacroData(activeTab = 'Dag') {
       });
   }
 
+  // ✅ Kwartaaldata -> per kwartaal groeperen
   function groupByQuarter(data) {
     const grouped = {};
     for (const item of data) {
@@ -178,6 +181,7 @@ export function useMacroData(activeTab = 'Dag') {
       }));
   }
 
+  // ✅ Nederlandse maandnamen
   function getMonthName(monthNum) {
     const maanden = [
       'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
@@ -186,11 +190,28 @@ export function useMacroData(activeTab = 'Dag') {
     return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
   }
 
+  // ✅ Uitleg per macro-indicator
+  function getExplanation(name) {
+    const uitleg = {
+      fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
+      btc_dominance: "Hoge dominantie = minder altcoin-risico.",
+      dxy: "Lage DXY = gunstig voor crypto.",
+      sp500: "Sterke S&P500 wijst op risk-on marktsentiment.",
+      vix: "Hoge VIX duidt op onzekerheid in de markt.",
+      inflation_rate: "Hoge inflatie vermindert koopkracht en verhoogt risico.",
+      interest_rate: "Hogere rente beperkt liquiditeit in markten.",
+      oil_price: "Hoge olieprijzen kunnen inflatie aanwakkeren.",
+    };
+    return uitleg[name] || "Geen uitleg beschikbaar.";
+  }
+
+  // ✅ Verwijderen
   function handleRemove(symbol) {
     const updated = macroData.filter((item) => item.symbol !== symbol);
     setMacroData(updated);
   }
 
+  // ✅ Exporteren van alle waarden
   return {
     macroData,
     avgScore,
@@ -198,5 +219,6 @@ export function useMacroData(activeTab = 'Dag') {
     handleRemove,
     loading,
     error,
+    getExplanation, // ✅ toegevoegd zodat de tabellen dit kunnen gebruiken
   };
 }

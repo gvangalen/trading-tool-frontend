@@ -16,25 +16,24 @@ export default function DashboardGauges() {
 
   return (
     <div className="space-y-6">
-
       {/* 📊 Gauges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <GaugeCard
           title="🌍 Macro"
           score={macro?.score}
-          explanation={macro?.interpretation}
+          explanation={macro?.explanation || macro?.uitleg || macro?.interpretation}
           topContributors={macro?.top_contributors}
         />
         <GaugeCard
           title="📈 Technical"
           score={technical?.score}
-          explanation={technical?.interpretation}
+          explanation={technical?.explanation || technical?.uitleg || technical?.interpretation}
           topContributors={technical?.top_contributors}
         />
         <GaugeCard
           title="⚙️ Setup"
           score={setup?.score}
-          explanation={setup?.interpretation}
+          explanation={setup?.explanation || setup?.uitleg || setup?.interpretation}
           topContributors={setup?.top_contributors}
           showTopSetups
         />
@@ -45,8 +44,14 @@ export default function DashboardGauges() {
 
 function GaugeCard({ title, score, explanation, topContributors = [], showTopSetups = false }) {
   const displayScore = typeof score === 'number' ? score : 0;
-  const displayExplanation = explanation?.trim() || '📡 Geen uitleg beschikbaar';
   const label = title.replace(/^[^a-zA-Z]+/, ''); // Strip emoji uit label
+
+  // 🧠 Automatische fallback uitleg
+  const autoExplanation = topContributors.length > 0
+    ? `Belangrijkste factoren: ${topContributors.join(', ')}`
+    : '📡 Geen uitleg beschikbaar';
+
+  const displayExplanation = explanation?.trim() || autoExplanation;
 
   return (
     <CardWrapper title={title}>

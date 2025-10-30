@@ -119,26 +119,33 @@ export function useMacroData(activeTab = 'Dag') {
 
   // ✅ Weekdata -> per dag groeperen
   function groupByDay(data) {
-    const grouped = {};
-    for (const item of data) {
-      if (!item.dateObj) continue;
-      const dag = item.dateObj.toLocaleDateString('nl-NL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-      if (!grouped[dag]) grouped[dag] = [];
-      grouped[dag].push(item);
-    }
+  const grouped = {};
+  for (const item of data) {
+    if (!item.dateObj) continue;
 
-    return Object.entries(grouped)
-      .sort((a, b) => new Date(b[1][0].timestamp) - new Date(a[1][0].timestamp))
-      .map(([label, items]) => ({
-        label: `📅 ${label}`,
-        data: items,
-      }));
+    // ✅ Weeknummer & jaartal berekenen
+    const date = item.dateObj;
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+    const year = date.getUTCFullYear();
+
+    // ✅ Groeperen op week
+    const key = `${year}-W${weekNo}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
   }
+
+  return Object.entries(grouped)
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([key, items]) => {
+      const [year, week] = key.split('-W');
+      const label = `📅 Week ${week} – ${year}`;
+      return { label, data: items };
+    });
+}
+
 
   // ✅ Maanddata -> per maand groeperen
   function groupByMonth(data) {

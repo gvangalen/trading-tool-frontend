@@ -6,11 +6,12 @@ import 'dayjs/locale/nl';
 dayjs.locale('nl');
 
 export default function MacroWeekTable({ data = [], onRemove, showDebug = false }) {
+  // 🧠 Debug
   useEffect(() => {
     console.log('📅 [MacroWeekTable] ontvangen data:', data);
     console.table(
       data.flatMap((groep) =>
-        groep.data.map((d) => ({
+        (groep?.data || []).map((d) => ({
           indicator: d.indicator,
           score: d.score,
           timestamp: d.timestamp,
@@ -19,6 +20,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
     );
   }, [data]);
 
+  // 🎨 Kleur o.b.v. score
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -27,6 +29,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
     return 'text-yellow-600';
   };
 
+  // ⚠️ Geen data fallback
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <tr>
@@ -38,17 +41,17 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
   }
 
   return (
-    <table className="w-full text-sm text-left text-gray-700 dark:text-gray-300">
-      {data.map((groep) => (
-        <tbody key={groep.label}>
-          {/* 🗓️ Weekheader */}
+    <>
+      {data.map((groep, groepIndex) => (
+        <tbody key={groep.label || `groep-${groepIndex}`}>
+          {/* 📅 Titelgroep */}
           <tr className="bg-gray-100 dark:bg-gray-800 border-y border-gray-300 dark:border-gray-700">
             <td colSpan={7} className="font-semibold p-3 text-sm">
-              {groep.label}
+              {groep.label ?? 'Geen label'}
             </td>
           </tr>
 
-          {/* 📋 Kolomtitels */}
+          {/* 🔠 Tabelkop */}
           <tr className="bg-gray-50 dark:bg-gray-900 text-xs uppercase text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-700">
             <th className="p-2 text-left">Indicator</th>
             <th className="p-2 text-center">Waarde</th>
@@ -59,7 +62,8 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
             <th className="p-2 text-center">Verwijder</th>
           </tr>
 
-          {groep.data.map((item, index) => {
+          {/* 📊 Data-rijen */}
+          {(groep?.data || []).map((item, index) => {
             const {
               indicator = '–',
               waarde = item.waarde ?? item.value ?? '–',
@@ -72,7 +76,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
 
             return (
               <tr
-                key={`${groep.label}-${symbol || index}`}
+                key={`${groep.label || 'groep'}-${symbol || index}`}
                 className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 <td className="p-2 font-medium text-gray-800 dark:text-gray-200">{indicator}</td>
@@ -98,7 +102,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
         </tbody>
       ))}
 
-      {/* 🧪 Debugmodus */}
+      {/* 🧪 Optionele debug */}
       {showDebug && (
         <tfoot>
           <tr>
@@ -110,6 +114,6 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
           </tr>
         </tfoot>
       )}
-    </table>
+    </>
   );
 }

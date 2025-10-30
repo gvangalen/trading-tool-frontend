@@ -63,42 +63,43 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
           </tr>
 
           {/* 📊 Indicatorgegevens */}
-          {groep.data.map((item, index) => {
-            const {
-              indicator = '–',
-              waarde = item.waarde ?? item.value ?? '–',
-              trend = item.trend ?? '–',
-              uitleg = item.uitleg ?? item.interpretation ?? '–',
-              advies = item.advies ?? item.action ?? '–',
-              score = item.score,
-              symbol,
-            } = item;
+          {Array.isArray(groep.data) &&
+            groep.data.map((item, index) => {
+              const {
+                indicator = '–',
+                waarde = item.waarde ?? item.value ?? '–',
+                trend = item.trend ?? '–',
+                uitleg = item.uitleg ?? item.interpretation ?? '–',
+                advies = item.advies ?? item.action ?? '–',
+                score = item.score,
+                symbol,
+              } = item;
 
-            return (
-              <tr
-                key={`${groep.label}-${symbol || index}`}
-                className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-              >
-                <td className="p-2 font-medium text-gray-800 dark:text-gray-200">{indicator}</td>
-                <td className="p-2 text-center">{waarde}</td>
-                <td className="p-2 text-center italic text-gray-500">{trend}</td>
-                <td className="p-2 text-center italic text-gray-500">{uitleg}</td>
-                <td className="p-2 text-center italic text-gray-500">{advies}</td>
-                <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
-                  {isNaN(score) ? '–' : score}
-                </td>
-                <td className="p-2 text-center">
-                  <button
-                    onClick={() => onRemove?.(symbol || `item-${index}`)}
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                    title="Verwijder deze regel"
-                  >
-                    ❌
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+              return (
+                <tr
+                  key={`${groep.label}-${symbol || index}`}
+                  className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                >
+                  <td className="p-2 font-medium text-gray-800 dark:text-gray-200">{indicator}</td>
+                  <td className="p-2 text-center">{waarde}</td>
+                  <td className="p-2 text-center italic text-gray-500">{trend}</td>
+                  <td className="p-2 text-center italic text-gray-500">{uitleg}</td>
+                  <td className="p-2 text-center italic text-gray-500">{advies}</td>
+                  <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+                    {isNaN(score) ? '–' : score}
+                  </td>
+                  <td className="p-2 text-center">
+                    <button
+                      onClick={() => onRemove?.(symbol || `item-${index}`)}
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                      title="Verwijder deze regel"
+                    >
+                      ❌
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       ))}
 

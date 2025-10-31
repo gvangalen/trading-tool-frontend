@@ -1,20 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchDashboardData } from '@/lib/api/dashboard';
+import { fetchDailyScores } from '@/lib/api/scores'; // 👈 deze moet je aanmaken als je 'fetchDashboardData' niet wil aanpassen
 
 export function useDashboardData() {
   const [macroScore, setMacroScore] = useState(0);
   const [technicalScore, setTechnicalScore] = useState(0);
   const [setupScore, setSetupScore] = useState(0);
+  const [marketScore, setMarketScore] = useState(0);
 
   const [macroExplanation, setMacroExplanation] = useState('📡 Data wordt geladen...');
   const [technicalExplanation, setTechnicalExplanation] = useState('📡 Data wordt geladen...');
   const [setupExplanation, setSetupExplanation] = useState('📡 Data wordt geladen...');
+  const [marketExplanation, setMarketExplanation] = useState('📡 Data wordt geladen...');
 
-  const [technicalTopContributors, setTechnicalTopContributors] = useState([]);
-  const [macroTopContributors, setMacroTopContributors] = useState([]);
-  const [setupTopContributors, setSetupTopContributors] = useState([]);
+  const [macroTop, setMacroTop] = useState([]);
+  const [technicalTop, setTechnicalTop] = useState([]);
+  const [setupTop, setSetupTop] = useState([]);
+  const [marketTop, setMarketTop] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -24,46 +27,27 @@ export function useDashboardData() {
     async function loadData() {
       try {
         setLoading(true);
-        const data = await fetchDashboardData();
-        if (!mounted || !data) return;
+        const res = await fetchDailyScores(); // 🔁 haalt direct /api/scores/daily op
+        if (!mounted || !res) return;
 
-        // ✅ DIRECTE velden gebruiken — geen nested 'scores' of 'explanation'
-        setMacroScore(data?.macro_score ?? 0);
-        setTechnicalScore(data?.technical_score ?? 0);
-        setSetupScore(data?.setup_score ?? 0);
+        setMacroScore(res.macro?.score ?? 0);
+        setMacroExplanation(res.macro?.interpretation ?? '–');
+        setMacroTop(res.macro?.top_contributors ?? []);
 
-        setMacroExplanation(data?.macro_interpretation ?? '⚠️ Geen uitleg beschikbaar');
-        setTechnicalExplanation(data?.technical_interpretation ?? '⚠️ Geen uitleg beschikbaar');
-        setSetupExplanation(data?.setup_interpretation ?? '⚠️ Geen setupinformatie beschikbaar');
+        setTechnicalScore(res.technical?.score ?? 0);
+        setTechnicalExplanation(res.technical?.interpretation ?? '–');
+        setTechnicalTop(res.technical?.top_contributors ?? []);
 
-        // ✅ Dynamische contributors instellen
-        const technicalData = data.technical_data || {};
-        const macroData = data.macro_data || [];
-        const setups = data.setups || [];
+        setSetupScore(res.setup?.score ?? 0);
+        setSetupExplanation(res.setup?.interpretation ?? '–');
+        setSetupTop(res.setup?.top_contributors ?? []);
 
-        const techKeys = Object.keys(technicalData).map((k) => k.toUpperCase());
-        setTechnicalTopContributors(techKeys.slice(0, 5));
-
-        const macroKeys = macroData.map((item) => item.name);
-        setMacroTopContributors(macroKeys.slice(0, 5));
-
-        const setupNames = setups.map((s) => s.name);
-        setSetupTopContributors(setupNames.slice(0, 5));
+        setMarketScore(res.market?.score ?? 0);
+        setMarketExplanation(res.market?.interpretation ?? '–');
+        setMarketTop(res.market?.top_contributors ?? []);
 
       } catch (err) {
-        console.warn('⚠️ Dashboarddata niet geladen. Gebruik fallbackwaarden.');
-
-        setMacroScore(0);
-        setTechnicalScore(0);
-        setSetupScore(0);
-
-        setMacroExplanation('❌ Kon macrodata niet laden');
-        setTechnicalExplanation('❌ Kon technische data niet laden');
-        setSetupExplanation('❌ Geen setupinformatie beschikbaar');
-
-        setTechnicalTopContributors([]);
-        setMacroTopContributors([]);
-        setSetupTopContributors([]);
+        console.error('❌ Fout bij ophalen scores:', err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -81,12 +65,15 @@ export function useDashboardData() {
     macroScore,
     technicalScore,
     setupScore,
+    marketScore,
     macroExplanation,
     technicalExplanation,
     setupExplanation,
-    technicalTopContributors,
-    macroTopContributors,
-    setupTopContributors,
+    marketExplanation,
+    macroTop,
+    technicalTop,
+    setupTop,
+    marketTop,
     loading,
   };
 }

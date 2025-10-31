@@ -12,7 +12,6 @@ export function useScoresData() {
     macro: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
     technical: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
     setup: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
-    sentiment: { score: 0, trend: '', interpretation: '', action: '', advies: '⚖️ Neutraal' },
     market: { score: 0, advies: '⚖️ Neutraal' },
   });
 
@@ -35,7 +34,6 @@ export function useScoresData() {
         const macroScore = res?.macro_score || 0;
         const techScore = res?.technical_score || 0;
         const setupScore = res?.setup_score || 0;
-        const sentimentScore = res?.sentiment_score || 0;
         const marketScore = res?.market_score || 0;
 
         setScores({
@@ -60,13 +58,6 @@ export function useScoresData() {
             action: res?.setup_action || '',
             advies: getAdvies(setupScore),
           },
-          sentiment: {
-            score: sentimentScore,
-            trend: res?.sentiment_trend || '',
-            interpretation: res?.sentiment_interpretation || '',
-            action: res?.sentiment_action || '',
-            advies: getAdvies(sentimentScore),
-          },
           market: {
             score: marketScore,
             advies: getAdvies(marketScore),
@@ -84,7 +75,7 @@ export function useScoresData() {
   }, []);
 
   return {
-    ...scores, // macro, technical, setup, sentiment, market
+    ...scores, // macro, technical, setup, market
     loading,
     error,
   };

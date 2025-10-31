@@ -10,7 +10,6 @@ export default function DashboardGauges() {
     macro,
     technical,
     setup,
-    sentiment,
     loading,
   } = useScoresData();
 

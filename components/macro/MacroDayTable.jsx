@@ -34,14 +34,14 @@ export default function MacroDayTable({
 
   return (
     <>
+      {/* 📋 Indicator-rijen */}
       {data.map((item, index) => {
         const {
           indicator = '–',
           waarde = '–',
-          trend = '–',
-          interpretation = '–',
-          action = '–',
           score = null,
+          advies = item.advies || item.action || '–',
+          uitleg = item.uitleg || item.interpretatie || 'Geen uitleg beschikbaar',
           symbol,
         } = item;
 
@@ -57,9 +57,8 @@ export default function MacroDayTable({
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
               {score !== null ? score : '–'}
             </td>
-            <td className="p-2 text-center">{trend}</td>
-            <td className="p-2 italic text-gray-600">{interpretation}</td>
-            <td className="p-2 italic text-gray-600">{action}</td>
+            <td className="p-2">{advies}</td>
+            <td className="p-2">{uitleg}</td>
             <td className="p-2 text-center">
               <button
                 onClick={() => {
@@ -75,9 +74,10 @@ export default function MacroDayTable({
         );
       })}
 
+      {/* 🧪 Debugmodus */}
       {showDebug && (
         <tr>
-          <td colSpan={7}>
+          <td colSpan={6}>
             <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
               {JSON.stringify(data, null, 2)}
             </pre>

@@ -51,8 +51,9 @@ export function useMacroData(activeTab = 'Dag') {
         indicator: item.indicator || item.name || '–',
         waarde: item.waarde ?? item.value ?? '–',
         score: parseFloat(item.score) ?? null,
-        advies: item.advies || '–',
-        uitleg: item.uitleg || 'Geen uitleg beschikbaar',
+        trend: item.trend || '–',                                // ✅ Toegevoegd
+        interpretation: item.interpretation || '–',              // ✅ Toegevoegd
+        action: item.action || '–',                              // ✅ Toegevoegd
         symbol: item.symbol || '',
         timestamp: item.timestamp || null,
         dateObj: item.timestamp ? new Date(item.timestamp) : null,

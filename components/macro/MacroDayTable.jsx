@@ -6,6 +6,7 @@ export default function MacroDayTable({
   data = [],
   onRemove,
   showDebug = false,
+  getExplanation,
 }) {
   useEffect(() => {
     console.log('📊 [MacroDayTable] received data:', data);
@@ -33,26 +34,32 @@ export default function MacroDayTable({
 
   return (
     <>
-      {/* 📋 Indicator-rijen */}
       {data.map((item, index) => {
         const {
           indicator = '–',
           waarde = '–',
+          trend = '–',
+          interpretation = '–',
+          action = '–',
           score = null,
-          advies = '–',
-          uitleg = '–',
           symbol,
         } = item;
 
         return (
-          <tr key={symbol || `row-${index}`} className="border-t dark:border-gray-700">
-            <td className="p-2 font-medium">{indicator}</td>
+          <tr
+            key={symbol || `row-${index}`}
+            className="border-t dark:border-gray-700"
+          >
+            <td className="p-2 font-medium" title={getExplanation?.(indicator)}>
+              {indicator}
+            </td>
             <td className="p-2 text-center">{waarde}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
               {score !== null ? score : '–'}
             </td>
-            <td className="p-2 text-center">{advies}</td>
-            <td className="p-2">{uitleg}</td>
+            <td className="p-2 text-center">{trend}</td>
+            <td className="p-2 italic text-gray-600">{interpretation}</td>
+            <td className="p-2 italic text-gray-600">{action}</td>
             <td className="p-2 text-center">
               <button
                 onClick={() => {
@@ -68,10 +75,9 @@ export default function MacroDayTable({
         );
       })}
 
-      {/* 🧪 Debugmodus */}
       {showDebug && (
         <tr>
-          <td colSpan={6}>
+          <td colSpan={7}>
             <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
               {JSON.stringify(data, null, 2)}
             </pre>

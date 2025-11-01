@@ -37,15 +37,14 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
 
   return (
     <div className="overflow-x-auto w-full">
-      <table className="min-w-[1200px] w-full text-sm text-left text-gray-800 dark:text-gray-200 border-collapse">
+      <table className="min-w-[1000px] w-full text-sm text-left text-gray-800 dark:text-gray-200 border-collapse">
         <thead>
           <tr className="bg-gray-50 dark:bg-gray-900 text-xs uppercase text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-700">
             <th className="p-3 text-left">📊 Indicator</th>
             <th className="p-3 text-center">Waarde</th>
-            <th className="p-3 text-center">Trend</th>
-            <th className="p-3 text-center">Interpretatie</th>
-            <th className="p-3 text-center">Actie</th>
             <th className="p-3 text-center">Score</th>
+            <th className="p-3 text-center">Advies</th>
+            <th className="p-3 text-center">Uitleg</th>
             <th className="p-3 text-center">Verwijder</th>
           </tr>
         </thead>
@@ -57,7 +56,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
                 key={`header-${groepIndex}`}
                 className="bg-gray-100 dark:bg-gray-800 border-y border-gray-300 dark:border-gray-700"
               >
-                <td colSpan={7} className="font-semibold p-3 text-sm">
+                <td colSpan={6} className="font-semibold p-3 text-sm">
                   📅 {groep.label ?? `Week ${groepIndex + 1}`}
                 </td>
               </tr>
@@ -66,11 +65,10 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
                 const {
                   indicator = '–',
                   waarde = item.waarde ?? item.value ?? '–',
-                  trend = item.trend ?? '–',
-                  uitleg = item.uitleg ?? item.interpretation ?? '–',
-                  advies = item.advies ?? item.action ?? '–',
                   score = item.score,
                   symbol,
+                  interpretation = item.interpretation ?? '–',
+                  action = item.action ?? '–',
                 } = item;
 
                 return (
@@ -80,12 +78,11 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
                   >
                     <td className="p-3 font-medium">{indicator}</td>
                     <td className="p-3 text-center">{waarde}</td>
-                    <td className="p-3 text-center italic text-gray-500">{trend}</td>
-                    <td className="p-3 text-center italic text-gray-500">{uitleg}</td>
-                    <td className="p-3 text-center italic text-gray-500">{advies}</td>
                     <td className={`p-3 text-center font-bold ${getScoreColor(score)}`}>
-                      {isNaN(score) ? '–' : score}
+                      {isNaN(score) ? '–' : Math.round(score)}
                     </td>
+                    <td className="p-3 text-center italic text-gray-500">{action}</td>
+                    <td className="p-3 text-center italic text-gray-500">{interpretation}</td>
                     <td className="p-3 text-center">
                       <button
                         onClick={() => onRemove?.(symbol || `item-${index}`)}
@@ -105,7 +102,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
         {showDebug && (
           <tfoot>
             <tr>
-              <td colSpan={7}>
+              <td colSpan={6}>
                 <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
                   {JSON.stringify(data, null, 2)}
                 </pre>

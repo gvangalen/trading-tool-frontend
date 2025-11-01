@@ -50,16 +50,15 @@ export function useMacroData(activeTab = 'Dag') {
       const enriched = data.map((item) => ({
         indicator: item.indicator || item.name || '–',
         waarde: item.waarde ?? item.value ?? '–',
-        score: parseFloat(item.score) ?? null,
-        trend: item.trend || '–',                                // ✅ Toegevoegd
-        interpretation: item.interpretation || '–',              // ✅ Toegevoegd
-        action: item.action || '–',                              // ✅ Toegevoegd
-        symbol: item.symbol || '',
-        timestamp: item.timestamp || null,
+        score: item.score ?? null,
+        trend: item.trend ?? null,
+        interpretation: item.interpretation ?? null,
+        action: item.action ?? null,
+        symbol: item.symbol,
+        timestamp: item.timestamp ?? null,
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      // 🔹 Data groeperen per tijdseenheid
       if (activeTab === 'Week') {
         setMacroData(groupByDay(enriched));
       } else if (activeTab === 'Maand') {
@@ -70,7 +69,6 @@ export function useMacroData(activeTab = 'Dag') {
         setMacroData(enriched);
       }
 
-      // 🔹 Gemiddelde score ophalen
       const scores = await getDailyScores();
       const backendScore = scores?.macro_score ?? null;
 
@@ -98,7 +96,6 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
-  // ✅ Gemiddelde berekening fallback
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -118,37 +115,30 @@ export function useMacroData(activeTab = 'Dag') {
     );
   }
 
-  // ✅ Weekdata -> per dag groeperen
   function groupByDay(data) {
-  const grouped = {};
-  for (const item of data) {
-    if (!item.dateObj) continue;
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const date = item.dateObj;
+      const dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+      const year = date.getUTCFullYear();
+      const key = `${year}-W${weekNo}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
 
-    // ✅ Weeknummer & jaartal berekenen
-    const date = item.dateObj;
-    const dayNum = date.getUTCDay() || 7;
-    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
-    const year = date.getUTCFullYear();
-
-    // ✅ Groeperen op week
-    const key = `${year}-W${weekNo}`;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(item);
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => {
+        const [year, week] = key.split('-W');
+        const label = `📅 Week ${week} – ${year}`;
+        return { label, data: items };
+      });
   }
 
-  return Object.entries(grouped)
-    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-    .map(([key, items]) => {
-      const [year, week] = key.split('-W');
-      const label = `📅 Week ${week} – ${year}`;
-      return { label, data: items };
-    });
-}
-
-
-  // ✅ Maanddata -> per maand groeperen
   function groupByMonth(data) {
     const grouped = {};
     for (const item of data) {
@@ -169,7 +159,6 @@ export function useMacroData(activeTab = 'Dag') {
       });
   }
 
-  // ✅ Kwartaaldata -> per kwartaal groeperen
   function groupByQuarter(data) {
     const grouped = {};
     for (const item of data) {
@@ -189,7 +178,6 @@ export function useMacroData(activeTab = 'Dag') {
       }));
   }
 
-  // ✅ Nederlandse maandnamen
   function getMonthName(monthNum) {
     const maanden = [
       'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
@@ -198,7 +186,6 @@ export function useMacroData(activeTab = 'Dag') {
     return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
   }
 
-  // ✅ Uitleg per macro-indicator
   function getExplanation(name) {
     const uitleg = {
       fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
@@ -213,13 +200,11 @@ export function useMacroData(activeTab = 'Dag') {
     return uitleg[name] || "Geen uitleg beschikbaar.";
   }
 
-  // ✅ Verwijderen
   function handleRemove(symbol) {
     const updated = macroData.filter((item) => item.symbol !== symbol);
     setMacroData(updated);
   }
 
-  // ✅ Exporteren van alle waarden
   return {
     macroData,
     avgScore,
@@ -227,6 +212,6 @@ export function useMacroData(activeTab = 'Dag') {
     handleRemove,
     loading,
     error,
-    getExplanation, // ✅ toegevoegd zodat de tabellen dit kunnen gebruiken
+    getExplanation,
   };
 }

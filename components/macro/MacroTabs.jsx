@@ -116,10 +116,9 @@ export default function MacroTabs() {
                 <tr>
                   <th className="p-2">Indicator</th>
                   <th className="p-2">Waarde</th>
-                  <th className="p-2">Trend</th>
-                  <th className="p-2">Interpretatie</th>
-                  <th className="p-2">Actie</th>
                   <th className="p-2">Score</th>
+                  <th className="p-2">Advies</th>
+                  <th className="p-2">Uitleg</th>
                   <th className="p-2">🗑️</th>
                 </tr>
               </thead>

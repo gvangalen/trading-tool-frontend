@@ -8,6 +8,7 @@ import {
   technicalDataQuarter,
   getAllRules,
   addNewRule,
+  getIndicatorNames,
 } from '@/lib/api/technical';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -18,10 +19,12 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [rules, setRules] = useState([]);
+  const [indicatorNames, setIndicatorNames] = useState([]);
 
   useEffect(() => {
     loadData();
     loadRules();
+    loadIndicatorNames(); // 🔹 Nieuw toegevoegd
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
@@ -101,6 +104,15 @@ export function useTechnicalData(activeTab = 'Dag') {
       setRules(data);
     } catch (err) {
       console.error('Fout bij ophalen van regels:', err);
+    }
+  }
+
+  async function loadIndicatorNames() {
+    try {
+      const data = await getIndicatorNames();
+      setIndicatorNames(data);
+    } catch (err) {
+      console.error('Fout bij ophalen van indicatornamen:', err);
     }
   }
 
@@ -187,5 +199,6 @@ export function useTechnicalData(activeTab = 'Dag') {
     error,
     rules,
     submitRule,
+    indicatorNames, // ✅ dropdown names voor formulier
   };
 }

@@ -1,5 +1,8 @@
 'use client';
 
+import 'rc-slider/assets/index.css'; // ✅ FIX build error
+import Slider from 'rc-slider';       // ✅ de component zelf
+
 import React, { useState } from 'react';
 
 

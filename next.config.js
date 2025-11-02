@@ -10,6 +10,13 @@ const nextConfig = {
   },
 
   webpack: (config, { isServer }) => {
+    // ✅ CSS verwerken (ook uit node_modules)
+    config.module.rules.push({
+      test: /\.css$/i,
+      use: ['style-loader', 'css-loader', 'postcss-loader'],
+    });
+
+    // ✅ Pad-aliases
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
       '@': path.resolve(__dirname),
@@ -21,6 +28,7 @@ const nextConfig = {
       '@ui': path.resolve(__dirname, 'components/ui'),
     };
 
+    // ✅ Fallbacks voor client-side imports
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

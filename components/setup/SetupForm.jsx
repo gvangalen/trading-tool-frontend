@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Slider from 'rc-slider'; // ✅ rc-slider alleen component, geen CSS import hier!
+
 
 export default function SetupForm() {
   const [macroScore, setMacroScore] = useState([30, 70]);

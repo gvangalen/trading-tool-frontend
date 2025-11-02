@@ -6,6 +6,8 @@ import {
   technicalDataWeek,
   technicalDataMonth,
   technicalDataQuarter,
+  getAllRules,
+  addNewRule,
 } from '@/lib/api/technical';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -15,9 +17,11 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [rules, setRules] = useState([]);
 
   useEffect(() => {
     loadData();
+    loadRules();
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
@@ -28,8 +32,6 @@ export function useTechnicalData(activeTab = 'Dag') {
 
     try {
       let data;
-
-      // 🔹 Data ophalen per timeframe
       switch (activeTab) {
         case 'Dag':
           data = await technicalDataDay();
@@ -49,7 +51,6 @@ export function useTechnicalData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
-      // 🔹 Data verrijken met fallbackwaarden
       const enriched = data.map((item) => ({
         indicator: item.indicator || '–',
         waarde: item.waarde ?? item.value ?? '–',
@@ -61,7 +62,6 @@ export function useTechnicalData(activeTab = 'Dag') {
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      // ✅ Alleen groepeer bij maand of kwartaal
       if (activeTab === 'Maand') {
         const grouped = groupByMonth(enriched);
         setTechnicalData(grouped);
@@ -72,7 +72,6 @@ export function useTechnicalData(activeTab = 'Dag') {
         setTechnicalData(enriched);
       }
 
-      // 🔹 Score ophalen uit backend
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
@@ -80,11 +79,7 @@ export function useTechnicalData(activeTab = 'Dag') {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
         setAdvies(
-          backendScore >= 75
-            ? '🟢 Bullish'
-            : backendScore <= 25
-            ? '🔴 Bearish'
-            : '⚖️ Neutraal'
+          backendScore >= 75 ? '🟢 Bullish' : backendScore <= 25 ? '🔴 Bearish' : '⚖️ Neutraal'
         );
       } else {
         updateScore(enriched);
@@ -100,11 +95,27 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  // 🔹 Bereken gemiddelde score
+  async function loadRules() {
+    try {
+      const data = await getAllRules();
+      setRules(data);
+    } catch (err) {
+      console.error('Fout bij ophalen van regels:', err);
+    }
+  }
+
+  async function submitRule(rule) {
+    try {
+      await addNewRule(rule);
+      await loadRules();
+    } catch (err) {
+      console.error('Fout bij opslaan van regel:', err);
+    }
+  }
+
   function updateScore(data) {
     let total = 0;
     let count = 0;
-
     data.forEach((ind) => {
       const s = parseFloat(ind.score);
       if (!isNaN(s)) {
@@ -112,25 +123,11 @@ export function useTechnicalData(activeTab = 'Dag') {
         count++;
       }
     });
-
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
-    setAdvies(
-      avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal'
-    );
+    setAdvies(avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
 
-  // 🔹 Weeknummer berekenen
-  function getWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-    return weekNo;
-  }
-
-  // 🔹 Data groeperen per maand
   function groupByMonth(data) {
     const grouped = {};
     for (const item of data) {
@@ -141,7 +138,6 @@ export function useTechnicalData(activeTab = 'Dag') {
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
-
     return Object.entries(grouped)
       .sort((a, b) => (a[0] < b[0] ? 1 : -1))
       .map(([key, items]) => {
@@ -151,7 +147,6 @@ export function useTechnicalData(activeTab = 'Dag') {
       });
   }
 
-  // 🔹 Data groeperen per kwartaal
   function groupByQuarter(data) {
     const grouped = {};
     for (const item of data) {
@@ -162,7 +157,6 @@ export function useTechnicalData(activeTab = 'Dag') {
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
-
     return Object.entries(grouped)
       .sort((a, b) => (a[0] < b[0] ? 1 : -1))
       .map(([key, items]) => ({
@@ -171,7 +165,6 @@ export function useTechnicalData(activeTab = 'Dag') {
       }));
   }
 
-  // 🔹 Nederlandse maandnamen
   function getMonthName(monthNum) {
     const maanden = [
       'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
@@ -180,7 +173,6 @@ export function useTechnicalData(activeTab = 'Dag') {
     return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
   }
 
-  // 🔹 Verwijderen
   function handleRemove(symbol) {
     const updated = technicalData.filter((item) => item.symbol !== symbol);
     setTechnicalData(updated);
@@ -193,5 +185,7 @@ export function useTechnicalData(activeTab = 'Dag') {
     handleRemove,
     loading,
     error,
+    rules,
+    submitRule,
   };
 }

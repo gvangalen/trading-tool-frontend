@@ -1,244 +1,110 @@
-'use client';
+import React, { useState } from 'react';
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
 
-import { useState, useRef, useEffect } from 'react';
-import { addSetup, checkSetupNameExists } from '@/lib/api/setups';
-import { useSetupData } from '@/hooks/useSetupData';
-import InfoTooltip from '@/components/ui/InfoTooltip';
-
-export default function SetupForm({ onSubmitted }) {
-  const { loadSetups } = useSetupData();
-  const formRef = useRef(null);
-
-  const [form, setForm] = useState({
+export default function SetupForm() {
+  const [macroScore, setMacroScore] = useState([30, 70]);
+  const [technicalScore, setTechnicalScore] = useState([40, 80]);
+  const [marketScore, setMarketScore] = useState([20, 60]);
+  const [formData, setFormData] = useState({
     name: '',
     symbol: 'BTC',
-    timeframe: '',
-    account_type: '',
-    strategy_type: '',
-    category: '',
-    min_investment: '',
-    min_macro_score: '',
-    max_macro_score: '',
-    min_technical_score: '',
-    max_technical_score: '',
-    min_market_score: '',
-    max_market_score: '',
+    strategyType: '',
+    timeframe: '1D',
     trend: '',
-    score_logic: '',
+    accountType: '',
+    minInvestment: '',
+    scoreLogic: '',
     explanation: '',
-    description: '',
     action: '',
     tags: '',
-    dynamic_investment: false,
+    dynamicInvestment: false,
     favorite: false,
   });
 
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  function handleChange(e) {
+  const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const val = type === 'checkbox' ? checked : value;
-    setForm((prev) => ({ ...prev, [name]: val }));
-  }
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
 
-  function validate() {
-    const valErrors = {};
-    if (!form.name || form.name.trim().length < 3) valErrors.name = 'Naam is verplicht (min. 3 tekens)';
-    if (!form.symbol) valErrors.symbol = 'Symbool is verplicht';
-    if (!form.strategy_type) valErrors.strategy_type = 'Strategietype is verplicht';
-    return valErrors;
-  }
-
-  async function handleSubmit(e) {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const valErrors = validate();
-    if (Object.keys(valErrors).length > 0) {
-      setErrors(valErrors);
-      formRef.current.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const exists = await checkSetupNameExists(form.name.trim());
-      if (exists) {
-        setErrors({ name: 'Deze naam bestaat al' });
-        formRef.current.scrollIntoView({ behavior: 'smooth' });
-        setSubmitting(false);
-        return;
-      }
-
-      const payload = {
-        ...form,
-        name: form.name.trim(),
-        symbol: form.symbol.trim(),
-        min_investment: form.min_investment ? parseFloat(form.min_investment) : null,
-        tags: form.tags ? form.tags.split(',').map((t) => t.trim()) : [],
-      };
-
-      await addSetup(payload);
-      await loadSetups();
-      setSuccess(true);
-      setForm({
-        name: '',
-        symbol: 'BTC',
-        timeframe: '',
-        account_type: '',
-        strategy_type: '',
-        category: '',
-        min_investment: '',
-        min_macro_score: '',
-        max_macro_score: '',
-        min_technical_score: '',
-        max_technical_score: '',
-        min_market_score: '',
-        max_market_score: '',
-        trend: '',
-        score_logic: '',
-        explanation: '',
-        description: '',
-        action: '',
-        tags: '',
-        dynamic_investment: false,
-        favorite: false,
-      });
-      if (onSubmitted) onSubmitted();
-    } catch (err) {
-      console.error(err);
-      alert('Fout bij opslaan van setup.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
+    const payload = {
+      ...formData,
+      min_macro_score: macroScore[0],
+      max_macro_score: macroScore[1],
+      min_technical_score: technicalScore[0],
+      max_technical_score: technicalScore[1],
+      min_market_score: marketScore[0],
+      max_market_score: marketScore[1],
+    };
+    console.log('🔁 Payload:', payload);
+    // TODO: Post to API
+  };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 p-4 max-w-4xl mx-auto">
-      <h3 className="text-xl font-semibold">➕ Nieuwe Trading Setup</h3>
-      {success && <div className="bg-green-100 text-green-800 p-2 rounded">✅ Setup toegevoegd</div>}
+    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-4 space-y-6">
+      <h2 className="text-xl font-bold">+ Nieuwe Setup</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="font-medium">Naam*</label>
-          <input name="name" value={form.name} onChange={handleChange} className="input" />
-          {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
-        </div>
-
-        <div>
-          <label className="font-medium">Symbool*</label>
-          <input name="symbol" value={form.symbol} onChange={handleChange} className="input" />
-        </div>
-
-        <div>
-          <label className="font-medium">Strategie Type*</label>
-          <select name="strategy_type" value={form.strategy_type} onChange={handleChange} className="input">
-            <option value="">Kies...</option>
+      <section>
+        <h3 className="text-lg font-semibold border-b mb-2">📌 Basisgegevens</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <input type="text" name="name" placeholder="Naam*" value={formData.name} onChange={handleChange} required className="input" />
+          <input type="text" name="symbol" placeholder="Symbool*" value={formData.symbol} onChange={handleChange} required className="input" />
+          <select name="strategyType" value={formData.strategyType} onChange={handleChange} required className="input">
+            <option value="">Strategie Type*</option>
             <option value="dca">DCA</option>
-            <option value="manual">Handmatig</option>
-            <option value="trading">Trading</option>
+            <option value="breakout">Breakout</option>
           </select>
-        </div>
-
-        <div>
-          <label className="font-medium">Timeframe</label>
-          <select name="timeframe" value={form.timeframe} onChange={handleChange} className="input">
-            <option value="">-</option>
-            <option value="15m">15m</option>
-            <option value="1H">1H</option>
-            <option value="4H">4H</option>
+          <select name="timeframe" value={formData.timeframe} onChange={handleChange} className="input">
             <option value="1D">1D</option>
+            <option value="4H">4H</option>
             <option value="1W">1W</option>
           </select>
-        </div>
-
-        <div>
-          <label className="font-medium">Categorie</label>
-          <input name="category" value={form.category} onChange={handleChange} className="input" />
-        </div>
-
-        <div>
-          <label className="font-medium">Trend</label>
-          <select name="trend" value={form.trend} onChange={handleChange} className="input">
-            <option value="">-</option>
-            <option value="bullish">Bullish</option>
-            <option value="bearish">Bearish</option>
-            <option value="neutral">Neutraal</option>
+          <select name="trend" value={formData.trend} onChange={handleChange} className="input">
+            <option value="">Trend</option>
+            <option value="Bullish">Bullish</option>
+            <option value="Bearish">Bearish</option>
+            <option value="Range">Range</option>
           </select>
         </div>
+      </section>
 
-        <div>
-          <label className="font-medium">Account Type</label>
-          <input name="account_type" value={form.account_type} onChange={handleChange} className="input" />
+      <section>
+        <h3 className="text-lg font-semibold border-b mb-2">📊 Score Range (0–100)</h3>
+
+        <label className="block font-medium">Macro Score</label>
+        <Slider range min={0} max={100} defaultValue={macroScore} onChange={setMacroScore} className="mb-4" />
+        <label className="block font-medium">Technical Score</label>
+        <Slider range min={0} max={100} defaultValue={technicalScore} onChange={setTechnicalScore} className="mb-4" />
+        <label className="block font-medium">Market Score</label>
+        <Slider range min={0} max={100} defaultValue={marketScore} onChange={setMarketScore} className="mb-4" />
+      </section>
+
+      <section>
+        <h3 className="text-lg font-semibold border-b mb-2">💼 Overig</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <input type="text" name="accountType" placeholder="Account Type" value={formData.accountType} onChange={handleChange} className="input" />
+          <input type="number" name="minInvestment" placeholder="Minimale investering" value={formData.minInvestment} onChange={handleChange} className="input" />
         </div>
+      </section>
 
-        <div>
-          <label className="font-medium">Minimale investering</label>
-          <input name="min_investment" value={form.min_investment} onChange={handleChange} type="number" className="input" />
+      <section>
+        <h3 className="text-lg font-semibold border-b mb-2">🧠 Logica en Uitleg</h3>
+        <textarea name="scoreLogic" placeholder="Score Logica (optioneel)" value={formData.scoreLogic} onChange={handleChange} className="input"></textarea>
+        <textarea name="explanation" placeholder="Toelichting / Uitleg" value={formData.explanation} onChange={handleChange} className="input"></textarea>
+        <textarea name="action" placeholder="Actie / Tradeplan" value={formData.action} onChange={handleChange} className="input"></textarea>
+        <input type="text" name="tags" placeholder="Tags (bijv. swing, breakout)" value={formData.tags} onChange={handleChange} className="input" />
+        <div className="flex gap-4 mt-2">
+          <label><input type="checkbox" name="dynamicInvestment" checked={formData.dynamicInvestment} onChange={handleChange} /> Dynamische investering</label>
+          <label><input type="checkbox" name="favorite" checked={formData.favorite} onChange={handleChange} /> Favoriet</label>
         </div>
+      </section>
 
-        <div className="md:col-span-2 grid grid-cols-3 gap-4">
-          <div>
-            <label>Macro Score (min)</label>
-            <input type="number" name="min_macro_score" value={form.min_macro_score} onChange={handleChange} className="input" />
-          </div>
-          <div>
-            <label>Macro Score (max)</label>
-            <input type="number" name="max_macro_score" value={form.max_macro_score} onChange={handleChange} className="input" />
-          </div>
-          <div>
-            <label>Technical Score (min)</label>
-            <input type="number" name="min_technical_score" value={form.min_technical_score} onChange={handleChange} className="input" />
-          </div>
-          <div>
-            <label>Technical Score (max)</label>
-            <input type="number" name="max_technical_score" value={form.max_technical_score} onChange={handleChange} className="input" />
-          </div>
-          <div>
-            <label>Market Score (min)</label>
-            <input type="number" name="min_market_score" value={form.min_market_score} onChange={handleChange} className="input" />
-          </div>
-          <div>
-            <label>Market Score (max)</label>
-            <input type="number" name="max_market_score" value={form.max_market_score} onChange={handleChange} className="input" />
-          </div>
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="font-medium">Score Logic (optioneel)</label>
-          <textarea name="score_logic" value={form.score_logic} onChange={handleChange} className="input resize-none" rows={2} />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="font-medium">Toelichting / Uitleg</label>
-          <textarea name="explanation" value={form.explanation} onChange={handleChange} className="input resize-none" rows={2} />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="font-medium">Actie / Trade-instructie</label>
-          <textarea name="action" value={form.action} onChange={handleChange} className="input resize-none" rows={2} />
-        </div>
-
-        <div>
-          <label className="font-medium">Tags</label>
-          <input name="tags" value={form.tags} onChange={handleChange} className="input" placeholder="Bijv. swing, breakout" />
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <label className="flex items-center">
-            <input type="checkbox" name="dynamic_investment" checked={form.dynamic_investment} onChange={handleChange} className="mr-2" />
-            Dynamische investering
-          </label>
-          <label className="flex items-center">
-            <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} className="mr-2" />
-            Favoriet
-          </label>
-        </div>
-      </div>
-
-      <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded mt-4">
-        {submitting ? 'Bezig met opslaan...' : '➕ Setup toevoegen'}
-      </button>
+      <button type="submit" className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">💾 Setup toevoegen</button>
     </form>
   );
 }

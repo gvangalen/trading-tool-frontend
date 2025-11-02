@@ -21,11 +21,14 @@ echo "📦 NPM versie: $(npm -v)"
 
 # ✅ 4. Schoonmaak vóór installatie
 echo "🧨 Verwijder node_modules en .next..."
-rm -rf node_modules .next package-lock.json
+rm -rf node_modules .next
 
-# ✅ 5. Installeer dependencies (npm install i.p.v. npm ci voor zekerheid)
-echo "📦 Install dependencies..."
-npm install rc-slider next-transpile-modules || { echo "❌ npm install faalde"; exit 1; }
+# ✅ 5. Installeer dependencies
+echo "📦 Probeer 'npm ci'..."
+if ! npm ci; then
+  echo "⚠️ npm ci faalde, probeer 'npm install'..."
+  npm install || { echo "❌ npm install faalde"; exit 1; }
+fi
 
 # ✅ 6. Build project
 echo "🏗️ Build Next.js project..."

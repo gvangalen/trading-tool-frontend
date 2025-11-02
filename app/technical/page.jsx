@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useScoresData } from '@/hooks/useScoresData';
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
+import TechnicalForm from '@/components/technical/TechnicalForm'; // ✅ toegevoegd
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
   const [activeTab, setActiveTab] = useState('Dag');
 
-  // 🔹 Data voor de tabellen
   const {
     technicalData,
     handleRemove,
@@ -17,7 +17,6 @@ export default function TechnicalPage() {
     error,
   } = useTechnicalData(activeTab);
 
-  // 🔹 Score en advies uit centrale hook
   const { technical, loading: loadingScore } = useScoresData();
 
   const getScoreColor = (score) => {
@@ -37,10 +36,8 @@ export default function TechnicalPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
-      {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">📊 Technische Analyse</h1>
 
-      {/* ✅ Technische Score */}
       <CardWrapper>
         <p className="text-lg font-semibold">
           🧮 Totale Technische Score:{' '}
@@ -56,7 +53,11 @@ export default function TechnicalPage() {
         </p>
       </CardWrapper>
 
-      {/* 🔹 Tabs + Tabel */}
+      {/* ✅ Voeg hier het formulier toe */}
+      <CardWrapper>
+        <TechnicalForm />
+      </CardWrapper>
+
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}

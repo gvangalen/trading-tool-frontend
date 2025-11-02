@@ -1,11 +1,12 @@
 const path = require('path');
+const withTM = require('next-transpile-modules')(['rc-slider']); // ✅ Transpile rc-slider
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 
   experimental: {
-    appDir: true, // ✅ nodig voor gebruik van /app directory (i.p.v. /pages)
+    appDir: true,
   },
 
   webpack: (config, { isServer }) => {
@@ -32,4 +33,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withTM(nextConfig); // ✅ gebruik wrapper

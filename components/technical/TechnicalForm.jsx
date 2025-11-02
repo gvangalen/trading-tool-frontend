@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
+import { getIndicatorNames, addNewRule } from '@/lib/api/technical';
 
 export default function IndicatorRuleForm() {
   const [indicators, setIndicators] = useState([]);
@@ -16,12 +17,20 @@ export default function IndicatorRuleForm() {
     score: 90,
   });
 
+  const [status, setStatus] = useState('');
+
   useEffect(() => {
-    // 🔃 Ophalen van indicatoren uit de backend
-    fetch('/api/indicators')
-      .then((res) => res.json())
-      .then(setIndicators)
-      .catch((err) => console.error('❌ Fout bij ophalen indicatoren:', err));
+    // ✅ Ophalen van beschikbare indicatornamen uit backend
+    async function fetchIndicators() {
+      try {
+        const data = await getIndicatorNames();
+        setIndicators(data);
+      } catch (err) {
+        console.error('❌ Fout bij ophalen indicatoren:', err);
+      }
+    }
+
+    fetchIndicators();
   }, []);
 
   const handleChange = (e) => {
@@ -32,19 +41,36 @@ export default function IndicatorRuleForm() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     const payload = {
       indicator: formData.indicator,
       range_min: range[0],
       range_max: range[1],
-      score: formData.score,
+      score: parseInt(formData.score),
       trend: formData.trend,
       interpretation: formData.interpretation,
       action: formData.action,
     };
-    console.log('📤 Payload:', payload);
-    // TODO: stuur naar API bijv. POST /api/indicator-rules
+
+    try {
+      setStatus('⏳ Regel wordt opgeslagen...');
+      await addNewRule(payload);
+      setStatus('✅ Regel succesvol opgeslagen!');
+      // Reset formulier na succes
+      setFormData({
+        indicator: '',
+        trend: '',
+        interpretation: '',
+        action: '',
+        score: 90,
+      });
+      setRange([0, 30]);
+    } catch (err) {
+      console.error('❌ Fout bij opslaan van regel:', err);
+      setStatus('❌ Fout bij opslaan van regel');
+    }
   };
 
   return (
@@ -69,7 +95,7 @@ export default function IndicatorRuleForm() {
           <option value="">Kies een indicator</option>
           {indicators.map((ind) => (
             <option key={ind.name} value={ind.name}>
-              {ind.display_name}
+              {ind.display_name || ind.name}
             </option>
           ))}
         </select>
@@ -98,8 +124,8 @@ export default function IndicatorRuleForm() {
           onChange={handleChange}
           min={0}
           max={100}
-          className="border p-2 rounded w-full bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
           required
+          className="border p-2 rounded w-full bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
         />
       </section>
 
@@ -135,6 +161,10 @@ export default function IndicatorRuleForm() {
       >
         💾 Regel opslaan
       </button>
+
+      {status && (
+        <p className="mt-4 text-sm text-gray-700 dark:text-gray-300 italic">{status}</p>
+      )}
     </form>
   );
 }

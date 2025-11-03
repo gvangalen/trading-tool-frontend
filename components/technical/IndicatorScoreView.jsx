@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getIndicators, getScoreRulesForIndicator } from '@/lib/api/technical';
+import {
+  getIndicators,
+  getScoreRulesForIndicator,
+  addTechnicalData,
+} from '@/lib/api/technical';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function IndicatorScoreView() {
@@ -10,12 +14,13 @@ export default function IndicatorScoreView() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
   const [allIndicators, setAllIndicators] = useState([]);
+  const [added, setAdded] = useState(false); // ✅ bevestiging
 
   // 🔁 Haal alle indicatornamen op bij laden
   useEffect(() => {
     async function fetchIndicators() {
       try {
-        const res = await getIndicators(); // nieuwe route
+        const res = await getIndicators();
         setAllIndicators(res);
       } catch (error) {
         console.error('❌ Fout bij ophalen indicators:', error);
@@ -43,10 +48,23 @@ export default function IndicatorScoreView() {
     setFilteredIndicators([]);
 
     try {
-      const rules = await getScoreRulesForIndicator(indicator.name); // nieuwe route
+      // 1. Voeg toe aan technische data (dag timeframe + BTCUSDT)
+      await addTechnicalData({
+        symbol: 'BTCUSDT',
+        indicator: indicator.name,
+        timeframe: 'day',
+        timestamp: new Date().toISOString(),
+      });
+
+      // 2. Bevestiging tonen
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+
+      // 3. Haal scoreregels op
+      const rules = await getScoreRulesForIndicator(indicator.name);
       setScoreRules(rules);
     } catch (error) {
-      console.error('❌ Fout bij ophalen scoreregels:', error);
+      console.error('❌ Fout bij selecteren of toevoegen:', error);
     }
   };
 
@@ -81,6 +99,13 @@ export default function IndicatorScoreView() {
         )}
       </div>
 
+      {/* ✅ Feedback toegevoegd */}
+      {added && (
+        <p className="text-green-600 text-sm mb-2">
+          ✅ Toegevoegd aan technische analyse
+        </p>
+      )}
+
       {/* 📊 Scoreregels */}
       {selectedIndicator && scoreRules.length > 0 && (
         <div className="space-y-4">
@@ -101,8 +126,12 @@ export default function IndicatorScoreView() {
             <tbody>
               {scoreRules.map((r, i) => (
                 <tr key={i} className="border-t dark:border-gray-600">
-                  <td className="p-2">{r.range_min} – {r.range_max}</td>
-                  <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">{r.score}</td>
+                  <td className="p-2">
+                    {r.range_min} – {r.range_max}
+                  </td>
+                  <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
+                    {r.score}
+                  </td>
                   <td className="p-2 italic">{r.trend}</td>
                   <td className="p-2">{r.interpretation}</td>
                   <td className="p-2 text-gray-500">{r.action}</td>
@@ -113,7 +142,7 @@ export default function IndicatorScoreView() {
         </div>
       )}
 
-      {/* 🕳️ Placeholder als er geen resultaten zijn */}
+      {/* 🕳️ Geen regels */}
       {selectedIndicator && scoreRules.length === 0 && (
         <p className="text-sm text-gray-500 italic">
           Geen scoreregels gevonden voor deze indicator.

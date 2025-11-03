@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { getIndicators, getScoreRulesForIndicator } from '@/lib/api/technical';
 import CardWrapper from '@/components/ui/CardWrapper';
-import { Input } from '@/components/ui/input';
 
 export default function IndicatorScoreView() {
   const [query, setQuery] = useState('');
@@ -42,6 +41,7 @@ export default function IndicatorScoreView() {
     setSelectedIndicator(indicator);
     setQuery(indicator.display_name);
     setFilteredIndicators([]);
+
     try {
       const rules = await getScoreRulesForIndicator(indicator.name); // nieuwe route
       setScoreRules(rules);
@@ -52,33 +52,42 @@ export default function IndicatorScoreView() {
 
   return (
     <CardWrapper title="🔎 Bekijk Scorelogica">
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Zoek een indicator</label>
-        <Input
+      {/* 🔍 Zoekveld */}
+      <div className="mb-4 relative">
+        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">
+          Zoek een indicator
+        </label>
+        <input
+          type="text"
           placeholder="Typ een naam, zoals RSI..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:text-gray-100"
         />
+
         {filteredIndicators.length > 0 && (
-          <ul className="border rounded shadow mt-2 max-h-48 overflow-y-auto bg-white dark:bg-gray-800">
+          <ul className="absolute z-10 w-full border rounded shadow mt-1 max-h-48 overflow-y-auto bg-white dark:bg-gray-800">
             {filteredIndicators.map((i) => (
               <li
                 key={i.name}
                 onClick={() => handleSelect(i)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
               >
-                {i.display_name} <span className="text-xs text-gray-400">({i.name})</span>
+                {i.display_name}{' '}
+                <span className="text-xs text-gray-400">({i.name})</span>
               </li>
             ))}
           </ul>
         )}
       </div>
 
+      {/* 📊 Scoreregels */}
       {selectedIndicator && scoreRules.length > 0 && (
         <div className="space-y-4">
           <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">
             Scoreregels voor: {selectedIndicator.display_name}
           </h3>
+
           <table className="w-full text-sm border rounded">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-700">
@@ -102,6 +111,13 @@ export default function IndicatorScoreView() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* 🕳️ Placeholder als er geen resultaten zijn */}
+      {selectedIndicator && scoreRules.length === 0 && (
+        <p className="text-sm text-gray-500 italic">
+          Geen scoreregels gevonden voor deze indicator.
+        </p>
       )}
     </CardWrapper>
   );

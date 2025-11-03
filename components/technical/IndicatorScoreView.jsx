@@ -12,18 +12,20 @@ export default function IndicatorScoreView() {
   const [scoreRules, setScoreRules] = useState([]);
   const [allIndicators, setAllIndicators] = useState([]);
 
+  // 🔁 Haal alle indicatornamen op bij laden
   useEffect(() => {
     async function fetchIndicators() {
       try {
-        const res = await getIndicators();
+        const res = await getIndicators(); // nieuwe route
         setAllIndicators(res);
       } catch (error) {
-        console.error('Fout bij ophalen indicators:', error);
+        console.error('❌ Fout bij ophalen indicators:', error);
       }
     }
     fetchIndicators();
   }, []);
 
+  // 🔎 Filter op basis van query
   useEffect(() => {
     if (query.length === 0) {
       setFilteredIndicators([]);
@@ -35,16 +37,16 @@ export default function IndicatorScoreView() {
     setFilteredIndicators(filtered);
   }, [query, allIndicators]);
 
+  // 📊 Wanneer een indicator wordt aangeklikt
   const handleSelect = async (indicator) => {
     setSelectedIndicator(indicator);
     setQuery(indicator.display_name);
     setFilteredIndicators([]);
-
     try {
-      const rules = await getScoreRulesForIndicator(indicator.name);
+      const rules = await getScoreRulesForIndicator(indicator.name); // nieuwe route
       setScoreRules(rules);
     } catch (error) {
-      console.error('Fout bij ophalen scoreregels:', error);
+      console.error('❌ Fout bij ophalen scoreregels:', error);
     }
   };
 
@@ -90,9 +92,7 @@ export default function IndicatorScoreView() {
             <tbody>
               {scoreRules.map((r, i) => (
                 <tr key={i} className="border-t dark:border-gray-600">
-                  <td className="p-2">
-                    {r.range_min} – {r.range_max}
-                  </td>
+                  <td className="p-2">{r.range_min} – {r.range_max}</td>
                   <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">{r.score}</td>
                   <td className="p-2 italic">{r.trend}</td>
                   <td className="p-2">{r.interpretation}</td>

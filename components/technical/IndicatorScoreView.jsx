@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  getIndicators,
+  getIndicatorNames,
   getScoreRulesForIndicator,
   addTechnicalData,
 } from '@/lib/api/technical';
@@ -20,7 +20,7 @@ export default function IndicatorScoreView() {
   useEffect(() => {
     async function fetchIndicators() {
       try {
-        const res = await getIndicators();
+        const res = await getIndicatorNames();
         setAllIndicators(res);
       } catch (error) {
         console.error('❌ Fout bij ophalen indicators:', error);

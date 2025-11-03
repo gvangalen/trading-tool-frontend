@@ -6,9 +6,8 @@ import {
   technicalDataWeek,
   technicalDataMonth,
   technicalDataQuarter,
-  getAllRules,
-  addNewRule,
   getIndicatorNames,
+  getScoreRulesForIndicator,
 } from '@/lib/api/technical';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -18,21 +17,20 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [rules, setRules] = useState([]);
   const [indicatorNames, setIndicatorNames] = useState([]);
+  const [scoreRules, setScoreRules] = useState([]); // 🔹 logica per indicator
 
   useEffect(() => {
     loadData();
-    loadRules();
-    loadIndicatorNames(); // 🔹 Nieuw toegevoegd
+    loadIndicatorNames();
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
 
+  // 📊 Haal technische data op per timeframe
   async function loadData() {
     setLoading(true);
     setError('');
-
     try {
       let data;
       switch (activeTab) {
@@ -65,16 +63,11 @@ export function useTechnicalData(activeTab = 'Dag') {
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      if (activeTab === 'Maand') {
-        const grouped = groupByMonth(enriched);
-        setTechnicalData(grouped);
-      } else if (activeTab === 'Kwartaal') {
-        const grouped = groupByQuarter(enriched);
-        setTechnicalData(grouped);
-      } else {
-        setTechnicalData(enriched);
-      }
+      if (activeTab === 'Maand') setTechnicalData(groupByMonth(enriched));
+      else if (activeTab === 'Kwartaal') setTechnicalData(groupByQuarter(enriched));
+      else setTechnicalData(enriched);
 
+      // ✅ Haal de totale technische score op
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
@@ -82,7 +75,9 @@ export function useTechnicalData(activeTab = 'Dag') {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
         setAdvies(
-          backendScore >= 75 ? '🟢 Bullish' : backendScore <= 25 ? '🔴 Bearish' : '⚖️ Neutraal'
+          backendScore >= 75 ? '🟢 Bullish' :
+          backendScore <= 25 ? '🔴 Bearish' :
+          '⚖️ Neutraal'
         );
       } else {
         updateScore(enriched);
@@ -98,48 +93,39 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  async function loadRules() {
-    try {
-      const data = await getAllRules();
-      setRules(data);
-    } catch (err) {
-      console.error('Fout bij ophalen van regels:', err);
-    }
-  }
-
+  // 📚 Haal indicatornamen op (voor zoekbalk / dropdown)
   async function loadIndicatorNames() {
     try {
       const data = await getIndicatorNames();
       setIndicatorNames(data);
     } catch (err) {
-      console.error('Fout bij ophalen van indicatornamen:', err);
+      console.error('❌ Fout bij ophalen van indicatornamen:', err);
     }
   }
 
-  async function submitRule(rule) {
+  // 🧠 Haal scoreregels op voor één indicator
+  async function loadScoreRules(indicatorName) {
     try {
-      await addNewRule(rule);
-      await loadRules();
+      const rules = await getScoreRulesForIndicator(indicatorName);
+      setScoreRules(rules);
     } catch (err) {
-      console.error('Fout bij opslaan van regel:', err);
+      console.error('❌ Fout bij ophalen scoreregels:', err);
     }
   }
 
+  // 🔢 Bereken gemiddelde score
   function updateScore(data) {
-    let total = 0;
-    let count = 0;
+    let total = 0, count = 0;
     data.forEach((ind) => {
       const s = parseFloat(ind.score);
-      if (!isNaN(s)) {
-        total += s;
-        count++;
-      }
+      if (!isNaN(s)) { total += s; count++; }
     });
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
     setAdvies(avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
 
+  // 📅 Groeperingen
   function groupByMonth(data) {
     const grouped = {};
     for (const item of data) {
@@ -197,8 +183,8 @@ export function useTechnicalData(activeTab = 'Dag') {
     handleRemove,
     loading,
     error,
-    rules,
-    submitRule,
-    indicatorNames, // ✅ dropdown names voor formulier
+    indicatorNames,  // ✅ Voor dropdown/zoekbalk
+    scoreRules,      // ✅ Voor de logicaweergave per indicator
+    loadScoreRules,  // ✅ Functie om regels op te halen na klik
   };
 }

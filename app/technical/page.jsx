@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useScoresData } from '@/hooks/useScoresData';
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
-import TechnicalForm from '@/components/technical/TechnicalForm'; // ✅ toegevoegd
+import IndicatorScoreView from '@/components/technical/IndicatorScoreView'; // ✅ Nieuw component
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
@@ -38,6 +38,7 @@ export default function TechnicalPage() {
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
       <h1 className="text-2xl font-bold">📊 Technische Analyse</h1>
 
+      {/* 📊 Score + advies */}
       <CardWrapper>
         <p className="text-lg font-semibold">
           🧮 Totale Technische Score:{' '}
@@ -53,11 +54,10 @@ export default function TechnicalPage() {
         </p>
       </CardWrapper>
 
-      {/* ✅ Voeg hier het formulier toe */}
-      <CardWrapper>
-        <TechnicalForm />
-      </CardWrapper>
+      {/* 🔍 Scorelogica bekijken */}
+      <IndicatorScoreView />
 
+      {/* 📅 Tabs met technische indicatoren per periode */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}

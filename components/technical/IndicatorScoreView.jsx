@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   getIndicatorNames,
   getScoreRulesForIndicator,
-  technicalDataAdd, // ✅ correcte import
+  technicalDataAdd,
 } from '@/lib/api/technical';
 import CardWrapper from '@/components/ui/CardWrapper';
 
@@ -14,7 +14,7 @@ export default function IndicatorScoreView() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
   const [allIndicators, setAllIndicators] = useState([]);
-  const [added, setAdded] = useState(false); // ✅ bevestiging
+  const [added, setAdded] = useState(false);
 
   // 🔁 Haal alle indicatornamen op bij laden
   useEffect(() => {
@@ -48,20 +48,14 @@ export default function IndicatorScoreView() {
     setFilteredIndicators([]);
 
     try {
-      // 1. Voeg toe aan technische data (dag timeframe + BTCUSDT)
-      await technicalDataAdd({
-        symbol: 'BTCUSDT',
-        indicator: indicator.name,
-        timeframe: 'day',
-        timestamp: new Date().toISOString(),
-        waarde: null, // 🔹 optioneel: geen waarde nodig bij auto-scoring
-      });
+      // ✅ Alleen de naam doorgeven
+      await technicalDataAdd(indicator.name);
 
-      // 2. Bevestiging tonen
+      // ✅ Bevestiging tonen
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
 
-      // 3. Haal scoreregels op
+      // ✅ Scoreregels ophalen
       const rules = await getScoreRulesForIndicator(indicator.name);
       setScoreRules(rules);
     } catch (error) {

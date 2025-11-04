@@ -176,6 +176,24 @@ export function useTechnicalData(activeTab = 'Dag') {
     setTechnicalData(updated);
   }
 
+  // ➕ Voeg nieuwe technische data toe (bijv. RSI automatisch na toevoegen)
+async function addTechnicalData(entry) {
+  try {
+    const res = await fetch('/api/technical_data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+
+    if (!res.ok) throw new Error('Serverfout bij toevoegen technische data');
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('❌ Fout bij addTechnicalData:', err);
+    throw err;
+  }
+}
+
   return {
     technicalData,
     avgScore,
@@ -186,5 +204,6 @@ export function useTechnicalData(activeTab = 'Dag') {
     indicatorNames,  // ✅ Voor dropdown/zoekbalk
     scoreRules,      // ✅ Voor de logicaweergave per indicator
     loadScoreRules,  // ✅ Functie om regels op te halen na klik
+    addTechnicalData,
   };
 }

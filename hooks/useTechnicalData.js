@@ -8,6 +8,7 @@ import {
   technicalDataQuarter,
   getIndicatorNames,
   getScoreRulesForIndicator,
+  technicalDataAdd, // ✅ toegevoegd
 } from '@/lib/api/technical';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -18,7 +19,7 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [indicatorNames, setIndicatorNames] = useState([]);
-  const [scoreRules, setScoreRules] = useState([]); // 🔹 logica per indicator
+  const [scoreRules, setScoreRules] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -113,6 +114,20 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
+  // ➕ Voeg nieuwe technische data toe via API wrapper
+  async function addTechnicalData(entry) {
+    try {
+      // entry: { symbol, indicator, value, timeframe }
+      const result = await technicalDataAdd(entry);
+      console.log('✅ Technische data toegevoegd:', result);
+      await loadData(); // refresh tabel
+      return result;
+    } catch (err) {
+      console.error('❌ Fout bij addTechnicalData (via API wrapper):', err);
+      throw err;
+    }
+  }
+
   // 🔢 Bereken gemiddelde score
   function updateScore(data) {
     let total = 0, count = 0;
@@ -176,24 +191,6 @@ export function useTechnicalData(activeTab = 'Dag') {
     setTechnicalData(updated);
   }
 
-  // ➕ Voeg nieuwe technische data toe (bijv. RSI automatisch na toevoegen)
-async function addTechnicalData(entry) {
-  try {
-    const res = await fetch('/api/technical_data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry),
-    });
-
-    if (!res.ok) throw new Error('Serverfout bij toevoegen technische data');
-    const result = await res.json();
-    return result;
-  } catch (err) {
-    console.error('❌ Fout bij addTechnicalData:', err);
-    throw err;
-  }
-}
-
   return {
     technicalData,
     avgScore,
@@ -201,9 +198,9 @@ async function addTechnicalData(entry) {
     handleRemove,
     loading,
     error,
-    indicatorNames,  // ✅ Voor dropdown/zoekbalk
-    scoreRules,      // ✅ Voor de logicaweergave per indicator
-    loadScoreRules,  // ✅ Functie om regels op te halen na klik
-    addTechnicalData,
+    indicatorNames,  // ✅ voor dropdown/zoekbalk
+    scoreRules,      // ✅ voor logicaweergave
+    loadScoreRules,  // ✅ functie voor scoreregels
+    addTechnicalData, // ✅ nieuwe dynamische toevoegfunctie
   };
 }

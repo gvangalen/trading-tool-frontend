@@ -114,19 +114,19 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  // ➕ Voeg nieuwe technische data toe via API wrapper
-  async function addTechnicalData(entry) {
-    try {
-      // entry: { symbol, indicator, value, timeframe }
-      const result = await technicalDataAdd(entry);
-      console.log('✅ Technische data toegevoegd:', result);
-      await loadData(); // refresh tabel
-      return result;
-    } catch (err) {
-      console.error('❌ Fout bij addTechnicalData (via API wrapper):', err);
-      throw err;
-    }
+
+  // ➕ Voeg nieuwe technische indicator toe (alleen naam)
+async function addTechnicalData(indicatorName) {
+  try {
+    const result = await technicalDataAdd(indicatorName);  // ⬅️ alleen indicatornaam
+    console.log('✅ Indicator toegevoegd aan technische analyse:', result);
+    await loadData(); // Refresh de tabel
+    return result;
+  } catch (err) {
+    console.error('❌ Fout bij addTechnicalData (nieuwe setup):', err);
+    throw err;
   }
+}
 
   // 🔢 Bereken gemiddelde score
   function updateScore(data) {

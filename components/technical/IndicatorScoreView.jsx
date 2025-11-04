@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   getIndicatorNames,
   getScoreRulesForIndicator,
-  addTechnicalData,
+  technicalDataAdd, // ✅ correcte import
 } from '@/lib/api/technical';
 import CardWrapper from '@/components/ui/CardWrapper';
 
@@ -49,11 +49,12 @@ export default function IndicatorScoreView() {
 
     try {
       // 1. Voeg toe aan technische data (dag timeframe + BTCUSDT)
-      await addTechnicalData({
+      await technicalDataAdd({
         symbol: 'BTCUSDT',
         indicator: indicator.name,
         timeframe: 'day',
         timestamp: new Date().toISOString(),
+        waarde: null, // 🔹 optioneel: geen waarde nodig bij auto-scoring
       });
 
       // 2. Bevestiging tonen

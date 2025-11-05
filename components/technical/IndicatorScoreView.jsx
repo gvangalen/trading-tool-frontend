@@ -14,9 +14,8 @@ export default function IndicatorScoreView() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
   const [allIndicators, setAllIndicators] = useState([]);
-  const [addStatus, setAddStatus] = useState(null); // ✅ 'success' | 'already' | 'error'
+  const [added, setAdded] = useState(false);
 
-  // 🔁 Haal alle indicatornamen op bij laden
   useEffect(() => {
     async function fetchIndicators() {
       try {
@@ -29,7 +28,6 @@ export default function IndicatorScoreView() {
     fetchIndicators();
   }, []);
 
-  // 🔎 Filter op basis van zoekbalk
   useEffect(() => {
     if (query.length === 0) {
       setFilteredIndicators([]);
@@ -41,13 +39,11 @@ export default function IndicatorScoreView() {
     setFilteredIndicators(filtered);
   }, [query, allIndicators]);
 
-  // 📊 Wanneer een indicator wordt aangeklikt
   const handleSelect = async (indicator) => {
     setSelectedIndicator(indicator);
-    setQuery(''); // ✅ Leegmaken om dropdown te verwijderen
+    setQuery('');
     setFilteredIndicators([]);
     setScoreRules([]);
-    setAddStatus(null); // reset feedback
 
     try {
       const rules = await getScoreRulesForIndicator(indicator.name);
@@ -57,24 +53,14 @@ export default function IndicatorScoreView() {
     }
   };
 
-  // ➕ Voeg toe aan technische analyse
   const handleAdd = async () => {
     try {
-      const res = await technicalDataAdd(selectedIndicator.name);
-      const msg = res?.message?.toLowerCase() || '';
-
-      if (msg.includes('al actief')) {
-        setAddStatus('already');
-      } else {
-        setAddStatus('success');
-      }
+      await technicalDataAdd(selectedIndicator.name);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
     } catch (error) {
       console.error('❌ Fout bij toevoegen indicator:', error);
-      setAddStatus('error');
     }
-
-    // Reset status na 3 seconden
-    setTimeout(() => setAddStatus(null), 3000);
   };
 
   return (
@@ -108,7 +94,7 @@ export default function IndicatorScoreView() {
         )}
       </div>
 
-      {/* 📊 Scoreregels + Toevoegen */}
+      {/* 📊 Scoreregels */}
       {selectedIndicator && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
@@ -126,44 +112,35 @@ export default function IndicatorScoreView() {
               </tr>
             </thead>
             <tbody>
-              {scoreRules.map((r, i) => (
-                <tr key={i} className="border-t dark:border-gray-600">
-                  <td className="p-2">
-                    {r.range_min} – {r.range_max}
-                  </td>
-                  <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
-                    {r.score}
-                  </td>
-                  <td className="p-2 italic">{r.trend}</td>
-                  <td className="p-2">{r.interpretation}</td>
-                  <td className="p-2 text-gray-500">{r.action}</td>
-                </tr>
-              ))}
+              {[...scoreRules]
+                .sort((a, b) => a.range_min - b.range_min)
+                .map((r, i) => (
+                  <tr key={i} className="border-t dark:border-gray-600">
+                    <td className="p-2">
+                      {r.range_min} – {r.range_max}
+                    </td>
+                    <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
+                      {r.score}
+                    </td>
+                    <td className="p-2 italic">{r.trend}</td>
+                    <td className="p-2">{r.interpretation}</td>
+                    <td className="p-2 text-gray-500">{r.action}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
 
-          {/* ➕ Knop onderaan + feedback */}
-          <div className="pt-2 space-y-1">
+          {/* ➕ Knop onderaan */}
+          <div className="pt-2">
             <button
               onClick={handleAdd}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               ➕ Voeg toe aan technische analyse
             </button>
-
-            {addStatus === 'success' && (
-              <p className="text-green-600 text-sm">
-                ✅ Succesvol toegevoegd aan technische analyse.
-              </p>
-            )}
-            {addStatus === 'already' && (
-              <p className="text-yellow-600 text-sm">
-                ⚠️ Deze indicator is al actief voor deze asset.
-              </p>
-            )}
-            {addStatus === 'error' && (
-              <p className="text-red-600 text-sm">
-                ❌ Er ging iets mis bij het toevoegen. Probeer opnieuw.
+            {added && (
+              <p className="text-green-600 text-sm mt-1">
+                ✅ Succesvol toegevoegd
               </p>
             )}
           </div>

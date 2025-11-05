@@ -6,6 +6,9 @@ import {
   fetchMacroDataByWeek,
   fetchMacroDataByMonth,
   fetchMacroDataByQuarter,
+  getMacroIndicatorNames,
+  getScoreRulesForMacroIndicator,
+  macroDataAdd,
 } from '@/lib/api/macro';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -16,12 +19,18 @@ export function useMacroData(activeTab = 'Dag') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // 🔹 Nieuw: voor ScoreView-component
+  const [indicatorNames, setIndicatorNames] = useState([]);
+  const [scoreRules, setScoreRules] = useState([]);
+
   useEffect(() => {
     loadData();
+    loadIndicatorNames();
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
 
+  // 📊 Haal macro data op per timeframe
   async function loadData() {
     setLoading(true);
     setError('');
@@ -96,6 +105,40 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
+  // 📚 Haal lijst met beschikbare macro-indicatoren op
+  async function loadIndicatorNames() {
+    try {
+      const data = await getMacroIndicatorNames();
+      setIndicatorNames(data);
+    } catch (err) {
+      console.error('❌ Fout bij ophalen macro indicatornamen:', err);
+    }
+  }
+
+  // 🧠 Haal scoreregels op voor een specifieke indicator
+  async function loadScoreRules(indicatorName) {
+    try {
+      const rules = await getScoreRulesForMacroIndicator(indicatorName);
+      setScoreRules(rules);
+    } catch (err) {
+      console.error('❌ Fout bij ophalen scoreregels:', err);
+    }
+  }
+
+  // ➕ Voeg nieuwe macro-indicator toe
+  async function addMacroIndicator(indicatorName) {
+    try {
+      const result = await macroDataAdd(indicatorName);
+      console.log('✅ Indicator toegevoegd aan macro-analyse:', result);
+      await loadData(); // Refresh de tabel
+      return result;
+    } catch (err) {
+      console.error('❌ Fout bij addMacroIndicator:', err);
+      throw err;
+    }
+  }
+
+  // 🔢 Bereken gemiddelde score
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -115,6 +158,7 @@ export function useMacroData(activeTab = 'Dag') {
     );
   }
 
+  // 📅 Groeperingen
   function groupByDay(data) {
     const grouped = {};
     for (const item of data) {
@@ -213,5 +257,9 @@ export function useMacroData(activeTab = 'Dag') {
     loading,
     error,
     getExplanation,
+    indicatorNames,   // ✅ toegevoegd voor ScoreView
+    scoreRules,       // ✅ scoreregels van indicator
+    loadScoreRules,   // ✅ functie voor ophalen scoreregels
+    addMacroIndicator // ✅ toevoegen nieuwe indicator
   };
 }

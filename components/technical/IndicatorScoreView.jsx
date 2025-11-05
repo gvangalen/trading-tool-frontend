@@ -7,6 +7,7 @@ import {
   technicalDataAdd,
 } from '@/lib/api/technical';
 import CardWrapper from '@/components/ui/CardWrapper';
+import toast from 'react-hot-toast';
 
 export default function IndicatorScoreView() {
   const [query, setQuery] = useState('');
@@ -14,7 +15,6 @@ export default function IndicatorScoreView() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
   const [allIndicators, setAllIndicators] = useState([]);
-  const [added, setAdded] = useState(false);
 
   useEffect(() => {
     async function fetchIndicators() {
@@ -55,11 +55,21 @@ export default function IndicatorScoreView() {
 
   const handleAdd = async () => {
     try {
-      await technicalDataAdd(selectedIndicator.name);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
+      const res = await technicalDataAdd(selectedIndicator.name);
+
+      // 🧠 Check backend-response voor melding
+      const msg = res?.message?.toLowerCase() || '';
+      if (msg.includes('al actief')) {
+        toast('⚠️ Deze indicator is al actief voor deze asset.', {
+          icon: '⚠️',
+          style: { background: '#fff7e6', color: '#b26b00' },
+        });
+      } else {
+        toast.success('✅ Indicator succesvol toegevoegd aan technische analyse.');
+      }
     } catch (error) {
       console.error('❌ Fout bij toevoegen indicator:', error);
+      toast.error('❌ Er ging iets mis bij het toevoegen. Probeer opnieuw.');
     }
   };
 
@@ -136,11 +146,6 @@ export default function IndicatorScoreView() {
             >
               ➕ Voeg toe aan technische analyse
             </button>
-            {added && (
-              <p className="text-green-600 text-sm mt-1">
-                ✅ Succesvol toegevoegd
-              </p>
-            )}
           </div>
         </div>
       )}

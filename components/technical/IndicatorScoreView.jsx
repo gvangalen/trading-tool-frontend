@@ -7,7 +7,6 @@ import {
   technicalDataAdd,
 } from '@/lib/api/technical';
 import CardWrapper from '@/components/ui/CardWrapper';
-import toast from 'react-hot-toast';
 
 export default function IndicatorScoreView() {
   const [query, setQuery] = useState('');
@@ -15,7 +14,9 @@ export default function IndicatorScoreView() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
   const [allIndicators, setAllIndicators] = useState([]);
+  const [addStatus, setAddStatus] = useState(null); // ✅ 'success' | 'already' | 'error'
 
+  // 🔁 Haal alle indicatornamen op bij laden
   useEffect(() => {
     async function fetchIndicators() {
       try {
@@ -28,6 +29,7 @@ export default function IndicatorScoreView() {
     fetchIndicators();
   }, []);
 
+  // 🔎 Filter op basis van zoekbalk
   useEffect(() => {
     if (query.length === 0) {
       setFilteredIndicators([]);
@@ -39,11 +41,13 @@ export default function IndicatorScoreView() {
     setFilteredIndicators(filtered);
   }, [query, allIndicators]);
 
+  // 📊 Wanneer een indicator wordt aangeklikt
   const handleSelect = async (indicator) => {
     setSelectedIndicator(indicator);
-    setQuery(''); // ✅ Leeg maken om dropdown te verwijderen
+    setQuery(''); // ✅ Leegmaken om dropdown te verwijderen
     setFilteredIndicators([]);
     setScoreRules([]);
+    setAddStatus(null); // reset feedback
 
     try {
       const rules = await getScoreRulesForIndicator(indicator.name);
@@ -53,24 +57,24 @@ export default function IndicatorScoreView() {
     }
   };
 
+  // ➕ Voeg toe aan technische analyse
   const handleAdd = async () => {
     try {
       const res = await technicalDataAdd(selectedIndicator.name);
-
-      // 🧠 Check backend-response voor melding
       const msg = res?.message?.toLowerCase() || '';
+
       if (msg.includes('al actief')) {
-        toast('⚠️ Deze indicator is al actief voor deze asset.', {
-          icon: '⚠️',
-          style: { background: '#fff7e6', color: '#b26b00' },
-        });
+        setAddStatus('already');
       } else {
-        toast.success('✅ Indicator succesvol toegevoegd aan technische analyse.');
+        setAddStatus('success');
       }
     } catch (error) {
       console.error('❌ Fout bij toevoegen indicator:', error);
-      toast.error('❌ Er ging iets mis bij het toevoegen. Probeer opnieuw.');
+      setAddStatus('error');
     }
+
+    // Reset status na 3 seconden
+    setTimeout(() => setAddStatus(null), 3000);
   };
 
   return (
@@ -138,14 +142,30 @@ export default function IndicatorScoreView() {
             </tbody>
           </table>
 
-          {/* ➕ Knop onderaan */}
-          <div className="pt-2">
+          {/* ➕ Knop onderaan + feedback */}
+          <div className="pt-2 space-y-1">
             <button
               onClick={handleAdd}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               ➕ Voeg toe aan technische analyse
             </button>
+
+            {addStatus === 'success' && (
+              <p className="text-green-600 text-sm">
+                ✅ Succesvol toegevoegd aan technische analyse.
+              </p>
+            )}
+            {addStatus === 'already' && (
+              <p className="text-yellow-600 text-sm">
+                ⚠️ Deze indicator is al actief voor deze asset.
+              </p>
+            )}
+            {addStatus === 'error' && (
+              <p className="text-red-600 text-sm">
+                ❌ Er ging iets mis bij het toevoegen. Probeer opnieuw.
+              </p>
+            )}
           </div>
         </div>
       )}

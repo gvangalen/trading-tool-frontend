@@ -16,7 +16,6 @@ export default function IndicatorScoreView() {
   const [allIndicators, setAllIndicators] = useState([]);
   const [added, setAdded] = useState(false);
 
-  // 🔁 Haal alle indicatornamen op bij laden
   useEffect(() => {
     async function fetchIndicators() {
       try {
@@ -29,7 +28,6 @@ export default function IndicatorScoreView() {
     fetchIndicators();
   }, []);
 
-  // 🔎 Filter op basis van query
   useEffect(() => {
     if (query.length === 0) {
       setFilteredIndicators([]);
@@ -41,25 +39,27 @@ export default function IndicatorScoreView() {
     setFilteredIndicators(filtered);
   }, [query, allIndicators]);
 
-  // 📊 Wanneer een indicator wordt aangeklikt
   const handleSelect = async (indicator) => {
     setSelectedIndicator(indicator);
     setQuery(indicator.display_name);
     setFilteredIndicators([]);
+    setScoreRules([]);
 
     try {
-      // ✅ Alleen de naam doorgeven
-      await technicalDataAdd(indicator.name);
-
-      // ✅ Bevestiging tonen
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
-
-      // ✅ Scoreregels ophalen
       const rules = await getScoreRulesForIndicator(indicator.name);
       setScoreRules(rules);
     } catch (error) {
-      console.error('❌ Fout bij selecteren of toevoegen:', error);
+      console.error('❌ Fout bij ophalen scoreregels:', error);
+    }
+  };
+
+  const handleAdd = async () => {
+    try {
+      await technicalDataAdd(selectedIndicator.name);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (error) {
+      console.error('❌ Fout bij toevoegen indicator:', error);
     }
   };
 
@@ -94,11 +94,21 @@ export default function IndicatorScoreView() {
         )}
       </div>
 
-      {/* ✅ Feedback toegevoegd */}
-      {added && (
-        <p className="text-green-600 text-sm mb-2">
-          ✅ Toegevoegd aan technische analyse
-        </p>
+      {/* ✅ Actieknop + Feedback */}
+      {selectedIndicator && (
+        <div className="mb-4 space-y-2">
+          <button
+            onClick={handleAdd}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            ➕ Voeg toe aan technische analyse
+          </button>
+          {added && (
+            <p className="text-green-600 text-sm">
+              ✅ Succesvol toegevoegd!
+            </p>
+          )}
+        </div>
       )}
 
       {/* 📊 Scoreregels */}

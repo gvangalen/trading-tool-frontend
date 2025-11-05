@@ -41,7 +41,7 @@ export default function IndicatorScoreView() {
 
   const handleSelect = async (indicator) => {
     setSelectedIndicator(indicator);
-    setQuery(indicator.display_name);
+    setQuery(''); // ✅ Leeg maken om dropdown te verwijderen
     setFilteredIndicators([]);
     setScoreRules([]);
 
@@ -66,7 +66,7 @@ export default function IndicatorScoreView() {
   return (
     <CardWrapper title="🔎 Bekijk Scorelogica">
       {/* 🔍 Zoekveld */}
-      <div className="mb-4 relative">
+      <div className="mb-6 relative">
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">
           Zoek een indicator
         </label>
@@ -94,27 +94,10 @@ export default function IndicatorScoreView() {
         )}
       </div>
 
-      {/* ✅ Actieknop + Feedback */}
+      {/* 📊 Scoreregels + Toevoegen */}
       {selectedIndicator && (
-        <div className="mb-4 space-y-2">
-          <button
-            onClick={handleAdd}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            ➕ Voeg toe aan technische analyse
-          </button>
-          {added && (
-            <p className="text-green-600 text-sm">
-              ✅ Succesvol toegevoegd!
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* 📊 Scoreregels */}
-      {selectedIndicator && scoreRules.length > 0 && (
         <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
             Scoreregels voor: {selectedIndicator.display_name}
           </h3>
 
@@ -144,6 +127,21 @@ export default function IndicatorScoreView() {
               ))}
             </tbody>
           </table>
+
+          {/* ➕ Knop onderaan */}
+          <div className="pt-2">
+            <button
+              onClick={handleAdd}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              ➕ Voeg toe aan technische analyse
+            </button>
+            {added && (
+              <p className="text-green-600 text-sm mt-1">
+                ✅ Succesvol toegevoegd
+              </p>
+            )}
+          </div>
         </div>
       )}
 

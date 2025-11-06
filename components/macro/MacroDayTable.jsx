@@ -24,39 +24,38 @@ export default function MacroDayTable({
     return 'text-yellow-600';
   };
 
-  // 🗑️ Verwijder één macro-indicator (met bevestiging)
-  const handleDelete = async (indicator) => {
-    if (!indicator) return;
+  // 🗑️ Verwijder één macro-indicator (zelfde logica als technical)
+  const handleDelete = async (name) => {
+    if (!name) return;
 
     const confirmDelete = window.confirm(
-      `Weet je zeker dat je '${indicator}' wilt verwijderen?`
+      `Weet je zeker dat je '${name}' wilt verwijderen?`
     );
     if (!confirmDelete) return;
 
     try {
-      const res = await deleteMacroIndicator(indicator);
+      const res = await deleteMacroIndicator(name);
       console.log('✅ [MacroDayTable] Verwijderd:', res);
 
       // 🔄 Update lokale staat
-      const updated = localData.filter((i) => i.indicator !== indicator);
+      const updated = localData.filter((i) => i.name !== name);
       setLocalData(updated);
-      onRemove?.(indicator);
+      onRemove?.(name);
 
-      // ✅ Feedback aan gebruiker
-      window.alert(`✅ Indicator '${indicator}' succesvol verwijderd.`);
+      // ✅ Visuele feedback (zelfde als bij technical)
+      window.alert(`✅ Indicator '${name}' succesvol verwijderd.`);
     } catch (err) {
       console.error('❌ [MacroDayTable] Fout bij verwijderen:', err);
-      window.alert(`❌ Verwijderen van '${indicator}' mislukt.`);
+      window.alert(`❌ Verwijderen van '${name}' mislukt.`);
     }
   };
 
-  // 🧠 Geen data fallback
+  // 🧠 Geen data fallback (zelfde layout als technical)
   if (!Array.isArray(localData) || localData.length === 0) {
     return (
       <tr>
         <td colSpan={6} className="p-6 text-center text-gray-500">
-          ⚠️ Geen macro-indicatoren actief.
-          <br />
+          ⚠️ Geen macro-indicatoren actief.<br />
           ➕ Voeg een indicator toe om te beginnen.
         </td>
       </tr>
@@ -68,32 +67,29 @@ export default function MacroDayTable({
       {/* 📋 Indicator-rijen */}
       {localData.map((item, index) => {
         const {
-          indicator = '–',
-          waarde = '–',
+          name = '–',
+          value = '–',
           score = null,
-          advies = item.advies || item.action || '–',
-          uitleg = item.uitleg || item.interpretatie || 'Geen uitleg beschikbaar',
+          action = '–',
+          interpretation = 'Geen uitleg beschikbaar',
         } = item;
 
         return (
-          <tr
-            key={`indicator-${indicator}-${index}`}
-            className="border-t dark:border-gray-700"
-          >
-            <td className="p-2 font-medium" title={getExplanation?.(indicator)}>
-              {indicator}
+          <tr key={`macro-${name}-${index}`} className="border-t dark:border-gray-700">
+            <td className="p-2 font-medium" title={getExplanation?.(name)}>
+              {name}
             </td>
-            <td className="p-2 text-center">{waarde}</td>
+            <td className="p-2 text-center">{value}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
               {score !== null ? score : '–'}
             </td>
-            <td className="p-2">{advies}</td>
-            <td className="p-2">{uitleg}</td>
+            <td className="p-2 text-center">{action}</td>
+            <td className="p-2">{interpretation}</td>
             <td className="p-2 text-center">
               <button
-                onClick={() => handleDelete(indicator)}
+                onClick={() => handleDelete(name)}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                title={`Verwijder ${indicator}`}
+                title={`Verwijder ${name}`}
               >
                 ❌
               </button>

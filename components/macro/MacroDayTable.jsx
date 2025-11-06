@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { toast } from 'react-hot-toast'; // ✅ Toasts toegevoegd
 
 export default function MacroDayTable({
   data = [],
-  onRemove,
+  onRemove,          // => verwijdert indicator via hook
   showDebug = false,
   getExplanation,
 }) {
@@ -32,40 +33,57 @@ export default function MacroDayTable({
     );
   }
 
+  // 🗑️ Verwijderactie met confirm & toast
+  const handleDeleteClick = async (name) => {
+    if (!name) return;
+    const confirm = window.confirm(`Weet je zeker dat je '${name}' wilt verwijderen?`);
+    if (!confirm) {
+      toast('❎ Verwijderen geannuleerd');
+      return;
+    }
+
+    toast.loading(`Verwijderen van '${name}'...`);
+    try {
+      await onRemove?.(name);
+      toast.dismiss();
+      toast.success(`✅ '${name}' succesvol verwijderd.`);
+    } catch (err) {
+      console.error('❌ Fout bij verwijderen:', err);
+      toast.dismiss();
+      toast.error(`❌ Verwijderen van '${name}' mislukt.`);
+    }
+  };
+
   return (
     <>
-      {/* 📋 Indicator-rijen */}
       {data.map((item, index) => {
         const {
-          indicator = '–',
+          name = item.indicator || '–',
           waarde = '–',
           score = null,
           advies = item.advies || item.action || '–',
-          uitleg = item.uitleg || item.interpretatie || 'Geen uitleg beschikbaar',
-          symbol,
+          uitleg = item.uitleg || item.interpretation || 'Geen uitleg beschikbaar',
         } = item;
 
         return (
           <tr
-            key={symbol || `row-${index}`}
-            className="border-t dark:border-gray-700"
+            key={name || `row-${index}`}
+            className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
-            <td className="p-2 font-medium" title={getExplanation?.(indicator)}>
-              {indicator}
+            <td className="p-2 font-medium" title={getExplanation?.(name)}>
+              {name}
             </td>
             <td className="p-2 text-center">{waarde}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
               {score !== null ? score : '–'}
             </td>
-            <td className="p-2">{advies}</td>
+            <td className="p-2 text-center">{advies}</td>
             <td className="p-2">{uitleg}</td>
             <td className="p-2 text-center">
               <button
-                onClick={() => {
-                  console.log('🗑️ Removing:', symbol || `item-${index}`);
-                  onRemove?.(symbol || `item-${index}`);
-                }}
-                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={() => handleDeleteClick(name)}
+                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                title="Verwijder deze macro-indicator"
               >
                 ❌
               </button>
@@ -74,7 +92,6 @@ export default function MacroDayTable({
         );
       })}
 
-      {/* 🧪 Debugmodus */}
       {showDebug && (
         <tr>
           <td colSpan={6}>

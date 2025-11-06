@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
-import { deleteTechnicalIndicator } from '@/lib/api/technical'; // ✅ import toegevoegd
+import { useEffect, useState } from 'react';
+import { deleteTechnicalIndicator } from '@/lib/api/technical';
 
 export default function TechnicalDayTable({
   data = [],
   onRemove,
   showDebug = false,
 }) {
+  const [localData, setLocalData] = useState(data);
+
   useEffect(() => {
-    console.log('📊 [TechnicalDayTable] received data:', data);
+    setLocalData(data);
   }, [data]);
 
   // 🎨 Scorekleur bepalen
@@ -20,17 +22,6 @@ export default function TechnicalDayTable({
     if (s <= 40) return 'text-red-600';
     return 'text-yellow-600';
   };
-
-  // 🧠 Geen data fallback
-  if (!Array.isArray(data) || data.length === 0) {
-    return (
-      <tr>
-        <td colSpan={6} className="p-4 text-center text-gray-500">
-          ⚠️ Geen technische dagdata beschikbaar.
-        </td>
-      </tr>
-    );
-  }
 
   // 🗑️ Verwijder één indicator (met bevestiging)
   const handleDelete = async (indicator) => {
@@ -44,18 +35,36 @@ export default function TechnicalDayTable({
     try {
       const res = await deleteTechnicalIndicator(indicator);
       console.log('✅ [TechnicalDayTable] Verwijderd:', res);
-      alert(`✅ Indicator '${indicator}' succesvol verwijderd.`);
+
+      // 🔄 Update lokale staat
+      const updated = localData.filter((i) => i.indicator !== indicator);
+      setLocalData(updated);
       onRemove?.(indicator);
+
+      // ✅ Visuele melding
+      window.alert(`✅ Indicator '${indicator}' succesvol verwijderd.`);
+
     } catch (err) {
       console.error('❌ [TechnicalDayTable] Fout bij verwijderen:', err);
-      alert(`❌ Verwijderen van '${indicator}' mislukt.`);
+      window.alert(`❌ Verwijderen van '${indicator}' mislukt.`);
     }
   };
 
+  // 🧠 Geen data fallback (live na verwijderen)
+  if (!Array.isArray(localData) || localData.length === 0) {
+    return (
+      <tr>
+        <td colSpan={6} className="p-6 text-center text-gray-500">
+          ⚠️ Geen technische indicatoren actief.<br />
+          ➕ Voeg een indicator toe om te beginnen.
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <>
-      {/* 📋 Indicator-rijen */}
-      {data.map((item, index) => {
+      {localData.map((item, index) => {
         const {
           indicator = '–',
           waarde = '–',
@@ -91,7 +100,7 @@ export default function TechnicalDayTable({
         <tr>
           <td colSpan={6}>
             <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-64 overflow-auto">
-              {JSON.stringify(data, null, 2)}
+              {JSON.stringify(localData, null, 2)}
             </pre>
           </td>
         </tr>

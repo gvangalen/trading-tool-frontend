@@ -9,10 +9,16 @@ export default function MacroDayTable({
   showDebug = false,
   getExplanation,
 }) {
-  const [localData, setLocalData] = useState(data);
+  // ✅ Veilige initiële state
+  const [localData, setLocalData] = useState(Array.isArray(data) ? data : []);
 
   useEffect(() => {
-    setLocalData(data);
+    if (!Array.isArray(data)) {
+      console.error('❌ Ongeldige macro data ontvangen:', data);
+      setLocalData([]);
+    } else {
+      setLocalData(data);
+    }
   }, [data]);
 
   // 🎨 Scorekleur bepalen

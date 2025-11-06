@@ -16,6 +16,7 @@ export default function IndicatorScoreView() {
   const [allIndicators, setAllIndicators] = useState([]);
   const [added, setAdded] = useState(false);
 
+  // 📡 Alle technische indicatoren ophalen (bij eerste render)
   useEffect(() => {
     async function fetchIndicators() {
       try {
@@ -28,6 +29,7 @@ export default function IndicatorScoreView() {
     fetchIndicators();
   }, []);
 
+  // 🔎 Live filter tijdens typen
   useEffect(() => {
     if (query.length === 0) {
       setFilteredIndicators([]);
@@ -39,6 +41,7 @@ export default function IndicatorScoreView() {
     setFilteredIndicators(filtered);
   }, [query, allIndicators]);
 
+  // 📊 Scoreregels ophalen bij selectie
   const handleSelect = async (indicator) => {
     setSelectedIndicator(indicator);
     setQuery('');
@@ -53,13 +56,22 @@ export default function IndicatorScoreView() {
     }
   };
 
+  // ➕ Toevoegen aan technische analyse (veilig)
   const handleAdd = async () => {
+    if (!selectedIndicator || !selectedIndicator.name) {
+      alert('⚠️ Selecteer eerst een indicator voordat je deze toevoegt.');
+      return;
+    }
+
     try {
+      console.log(`📤 Voeg toe aan technische analyse: ${selectedIndicator.name}`);
       await technicalDataAdd(selectedIndicator.name);
+
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (error) {
       console.error('❌ Fout bij toevoegen indicator:', error);
+      alert('❌ Toevoegen mislukt, controleer de console voor details.');
     }
   };
 
@@ -75,9 +87,11 @@ export default function IndicatorScoreView() {
           placeholder="Typ een naam, zoals RSI..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          autoComplete="off"
           className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:text-gray-100"
         />
 
+        {/* 📋 Suggestielijst */}
         {filteredIndicators.length > 0 && (
           <ul className="absolute z-10 w-full border rounded shadow mt-1 max-h-48 overflow-y-auto bg-white dark:bg-gray-800">
             {filteredIndicators.map((i) => (
@@ -94,41 +108,47 @@ export default function IndicatorScoreView() {
         )}
       </div>
 
-      {/* 📊 Scoreregels */}
+      {/* 📈 Scoreregels */}
       {selectedIndicator && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
             Scoreregels voor: {selectedIndicator.display_name}
           </h3>
 
-          <table className="w-full text-sm border rounded">
-            <thead>
-              <tr className="bg-gray-100 dark:bg-gray-700">
-                <th className="p-2 text-left">Range</th>
-                <th className="p-2 text-left">Score</th>
-                <th className="p-2 text-left">Trend</th>
-                <th className="p-2 text-left">Interpretatie</th>
-                <th className="p-2 text-left">Actie</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...scoreRules]
-                .sort((a, b) => a.range_min - b.range_min)
-                .map((r, i) => (
-                  <tr key={i} className="border-t dark:border-gray-600">
-                    <td className="p-2">
-                      {r.range_min} – {r.range_max}
-                    </td>
-                    <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
-                      {r.score}
-                    </td>
-                    <td className="p-2 italic">{r.trend}</td>
-                    <td className="p-2">{r.interpretation}</td>
-                    <td className="p-2 text-gray-500">{r.action}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          {scoreRules.length > 0 ? (
+            <table className="w-full text-sm border rounded">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  <th className="p-2 text-left">Range</th>
+                  <th className="p-2 text-left">Score</th>
+                  <th className="p-2 text-left">Trend</th>
+                  <th className="p-2 text-left">Interpretatie</th>
+                  <th className="p-2 text-left">Actie</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...scoreRules]
+                  .sort((a, b) => a.range_min - b.range_min)
+                  .map((r, i) => (
+                    <tr key={i} className="border-t dark:border-gray-600">
+                      <td className="p-2">
+                        {r.range_min} – {r.range_max}
+                      </td>
+                      <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
+                        {r.score}
+                      </td>
+                      <td className="p-2 italic">{r.trend}</td>
+                      <td className="p-2">{r.interpretation}</td>
+                      <td className="p-2 text-gray-500">{r.action}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-gray-500 italic">
+              Geen scoreregels gevonden voor deze indicator.
+            </p>
+          )}
 
           {/* ➕ Knop onderaan */}
           <div className="pt-2">
@@ -140,17 +160,17 @@ export default function IndicatorScoreView() {
             </button>
             {added && (
               <p className="text-green-600 text-sm mt-1">
-                ✅ Succesvol toegevoegd
+                ✅ Indicator succesvol toegevoegd
               </p>
             )}
           </div>
         </div>
       )}
 
-      {/* 🕳️ Geen regels */}
-      {selectedIndicator && scoreRules.length === 0 && (
+      {/* 🕳️ Placeholder als niets geselecteerd is */}
+      {!selectedIndicator && (
         <p className="text-sm text-gray-500 italic">
-          Geen scoreregels gevonden voor deze indicator.
+          Typ en selecteer een indicator om de scoreregels te bekijken.
         </p>
       )}
     </CardWrapper>

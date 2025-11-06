@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { deleteTechnicalIndicator } from '@/lib/api/technical'; // ✅ import toegevoegd
 
 export default function TechnicalDayTable({
   data = [],
@@ -31,6 +32,26 @@ export default function TechnicalDayTable({
     );
   }
 
+  // 🗑️ Verwijder één indicator (met bevestiging)
+  const handleDelete = async (indicator) => {
+    if (!indicator) return;
+
+    const confirmDelete = window.confirm(
+      `Weet je zeker dat je '${indicator}' wilt verwijderen?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await deleteTechnicalIndicator(indicator);
+      console.log('✅ [TechnicalDayTable] Verwijderd:', res);
+      alert(`✅ Indicator '${indicator}' succesvol verwijderd.`);
+      onRemove?.(indicator);
+    } catch (err) {
+      console.error('❌ [TechnicalDayTable] Fout bij verwijderen:', err);
+      alert(`❌ Verwijderen van '${indicator}' mislukt.`);
+    }
+  };
+
   return (
     <>
       {/* 📋 Indicator-rijen */}
@@ -41,11 +62,10 @@ export default function TechnicalDayTable({
           score = null,
           advies = '–',
           uitleg = '–',
-          symbol,
         } = item;
 
         return (
-          <tr key={symbol || `row-${index}`} className="border-t dark:border-gray-700">
+          <tr key={`indicator-${indicator}-${index}`} className="border-t dark:border-gray-700">
             <td className="p-2 font-medium">{indicator}</td>
             <td className="p-2 text-center">{waarde}</td>
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
@@ -55,11 +75,9 @@ export default function TechnicalDayTable({
             <td className="p-2">{uitleg}</td>
             <td className="p-2 text-center">
               <button
-                onClick={() => {
-                  console.log('🗑️ Removing:', symbol || `item-${index}`);
-                  onRemove?.(symbol || `item-${index}`);
-                }}
+                onClick={() => handleDelete(indicator)}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                title={`Verwijder ${indicator}`}
               >
                 ❌
               </button>

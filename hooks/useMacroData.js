@@ -9,6 +9,7 @@ import {
   getMacroIndicatorNames,
   getScoreRulesForMacroIndicator,
   macroDataAdd,
+  deleteMacroIndicator, // ✅ toegevoegd
 } from '@/lib/api/macro';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -18,8 +19,6 @@ export function useMacroData(activeTab = 'Dag') {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // 🔹 Nieuw: voor ScoreView-component
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
@@ -30,7 +29,7 @@ export function useMacroData(activeTab = 'Dag') {
     return () => clearInterval(interval);
   }, [activeTab]);
 
-  // 📊 Haal macro data op per timeframe
+  // 📊 Haal macrodata op per timeframe
   async function loadData() {
     setLoading(true);
     setError('');
@@ -57,26 +56,20 @@ export function useMacroData(activeTab = 'Dag') {
       if (!Array.isArray(data)) throw new Error('Macrodata is geen lijst');
 
       const enriched = data.map((item) => ({
-        indicator: item.indicator || item.name || '–',
+        name: item.name || item.indicator || '–',
         waarde: item.waarde ?? item.value ?? '–',
         score: item.score ?? null,
         trend: item.trend ?? null,
         interpretation: item.interpretation ?? null,
         action: item.action ?? null,
-        symbol: item.symbol,
         timestamp: item.timestamp ?? null,
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      if (activeTab === 'Week') {
-        setMacroData(groupByDay(enriched));
-      } else if (activeTab === 'Maand') {
-        setMacroData(groupByMonth(enriched));
-      } else if (activeTab === 'Kwartaal') {
-        setMacroData(groupByQuarter(enriched));
-      } else {
-        setMacroData(enriched);
-      }
+      if (activeTab === 'Week') setMacroData(groupByDay(enriched));
+      else if (activeTab === 'Maand') setMacroData(groupByMonth(enriched));
+      else if (activeTab === 'Kwartaal') setMacroData(groupByQuarter(enriched));
+      else setMacroData(enriched);
 
       const scores = await getDailyScores();
       const backendScore = scores?.macro_score ?? null;
@@ -85,11 +78,9 @@ export function useMacroData(activeTab = 'Dag') {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
         setAdvies(
-          backendScore >= 75
-            ? '🟢 Bullish'
-            : backendScore <= 25
-            ? '🔴 Bearish'
-            : '⚖️ Neutraal'
+          backendScore >= 75 ? '🟢 Bullish' :
+          backendScore <= 25 ? '🔴 Bearish' :
+          '⚖️ Neutraal'
         );
       } else {
         updateScore(enriched);
@@ -130,7 +121,7 @@ export function useMacroData(activeTab = 'Dag') {
     try {
       const result = await macroDataAdd(indicatorName);
       console.log('✅ Indicator toegevoegd aan macro-analyse:', result);
-      await loadData(); // Refresh de tabel
+      await loadData(); // Refresh tabel
       return result;
     } catch (err) {
       console.error('❌ Fout bij addMacroIndicator:', err);
@@ -138,24 +129,33 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
+  // 🗑️ Verwijder macro-indicator op basis van naam
+  async function removeMacroIndicator(indicatorName) {
+    if (!indicatorName) return;
+    const confirmDelete = window.confirm(`Weet je zeker dat je '${indicatorName}' wilt verwijderen?`);
+    if (!confirmDelete) return;
+
+    try {
+      const res = await deleteMacroIndicator(indicatorName);
+      console.log('✅ Indicator verwijderd:', res);
+      alert(`✅ Indicator '${indicatorName}' succesvol verwijderd.`);
+      setMacroData((prev) => prev.filter((item) => item.name !== indicatorName));
+    } catch (err) {
+      console.error('❌ Fout bij verwijderen van indicator:', err);
+      alert(`❌ Verwijderen van '${indicatorName}' mislukt.`);
+    }
+  }
+
   // 🔢 Bereken gemiddelde score
   function updateScore(data) {
-    let total = 0;
-    let count = 0;
-
+    let total = 0, count = 0;
     data.forEach((ind) => {
       const s = parseFloat(ind.score);
-      if (!isNaN(s)) {
-        total += s;
-        count++;
-      }
+      if (!isNaN(s)) { total += s; count++; }
     });
-
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
-    setAdvies(
-      avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal'
-    );
+    setAdvies(avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal');
   }
 
   // 📅 Groeperingen
@@ -230,6 +230,7 @@ export function useMacroData(activeTab = 'Dag') {
     return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
   }
 
+  // 🔍 Extra uitleg per indicator
   function getExplanation(name) {
     const uitleg = {
       fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
@@ -244,22 +245,17 @@ export function useMacroData(activeTab = 'Dag') {
     return uitleg[name] || "Geen uitleg beschikbaar.";
   }
 
-  function handleRemove(symbol) {
-    const updated = macroData.filter((item) => item.symbol !== symbol);
-    setMacroData(updated);
-  }
-
   return {
     macroData,
     avgScore,
     advies,
-    handleRemove,
     loading,
     error,
+    indicatorNames,
+    scoreRules,
     getExplanation,
-    indicatorNames,   // ✅ toegevoegd voor ScoreView
-    scoreRules,       // ✅ scoreregels van indicator
-    loadScoreRules,   // ✅ functie voor ophalen scoreregels
-    addMacroIndicator // ✅ toevoegen nieuwe indicator
+    loadScoreRules,
+    addMacroIndicator,
+    removeMacroIndicator, // ✅ nieuwe deletefunctie
   };
 }

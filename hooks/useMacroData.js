@@ -56,7 +56,7 @@ export function useMacroData(activeTab = 'Dag') {
       if (!Array.isArray(data)) throw new Error('Macrodata is geen lijst');
 
       const enriched = data.map((item) => ({
-        name: item.name || item.indicator || '–',
+        name: item.name ?? item.indicator ?? '–',
         waarde: item.waarde ?? item.value ?? '–',
         score: item.score ?? null,
         trend: item.trend ?? null,

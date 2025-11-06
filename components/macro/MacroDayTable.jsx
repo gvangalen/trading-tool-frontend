@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { deleteMacroIndicator } from '@/lib/api/macroDataApi'; // ✅ juiste API import
+import { deleteMacroIndicator } from '@/lib/api/macro';
 
 export default function MacroDayTable({
   data = [],

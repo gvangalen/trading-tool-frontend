@@ -186,10 +186,11 @@ async function addTechnicalData(indicatorName) {
     return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
   }
 
-  function handleRemove(symbol) {
-    const updated = technicalData.filter((item) => item.symbol !== symbol);
-    setTechnicalData(updated);
-  }
+  function handleRemove(indicatorName) {
+  // 🔍 Filter alleen de verwijderde indicator uit de lijst
+  const updated = technicalData.filter((item) => item.indicator !== indicatorName);
+  setTechnicalData(updated);
+}
 
   return {
     technicalData,

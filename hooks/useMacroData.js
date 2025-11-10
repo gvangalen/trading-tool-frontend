@@ -9,7 +9,7 @@ import {
   getMacroIndicatorNames,
   getScoreRulesForMacroIndicator,
   macroDataAdd,
-  deleteMacroIndicator, // ✅ toegevoegd
+  deleteMacroIndicator,
 } from '@/lib/api/macro';
 import { getDailyScores } from '@/lib/api/scores';
 
@@ -55,9 +55,10 @@ export function useMacroData(activeTab = 'Dag') {
 
       if (!Array.isArray(data)) throw new Error('Macrodata is geen lijst');
 
+      // ✅ Belangrijkste fix: gebruik consistent "value" ipv "waarde"
       const enriched = data.map((item) => ({
         name: item.name ?? item.indicator ?? '–',
-        waarde: item.waarde ?? item.value ?? '–',
+        value: item.value ?? item.waarde ?? '–',
         score: item.score ?? null,
         trend: item.trend ?? null,
         interpretation: item.interpretation ?? null,
@@ -256,6 +257,6 @@ export function useMacroData(activeTab = 'Dag') {
     getExplanation,
     loadScoreRules,
     addMacroIndicator,
-    removeMacroIndicator, // ✅ nieuwe deletefunctie
+    removeMacroIndicator,
   };
 }

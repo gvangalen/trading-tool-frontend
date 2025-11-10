@@ -5,13 +5,17 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/nl';
 dayjs.locale('nl');
 
+/**
+ * 📊 MacroWeekTable
+ * Data gegroepeerd per week (zoals: 📅 Week 43 – 2025)
+ */
 export default function MacroWeekTable({ data = [], onRemove, showDebug = false }) {
   useEffect(() => {
     console.log('📅 [MacroWeekTable] ontvangen data:', data);
     console.table(
       data.flatMap((groep) =>
         (groep?.data || []).map((d) => ({
-          indicator: d.indicator,
+          name: d.name,
           score: d.score,
           timestamp: d.timestamp,
         }))
@@ -19,6 +23,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
     );
   }, [data]);
 
+  // 🎨 Scorekleur bepalen
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -27,6 +32,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
     return 'text-yellow-600';
   };
 
+  // 🧠 Geen data fallback
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <div className="w-full text-center p-4 text-gray-500 italic">
@@ -45,49 +51,50 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
             <th className="p-3 text-center">Score</th>
             <th className="p-3 text-center">Advies</th>
             <th className="p-3 text-center">Uitleg</th>
-            <th className="p-3 text-center">Verwijder</th>
+            <th className="p-3 text-center">🗑️</th>
           </tr>
         </thead>
 
         <tbody>
           {data.map((groep, groepIndex) => (
             <>
+              {/* 📅 Weekheader */}
               <tr
                 key={`header-${groepIndex}`}
                 className="bg-gray-100 dark:bg-gray-800 border-y border-gray-300 dark:border-gray-700"
               >
                 <td colSpan={6} className="font-semibold p-3 text-sm">
-                  📅 {groep.label ?? `Week ${groepIndex + 1}`}
+                  {groep.label ?? `📅 Week ${groepIndex + 1}`}
                 </td>
               </tr>
 
+              {/* 🔁 Indicatoren in deze weekgroep */}
               {(groep?.data || []).map((item, index) => {
                 const {
-                  indicator = '–',
-                  waarde = item.waarde ?? item.value ?? '–',
-                  score = item.score,
-                  symbol,
-                  interpretation = item.interpretation ?? '–',
-                  action = item.action ?? '–',
+                  name = '–',
+                  value = '–',
+                  score = null,
+                  interpretation = '–',
+                  action = '–',
                 } = item;
 
                 return (
                   <tr
-                    key={`${groep.label || 'groep'}-${symbol || index}`}
+                    key={`${groep.label || 'groep'}-${name}-${index}`}
                     className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                   >
-                    <td className="p-3 font-medium">{indicator}</td>
-                    <td className="p-3 text-center">{waarde}</td>
+                    <td className="p-3 font-medium">{name}</td>
+                    <td className="p-3 text-center">{value}</td>
                     <td className={`p-3 text-center font-bold ${getScoreColor(score)}`}>
-                      {isNaN(score) ? '–' : Math.round(score)}
+                      {score !== null && !isNaN(score) ? Math.round(score) : '–'}
                     </td>
                     <td className="p-3 text-center italic text-gray-500">{action}</td>
                     <td className="p-3 text-center italic text-gray-500">{interpretation}</td>
                     <td className="p-3 text-center">
                       <button
-                        onClick={() => onRemove?.(symbol || `item-${index}`)}
+                        onClick={() => onRemove?.(name)}
                         className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                        title="Verwijder deze regel"
+                        title={`Verwijder ${name}`}
                       >
                         ❌
                       </button>
@@ -99,6 +106,7 @@ export default function MacroWeekTable({ data = [], onRemove, showDebug = false 
           ))}
         </tbody>
 
+        {/* 🧪 Debugmodus */}
         {showDebug && (
           <tfoot>
             <tr>

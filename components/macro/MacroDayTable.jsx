@@ -9,7 +9,7 @@ export default function MacroDayTable({
   showDebug = false,
   getExplanation,
 }) {
-  // ✅ Veilige initiële state
+  // ✅ Lokale state voor tabeldata
   const [localData, setLocalData] = useState(Array.isArray(data) ? data : []);
 
   useEffect(() => {
@@ -30,11 +30,11 @@ export default function MacroDayTable({
     return 'text-yellow-600';
   };
 
-  // 🔢 Waarde formatter (toon getal indien mogelijk, anders '–')
+  // 🔢 Waarde formatter (toon netjes met max 2 decimalen)
   const formatValue = (val) => {
-    if (val === null || val === undefined) return '–';
+    if (val === null || val === undefined || val === '–') return '–';
     const n = typeof val === 'number' ? val : parseFloat(val);
-    if (Number.isNaN(n)) return '–';
+    if (Number.isNaN(n)) return val; // bv. string "N/A"
     return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
@@ -56,7 +56,6 @@ export default function MacroDayTable({
       setLocalData(updated);
       onRemove?.(name);
 
-      // ✅ Visuele feedback
       window.alert(`✅ Indicator '${name}' succesvol verwijderd.`);
     } catch (err) {
       console.error('❌ [MacroDayTable] Fout bij verwijderen:', err);
@@ -76,17 +75,18 @@ export default function MacroDayTable({
     );
   }
 
+  // 📋 Tabelrijen renderen
   return (
     <>
-      {/* 📋 Indicator-rijen */}
       {localData.map((item, index) => {
+        // ✅ Gebruik robuuste fallbacks
         const {
-          name = '–',
+          name = item.indicator ?? '–',
           display_name,
-          value, // kan number of string zijn
-          score = null,
-          action = '–',
-          interpretation = 'Geen uitleg beschikbaar',
+          value = item.value ?? item.waarde ?? '–',
+          score = item.score ?? null,
+          action = item.action ?? item.advies ?? '–',
+          interpretation = item.interpretation ?? item.uitleg ?? 'Geen uitleg beschikbaar',
         } = item;
 
         const shownName = display_name || name;
@@ -97,18 +97,19 @@ export default function MacroDayTable({
               {shownName}
             </td>
 
-            {/* ✅ Waarde altijd correct renderen */}
-            <td className="p-2 text-center">
-              {formatValue(value)}
-            </td>
+            {/* ✅ Waarde kolom */}
+            <td className="p-2 text-center">{formatValue(value)}</td>
 
+            {/* ✅ Score kolom */}
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
               {score !== null && score !== undefined ? score : '–'}
             </td>
 
+            {/* ✅ Advies en uitleg */}
             <td className="p-2 text-center">{action || '–'}</td>
             <td className="p-2">{interpretation || 'Geen uitleg beschikbaar'}</td>
 
+            {/* 🗑️ Verwijderknop */}
             <td className="p-2 text-center">
               <button
                 onClick={() => handleDelete(name)}

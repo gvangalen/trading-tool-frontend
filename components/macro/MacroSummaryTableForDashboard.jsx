@@ -41,23 +41,24 @@ export default function MacroSummaryTableForDashboard({ data = [], loading = fal
         </thead>
         <tbody>
           {data.map((item, index) => {
+            // ✅ Consistente veldnamen zoals in hook en backend
             const {
-              indicator = item.name ?? '–',
-              waarde = item.value ?? '–',
+              name = item.name ?? '–',
+              value = item.value ?? '–',
               score = item.score ?? null,
-              advies = item.action ?? '–',
-              uitleg = item.interpretation ?? '–',
+              action = item.action ?? '–',
+              interpretation = item.interpretation ?? '–',
             } = item;
 
             return (
-              <tr key={`${indicator}-${index}`} className="border-t dark:border-gray-700">
-                <td className="p-2 font-medium">{indicator}</td>
-                <td className="p-2 text-center">{waarde}</td>
+              <tr key={`${name}-${index}`} className="border-t dark:border-gray-700">
+                <td className="p-2 font-medium">{name}</td>
+                <td className="p-2 text-center">{value}</td>
                 <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
                   {score !== null ? score : '–'}
                 </td>
-                <td className="p-2 text-center">{advies}</td>
-                <td className="p-2">{uitleg}</td>
+                <td className="p-2 text-center">{action}</td>
+                <td className="p-2">{interpretation}</td>
               </tr>
             );
           })}

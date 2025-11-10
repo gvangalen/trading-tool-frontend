@@ -43,30 +43,41 @@ export default function MacroMonthTable({ data, onRemove }) {
 
           {/* 🔁 Indicatoren in deze maandgroep */}
           {Array.isArray(groep.data) &&
-            groep.data.map((item, index) => (
-              <tr
-                key={item.symbol || `${item.indicator}-${index}`}
-                className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-              >
-                <td className="p-2 font-medium">{item.indicator ?? '–'}</td>
-                <td className="p-2 text-center">{item.waarde ?? item.value ?? '–'}</td>
-                <td className="p-2 text-center italic text-gray-500">{item.trend ?? '–'}</td>
-                <td className="p-2 text-center italic text-gray-500">{item.uitleg ?? item.interpretation ?? '–'}</td>
-                <td className="p-2 text-center italic text-gray-500">{item.advies ?? item.action ?? '–'}</td>
-                <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
-                  {isNaN(item.score) ? '–' : item.score}
-                </td>
-                <td className="p-2 text-center">
-                  <button
-                    onClick={() => onRemove?.(item.symbol || item.indicator)}
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                    title="Verwijder indicator"
-                  >
-                    ❌
-                  </button>
-                </td>
-              </tr>
-            ))}
+            groep.data.map((item, index) => {
+              const {
+                name = '–',
+                value = '–',
+                trend = '–',
+                interpretation = '–',
+                action = '–',
+                score = null,
+              } = item;
+
+              return (
+                <tr
+                  key={`${name}-${index}`}
+                  className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                >
+                  <td className="p-2 font-medium">{name}</td>
+                  <td className="p-2 text-center">{value}</td>
+                  <td className="p-2 text-center italic text-gray-500">{trend}</td>
+                  <td className="p-2 text-center">{interpretation}</td>
+                  <td className="p-2 text-center">{action}</td>
+                  <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
+                    {score !== null && !isNaN(score) ? score : '–'}
+                  </td>
+                  <td className="p-2 text-center">
+                    <button
+                      onClick={() => onRemove?.(name)}
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                      title={`Verwijder ${name}`}
+                    >
+                      ❌
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
         </React.Fragment>
       ))}
     </>

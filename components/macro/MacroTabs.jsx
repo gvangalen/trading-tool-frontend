@@ -15,14 +15,15 @@ export default function MacroTabs() {
 
   const {
     macroData,
-    handleEdit,
-    handleRemove,
-    calculateMacroScore,
+    avgScore,
+    advies,
+    removeMacroIndicator,
     getExplanation,
     loading,
     error,
   } = useMacroData(activeTab);
 
+  // 🔁 Render juiste tabel per tab
   const renderTableBody = () => {
     if (loading) {
       return (
@@ -49,37 +50,29 @@ export default function MacroTabs() {
         return (
           <MacroDayTable
             data={macroData}
-            onEdit={handleEdit}
-            onRemove={handleRemove}
+            onRemove={removeMacroIndicator}
             getExplanation={getExplanation}
-            calculateScore={calculateMacroScore}
           />
         );
       case 'Week':
         return (
           <MacroWeekTable
             data={macroData}
-            calculateScore={calculateMacroScore}
-            getExplanation={getExplanation}
-            onRemove={handleRemove}
+            onRemove={removeMacroIndicator}
           />
         );
       case 'Maand':
         return (
           <MacroMonthTable
             data={macroData}
-            calculateScore={calculateMacroScore}
-            getExplanation={getExplanation}
-            onRemove={handleRemove}
+            onRemove={removeMacroIndicator}
           />
         );
       case 'Kwartaal':
         return (
           <MacroQuarterTable
             data={macroData}
-            calculateScore={calculateMacroScore}
-            getExplanation={getExplanation}
-            onRemove={handleRemove}
+            onRemove={removeMacroIndicator}
           />
         );
       default:
@@ -106,23 +99,28 @@ export default function MacroTabs() {
         ))}
       </div>
 
+      {/* 🔹 Overzicht header */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          📊 Gemiddelde macroscore: <strong>{avgScore}</strong> ({advies})
+        </p>
+      </div>
+
       {/* 🔹 Macro Tabel */}
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            {/* ✅ Alleen header tonen bij Dag-tab */}
-            {activeTab === 'Dag' && (
-              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-                <tr>
-                  <th className="p-2">Indicator</th>
-                  <th className="p-2">Waarde</th>
-                  <th className="p-2">Score</th>
-                  <th className="p-2">Advies</th>
-                  <th className="p-2">Uitleg</th>
-                  <th className="p-2">🗑️</th>
-                </tr>
-              </thead>
-            )}
+            {/* ✅ Header tonen voor alle tabs */}
+            <thead className="bg-gray-100 dark:bg-gray-800 text-left">
+              <tr>
+                <th className="p-2">Indicator</th>
+                <th className="p-2 text-center">Waarde</th>
+                <th className="p-2 text-center">Score</th>
+                <th className="p-2 text-center">Advies</th>
+                <th className="p-2 text-center">Uitleg</th>
+                <th className="p-2 text-center">🗑️</th>
+              </tr>
+            </thead>
 
             <tbody>{renderTableBody()}</tbody>
           </table>

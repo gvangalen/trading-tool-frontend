@@ -99,12 +99,6 @@ export default function MacroTabs() {
         ))}
       </div>
 
-      {/* 🔹 Overzicht header */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          📊 Gemiddelde macroscore: <strong>{avgScore}</strong> ({advies})
-        </p>
-      </div>
 
       {/* 🔹 Macro Tabel */}
       <CardWrapper>

@@ -104,18 +104,19 @@ export default function MacroTabs() {
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            {/* ✅ Header tonen voor alle tabs */}
-            <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-              <tr>
-                <th className="p-2">Indicator</th>
-                <th className="p-2 text-center">Waarde</th>
-                <th className="p-2 text-center">Score</th>
-                <th className="p-2 text-center">Advies</th>
-                <th className="p-2 text-center">Uitleg</th>
-                <th className="p-2 text-center">🗑️</th>
-              </tr>
-            </thead>
-
+            {/* ❌ Geen vaste header bij Week, Maand of Kwartaal */}
+            {activeTab === 'Dag' && (
+              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
+                <tr>
+                  <th className="p-2">📊 Indicator</th>
+                  <th className="p-2 text-center">Waarde</th>
+                  <th className="p-2 text-center">Score</th>
+                  <th className="p-2 text-center">Advies</th>
+                  <th className="p-2">Uitleg</th>
+                  <th className="p-2 text-center">🗑️</th>
+                </tr>
+              </thead>
+            )}
             <tbody>{renderTableBody()}</tbody>
           </table>
         </div>

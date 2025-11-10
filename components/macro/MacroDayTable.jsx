@@ -30,7 +30,15 @@ export default function MacroDayTable({
     return 'text-yellow-600';
   };
 
-  // 🗑️ Verwijder één macro-indicator (zelfde logica als technical)
+  // 🔢 Waarde formatter (toon getal indien mogelijk, anders '–')
+  const formatValue = (val) => {
+    if (val === null || val === undefined) return '–';
+    const n = typeof val === 'number' ? val : parseFloat(val);
+    if (Number.isNaN(n)) return '–';
+    return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  };
+
+  // 🗑️ Verwijder één macro-indicator
   const handleDelete = async (name) => {
     if (!name) return;
 
@@ -48,7 +56,7 @@ export default function MacroDayTable({
       setLocalData(updated);
       onRemove?.(name);
 
-      // ✅ Visuele feedback (zelfde als bij technical)
+      // ✅ Visuele feedback
       window.alert(`✅ Indicator '${name}' succesvol verwijderd.`);
     } catch (err) {
       console.error('❌ [MacroDayTable] Fout bij verwijderen:', err);
@@ -56,7 +64,7 @@ export default function MacroDayTable({
     }
   };
 
-  // 🧠 Geen data fallback (zelfde layout als technical)
+  // 🧠 Geen data fallback
   if (!Array.isArray(localData) || localData.length === 0) {
     return (
       <tr>
@@ -74,28 +82,38 @@ export default function MacroDayTable({
       {localData.map((item, index) => {
         const {
           name = '–',
-          value = '–',
+          display_name,
+          value, // kan number of string zijn
           score = null,
           action = '–',
           interpretation = 'Geen uitleg beschikbaar',
         } = item;
 
+        const shownName = display_name || name;
+
         return (
           <tr key={`macro-${name}-${index}`} className="border-t dark:border-gray-700">
             <td className="p-2 font-medium" title={getExplanation?.(name)}>
-              {name}
+              {shownName}
             </td>
-            <td className="p-2 text-center">{value}</td>
+
+            {/* ✅ Waarde altijd correct renderen */}
+            <td className="p-2 text-center">
+              {formatValue(value)}
+            </td>
+
             <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
-              {score !== null ? score : '–'}
+              {score !== null && score !== undefined ? score : '–'}
             </td>
-            <td className="p-2 text-center">{action}</td>
-            <td className="p-2">{interpretation}</td>
+
+            <td className="p-2 text-center">{action || '–'}</td>
+            <td className="p-2">{interpretation || 'Geen uitleg beschikbaar'}</td>
+
             <td className="p-2 text-center">
               <button
                 onClick={() => handleDelete(name)}
                 className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                title={`Verwijder ${name}`}
+                title={`Verwijder ${shownName}`}
               >
                 ❌
               </button>

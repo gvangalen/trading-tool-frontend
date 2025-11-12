@@ -2,7 +2,7 @@
 
 import ReportCard from '@/components/cards/ReportCard';
 import ActiveTradeCard from '@/components/cards/ActiveTradeCard';
-import MasterScoreCard from '@/components/dashboard/MasterScoreCard';
+import MasterScoreCard from '@/components/cards/MasterScoreCard';
 import TradingBotCard from '@/components/cards/TradingBotCard';
 
 export default function DashboardHighlights() {

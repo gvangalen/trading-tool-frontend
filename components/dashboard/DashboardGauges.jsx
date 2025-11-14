@@ -9,6 +9,7 @@ export default function DashboardGauges() {
   const {
     macro,
     technical,
+    market,     // ⬅️ NIEUW
     setup,
     loading,
   } = useScoresData();
@@ -16,19 +17,33 @@ export default function DashboardGauges() {
   return (
     <div className="space-y-6">
       {/* 📊 Gauges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+        {/* 🌍 Macro */}
         <GaugeCard
           title="🌍 Macro"
           score={macro?.score}
           explanation={macro?.explanation || macro?.uitleg || macro?.interpretation}
           topContributors={macro?.top_contributors}
         />
+
+        {/* 📈 Technical */}
         <GaugeCard
           title="📈 Technical"
           score={technical?.score}
           explanation={technical?.explanation || technical?.uitleg || technical?.interpretation}
           topContributors={technical?.top_contributors}
         />
+
+        {/* 💰 Market — NIEUW */}
+        <GaugeCard
+          title="💰 Market"
+          score={market?.score}
+          explanation={market?.explanation || market?.uitleg || market?.interpretation}
+          topContributors={market?.top_contributors}
+        />
+
+        {/* ⚙️ Setup */}
         <GaugeCard
           title="⚙️ Setup"
           score={setup?.score}

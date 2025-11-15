@@ -5,11 +5,11 @@ import { getDailyScores, getAiMasterScore } from '@/lib/api/scores';
 
 // Score → Advies
 const getAdvies = (score) =>
-  score >= 75 ? '📈 Bullish' :
-  score <= 25 ? '📉 Bearish' :
-  '⚖️ Neutraal';
+  score >= 75 ? '📈 Bullish'
+  : score <= 25 ? '📉 Bearish'
+  : '⚖️ Neutraal';
 
-// Zorg dat altijd een array terugkomt, ook als backend JSON-string stuurt
+// Zorg dat altijd een array terugkomt
 const normalizeArray = (v) => {
   if (!v) return [];
   if (Array.isArray(v)) return v;
@@ -35,38 +35,46 @@ export function useScoresData() {
   useEffect(() => {
     async function fetchScores() {
       try {
-        const [daily, master] = await Promise.all([
+        // Nooit meer crash door master score
+        const [dailyRes, masterRes] = await Promise.allSettled([
           getDailyScores(),
           getAiMasterScore(),
         ]);
 
-        console.log('📊 Daily scores:', daily);
-        console.log('🧠 Master score:', master);
+        const daily =
+          dailyRes.status === 'fulfilled' ? dailyRes.value : null;
+        const master =
+          masterRes.status === 'fulfilled' ? masterRes.value : null;
+
+        if (!daily) {
+          console.error("❌ Daily scores ontbreken — dit mag eigenlijk nooit.");
+          return;
+        }
 
         setScores({
           macro: {
-            score: daily?.macro_score ?? 0,
-            uitleg: daily?.macro_interpretation ?? 'Geen uitleg beschikbaar',
-            advies: getAdvies(daily?.macro_score ?? 0),
-            top_contributors: normalizeArray(daily?.macro_top_contributors),
+            score: daily.macro_score ?? 0,
+            uitleg: daily.macro_interpretation ?? 'Geen uitleg beschikbaar',
+            advies: getAdvies(daily.macro_score ?? 0),
+            top_contributors: normalizeArray(daily.macro_top_contributors),
           },
           technical: {
-            score: daily?.technical_score ?? 0,
-            uitleg: daily?.technical_interpretation ?? 'Geen uitleg beschikbaar',
-            advies: getAdvies(daily?.technical_score ?? 0),
-            top_contributors: normalizeArray(daily?.technical_top_contributors),
+            score: daily.technical_score ?? 0,
+            uitleg: daily.technical_interpretation ?? 'Geen uitleg beschikbaar',
+            advies: getAdvies(daily.technical_score ?? 0),
+            top_contributors: normalizeArray(daily.technical_top_contributors),
           },
           market: {
-            score: daily?.market_score ?? 0,
-            uitleg: daily?.market_interpretation ?? 'Geen uitleg beschikbaar',
-            advies: getAdvies(daily?.market_score ?? 0),
-            top_contributors: normalizeArray(daily?.market_top_contributors),
+            score: daily.market_score ?? 0,
+            uitleg: daily.market_interpretation ?? 'Geen uitleg beschikbaar',
+            advies: getAdvies(daily.market_score ?? 0),
+            top_contributors: normalizeArray(daily.market_top_contributors),
           },
           setup: {
-            score: daily?.setup_score ?? 0,
-            uitleg: daily?.setup_interpretation ?? 'Geen uitleg beschikbaar',
-            advies: getAdvies(daily?.setup_score ?? 0),
-            top_contributors: normalizeArray(daily?.setup_top_contributors),
+            score: daily.setup_score ?? 0,
+            uitleg: daily.setup_interpretation ?? 'Geen uitleg beschikbaar',
+            advies: getAdvies(daily.setup_score ?? 0),
+            top_contributors: normalizeArray(daily.setup_top_contributors),
           },
           master: {
             score: master?.master_score ?? 0,
@@ -78,8 +86,8 @@ export function useScoresData() {
         });
 
       } catch (err) {
-        console.error('❌ Fout bij ophalen scores:', err);
-        setError('Kon scores niet laden.');
+        console.error("❌ Fout bij verwerken scores:", err);
+        setError("Kon scores niet laden.");
       } finally {
         setLoading(false);
       }
@@ -88,9 +96,5 @@ export function useScoresData() {
     fetchScores();
   }, []);
 
-  return {
-    ...scores,
-    loading,
-    error,
-  };
+  return { ...scores, loading, error };
 }

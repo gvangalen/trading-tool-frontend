@@ -9,6 +9,17 @@ const getAdvies = (score) =>
   score <= 25 ? '📉 Bearish' :
   '⚖️ Neutraal';
 
+// Zorg dat altijd een array terugkomt, ook als backend JSON-string stuurt
+const normalizeArray = (v) => {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  try {
+    return JSON.parse(v);
+  } catch {
+    return [];
+  }
+};
+
 export function useScoresData() {
   const [scores, setScores] = useState({
     macro: { score: 0, uitleg: '', advies: '⚖️ Neutraal', top_contributors: [] },
@@ -37,25 +48,25 @@ export function useScoresData() {
             score: daily?.macro_score ?? 0,
             uitleg: daily?.macro_interpretation ?? 'Geen uitleg beschikbaar',
             advies: getAdvies(daily?.macro_score ?? 0),
-            top_contributors: daily?.macro_top_contributors ?? [],
+            top_contributors: normalizeArray(daily?.macro_top_contributors),
           },
           technical: {
             score: daily?.technical_score ?? 0,
             uitleg: daily?.technical_interpretation ?? 'Geen uitleg beschikbaar',
             advies: getAdvies(daily?.technical_score ?? 0),
-            top_contributors: daily?.technical_top_contributors ?? [],
+            top_contributors: normalizeArray(daily?.technical_top_contributors),
           },
           market: {
             score: daily?.market_score ?? 0,
             uitleg: daily?.market_interpretation ?? 'Geen uitleg beschikbaar',
             advies: getAdvies(daily?.market_score ?? 0),
-            top_contributors: daily?.market_top_contributors ?? [],
+            top_contributors: normalizeArray(daily?.market_top_contributors),
           },
           setup: {
             score: daily?.setup_score ?? 0,
             uitleg: daily?.setup_interpretation ?? 'Geen uitleg beschikbaar',
             advies: getAdvies(daily?.setup_score ?? 0),
-            top_contributors: daily?.setup_top_contributors ?? [],
+            top_contributors: normalizeArray(daily?.setup_top_contributors),
           },
           master: {
             score: master?.master_score ?? 0,

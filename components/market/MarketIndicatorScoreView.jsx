@@ -1,85 +1,49 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import {
-  getMarketIndicatorNames,
-  getScoreRulesForMarketIndicator,
-  marketDataAdd,
-} from '@/lib/api/market'; // ✅ Market API-endpoints
 import CardWrapper from '@/components/ui/CardWrapper';
+import { useState, useEffect } from 'react';
 
-export default function MarketIndicatorScoreView() {
+export default function MarketIndicatorScoreView({
+  availableIndicators,        // lijst vanuit hook
+  selectedIndicator,          // huidig gekozen indicator
+  scoreRules,                 // scoreregels vanuit hook
+  selectIndicator,            // functie uit hook
+  addMarketIndicator,         // functie uit hook
+}) {
   const [query, setQuery] = useState('');
   const [filteredIndicators, setFilteredIndicators] = useState([]);
-  const [selectedIndicator, setSelectedIndicator] = useState(null);
-  const [scoreRules, setScoreRules] = useState([]);
-  const [allIndicators, setAllIndicators] = useState([]);
   const [added, setAdded] = useState(false);
-
-  // 📡 Alle market-indicatoren ophalen
-  useEffect(() => {
-    async function fetchIndicators() {
-      try {
-        const res = await getMarketIndicatorNames();
-        setAllIndicators(res);
-      } catch (error) {
-        console.error('❌ Fout bij ophalen market indicators:', error);
-      }
-    }
-    fetchIndicators();
-  }, []);
 
   // 🔎 Live filter
   useEffect(() => {
-    if (query.length === 0) {
+    if (!query) {
       setFilteredIndicators([]);
       return;
     }
 
-    const filtered = allIndicators.filter((i) =>
-      i.display_name.toLowerCase().includes(query.toLowerCase())
+    setFilteredIndicators(
+      availableIndicators.filter((i) =>
+        i.display_name.toLowerCase().includes(query.toLowerCase())
+      )
     );
+  }, [query, availableIndicators]);
 
-    setFilteredIndicators(filtered);
-  }, [query, allIndicators]);
-
-  // 📊 Scoreregels ophalen bij selectie
-  const handleSelect = async (indicator) => {
-    setSelectedIndicator(indicator);
-    setQuery('');
-    setFilteredIndicators([]);
-    setScoreRules([]);
-
-    try {
-      const rules = await getScoreRulesForMarketIndicator(indicator.name);
-      setScoreRules(rules);
-    } catch (error) {
-      console.error('❌ Fout bij ophalen market scoreregels:', error);
-    }
-  };
-
-  // ➕ Toevoegen aan market-analyse
+  // ➕ Toevoegen
   const handleAdd = async () => {
-    if (!selectedIndicator || !selectedIndicator.name) {
-      alert('⚠️ Selecteer eerst een indicator.');
-      return;
-    }
+    if (!selectedIndicator?.name) return;
 
     try {
-      console.log(`📤 Voeg toe aan market_analyse: ${selectedIndicator.name}`);
-      await marketDataAdd(selectedIndicator.name);
-
+      await addMarketIndicator(selectedIndicator.name);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
-    } catch (error) {
-      console.error('❌ Fout bij toevoegen market indicator:', error);
-      alert('❌ Toevoegen mislukt. Check console.');
+    } catch (err) {
+      console.error('❌ Toevoegen mislukt:', err);
     }
   };
 
   return (
     <CardWrapper title="🪙 Bekijk Market Scorelogica">
-      
+
       {/* 🔍 Zoekveld */}
       <div className="mb-6 relative">
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">
@@ -88,7 +52,7 @@ export default function MarketIndicatorScoreView() {
 
         <input
           type="text"
-          placeholder="Typ een naam zoals BTC Change 24h of Price Trend..."
+          placeholder="Typ een naam zoals BTC Change 24h, Volume, Price…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           autoComplete="off"
@@ -100,7 +64,11 @@ export default function MarketIndicatorScoreView() {
             {filteredIndicators.map((i) => (
               <li
                 key={i.name}
-                onClick={() => handleSelect(i)}
+                onClick={() => {
+                  selectIndicator(i);
+                  setQuery('');
+                  setFilteredIndicators([]);
+                }}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 {i.display_name}{' '}
@@ -111,8 +79,8 @@ export default function MarketIndicatorScoreView() {
         )}
       </div>
 
-      {/* 📈 Scoreregels */}
-      {selectedIndicator && (
+      {/* 📊 Scoreregels */}
+      {selectedIndicator ? (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
             Scoreregels voor: {selectedIndicator.display_name}
@@ -131,7 +99,7 @@ export default function MarketIndicatorScoreView() {
               </thead>
 
               <tbody>
-                {[...scoreRules]
+                {scoreRules
                   .sort((a, b) => a.range_min - b.range_min)
                   .map((r, i) => (
                     <tr key={i} className="border-t dark:border-gray-600">
@@ -150,11 +118,11 @@ export default function MarketIndicatorScoreView() {
             </table>
           ) : (
             <p className="text-sm text-gray-500 italic">
-              Geen scoreregels gevonden voor deze market-indicator.
+              Geen scoreregels gevonden.
             </p>
           )}
 
-          {/* ➕ Add-knop */}
+          {/* ➕ Toevoegen */}
           <div className="pt-2">
             <button
               onClick={handleAdd}
@@ -170,9 +138,7 @@ export default function MarketIndicatorScoreView() {
             )}
           </div>
         </div>
-      )}
-
-      {!selectedIndicator && (
+      ) : (
         <p className="text-sm text-gray-500 italic">
           Typ en selecteer een indicator om de scoreregels te bekijken.
         </p>

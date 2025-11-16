@@ -13,9 +13,10 @@ import {
   // 🔥 Nieuwe API’s
   getMarketIndicatorNames,
   getScoreRulesForMarketIndicator,
-  addMarketIndicator,          // ✅ Correcte naam
-  fetchActiveMarketIndicators,  // ✅ Correcte naam
-  removeMarketIndicatorByName,  // ✅ Correcte naam
+  fetchActiveMarketIndicators,
+  marketDataAdd,           // ✔️ correcte backend naam
+  marketDataDelete,        // ✔️ correcte backend naam
+
 } from '@/lib/api/market';
 
 import { getDailyScores } from '@/lib/api/scores';
@@ -39,11 +40,10 @@ export function useMarketData() {
     jaar: [],
   });
 
-  // Score + advies
   const [marketScore, setMarketScore] = useState('N/A');
   const [advies, setAdviesState] = useState('⚖️ Neutraal');
 
-  // Daytable
+  // Day table
   const [marketIndicators, setMarketIndicators] = useState([]);
 
   // Score rules view
@@ -51,13 +51,12 @@ export function useMarketData() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
 
-  // Loading / error
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
 
   // =========================================================
-  // INIT LOAD
+  // INIT
   // =========================================================
   useEffect(() => {
     loadAllData();
@@ -73,7 +72,7 @@ export function useMarketData() {
     setLoading(true);
 
     try {
-      // 7 day
+      // 7-day data
       const history = await fetchMarketData7d();
       setSevenDayData(history);
 
@@ -87,18 +86,18 @@ export function useMarketData() {
 
       setForwardReturns({ week, maand, kwartaal, jaar });
 
-      // Scores
+      // Market score
       const dailyScores = await getDailyScores();
       const aiMarketScore = dailyScores?.market_score ?? 0;
 
       setMarketScore(aiMarketScore);
       setAdviesState(getAdvies(aiMarketScore));
 
-      // Actieve market indicators
+      // Actieve daily indicators
       const active = await fetchActiveMarketIndicators();
       setMarketIndicators(active || []);
 
-      // Indicator lijst
+      // Alle indicator namen (voor score rules viewer)
       const names = await getMarketIndicatorNames();
       setAvailableIndicators(names || []);
 
@@ -126,7 +125,7 @@ export function useMarketData() {
 
 
   // =========================================================
-  // SCORE RULES (selecteer indicator)
+  // SCORE RULES (ScoreViewer)
   // =========================================================
   async function selectIndicator(indicatorObj) {
     if (!indicatorObj) return;
@@ -144,16 +143,16 @@ export function useMarketData() {
 
 
   // =========================================================
-  // ADD MARKET INDICATOR
+  // ADD MARKET INDICATOR (Dagelijkse analyse)
   // =========================================================
   async function addMarket(name) {
     if (!name) return;
 
     try {
-      await addMarketIndicator(name);      // 🟢 correcte API call
+      await marketDataAdd(name);      // ✔️ juiste backend call
       await loadActiveIndicators();
     } catch (err) {
-      console.error('❌ addMarketIndicator:', err);
+      console.error('❌ addMarket:', err);
     }
   }
 
@@ -163,15 +162,15 @@ export function useMarketData() {
   // =========================================================
   async function removeMarket(name) {
     try {
-      await removeMarketIndicatorByName(name);  // 🟢 correcte API call
+      await marketDataDelete(name);   // ✔️ juiste backend call
       await loadActiveIndicators();
     } catch (err) {
-      console.error('❌ removeMarketIndicator:', err);
+      console.error('❌ removeMarket:', err);
     }
   }
 
 
-  // Helper
+  // Helper om dagtabel opnieuw te laden
   async function loadActiveIndicators() {
     const active = await fetchActiveMarketIndicators();
     setMarketIndicators(active || []);

@@ -2,14 +2,36 @@
 
 import { useMarketData } from '@/hooks/useMarketData';
 import { useScoresData } from '@/hooks/useScoresData';
+
 import MarketLiveCard from '@/components/market/MarketLiveCard';
 import MarketSevenDayTable from '@/components/market/MarketSevenDayTable';
 import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 
+import MarketIndicatorScoreView from '@/components/market/MarketIndicatorScoreView';
+import MarketDayTable from '@/components/market/MarketDayTable';
+
 export default function MarketPage() {
-  const { btcLive, sevenDayData, forwardReturns } = useMarketData();
-  const { market, loading, error } = useScoresData();
+  const {
+    btcLive,
+    sevenDayData,
+    forwardReturns,
+
+    marketIndicators,           // ⬅ daytable
+
+    availableIndicators,        // ⬅ scoreview
+    selectedIndicator,
+    scoreRules,
+    selectIndicator,
+    addMarketIndicator,
+
+    removeMarketIndicator,      // ⬅ delete row
+
+    loading,
+    error,
+  } = useMarketData();
+
+  const { market } = useScoresData();
 
   const scoreColor = (score) => {
     if (score >= 75) return 'text-green-600';
@@ -18,10 +40,8 @@ export default function MarketPage() {
   };
 
   const adviesText =
-    market.score >= 75
-      ? '📈 Bullish'
-      : market.score <= 25
-      ? '📉 Bearish'
+    market.score >= 75 ? '📈 Bullish'
+      : market.score <= 25 ? '📉 Bearish'
       : '⚖️ Neutraal';
 
   return (
@@ -29,14 +49,12 @@ export default function MarketPage() {
       {/* 🔹 Titel */}
       <h1 className="text-2xl font-bold">📊 Bitcoin Markt Overzicht</h1>
 
-      {loading && (
-        <p className="text-sm text-gray-500">📡 Gegevens worden geladen...</p>
-      )}
-      {error && (
-        <p className="text-sm text-red-500">❌ {error}</p>
-      )}
+      {loading && <p className="text-sm text-gray-500">📡 Laden...</p>}
+      {error && <p className="text-sm text-red-500">❌ {error}</p>}
 
-      {/* ✅ Markt Score */}
+      {/* ========================================================= */}
+      {/* 🔥 OVERALL MARKET SCORE */}
+      {/* ========================================================= */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
@@ -47,14 +65,14 @@ export default function MarketPage() {
           </h3>
           <h3 className="text-lg font-semibold">
             📈 Advies:{' '}
-            <span className="text-blue-600">
-              {loading ? '⏳' : adviesText}
-            </span>
+            <span className="text-blue-600">{loading ? '⏳' : adviesText}</span>
           </h3>
         </div>
       </CardWrapper>
 
-      {/* 🔹 Live BTC info */}
+      {/* ========================================================= */}
+      {/* 🔥 LIVE MARKET DATA */}
+      {/* ========================================================= */}
       <MarketLiveCard
         price={btcLive?.price}
         change24h={btcLive?.change_24h}
@@ -62,10 +80,49 @@ export default function MarketPage() {
         timestamp={btcLive?.timestamp}
       />
 
-      {/* 🔹 Tabel 7 dagen */}
+      {/* ========================================================= */}
+      {/* 🔥 SCORE LOGIC VIEW (ZOEK + SCOREREGELS + ADD) */}
+      {/* ========================================================= */}
+      <MarketIndicatorScoreView
+        availableIndicators={availableIndicators}
+        selectedIndicator={selectedIndicator}
+        scoreRules={scoreRules}
+        selectIndicator={selectIndicator}
+        addMarketIndicator={addMarketIndicator}
+      />
+
+      {/* ========================================================= */}
+      {/* 🔥 MARKET DAY TABLE (SCORES PER INDICATOR) */}
+      {/* ========================================================= */}
+      <CardWrapper title="📅 Dagelijkse Market Analyse">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-100 dark:bg-gray-800 text-left">
+              <th className="p-2">Indicator</th>
+              <th className="p-2 text-center">Value</th>
+              <th className="p-2 text-center">Score</th>
+              <th className="p-2 text-center">Actie</th>
+              <th className="p-2">Uitleg</th>
+              <th className="p-2 text-center">❌</th>
+            </tr>
+          </thead>
+          <tbody>
+            <MarketDayTable
+              data={marketIndicators}
+              onRemove={removeMarketIndicator}
+            />
+          </tbody>
+        </table>
+      </CardWrapper>
+
+      {/* ========================================================= */}
+      {/* 🔥 7-DAY HISTORY */}
+      {/* ========================================================= */}
       <MarketSevenDayTable history={sevenDayData} />
 
+      {/* ========================================================= */}
       {/* 🔮 Forward returns tabs */}
+      {/* ========================================================= */}
       <MarketForwardReturnTabs data={forwardReturns} />
     </div>
   );

@@ -10,7 +10,7 @@ import {
   fetchForwardReturnsQuarter,
   fetchForwardReturnsYear,
 
-  // 🔥 Nieuwe API’s voor scorelogica & tabel
+  // Nieuwe API's
   getMarketIndicatorNames,
   getScoreRulesForMarketIndicator,
   marketDataAdd,
@@ -20,6 +20,7 @@ import {
 
 import { getDailyScores } from '@/lib/api/scores';
 
+
 // 🧠 Adviesfunctie
 const getAdvies = (score) =>
   score >= 75 ? '🟢 Bullish'
@@ -28,8 +29,14 @@ const getAdvies = (score) =>
 
 
 export function useMarketData() {
+
+  // =====================================================================
+  // STATE
+  // =====================================================================
+
   const [sevenDayData, setSevenDayData] = useState([]);
   const [btcLive, setBtcLive] = useState(null);
+
   const [forwardReturns, setForwardReturns] = useState({
     week: [],
     maand: [],
@@ -37,25 +44,23 @@ export function useMarketData() {
     jaar: [],
   });
 
-  // 🆕 Market score vanuit DB rule engine
-  const [marketScore, setMarketScore] = useState('N/A');
+  const [marketScore, setMarketScore] = useState('N/A');   // AI score
   const [advies, setAdviesState] = useState('⚖️ Neutraal');
 
-  // 🆕 Market-indicatoren voor daytable
-  const [marketIndicators, setMarketIndicators] = useState([]);
+  const [marketIndicators, setMarketIndicators] = useState([]); // daytable
 
-  // 🆕 Score logic (selecteer indicator → bekijk scoreregels)
-  const [availableIndicators, setAvailableIndicators] = useState([]);
-  const [scoreRules, setScoreRules] = useState([]);
+  const [availableIndicators, setAvailableIndicators] = useState([]); // dropdown keuzes
+
+  const [scoreRules, setScoreRules] = useState([]);  // scoreregels van geselecteerde indicator
   const [selectedIndicator, setSelectedIndicator] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
 
-  // =========================================================
-  // 📡 INIT LOAD
-  // =========================================================
+  // =====================================================================
+  // INIT
+  // =====================================================================
   useEffect(() => {
     loadAllData();
     const interval = setInterval(loadLiveBTC, 60000);
@@ -63,17 +68,18 @@ export function useMarketData() {
   }, []);
 
 
-  // =========================================================
-  // 📦 Alles laden (scores, tabel, forward returns)
-  // =========================================================
+  // =====================================================================
+  // 🧩 ALLE DATA LADEN (dagscore, tabel, returns, indicator-namen)
+  // =====================================================================
   async function loadAllData() {
     setLoading(true);
+
     try {
-      // 7-day history
+      // 7d chart
       const history = await fetchMarketData7d();
       setSevenDayData(history);
 
-      // Forward returns
+      // forward returns
       const [week, maand, kwartaal, jaar] = await Promise.all([
         fetchForwardReturnsWeek(),
         fetchForwardReturnsMonth(),
@@ -82,106 +88,119 @@ export function useMarketData() {
       ]);
       setForwardReturns({ week, maand, kwartaal, jaar });
 
-      // 🧠 AI-driven Market score
+      // AI market score
       const dailyScores = await getDailyScores();
       const aiMarketScore = dailyScores?.market_score ?? 0;
 
       setMarketScore(aiMarketScore);
       setAdviesState(getAdvies(aiMarketScore));
 
-      // 🆕 Tabel: actieve indicators ophalen
+      // daytable
       const active = await fetchActiveMarketIndicators();
       setMarketIndicators(active || []);
 
-      // 🆕 Score logic: lijst met indicators
+      // score view indicator names
       const names = await getMarketIndicatorNames();
       setAvailableIndicators(names || []);
 
     } catch (err) {
-      console.error('❌ Fout bij loadAllData()', err);
+      console.error('❌ Fout bij loadAllData():', err);
       setError('Kon market data niet laden.');
     } finally {
       setLoading(false);
     }
   }
 
-  // =========================================================
-  // 🔄 Live BTC price (60s interval)
-  // =========================================================
+
+  // =====================================================================
+  // 🔄 Live BTC price
+  // =====================================================================
   async function loadLiveBTC() {
     try {
       const live = await fetchLatestBTC();
       setBtcLive(live);
     } catch (err) {
-      console.error('❌ Fout bij live BTC ophalen:', err);
+      console.error('❌ Fout bij ophalen live BTC:', err);
       setBtcLive(null);
     }
   }
 
-  // =========================================================
-  // 🎯 Score rules ophalen voor selecteer indicator
-  // =========================================================
-  async function selectIndicator(nameObject) {
-    if (!nameObject) return;
 
-    setSelectedIndicator(nameObject);
+  // =====================================================================
+  // 🎯 Score rules ophalen voor geselecteerde indicator
+  // =====================================================================
+  async function selectIndicator(indicatorObject) {
+    if (!indicatorObject) return;
+
+    setSelectedIndicator(indicatorObject);
     setScoreRules([]);
 
     try {
-      const rules = await getScoreRulesForMarketIndicator(nameObject.name);
+      const rules = await getScoreRulesForMarketIndicator(indicatorObject.name);
       setScoreRules(rules || []);
     } catch (err) {
       console.error('❌ Fout bij scoreregels ophalen:', err);
     }
   }
 
-  // =========================================================
-  // ➕ Indicator toevoegen aan market analyse
-  // =========================================================
+
+  // =====================================================================
+  // ➕ Indicator toevoegen aan daily analyse
+  // =====================================================================
   async function addMarketIndicator(name) {
     if (!name) return;
 
     try {
       await marketDataAdd(name);
-      await loadActiveIndicators(); // refresh tabel
+      await loadActiveIndicators(); // alleen daytable verversen
     } catch (err) {
       console.error('❌ Fout bij marketDataAdd:', err);
       throw err;
     }
   }
 
-  // =========================================================
-  // 🗑 Indicator verwijderen
-  // =========================================================
+
+  // =====================================================================
+  // 🗑 Indicator verwijderen uit daytable
+  // =====================================================================
   async function removeMarketIndicator(name) {
     try {
       await deleteMarketIndicator(name);
       await loadActiveIndicators();
     } catch (err) {
-      console.error('❌ Verwijderen mislukt:', err);
+      console.error('❌ Fout bij verwijderen indicator:', err);
     }
   }
 
-  // Helper om alleen tabel te herladen
+
+  // =====================================================================
+  // Helper om enkel de daytable te reloaden
+  // =====================================================================
   async function loadActiveIndicators() {
-    const active = await fetchActiveMarketIndicators();
-    setMarketIndicators(active || []);
+    try {
+      const active = await fetchActiveMarketIndicators();
+      setMarketIndicators(active || []);
+    } catch (err) {
+      console.error('❌ Fout bij reload daytable:', err);
+    }
   }
 
 
-  // EXPORT NAAR COMPONENTS
+  // =====================================================================
+  // EXPORT
+  // =====================================================================
   return {
     loading,
     error,
 
-    // Live BTC
+    // BTC
     btcLive,
 
-    // AI-driven score + advies
+    // Score + Advies
     marketScore,
     advies,
 
-    // History + returns
+    // History
     sevenDayData,
     forwardReturns,
 

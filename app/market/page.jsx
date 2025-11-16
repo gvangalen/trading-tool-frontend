@@ -17,15 +17,15 @@ export default function MarketPage() {
     sevenDayData,
     forwardReturns,
 
-    marketIndicators,           // ⬅ daytable
+    marketIndicators,
 
-    availableIndicators,        // ⬅ scoreview
+    availableIndicators,
     selectedIndicator,
     scoreRules,
     selectIndicator,
-    addMarketIndicator,
 
-    removeMarketIndicator,      // ⬅ delete row
+    addMarket,          // 👈 Gebruik deze uit de hook
+    removeMarket,       // 👈 Gebruik deze uit de hook
 
     loading,
     error,
@@ -46,15 +46,13 @@ export default function MarketPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
-      {/* 🔹 Titel */}
+      
       <h1 className="text-2xl font-bold">📊 Bitcoin Markt Overzicht</h1>
 
       {loading && <p className="text-sm text-gray-500">📡 Laden...</p>}
       {error && <p className="text-sm text-red-500">❌ {error}</p>}
 
-      {/* ========================================================= */}
-      {/* 🔥 OVERALL MARKET SCORE */}
-      {/* ========================================================= */}
+      {/* MARKET SCORE */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
@@ -70,9 +68,7 @@ export default function MarketPage() {
         </div>
       </CardWrapper>
 
-      {/* ========================================================= */}
-      {/* 🔥 LIVE MARKET DATA */}
-      {/* ========================================================= */}
+      {/* LIVE DATA */}
       <MarketLiveCard
         price={btcLive?.price}
         change24h={btcLive?.change_24h}
@@ -80,20 +76,16 @@ export default function MarketPage() {
         timestamp={btcLive?.timestamp}
       />
 
-      {/* ========================================================= */}
-      {/* 🔥 SCORE LOGIC VIEW (ZOEK + SCOREREGELS + ADD) */}
-      {/* ========================================================= */}
+      {/* SCORE RULE VIEW */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators}
         selectedIndicator={selectedIndicator}
         scoreRules={scoreRules}
         selectIndicator={selectIndicator}
-        addMarketIndicator={addMarketIndicator}
+        addMarketIndicator={addMarket}       // FIXED
       />
 
-      {/* ========================================================= */}
-      {/* 🔥 MARKET DAY TABLE (SCORES PER INDICATOR) */}
-      {/* ========================================================= */}
+      {/* DAY TABLE */}
       <CardWrapper title="📅 Dagelijkse Market Analyse">
         <table className="w-full text-sm">
           <thead>
@@ -109,20 +101,16 @@ export default function MarketPage() {
           <tbody>
             <MarketDayTable
               data={marketIndicators}
-              onRemove={removeMarketIndicator}
+              onRemove={removeMarket}         // FIXED
             />
           </tbody>
         </table>
       </CardWrapper>
 
-      {/* ========================================================= */}
-      {/* 🔥 7-DAY HISTORY */}
-      {/* ========================================================= */}
+      {/* 7 DAY */}
       <MarketSevenDayTable history={sevenDayData} />
 
-      {/* ========================================================= */}
-      {/* 🔮 Forward returns tabs */}
-      {/* ========================================================= */}
+      {/* FORWARD RETURNS */}
       <MarketForwardReturnTabs data={forwardReturns} />
     </div>
   );

@@ -12,8 +12,11 @@ const labelsByTab = {
 };
 
 const getCellStyle = (value) => {
-  if (value === null || value === undefined) return 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500';
-  return value >= 0 ? 'bg-green-200 text-green-800 dark:bg-green-700 dark:text-white' : 'bg-red-200 text-red-800 dark:bg-red-700 dark:text-white';
+  if (value === null || value === undefined)
+    return 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500';
+  return value >= 0
+    ? 'bg-green-200 text-green-800 dark:bg-green-700 dark:text-white'
+    : 'bg-red-200 text-red-800 dark:bg-red-700 dark:text-white';
 };
 
 const formatPercentage = (value) => {
@@ -80,7 +83,7 @@ export default function MarketForwardReturnTabs({ data = {} }) {
       : [{ year: '–', values: Array(activeLabels.length).fill(null) }];
 
   return (
-    <div className="p-4 border rounded bg-white dark:bg-gray-900 shadow">
+    <div className="p-4 border rounded bg-white dark:bg-gray-900 shadow overflow-x-auto">
       {/* Tabs */}
       <div className="flex gap-2 mb-4">
         {tabs.map((tab) => (

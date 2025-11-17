@@ -14,15 +14,12 @@ import {
   getMarketIndicatorNames,
   getScoreRulesForMarketIndicator,
 
-  // Dagelijks gescoorde waarden
-  fetchMarketDayData,
+  // Dagelijks gescoorde indicatorwaarden
+  getActiveMarketIndicators,
 
-  // Toevoegen/verwijderen indicatoren
+  // Toevoegen / verwijderen uit analyse
   marketDataAdd,
   marketDataDelete,
-
-  // ⬅️ NIEUW
-  getActiveMarketIndicators,
 
 } from '@/lib/api/market';
 
@@ -37,9 +34,14 @@ const getAdvies = (score) =>
 
 
 export function useMarketData() {
+
+  // 7-daagse ohlc
   const [sevenDayData, setSevenDayData] = useState([]);
+
+  // Live BTC
   const [btcLive, setBtcLive] = useState(null);
 
+  // Forward returns (week/maand/kwartaal/jaar)
   const [forwardReturns, setForwardReturns] = useState({
     week: [],
     maand: [],
@@ -47,13 +49,14 @@ export function useMarketData() {
     jaar: [],
   });
 
+  // Dagelijkse AI-market-score
   const [marketScore, setMarketScore] = useState('N/A');
   const [advies, setAdviesState] = useState('⚖️ Neutraal');
 
-  // 🟦 Actieve indicatoren (uit DB)
+  // Actieve indicatoren (dagtabel)
   const [marketIndicators, setMarketIndicators] = useState([]);
 
-  // 🟩 Score rules view
+  // Score rules panel
   const [availableIndicators, setAvailableIndicators] = useState([]);
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
@@ -79,11 +82,15 @@ export function useMarketData() {
     setLoading(true);
 
     try {
-      // 7-day data
+      // -------------------------------------
+      // 📌 7-daagse data
+      // -------------------------------------
       const history = await fetchMarketData7d();
       setSevenDayData(history);
 
-      // Forward returns
+      // -------------------------------------
+      // 📌 Forward returns
+      // -------------------------------------
       const [week, maand, kwartaal, jaar] = await Promise.all([
         fetchForwardReturnsWeek(),
         fetchForwardReturnsMonth(),
@@ -93,18 +100,24 @@ export function useMarketData() {
 
       setForwardReturns({ week, maand, kwartaal, jaar });
 
-      // Market score (uit daily_scores)
+      // -------------------------------------
+      // 📌 Dagelijkse AI market-score
+      // -------------------------------------
       const dailyScores = await getDailyScores();
-      const aiMarketScore = dailyScores?.market_score ?? 0;
+      const aiMarketScore = dailyScores?.market_score ?? 50; // fallback 50
 
       setMarketScore(aiMarketScore);
       setAdviesState(getAdvies(aiMarketScore));
 
-      // 🟦 Actieve indicatoren uit DB
+      // -------------------------------------
+      // 🟦 Actieve indicatoren (dagtabel)
+      // -------------------------------------
       const indicators = await getActiveMarketIndicators();
       setMarketIndicators(indicators || []);
 
-      // 🟩 Alle indicatornamen (voor selectbox)
+      // -------------------------------------
+      // 🟩 Alle indicatornamen voor select UI
+      // -------------------------------------
       const names = await getMarketIndicatorNames();
       setAvailableIndicators(names || []);
 
@@ -150,7 +163,7 @@ export function useMarketData() {
 
 
   // =========================================================
-  // ADD MARKET INDICATOR
+  // INDICATOR TOEVOEGEN
   // =========================================================
   async function addMarket(name) {
     if (!name) return;
@@ -165,7 +178,7 @@ export function useMarketData() {
 
 
   // =========================================================
-  // REMOVE MARKET INDICATOR
+  // INDICATOR VERWIJDEREN
   // =========================================================
   async function removeMarket(name) {
     try {
@@ -178,7 +191,7 @@ export function useMarketData() {
 
 
   // =========================================================
-  // 🟦 ACTIEVE indicatoren OPNIEUW LADEN
+  // 🟦 ACTIEVE DAGRAPPORT INDICATOREN OPNIEUW LADEN
   // =========================================================
   async function loadActiveIndicators() {
     const active = await getActiveMarketIndicators();

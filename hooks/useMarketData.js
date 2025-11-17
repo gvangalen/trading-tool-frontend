@@ -10,12 +10,19 @@ import {
   fetchForwardReturnsQuarter,
   fetchForwardReturnsYear,
 
-  // ✔ Nieuwe API’s
+  // Scorelogica API’s
   getMarketIndicatorNames,
   getScoreRulesForMarketIndicator,
-  fetchMarketDayData,     // ✅ juiste dagtabel route
+
+  // Dagelijks gescoorde waarden
+  fetchMarketDayData,
+
+  // Toevoegen/verwijderen indicatoren
   marketDataAdd,
   marketDataDelete,
+
+  // ⬅️ NIEUW
+  getActiveMarketIndicators,
 
 } from '@/lib/api/market';
 
@@ -43,10 +50,10 @@ export function useMarketData() {
   const [marketScore, setMarketScore] = useState('N/A');
   const [advies, setAdviesState] = useState('⚖️ Neutraal');
 
-  // Dagelijkse market-indicatoren
+  // 🟦 Actieve indicatoren (uit DB)
   const [marketIndicators, setMarketIndicators] = useState([]);
 
-  // Score rules view
+  // 🟩 Score rules view
   const [availableIndicators, setAvailableIndicators] = useState([]);
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
@@ -86,18 +93,18 @@ export function useMarketData() {
 
       setForwardReturns({ week, maand, kwartaal, jaar });
 
-      // Market score
+      // Market score (uit daily_scores)
       const dailyScores = await getDailyScores();
       const aiMarketScore = dailyScores?.market_score ?? 0;
 
       setMarketScore(aiMarketScore);
       setAdviesState(getAdvies(aiMarketScore));
 
-      // ✔ Dagelijkse indicatoren ophalen
-      const active = await fetchMarketDayData();
-      setMarketIndicators(active || []);
+      // 🟦 Actieve indicatoren uit DB
+      const indicators = await getActiveMarketIndicators();
+      setMarketIndicators(indicators || []);
 
-      // ✔ Alle indicatornamen ophalen
+      // 🟩 Alle indicatornamen (voor selectbox)
       const names = await getMarketIndicatorNames();
       setAvailableIndicators(names || []);
 
@@ -171,10 +178,10 @@ export function useMarketData() {
 
 
   // =========================================================
-  // DAGTABEL OPNIEUW LADEN
+  // 🟦 ACTIEVE indicatoren OPNIEUW LADEN
   // =========================================================
   async function loadActiveIndicators() {
-    const active = await fetchMarketDayData();
+    const active = await getActiveMarketIndicators();
     setMarketIndicators(active || []);
   }
 

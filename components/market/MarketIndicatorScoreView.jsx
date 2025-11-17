@@ -26,7 +26,7 @@ export default function MarketIndicatorScoreView({
       return;
     }
 
-    const results = availableIndicators.filter((i) =>
+    const results = availableIndicators.filter(i =>
       i.display_name.toLowerCase().includes(query.toLowerCase())
     );
 
@@ -38,13 +38,14 @@ export default function MarketIndicatorScoreView({
   // 🔐 Click outside → dropdown sluiten
   useEffect(() => {
     function handleClickOutside(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+      if (isOpen && wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setIsOpen(false);
+        setFilteredIndicators([]);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   // ⌨️ Keyboard navigatie
   const handleKeyDown = (e) => {
@@ -52,14 +53,14 @@ export default function MarketIndicatorScoreView({
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlightIndex((prev) =>
+      setHighlightIndex(prev =>
         prev < filteredIndicators.length - 1 ? prev + 1 : prev
       );
     }
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setHighlightIndex((prev) => (prev > 0 ? prev - 1 : prev));
+      setHighlightIndex(prev => (prev > 0 ? prev - 1 : prev));
     }
 
     if (e.key === 'Enter') {
@@ -69,15 +70,23 @@ export default function MarketIndicatorScoreView({
         selectIndicator(chosen);
         setQuery('');
         setIsOpen(false);
+        setFilteredIndicators([]);
       }
     }
 
     if (e.key === 'Escape') {
       setIsOpen(false);
+      setFilteredIndicators([]);
     }
   };
 
-  // ➕ Toevoegen
+  const handleSelect = (item) => {
+    selectIndicator(item);
+    setQuery('');
+    setIsOpen(false);
+    setFilteredIndicators([]);
+  };
+
   const handleAdd = async () => {
     if (!selectedIndicator?.name) return;
 
@@ -92,7 +101,7 @@ export default function MarketIndicatorScoreView({
 
   return (
     <CardWrapper title="🪙 Bekijk Market Scorelogica">
-      <div className="mb-6 relative" ref={wrapperRef}>
+      <div className="mb-6 relative z-0" ref={wrapperRef}>
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">
           Zoek een market-indicator
         </label>
@@ -105,14 +114,15 @@ export default function MarketIndicatorScoreView({
           onKeyDown={handleKeyDown}
           autoComplete="off"
           className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:text-gray-100"
-          onFocus={() => query && filteredIndicators.length > 0 && setIsOpen(true)}
+          onFocus={() => {
+            if (filteredIndicators.length > 0) setIsOpen(true);
+          }}
         />
 
-        {/* 🔽 Dropdown */}
         {isOpen && filteredIndicators.length > 0 && (
           <ul
             className="
-              absolute left-0 right-0 top-full z-50 border rounded shadow 
+              absolute left-0 right-0 top-full z-[9999] border rounded shadow 
               max-h-60 overflow-y-auto bg-white dark:bg-gray-800 
               animate-fade-slide
             "
@@ -120,11 +130,7 @@ export default function MarketIndicatorScoreView({
             {filteredIndicators.map((i, idx) => (
               <li
                 key={i.name}
-                onClick={() => {
-                  selectIndicator(i);
-                  setQuery('');
-                  setIsOpen(false);
-                }}
+                onClick={() => handleSelect(i)}
                 className={`
                   p-2 cursor-pointer 
                   ${highlightIndex === idx
@@ -141,7 +147,7 @@ export default function MarketIndicatorScoreView({
         )}
       </div>
 
-      {/* 📊 Scoreregels */}
+      {/* Rest identiek */}
       {selectedIndicator ? (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
@@ -180,7 +186,6 @@ export default function MarketIndicatorScoreView({
             <p className="text-sm text-gray-500 italic">Geen scoreregels gevonden.</p>
           )}
 
-          {/* ➕ Toevoegen */}
           <div className="pt-2">
             <button
               onClick={handleAdd}

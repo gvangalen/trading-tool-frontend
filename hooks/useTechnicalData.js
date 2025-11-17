@@ -1,77 +1,96 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
 import {
   technicalDataDay,
   technicalDataWeek,
   technicalDataMonth,
   technicalDataQuarter,
-
   getIndicatorNames,
   getScoreRulesForIndicator,
-
   technicalDataAdd,
 } from '@/lib/api/technical';
 
 import { getDailyScores } from '@/lib/api/scores';
 
-
-// ------------------------------------------------------
-// 🧠 Adviesfunctie (zelfde model als macro & market)
-// ------------------------------------------------------
-const getAdvies = (score) =>
-  score >= 75 ? '🟢 Bullish'
-    : score <= 25 ? '🔴 Bearish'
-      : '⚖️ Neutraal';
-
-
 export function useTechnicalData(activeTab = 'Dag') {
-
-  // ➤ Tabelgegevens
   const [technicalData, setTechnicalData] = useState([]);
-
-  // ➤ Meterwaarden
-  const [technicalScore, setTechnicalScore] = useState('N/A');
-  const [advies, setAdviesState] = useState('⚖️ Neutraal');
-
-  // ➤ Indicatorselectie
+  const [avgScore, setAvgScore] = useState('N/A');
+  const [advies, setAdvies] = useState('⚖️ Neutraal');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
-  // ➤ Status
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-
-  // =========================================================
-  // INIT
-  // =========================================================
   useEffect(() => {
-    loadAll();
+    loadData();
+    loadIndicatorNames();
+
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
   }, [activeTab]);
 
 
   // =========================================================
-  // ALLES LADEN
+  // 📊 Load Technical Data
   // =========================================================
-  async function loadAll() {
+  async function loadData() {
     setLoading(true);
+    setError('');
 
     try {
-      // 1️⃣ tabeldata
-      await loadTechnicalTable();
+      let data;
 
-      // 2️⃣ meter (daily_scores)
-      await loadTechnicalMeter();
+      switch (activeTab) {
+        case 'Dag': data = await technicalDataDay(); break;
+        case 'Week': data = await technicalDataWeek(); break;
+        case 'Maand': data = await technicalDataMonth(); break;
+        case 'Kwartaal': data = await technicalDataQuarter(); break;
+        default: data = await technicalDataDay();
+      }
 
-      // 3️⃣ indicatornamen (dropdown)
-      const names = await getIndicatorNames();
-      setIndicatorNames(names || []);
+      if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
+      // =========================================================
+      // 🧠 BELANGRIJK: Backend → Frontend uniformeren
+      // =========================================================
+      const enriched = data.map((item) => ({
+        indicator: item.indicator || item.name || '–',   // FIXED
+        value: item.value ?? item.waarde ?? '–',          // FIXED
+        score: item.score ?? null,
+        advies: item.advies ?? item.action ?? '–',        // FIXED
+        uitleg: item.uitleg ?? item.interpretation ?? '–', // FIXED
+        symbol: item.symbol ?? '',
+        timestamp: item.timestamp ?? null,
+        dateObj: item.timestamp ? new Date(item.timestamp) : null,
+      }));
+
+      if (activeTab === 'Maand') setTechnicalData(groupByMonth(enriched));
+      else if (activeTab === 'Kwartaal') setTechnicalData(groupByQuarter(enriched));
+      else setTechnicalData(enriched);
+
+      // =========================================================
+      // 🟢 Total technical score (from daily_scores API)
+      // =========================================================
+      const scores = await getDailyScores();
+      const backendScore = scores?.technical_score ?? null;
+
+      if (backendScore !== null) {
+        const rounded = parseFloat(backendScore).toFixed(1);
+        setAvgScore(rounded);
+
+        setAdvies(
+          backendScore >= 75 ? '🟢 Bullish' :
+          backendScore <= 25 ? '🔴 Bearish' :
+          '⚖️ Neutraal'
+        );
+      }
     } catch (err) {
-      console.error('❌ loadAll technical:', err);
-      setError('Kon technical data niet laden.');
+      console.warn('⚠️ Technische data fout:', err);
+      setTechnicalData([]);
+      setAvgScore('N/A');
+      setAdvies('⚖️ Neutraal');
+      setError('Fout bij laden van technische data');
     } finally {
       setLoading(false);
     }
@@ -79,146 +98,104 @@ export function useTechnicalData(activeTab = 'Dag') {
 
 
   // =========================================================
-  // 1️⃣ TABEL LADEN
+  // 📚 Indicator Names
   // =========================================================
-  async function loadTechnicalTable() {
-
-    let raw = [];
-
-    switch (activeTab) {
-      case 'Dag':
-        raw = await technicalDataDay();
-        break;
-
-      case 'Week':
-        raw = await technicalDataWeek();
-        break;
-
-      case 'Maand':
-        raw = await technicalDataMonth();
-        break;
-
-      case 'Kwartaal':
-        raw = await technicalDataQuarter();
-        break;
-
-      default:
-        raw = await technicalDataDay();
-    }
-
-    if (!Array.isArray(raw)) raw = [];
-
-    const enriched = raw.map((item) => ({
-      name: item.indicator ?? item.name ?? '–',
-      value: item.waarde ?? item.value ?? '–',
-      score: item.score ?? null,
-      advies: item.advies ?? null,
-      uitleg: item.uitleg ?? null,
-      symbol: item.symbol ?? '',
-      timestamp: item.timestamp ?? null,
-      dateObj: item.timestamp ? new Date(item.timestamp) : null,
-    }));
-
-    // Groepering
-    if (activeTab === 'Maand') {
-      setTechnicalData(groupByMonth(enriched));
-    } else if (activeTab === 'Kwartaal') {
-      setTechnicalData(groupByQuarter(enriched));
-    } else {
-      setTechnicalData(enriched);
+  async function loadIndicatorNames() {
+    try {
+      const data = await getIndicatorNames();
+      setIndicatorNames(data);
+    } catch (err) {
+      console.error('❌ Fout bij indicator namen:', err);
     }
   }
 
 
   // =========================================================
-  // 2️⃣ METER (daily_scores)
-  // =========================================================
-  async function loadTechnicalMeter() {
-    const scores = await getDailyScores();
-
-    const s = parseFloat(scores?.technical_score ?? 0);
-
-    setTechnicalScore(s.toFixed(1));
-    setAdviesState(getAdvies(s));
-  }
-
-
-  // =========================================================
-  // SCORE RULES
+  // 🧠 Score Rules Logic
   // =========================================================
   async function loadScoreRules(indicatorName) {
     try {
       const rules = await getScoreRulesForIndicator(indicatorName);
-      setScoreRules(rules || []);
+      setScoreRules(rules);
     } catch (err) {
-      console.error('❌ Fout bij technical scorerules:', err);
+      console.error('❌ Fout bij scoreregels:', err);
     }
   }
 
 
   // =========================================================
-  // ADD TECHNICAL INDICATOR
+  // ➕ Add Indicator
   // =========================================================
-  async function addTechnicalData(name) {
+  async function addTechnicalData(indicatorName) {
     try {
-      await technicalDataAdd(name);
-      await loadAll();
+      const result = await technicalDataAdd(indicatorName);
+      await loadData();
+      return result;
     } catch (err) {
       console.error('❌ addTechnicalData error:', err);
+      throw err;
     }
   }
 
 
   // =========================================================
-  // GROEPERING HELPERS
+  // 🧹 Remove handler (frontend only)
+  // =========================================================
+  function handleRemove(indicatorName) {
+    setTechnicalData((prev) =>
+      prev.filter((item) => item.indicator !== indicatorName)
+    );
+  }
+
+
+  // =========================================================
+  // 🗓️ Grouping Functions
   // =========================================================
   function groupByMonth(data) {
     const grouped = {};
-
-    data.forEach((item) => {
-      if (!item.dateObj) return;
+    for (const item of data) {
+      if (!item.dateObj) continue;
       const y = item.dateObj.getFullYear();
       const m = item.dateObj.getMonth() + 1;
       const key = `${y}-${m}`;
-
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
-    });
+    }
 
-    return Object.entries(grouped).map(([key, items]) => {
-      const [year, month] = key.split('-');
-      return {
-        label: `📅 ${getMonthName(month)} ${year}`,
-        data: items,
-      };
-    });
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => {
+        const [y, m] = key.split('-');
+        const label = `📅 ${getMonthName(m)} ${y}`;
+        return { label, data: items };
+      });
   }
 
   function groupByQuarter(data) {
     const grouped = {};
-
-    data.forEach((item) => {
-      if (!item.dateObj) return;
+    for (const item of data) {
+      if (!item.dateObj) continue;
       const y = item.dateObj.getFullYear();
       const q = Math.floor(item.dateObj.getMonth() / 3) + 1;
       const key = `${y}-Q${q}`;
-
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
-    });
+    }
 
-    return Object.entries(grouped).map(([key, items]) => ({
-      label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
-      data: items,
-    }));
+    return Object.entries(grouped)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => ({
+        label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
+        data: items,
+      }));
   }
 
   function getMonthName(m) {
-    const arr = [
-      'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
-      'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
+    const maanden = [
+      'Januari','Februari','Maart','April','Mei','Juni',
+      'Juli','Augustus','September','Oktober','November','December'
     ];
-    return arr[parseInt(m) - 1] || '';
+    return maanden[parseInt(m, 10) - 1] || 'Onbekend';
   }
 
 
@@ -227,17 +204,14 @@ export function useTechnicalData(activeTab = 'Dag') {
   // =========================================================
   return {
     technicalData,
-
-    technicalScore,     // meterwaarde
-    advies,             // meter advies
-
+    avgScore,
+    advies,
     loading,
     error,
-
     indicatorNames,
     scoreRules,
-
     loadScoreRules,
     addTechnicalData,
+    handleRemove,
   };
 }

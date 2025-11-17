@@ -17,15 +17,14 @@ export default function MarketPage() {
     sevenDayData,
     forwardReturns,
 
-    marketIndicators,
-
+    marketDayData,        // ✅ juiste variabele
     availableIndicators,
     selectedIndicator,
     scoreRules,
     selectIndicator,
 
-    addMarket,     // 🟢 via hook
-    removeMarket,  // 🟢 via hook
+    addMarket,
+    removeMarket,
 
     loading,
     error,
@@ -53,10 +52,7 @@ export default function MarketPage() {
       {loading && <p className="text-sm text-gray-500">📡 Laden...</p>}
       {error && <p className="text-sm text-red-500">❌ {error}</p>}
 
-
-      {/* ================================
-          🔥 MARKET SCORE
-      ================================= */}
+      {/* MARKET SCORE */}
       <CardWrapper>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">
@@ -73,10 +69,7 @@ export default function MarketPage() {
         </div>
       </CardWrapper>
 
-
-      {/* ================================
-          🔥 LIVE BTC DATA
-      ================================= */}
+      {/* LIVE BTC DATA */}
       <MarketLiveCard
         price={btcLive?.price}
         change24h={btcLive?.change_24h}
@@ -84,22 +77,16 @@ export default function MarketPage() {
         timestamp={btcLive?.timestamp}
       />
 
-
-      {/* ================================
-          🔥 SCORE LOGICA (ZOEK + VIEW + ADD)
-      ================================= */}
+      {/* SCORE LOGICA */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators}
         selectedIndicator={selectedIndicator}
         scoreRules={scoreRules}
         selectIndicator={selectIndicator}
-        addMarketIndicator={addMarket}   // 🟢 Correct
+        addMarketIndicator={addMarket}
       />
 
-
-      {/* ================================
-          🔥 MARKET DAY TABLE
-      ================================= */}
+      {/* MARKET DAY TABLE */}
       <CardWrapper title="📅 Dagelijkse Market Analyse">
         <table className="w-full text-sm">
           <thead>
@@ -115,23 +102,17 @@ export default function MarketPage() {
 
           <tbody>
             <MarketDayTable
-              data={marketIndicators}
-              onRemove={removeMarket}   // 🟢 Correct
+              data={marketDayData}     // ✅ FIXED
+              onRemove={removeMarket}
             />
           </tbody>
         </table>
       </CardWrapper>
 
-
-      {/* ================================
-          🔥 7-DAY HISTORY
-      ================================= */}
+      {/* 7-DAY HISTORY */}
       <MarketSevenDayTable history={sevenDayData} />
 
-
-      {/* ================================
-          🔥 FORWARD RETURNS
-      ================================= */}
+      {/* FORWARD RETURNS */}
       <MarketForwardReturnTabs data={forwardReturns} />
 
     </div>

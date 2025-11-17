@@ -1,32 +1,81 @@
 'use client';
 
 import CardWrapper from '@/components/ui/CardWrapper';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function MarketIndicatorScoreView({
-  availableIndicators,        // lijst vanuit hook
-  selectedIndicator,          // huidig gekozen indicator
-  scoreRules,                 // scoreregels vanuit hook
-  selectIndicator,            // functie uit hook
-  addMarketIndicator,         // functie uit hook
+  availableIndicators,
+  selectedIndicator,
+  scoreRules,
+  selectIndicator,
+  addMarketIndicator,
 }) {
   const [query, setQuery] = useState('');
   const [filteredIndicators, setFilteredIndicators] = useState([]);
   const [added, setAdded] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+
+  const wrapperRef = useRef(null);
 
   // 🔎 Live filter
   useEffect(() => {
     if (!query) {
       setFilteredIndicators([]);
+      setIsOpen(false);
       return;
     }
 
-    setFilteredIndicators(
-      availableIndicators.filter((i) =>
-        i.display_name.toLowerCase().includes(query.toLowerCase())
-      )
+    const results = availableIndicators.filter((i) =>
+      i.display_name.toLowerCase().includes(query.toLowerCase())
     );
+
+    setFilteredIndicators(results);
+    setIsOpen(results.length > 0);
+    setHighlightIndex(-1);
   }, [query, availableIndicators]);
+
+  // 🔐 Click outside → dropdown sluiten
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // ⌨️ Keyboard navigatie
+  const handleKeyDown = (e) => {
+    if (!isOpen) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightIndex((prev) =>
+        prev < filteredIndicators.length - 1 ? prev + 1 : prev
+      );
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightIndex >= 0) {
+        const chosen = filteredIndicators[highlightIndex];
+        selectIndicator(chosen);
+        setQuery('');
+        setIsOpen(false);
+      }
+    }
+
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
 
   // ➕ Toevoegen
   const handleAdd = async () => {
@@ -43,9 +92,7 @@ export default function MarketIndicatorScoreView({
 
   return (
     <CardWrapper title="🪙 Bekijk Market Scorelogica">
-
-      {/* 🔍 Zoekveld */}
-      <div className="mb-6 relative">
+      <div className="mb-6 relative" ref={wrapperRef}>
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">
           Zoek een market-indicator
         </label>
@@ -55,21 +102,36 @@ export default function MarketIndicatorScoreView({
           placeholder="Typ een naam zoals BTC Change 24h, Volume, Price…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           autoComplete="off"
           className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:text-gray-100"
+          onFocus={() => query && filteredIndicators.length > 0 && setIsOpen(true)}
         />
 
-        {filteredIndicators.length > 0 && (
-          <ul className="absolute z-10 w-full border rounded shadow mt-1 max-h-48 overflow-y-auto bg-white dark:bg-gray-800">
-            {filteredIndicators.map((i) => (
+        {/* 🔽 Dropdown */}
+        {isOpen && filteredIndicators.length > 0 && (
+          <ul
+            className="
+              absolute left-0 right-0 top-full z-50 border rounded shadow 
+              max-h-60 overflow-y-auto bg-white dark:bg-gray-800 
+              animate-fade-slide
+            "
+          >
+            {filteredIndicators.map((i, idx) => (
               <li
                 key={i.name}
                 onClick={() => {
                   selectIndicator(i);
                   setQuery('');
-                  setFilteredIndicators([]);
+                  setIsOpen(false);
                 }}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                className={`
+                  p-2 cursor-pointer 
+                  ${highlightIndex === idx
+                    ? 'bg-blue-600 text-white'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }
+                `}
               >
                 {i.display_name}{' '}
                 <span className="text-xs text-gray-400">({i.name})</span>
@@ -103,9 +165,7 @@ export default function MarketIndicatorScoreView({
                   .sort((a, b) => a.range_min - b.range_min)
                   .map((r, i) => (
                     <tr key={i} className="border-t dark:border-gray-600">
-                      <td className="p-2">
-                        {r.range_min} – {r.range_max}
-                      </td>
+                      <td className="p-2">{r.range_min} – {r.range_max}</td>
                       <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
                         {r.score}
                       </td>
@@ -117,9 +177,7 @@ export default function MarketIndicatorScoreView({
               </tbody>
             </table>
           ) : (
-            <p className="text-sm text-gray-500 italic">
-              Geen scoreregels gevonden.
-            </p>
+            <p className="text-sm text-gray-500 italic">Geen scoreregels gevonden.</p>
           )}
 
           {/* ➕ Toevoegen */}

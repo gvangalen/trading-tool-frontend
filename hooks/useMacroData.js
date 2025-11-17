@@ -1,260 +1,292 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import {
   fetchMacroDataByDay,
   fetchMacroDataByWeek,
   fetchMacroDataByMonth,
   fetchMacroDataByQuarter,
+
   getMacroIndicatorNames,
   getScoreRulesForMacroIndicator,
+
   macroDataAdd,
   deleteMacroIndicator,
 } from '@/lib/api/macro';
+
 import { getDailyScores } from '@/lib/api/scores';
 
+// ------------------------------------------------------
+// 🧠 Adviesfunctie (zelfde als market/technical)
+// ------------------------------------------------------
+const getAdvies = (score) =>
+  score >= 75 ? '🟢 Bullish'
+    : score <= 25 ? '🔴 Bearish'
+      : '⚖️ Neutraal';
+
+
 export function useMacroData(activeTab = 'Dag') {
+
+  // ➤ Macro-tabel
   const [macroData, setMacroData] = useState([]);
-  const [avgScore, setAvgScore] = useState('N/A');
-  const [advies, setAdvies] = useState('⚖️ Neutraal');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+
+  // ➤ Meter waarden
+  const [macroScore, setMacroScore] = useState('N/A');
+  const [advies, setAdviesState] = useState('⚖️ Neutraal');
+
+  // ➤ Indicator selectors
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
+  // ➤ Loading/error
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+
+  // =========================================================
+  // INIT
+  // =========================================================
   useEffect(() => {
-    loadData();
-    loadIndicatorNames();
-    const interval = setInterval(loadData, 60000);
-    return () => clearInterval(interval);
+    loadAll();
   }, [activeTab]);
 
-  // 📊 Haal macrodata op per timeframe
-  async function loadData() {
+
+  // =========================================================
+  // ALLES LADEN (TABELLEN + METER)
+  // =========================================================
+  async function loadAll() {
     setLoading(true);
-    setError('');
 
     try {
-      let data;
-      switch (activeTab) {
-        case 'Dag':
-          data = await fetchMacroDataByDay();
-          break;
-        case 'Week':
-          data = await fetchMacroDataByWeek();
-          break;
-        case 'Maand':
-          data = await fetchMacroDataByMonth();
-          break;
-        case 'Kwartaal':
-          data = await fetchMacroDataByQuarter();
-          break;
-        default:
-          data = await fetchMacroDataByDay();
-      }
+      // 1️⃣ TABELLEN LADEN
+      await loadMacroTable();
 
-      if (!Array.isArray(data)) throw new Error('Macrodata is geen lijst');
+      // 2️⃣ METER DIRECT LADEN (ALTJD VIA daily_scores)
+      await loadMacroMeter();
 
-      // ✅ Belangrijkste fix: gebruik consistent "value" ipv "waarde"
-      const enriched = data.map((item) => ({
-        name: item.name ?? item.indicator ?? '–',
-        value: item.value ?? item.waarde ?? '–',
-        score: item.score ?? null,
-        trend: item.trend ?? null,
-        interpretation: item.interpretation ?? null,
-        action: item.action ?? null,
-        timestamp: item.timestamp ?? null,
-        dateObj: item.timestamp ? new Date(item.timestamp) : null,
-      }));
+      // 3️⃣ Indicatoren voor selectbox
+      const names = await getMacroIndicatorNames();
+      setIndicatorNames(names || []);
 
-      if (activeTab === 'Week') setMacroData(groupByDay(enriched));
-      else if (activeTab === 'Maand') setMacroData(groupByMonth(enriched));
-      else if (activeTab === 'Kwartaal') setMacroData(groupByQuarter(enriched));
-      else setMacroData(enriched);
-
-      const scores = await getDailyScores();
-      const backendScore = scores?.macro_score ?? null;
-
-      if (backendScore !== null) {
-        const rounded = parseFloat(backendScore).toFixed(1);
-        setAvgScore(rounded);
-        setAdvies(
-          backendScore >= 75 ? '🟢 Bullish' :
-          backendScore <= 25 ? '🔴 Bearish' :
-          '⚖️ Neutraal'
-        );
-      } else {
-        updateScore(enriched);
-      }
     } catch (err) {
-      console.warn('⚠️ Macrodata kon niet worden geladen:', err);
-      setMacroData([]);
-      setAvgScore('N/A');
-      setAdvies('⚖️ Neutraal');
-      setError('Fout bij laden van macrodata');
+      console.error('❌ loadAll macro:', err);
+      setError('Kon macrodata niet laden.');
     } finally {
       setLoading(false);
     }
   }
 
-  // 📚 Haal lijst met beschikbare macro-indicatoren op
-  async function loadIndicatorNames() {
-    try {
-      const data = await getMacroIndicatorNames();
-      setIndicatorNames(data);
-    } catch (err) {
-      console.error('❌ Fout bij ophalen macro indicatornamen:', err);
+
+  // =========================================================
+  // 1️⃣ TABELLEN LADEN
+  // =========================================================
+  async function loadMacroTable() {
+
+    let raw = [];
+
+    switch (activeTab) {
+      case 'Dag':
+        raw = await fetchMacroDataByDay();
+        break;
+
+      case 'Week':
+        raw = await fetchMacroDataByWeek();
+        break;
+
+      case 'Maand':
+        raw = await fetchMacroDataByMonth();
+        break;
+
+      case 'Kwartaal':
+        raw = await fetchMacroDataByQuarter();
+        break;
+
+      default:
+        raw = await fetchMacroDataByDay();
+    }
+
+    if (!Array.isArray(raw)) raw = [];
+
+    // Normaliseren
+    const enriched = raw.map((item) => ({
+      name: item.name ?? item.indicator,
+      value: item.value ?? '–',
+      score: item.score ?? null,
+      trend: item.trend ?? null,
+      interpretation: item.interpretation ?? null,
+      action: item.action ?? null,
+      timestamp: item.timestamp ?? null,
+      dateObj: item.timestamp ? new Date(item.timestamp) : null,
+    }));
+
+    // Groeperingen
+    switch (activeTab) {
+      case 'Week':
+        setMacroData(groupByWeek(enriched));
+        break;
+
+      case 'Maand':
+        setMacroData(groupByMonth(enriched));
+        break;
+
+      case 'Kwartaal':
+        setMacroData(groupByQuarter(enriched));
+        break;
+
+      default:
+        setMacroData(enriched);
     }
   }
 
-  // 🧠 Haal scoreregels op voor een specifieke indicator
+
+  // =========================================================
+  // 2️⃣ METER (ALLEEN DAILY_SCORES)
+  // =========================================================
+  async function loadMacroMeter() {
+
+    const scores = await getDailyScores();
+
+    const s = parseFloat(scores?.macro_score ?? 0);
+
+    setMacroScore(s.toFixed(1));
+    setAdviesState(getAdvies(s));
+  }
+
+
+  // =========================================================
+  // SCORE RULES
+  // =========================================================
   async function loadScoreRules(indicatorName) {
     try {
       const rules = await getScoreRulesForMacroIndicator(indicatorName);
-      setScoreRules(rules);
+      setScoreRules(rules || []);
     } catch (err) {
-      console.error('❌ Fout bij ophalen scoreregels:', err);
+      console.error('❌ Fout bij score rules:', err);
     }
   }
 
-  // ➕ Voeg nieuwe macro-indicator toe
-  async function addMacroIndicator(indicatorName) {
+
+  // =========================================================
+  // ADD / REMOVE
+  // =========================================================
+  async function addMacroIndicator(name) {
     try {
-      const result = await macroDataAdd(indicatorName);
-      console.log('✅ Indicator toegevoegd aan macro-analyse:', result);
-      await loadData(); // Refresh tabel
-      return result;
+      await macroDataAdd(name);
+      await loadAll();
     } catch (err) {
-      console.error('❌ Fout bij addMacroIndicator:', err);
-      throw err;
+      console.error('❌ addMacroIndicator:', err);
     }
   }
 
-  // 🗑️ Verwijder macro-indicator op basis van naam
-  async function removeMacroIndicator(indicatorName) {
-    if (!indicatorName) return;
-    const confirmDelete = window.confirm(`Weet je zeker dat je '${indicatorName}' wilt verwijderen?`);
-    if (!confirmDelete) return;
-
+  async function removeMacroIndicator(name) {
     try {
-      const res = await deleteMacroIndicator(indicatorName);
-      console.log('✅ Indicator verwijderd:', res);
-      alert(`✅ Indicator '${indicatorName}' succesvol verwijderd.`);
-      setMacroData((prev) => prev.filter((item) => item.name !== indicatorName));
+      await deleteMacroIndicator(name);
+      await loadAll();
     } catch (err) {
-      console.error('❌ Fout bij verwijderen van indicator:', err);
-      alert(`❌ Verwijderen van '${indicatorName}' mislukt.`);
+      console.error('❌ removeMacroIndicator:', err);
     }
   }
 
-  // 🔢 Bereken gemiddelde score
-  function updateScore(data) {
-    let total = 0, count = 0;
-    data.forEach((ind) => {
-      const s = parseFloat(ind.score);
-      if (!isNaN(s)) { total += s; count++; }
-    });
-    const avg = count ? (total / count).toFixed(1) : 'N/A';
-    setAvgScore(avg);
-    setAdvies(avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal');
-  }
 
-  // 📅 Groeperingen
-  function groupByDay(data) {
+  // =========================================================
+  // HELPERS: GROEPERING
+  // =========================================================
+  function groupByWeek(data) {
     const grouped = {};
+
     for (const item of data) {
       if (!item.dateObj) continue;
-      const date = item.dateObj;
-      const dayNum = date.getUTCDay() || 7;
-      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
-      const year = date.getUTCFullYear();
-      const key = `${year}-W${weekNo}`;
+
+      const d = item.dateObj;
+      const week = getISOWeek(d);
+      const key = `${d.getUTCFullYear()}-W${week}`;
+
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
 
-    return Object.entries(grouped)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([key, items]) => {
-        const [year, week] = key.split('-W');
-        const label = `📅 Week ${week} – ${year}`;
-        return { label, data: items };
-      });
+    return Object.entries(grouped).map(([label, items]) => ({
+      label: `📅 ${label}`,
+      data: items,
+    }));
+  }
+
+  function getISOWeek(date) {
+    const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const day = tmp.getUTCDay() || 7;
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    return Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
   }
 
   function groupByMonth(data) {
     const grouped = {};
+
     for (const item of data) {
       if (!item.dateObj) continue;
-      const year = item.dateObj.getFullYear();
-      const month = item.dateObj.getMonth() + 1;
-      const key = `${year}-${month}`;
+
+      const y = item.dateObj.getFullYear();
+      const m = item.dateObj.getMonth() + 1;
+      const key = `${y}-${m}`;
+
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
 
-    return Object.entries(grouped)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([key, items]) => {
-        const [year, month] = key.split('-');
-        const label = `📅 ${getMonthName(month)} ${year}`;
-        return { label, data: items };
-      });
+    return Object.entries(grouped).map(([key, items]) => {
+      const [year, month] = key.split('-');
+      return {
+        label: `📅 ${getMonthName(month)} ${year}`,
+        data: items,
+      };
+    });
   }
 
   function groupByQuarter(data) {
     const grouped = {};
+
     for (const item of data) {
       if (!item.dateObj) continue;
-      const year = item.dateObj.getFullYear();
-      const quarter = Math.floor(item.dateObj.getMonth() / 3) + 1;
-      const key = `${year}-Q${quarter}`;
+
+      const y = item.dateObj.getFullYear();
+      const q = Math.floor(item.dateObj.getMonth() / 3) + 1;
+      const key = `${y}-Q${q}`;
+
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
 
-    return Object.entries(grouped)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([key, items]) => ({
-        label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
-        data: items,
-      }));
+    return Object.entries(grouped).map(([key, items]) => ({
+      label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
+      data: items,
+    }));
   }
 
-  function getMonthName(monthNum) {
-    const maanden = [
+  function getMonthName(m) {
+    const arr = [
       'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
       'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
     ];
-    return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
+    return arr[parseInt(m) - 1] || '';
   }
 
-  // 🔍 Extra uitleg per indicator
-  function getExplanation(name) {
-    const uitleg = {
-      fear_greed_index: "Lage waarde = angst, hoge waarde = hebzucht.",
-      btc_dominance: "Hoge dominantie = minder altcoin-risico.",
-      dxy: "Lage DXY = gunstig voor crypto.",
-      sp500: "Sterke S&P500 wijst op risk-on marktsentiment.",
-      vix: "Hoge VIX duidt op onzekerheid in de markt.",
-      inflation_rate: "Hoge inflatie vermindert koopkracht en verhoogt risico.",
-      interest_rate: "Hogere rente beperkt liquiditeit in markten.",
-      oil_price: "Hoge olieprijzen kunnen inflatie aanwakkeren.",
-    };
-    return uitleg[name] || "Geen uitleg beschikbaar.";
-  }
 
+  // =========================================================
+  // EXPORT
+  // =========================================================
   return {
     macroData,
-    avgScore,
+
+    macroScore,
     advies,
+
     loading,
     error,
+
     indicatorNames,
     scoreRules,
-    getExplanation,
+
     loadScoreRules,
     addMacroIndicator,
     removeMacroIndicator,

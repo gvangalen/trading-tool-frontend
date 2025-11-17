@@ -21,8 +21,8 @@ import {
   marketDataAdd,
   marketDataDelete,
 
-  // Dagdata VAN DE DAG!
-  fetchMarketDataDay,
+  // ✔️ JUISTE FUNCTIE
+  fetchMarketDayData,
 
 } from '@/lib/api/market';
 
@@ -58,10 +58,10 @@ export function useMarketData() {
   const [marketScore, setMarketScore] = useState('N/A');
   const [advies, setAdviesState] = useState('⚖️ Neutraal');
 
-  // Dagelijkse indicatoren (VOOR TABEL)
+  // Dagelijkse indicatoren (TABEL)
   const [marketDayData, setMarketDayData] = useState([]);
 
-  // Actieve indicatoren (VOOR UI)
+  // Actieve indicatoren (UI)
   const [activeMarketIndicators, setActiveMarketIndicators] = useState([]);
 
   // Dropdown + logica
@@ -69,14 +69,12 @@ export function useMarketData() {
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
 
-  // Loading / Error
+  // Loading / Error state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
 
-  // ===============================================================
   // INIT
-  // ===============================================================
   useEffect(() => {
     loadAllData();
     const interval = setInterval(loadLiveBTC, 60000);
@@ -85,15 +83,12 @@ export function useMarketData() {
 
 
   // ===============================================================
-  // ALLE MARKET DATA LADEN
+  // ALLES LADEN
   // ===============================================================
   async function loadAllData() {
     setLoading(true);
 
     try {
-      //
-      // 1️⃣ Live charts (7d, returns)
-      //
       const history = await fetchMarketData7d();
       setSevenDayData(history);
 
@@ -105,30 +100,20 @@ export function useMarketData() {
       ]);
       setForwardReturns({ week, maand, kwartaal, jaar });
 
-      //
-      // 2️⃣ Dashboard Market Score (daily_scores)
-      //
       const dailyScores = await getDailyScores();
       const aiMarketScore = dailyScores?.market?.score ?? 50;
-
       setMarketScore(aiMarketScore);
       setAdviesState(getAdvies(aiMarketScore));
 
-      //
-      // 3️⃣ Dagelijkse indicatorwaarden (TABEL)
-      //
-      const dayData = await fetchMarketDataDay();
+      // ✔️ Dagdata correct ophalen
+      const dayData = await fetchMarketDayData();
       setMarketDayData(dayData || []);
 
-      //
-      // 4️⃣ Actieve indicatoren (user actief in analyse)
-      //
+      // Active indicators
       const active = await getActiveMarketIndicators();
       setActiveMarketIndicators(active || []);
 
-      //
-      // 5️⃣ Beschikbare indicators (scoreview dropdown)
-      //
+      // Beschikbare indicatoren
       const names = await getMarketIndicatorNames();
       setAvailableIndicators(names || []);
 
@@ -141,9 +126,7 @@ export function useMarketData() {
   }
 
 
-  // ===============================================================
-  // BTC LIVE PRICE
-  // ===============================================================
+  // LIVE BTC
   async function loadLiveBTC() {
     try {
       const live = await fetchLatestBTC();
@@ -155,13 +138,11 @@ export function useMarketData() {
   }
 
 
-  // ===============================================================
-  // SCORE RULES SELECTIE
-  // ===============================================================
+  // SCORE RULE SELECTIE
   async function selectIndicator(indicatorObj) {
     if (!indicatorObj) return;
-    setSelectedIndicator(indicatorObj);
 
+    setSelectedIndicator(indicatorObj);
     try {
       const rules = await getScoreRulesForMarketIndicator(indicatorObj.name);
       setScoreRules(rules || []);
@@ -171,9 +152,7 @@ export function useMarketData() {
   }
 
 
-  // ===============================================================
-  // INDICATOR TOEVOEGEN
-  // ===============================================================
+  // INDICATOR TOEVPGEN
   async function addMarket(name) {
     try {
       await marketDataAdd(name);
@@ -184,9 +163,7 @@ export function useMarketData() {
     }
   }
 
-  // ===============================================================
   // INDICATOR VERWIJDEREN
-  // ===============================================================
   async function removeMarket(name) {
     try {
       await marketDataDelete(name);
@@ -198,11 +175,9 @@ export function useMarketData() {
   }
 
 
-  // ===============================================================
   // REFRESH HELPERS
-  // ===============================================================
   async function refreshDayData() {
-    const dayData = await fetchMarketDataDay();
+    const dayData = await fetchMarketDayData();
     setMarketDayData(dayData || []);
   }
 
@@ -212,29 +187,23 @@ export function useMarketData() {
   }
 
 
-  // ===============================================================
-  // EXPORT
-  // ===============================================================
+  // EXPORTS
   return {
     loading,
     error,
 
-    // Dashboard
     btcLive,
     marketScore,
     advies,
 
-    // Charting
     sevenDayData,
     forwardReturns,
 
-    // Daily table
     marketDayData,
     activeMarketIndicators,
     removeMarket,
     addMarket,
 
-    // Score Logic UI
     availableIndicators,
     selectedIndicator,
     scoreRules,

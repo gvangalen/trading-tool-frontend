@@ -1,60 +1,63 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchDailyScores } from '@/lib/api/scores'; // 👈 deze moet je aanmaken als je 'fetchDashboardData' niet wil aanpassen
+import { getDailyScores } from '@/lib/api/scores'; // 👈 jouw bestaande route
 
 export function useDashboardData() {
+  const [loading, setLoading] = useState(true);
+
   const [macroScore, setMacroScore] = useState(0);
   const [technicalScore, setTechnicalScore] = useState(0);
-  const [setupScore, setSetupScore] = useState(0);
   const [marketScore, setMarketScore] = useState(0);
+  const [setupScore, setSetupScore] = useState(0);
 
-  const [macroExplanation, setMacroExplanation] = useState('📡 Data wordt geladen...');
-  const [technicalExplanation, setTechnicalExplanation] = useState('📡 Data wordt geladen...');
-  const [setupExplanation, setSetupExplanation] = useState('📡 Data wordt geladen...');
-  const [marketExplanation, setMarketExplanation] = useState('📡 Data wordt geladen...');
+  const [macroExplanation, setMacroExplanation] = useState('–');
+  const [technicalExplanation, setTechnicalExplanation] = useState('–');
+  const [marketExplanation, setMarketExplanation] = useState('–');
+  const [setupExplanation, setSetupExplanation] = useState('–');
 
   const [macroTop, setMacroTop] = useState([]);
   const [technicalTop, setTechnicalTop] = useState([]);
-  const [setupTop, setSetupTop] = useState([]);
   const [marketTop, setMarketTop] = useState([]);
-
-  const [loading, setLoading] = useState(true);
+  const [setupTop, setSetupTop] = useState([]);
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadData() {
+    async function load() {
       try {
         setLoading(true);
-        const res = await fetchDailyScores(); // 🔁 haalt direct /api/scores/daily op
+
+        // 🟦 CORRECTE BACKEND-CALL
+        const res = await getDailyScores();
         if (!mounted || !res) return;
 
-        setMacroScore(res.macro?.score ?? 0);
-        setMacroExplanation(res.macro?.interpretation ?? '–');
-        setMacroTop(res.macro?.top_contributors ?? []);
+        // 🟩 EXACTE BACKEND-FIELDS (dit komt uit daily_scores)
+        setMacroScore(res.macro_score ?? 0);
+        setMacroExplanation(res.macro_interpretation ?? '–');
+        setMacroTop(res.macro_top_contributors ?? []);
 
-        setTechnicalScore(res.technical?.score ?? 0);
-        setTechnicalExplanation(res.technical?.interpretation ?? '–');
-        setTechnicalTop(res.technical?.top_contributors ?? []);
+        setTechnicalScore(res.technical_score ?? 0);
+        setTechnicalExplanation(res.technical_interpretation ?? '–');
+        setTechnicalTop(res.technical_top_contributors ?? []);
 
-        setSetupScore(res.setup?.score ?? 0);
-        setSetupExplanation(res.setup?.interpretation ?? '–');
-        setSetupTop(res.setup?.top_contributors ?? []);
+        setMarketScore(res.market_score ?? 0);
+        setMarketExplanation(res.market_interpretation ?? '–');
+        setMarketTop(res.market_top_contributors ?? []);
 
-        setMarketScore(res.market?.score ?? 0);
-        setMarketExplanation(res.market?.interpretation ?? '–');
-        setMarketTop(res.market?.top_contributors ?? []);
+        setSetupScore(res.setup_score ?? 0);
+        setSetupExplanation(res.setup_interpretation ?? '–');
+        setSetupTop(res.setup_top_contributors ?? []);
 
       } catch (err) {
-        console.error('❌ Fout bij ophalen scores:', err);
+        console.error('❌ Fout bij useDashboardData:', err);
       } finally {
         if (mounted) setLoading(false);
       }
     }
 
-    loadData();
-    const interval = setInterval(loadData, 60000);
+    load();
+    const interval = setInterval(load, 60000);
     return () => {
       mounted = false;
       clearInterval(interval);
@@ -62,18 +65,21 @@ export function useDashboardData() {
   }, []);
 
   return {
+    loading,
+
     macroScore,
     technicalScore,
-    setupScore,
     marketScore,
+    setupScore,
+
     macroExplanation,
     technicalExplanation,
-    setupExplanation,
     marketExplanation,
+    setupExplanation,
+
     macroTop,
     technicalTop,
-    setupTop,
     marketTop,
-    loading,
+    setupTop,
   };
 }

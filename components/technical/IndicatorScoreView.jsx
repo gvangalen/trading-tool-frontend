@@ -5,13 +5,12 @@ import { useEffect, useState } from 'react';
 import {
   getIndicatorNames as getTechnicalIndicatorNames,
   getScoreRulesForIndicator,
-  technicalDataAdd,
 } from '@/lib/api/technical';
 
 import CardWrapper from '@/components/ui/CardWrapper';
 import UniversalSearchDropdown from '@/components/ui/UniversalSearchDropdown';
 
-export default function TechnicalIndicatorScoreView() {
+export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
@@ -53,7 +52,7 @@ export default function TechnicalIndicatorScoreView() {
     if (!selected) return;
 
     try {
-      await technicalDataAdd(selected.name);
+      await addTechnicalIndicator(selected.name);   // ✔ JUIST
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (err) {
@@ -64,9 +63,6 @@ export default function TechnicalIndicatorScoreView() {
 
   return (
     <CardWrapper title="📐 Bekijk Technische Scorelogica">
-      {/* =====================================================
-          🔎 UNIVERSELE ZOEKDROPDOWN
-      ===================================================== */}
       <UniversalSearchDropdown
         label="Zoek een technische indicator"
         items={allIndicators}
@@ -75,9 +71,6 @@ export default function TechnicalIndicatorScoreView() {
         placeholder="Typ bijvoorbeeld RSI, MA200, Volume..."
       />
 
-      {/* =====================================================
-          📊 Scoreregels tabel
-      ===================================================== */}
       {selected && scoreRules.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
@@ -122,9 +115,6 @@ export default function TechnicalIndicatorScoreView() {
         </p>
       )}
 
-      {/* =====================================================
-          ➕ Toevoegen knop
-      ===================================================== */}
       <div className="pt-4">
         <button
           onClick={handleAdd}

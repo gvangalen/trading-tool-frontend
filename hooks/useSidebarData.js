@@ -1,47 +1,62 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  fetchDailyReportSummary,
-  fetchActiveTrades,
-  fetchAIBotStatus,
-} from '@/lib/api/sidebar';
+import { fetchDailyReportSummary } from '@/lib/api/sidebar'; // deze bestaat wél nog
 
 export function useSidebarData() {
-  const [summary, setSummary] = useState('');
+  const [summary, setSummary] = useState('Geen samenvatting beschikbaar');
   const [trades, setTrades] = useState([]);
-  const [aiStatus, setAiStatus] = useState({ state: '', strategy: '', updated: '' });
+  const [aiStatus, setAiStatus] = useState({
+    state: 'onbekend',
+    strategy: 'n.v.t.',
+    updated: 'onbekend'
+  });
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
-    async function loadSidebarData() {
-      try {
-        setLoading(true);
-        const [summaryRes, tradesRes, aiRes] = await Promise.all([
-          fetchDailyReportSummary(),
-          fetchActiveTrades(),
-          fetchAIBotStatus(),
-        ]);
+    let mounted = true;
 
-        if (!isMounted) return;
+    async function load() {
+      setLoading(true);
+
+      try {
+        // 🟢 Enige echte API call
+        const summaryRes = await fetchDailyReportSummary();
+
+        if (!mounted) return;
+
         setSummary(summaryRes.summary || 'Geen samenvatting beschikbaar');
-        setTrades(tradesRes);
-        setAiStatus(aiRes);
-      } catch (err) {
-        console.error('⚠️ Sidebar data ophalen mislukt:', err);
-        if (isMounted) setError('Kan sidebar-data niet laden.');
+
+        // 🟡 ACTIEVE TRADES = dummy
+        setTrades([]);
+
+        // 🔵 AI BOT STATUS = dummy
+        setAiStatus({
+          state: 'onbekend',
+          strategy: 'n.v.t.',
+          updated: 'onbekend'
+        });
+
+      } catch (e) {
+        console.error("Sidebar load failed:", e);
+
+        if (mounted) {
+          setSummary('Geen samenvatting beschikbaar');
+          setTrades([]);
+          setAiStatus({
+            state: 'onbekend',
+            strategy: 'n.v.t.',
+            updated: 'onbekend'
+          });
+        }
       } finally {
-        if (isMounted) setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
 
-    loadSidebarData();
-    return () => {
-      isMounted = false;
-    };
+    load();
+    return () => { mounted = false };
   }, []);
 
   return {
@@ -49,6 +64,5 @@ export function useSidebarData() {
     trades,
     aiStatus,
     loading,
-    error,
   };
 }

@@ -13,10 +13,11 @@ export default function TechnicalPage() {
   const [activeTab, setActiveTab] = useState('Dag');
   const [editIndicator, setEditIndicator] = useState(null);
 
-  // 📡 Haal technische data + remove functie op
+  // 📡 Haal technische data + add/remove functies op
   const {
     technicalData,
-    removeTechnicalIndicator,   // <-- juiste functie
+    addTechnicalIndicator,       // <-- HIER OOK OPHALEN
+    removeTechnicalIndicator,
     loading: loadingIndicators,
     error,
   } = useTechnicalData(activeTab);
@@ -33,7 +34,6 @@ export default function TechnicalPage() {
     return 'text-yellow-600';
   };
 
-  // Advies bepalen uit score
   const adviesText =
     (technical?.score ?? 0) >= 75
       ? '📈 Bullish'
@@ -66,7 +66,9 @@ export default function TechnicalPage() {
       </CardWrapper>
 
       {/* 🔍 Scorelogica bekijken + indicator toevoegen */}
-      <TechnicalIndicatorScoreView />
+      <TechnicalIndicatorScoreView
+        addTechnicalIndicator={addTechnicalIndicator}  // <-- 🔥 BELANGRIJK
+      />
 
       {/* 📅 Tabs met data */}
       <TechnicalTabs
@@ -75,24 +77,8 @@ export default function TechnicalPage() {
         technicalData={technicalData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={removeTechnicalIndicator}   // <-- FIXED
+        handleRemove={removeTechnicalIndicator}
       />
-
-      {/* 💬 Popup (optioneel) */}
-      {editIndicator && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
-            <h3 className="text-lg font-bold">✏️ Bewerk {editIndicator.name}</h3>
-
-            <button
-              onClick={() => setEditIndicator(null)}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              Sluiten
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

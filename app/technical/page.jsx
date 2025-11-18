@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useScoresData } from '@/hooks/useScoresData';
+
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
-import IndicatorScoreView from '@/components/technical/IndicatorScoreView'; // ✅ Nieuw component
+import IndicatorScoreView from '@/components/technical/IndicatorScoreView';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
@@ -15,6 +16,13 @@ export default function TechnicalPage() {
     handleRemove,
     loading: loadingIndicators,
     error,
+
+    // 🔥 Deze 4 komen uit de hook — nodig voor de dropdown
+    indicatorNames,
+    scoreRules,
+    loadScoreRules,
+    addTechnicalData,
+
   } = useTechnicalData(activeTab);
 
   const { technical, loading: loadingScore } = useScoresData();
@@ -33,6 +41,15 @@ export default function TechnicalPage() {
       : technical.score <= 25
       ? '📉 Bearish'
       : '⚖️ Neutraal';
+
+  // 🔥 Selected indicator: simpele local state
+  const [selectedIndicator, setSelectedIndicator] = useState(null);
+
+  // Wanneer user iets selecteert in de dropdown:
+  const handleSelectIndicator = (item) => {
+    setSelectedIndicator(item);
+    loadScoreRules(item.name); // ⬅️ laad scoreregels uit de DB
+  };
 
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
@@ -54,8 +71,14 @@ export default function TechnicalPage() {
         </p>
       </CardWrapper>
 
-      {/* 🔍 Scorelogica bekijken */}
-      <IndicatorScoreView />
+      {/* 🔍 Scorelogica bekijken — NU MET JUISTE PROPS */}
+      <IndicatorScoreView
+        indicatorNames={indicatorNames}              // ⬅️ lijst voor zoek dropdown
+        selectedIndicator={selectedIndicator}        // ⬅️ wat is geselecteerd
+        onSelectIndicator={handleSelectIndicator}    // ⬅️ laad regels
+        scoreRules={scoreRules}                      // ⬅️ regels uit DB
+        addTechnicalData={addTechnicalData}          // ⬅️ toevoegen aan dagtabel
+      />
 
       {/* 📅 Tabs met technische indicatoren per periode */}
       <TechnicalTabs

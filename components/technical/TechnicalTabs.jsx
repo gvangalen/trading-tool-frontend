@@ -21,7 +21,7 @@ export default function TechnicalTabs({
     if (loading) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-gray-500">
+          <td colSpan="100%" className="p-4 text-center text-gray-500">
             ⏳ Laden...
           </td>
         </tr>
@@ -31,7 +31,7 @@ export default function TechnicalTabs({
     if (error) {
       return (
         <tr>
-          <td colSpan={6} className="p-4 text-center text-red-500">
+          <td colSpan="100%" className="p-4 text-center text-red-500">
             ❌ {error}
           </td>
         </tr>
@@ -41,12 +41,16 @@ export default function TechnicalTabs({
     switch (activeTab) {
       case 'Dag':
         return <TechnicalDayTable data={technicalData} onRemove={handleRemove} />;
+
       case 'Week':
         return <TechnicalWeekTable data={technicalData} onRemove={handleRemove} />;
+
       case 'Maand':
         return <TechnicalMonthTable data={technicalData} onRemove={handleRemove} />;
+
       case 'Kwartaal':
         return <TechnicalQuarterTable data={technicalData} onRemove={handleRemove} />;
+
       default:
         return null;
     }
@@ -75,7 +79,8 @@ export default function TechnicalTabs({
       <CardWrapper>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            {/* ❌ Geen vaste header bij Week, Maand of Kwartaal */}
+
+            {/* Header alleen bij Dag */}
             {activeTab === 'Dag' && (
               <thead className="bg-gray-100 dark:bg-gray-800 text-left">
                 <tr>
@@ -88,6 +93,7 @@ export default function TechnicalTabs({
                 </tr>
               </thead>
             )}
+
             <tbody>{renderTableBody()}</tbody>
           </table>
         </div>

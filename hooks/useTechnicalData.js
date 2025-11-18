@@ -8,8 +8,9 @@ import {
   technicalDataQuarter,
   getIndicatorNames,
   getScoreRulesForIndicator,
-  technicalDataAdd, // ✅ toegevoegd
+  technicalDataAdd,
 } from '@/lib/api/technical';
+
 import { getDailyScores } from '@/lib/api/scores';
 
 export function useTechnicalData(activeTab = 'Dag') {
@@ -18,22 +19,34 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // 🔍 Indicatorlijst voor zoekbalk
   const [indicatorNames, setIndicatorNames] = useState([]);
+
+  // 🧠 Scoreregels
   const [scoreRules, setScoreRules] = useState([]);
 
+  // ============================================
+  // INIT
+  // ============================================
   useEffect(() => {
     loadData();
     loadIndicatorNames();
+
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [activeTab]);
 
-  // 📊 Haal technische data op per timeframe
+  // ============================================
+  // 📊 1 — DATA LADEN PER TAB
+  // ============================================
   async function loadData() {
     setLoading(true);
     setError('');
+
     try {
       let data;
+
       switch (activeTab) {
         case 'Dag':
           data = await technicalDataDay();
@@ -51,7 +64,7 @@ export function useTechnicalData(activeTab = 'Dag') {
           data = await technicalDataDay();
       }
 
-      if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
+      if (!Array.isArray(data)) throw new Error('Technische data is geen lijst.');
 
       const enriched = data.map((item) => ({
         indicator: item.indicator || '–',
@@ -64,21 +77,28 @@ export function useTechnicalData(activeTab = 'Dag') {
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      if (activeTab === 'Maand') setTechnicalData(groupByMonth(enriched));
-      else if (activeTab === 'Kwartaal') setTechnicalData(groupByQuarter(enriched));
-      else setTechnicalData(enriched);
+      if (activeTab === 'Maand') {
+        setTechnicalData(groupByMonth(enriched));
+      } else if (activeTab === 'Kwartaal') {
+        setTechnicalData(groupByQuarter(enriched));
+      } else {
+        setTechnicalData(enriched);
+      }
 
-      // ✅ Haal de totale technische score op
+      // Totale technische score ophalen
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
       if (backendScore !== null) {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
+
         setAdvies(
-          backendScore >= 75 ? '🟢 Bullish' :
-          backendScore <= 25 ? '🔴 Bearish' :
-          '⚖️ Neutraal'
+          backendScore >= 75
+            ? '🟢 Bullish'
+            : backendScore <= 25
+            ? '🔴 Bearish'
+            : '⚖️ Neutraal'
         );
       } else {
         updateScore(enriched);
@@ -94,17 +114,21 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  // 📚 Haal indicatornamen op (voor zoekbalk / dropdown)
+  // ============================================
+  // 📚 2 — Indicatornamen ophalen
+  // ============================================
   async function loadIndicatorNames() {
     try {
-      const data = await getIndicatorNames();
+      const data = await getIndicatorNames(); // 👈 haalt op uit /api/technical/indicator_names
       setIndicatorNames(data);
     } catch (err) {
       console.error('❌ Fout bij ophalen van indicatornamen:', err);
     }
   }
 
-  // 🧠 Haal scoreregels op voor één indicator
+  // ============================================
+  // 🧠 3 — Scoreregels voor één indicator
+  // ============================================
   async function loadScoreRules(indicatorName) {
     try {
       const rules = await getScoreRulesForIndicator(indicatorName);
@@ -114,62 +138,87 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
+  // ============================================
+  // ➕ 4 — Indicator toevoegen
+  // ============================================
+  async function addTechnicalData(indicatorName) {
+    try {
+      const result = await technicalDataAdd(indicatorName);
+      console.log('✅ Indicator toegevoegd:', result);
 
-  // ➕ Voeg nieuwe technische indicator toe (alleen naam)
-async function addTechnicalData(indicatorName) {
-  try {
-    const result = await technicalDataAdd(indicatorName);  // ⬅️ alleen indicatornaam
-    console.log('✅ Indicator toegevoegd aan technische analyse:', result);
-    await loadData(); // Refresh de tabel
-    return result;
-  } catch (err) {
-    console.error('❌ Fout bij addTechnicalData (nieuwe setup):', err);
-    throw err;
+      await loadData(); // tabel refreshen
+      return result;
+    } catch (err) {
+      console.error('❌ Fout bij toevoegen indicator:', err);
+      throw err;
+    }
   }
-}
 
-  // 🔢 Bereken gemiddelde score
+  // ============================================
+  // 🔢 5 — Gemiddelde score
+  // ============================================
   function updateScore(data) {
-    let total = 0, count = 0;
+    let total = 0;
+    let count = 0;
+
     data.forEach((ind) => {
       const s = parseFloat(ind.score);
-      if (!isNaN(s)) { total += s; count++; }
+      if (!isNaN(s)) {
+        total += s;
+        count++;
+      }
     });
+
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
-    setAdvies(avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal');
+
+    setAdvies(
+      avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal'
+    );
   }
 
-  // 📅 Groeperingen
+  // ============================================
+  // 🗂️ 6 — Grouping (Maand / Kwartaal)
+  // ============================================
   function groupByMonth(data) {
     const grouped = {};
+
     for (const item of data) {
       if (!item.dateObj) continue;
+
       const year = item.dateObj.getFullYear();
       const month = item.dateObj.getMonth() + 1;
       const key = `${year}-${month}`;
+
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
+
     return Object.entries(grouped)
       .sort((a, b) => (a[0] < b[0] ? 1 : -1))
       .map(([key, items]) => {
         const [year, month] = key.split('-');
-        const label = `📅 ${getMonthName(month)} ${year}`;
-        return { label, data: items };
+        return {
+          label: `📅 ${getMonthName(month)} ${year}`,
+          data: items,
+        };
       });
   }
 
   function groupByQuarter(data) {
     const grouped = {};
+
     for (const item of data) {
       if (!item.dateObj) continue;
+
       const year = item.dateObj.getFullYear();
       const quarter = Math.floor(item.dateObj.getMonth() / 3) + 1;
       const key = `${year}-Q${quarter}`;
+
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
+
     return Object.entries(grouped)
       .sort((a, b) => (a[0] < b[0] ? 1 : -1))
       .map(([key, items]) => ({
@@ -183,25 +232,36 @@ async function addTechnicalData(indicatorName) {
       'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
       'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
     ];
-    return maanden[parseInt(monthNum, 10) - 1] || 'Onbekend';
+    return maanden[parseInt(monthNum, 10) - 1];
   }
 
+  // ============================================
+  // 🗑 7 — Verwijderen vanuit tabel
+  // ============================================
   function handleRemove(indicatorName) {
-  // 🔍 Filter alleen de verwijderde indicator uit de lijst
-  const updated = technicalData.filter((item) => item.indicator !== indicatorName);
-  setTechnicalData(updated);
-}
+    const updated = technicalData.filter(
+      (item) => item.indicator !== indicatorName
+    );
+    setTechnicalData(updated);
+  }
 
+  // ============================================
+  // EXPORT
+  // ============================================
   return {
     technicalData,
     avgScore,
     advies,
-    handleRemove,
     loading,
     error,
-    indicatorNames,  // ✅ voor dropdown/zoekbalk
-    scoreRules,      // ✅ voor logicaweergave
-    loadScoreRules,  // ✅ functie voor scoreregels
-    addTechnicalData, // ✅ nieuwe dynamische toevoegfunctie
+
+    // Zoek & logica
+    indicatorNames,
+    scoreRules,
+    loadScoreRules,
+
+    // Acties
+    addTechnicalData,
+    handleRemove,
   };
 }

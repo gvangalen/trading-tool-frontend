@@ -11,6 +11,7 @@ import CardWrapper from '@/components/ui/CardWrapper';
 import UniversalSearchDropdown from '@/components/ui/UniversalSearchDropdown';
 
 export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
+
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
@@ -23,7 +24,7 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
     async function load() {
       try {
         const list = await getTechnicalIndicatorNames();
-        setAllIndicators(list);
+        setAllIndicators(list || []);
       } catch (err) {
         console.error('❌ technical indicators ophalen', err);
       }
@@ -37,6 +38,11 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
   const onSelect = async (indicator) => {
     setSelected(indicator);
 
+    if (!indicator?.name) {
+      setScoreRules([]);
+      return;
+    }
+
     try {
       const rules = await getScoreRulesForIndicator(indicator.name);
       setScoreRules(rules || []);
@@ -49,10 +55,10 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
   // ➕ Toevoegen aan technical analyse
   // -------------------------------------------------------
   const handleAdd = async () => {
-    if (!selected) return;
+    if (!selected || !addTechnicalIndicator) return;
 
     try {
-      await addTechnicalIndicator(selected.name);   // ✔ JUIST
+      await addTechnicalIndicator(selected.name);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (err) {
@@ -71,10 +77,11 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         placeholder="Typ bijvoorbeeld RSI, MA200, Volume..."
       />
 
+      {/* Scoreregels */}
       {selected && scoreRules.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Scoreregels voor: {selected.display_name}
+            Scoreregels voor: {selected.display_name || selected.name}
           </h3>
 
           <table className="w-full text-sm border rounded">
@@ -90,12 +97,10 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
 
             <tbody>
               {[...scoreRules]
-                .sort((a, b) => a.range_min - b.range_min)
+                .sort((a, b) => Number(a.range_min) - Number(b.range_min))
                 .map((r, idx) => (
                   <tr key={idx} className="border-t dark:border-gray-600">
-                    <td className="p-2">
-                      {r.range_min} – {r.range_max}
-                    </td>
+                    <td className="p-2">{r.range_min} – {r.range_max}</td>
                     <td className="p-2 font-semibold text-blue-600 dark:text-blue-300">
                       {r.score}
                     </td>
@@ -109,12 +114,14 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         </div>
       )}
 
+      {/* Placeholder */}
       {!selected && (
         <p className="text-sm text-gray-500 italic">
           Typ en selecteer een indicator om scoreregels te bekijken.
         </p>
       )}
 
+      {/* Add-knop */}
       <div className="pt-4">
         <button
           onClick={handleAdd}

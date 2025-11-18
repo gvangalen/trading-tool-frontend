@@ -1,53 +1,87 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import {
+  getIndicatorNames as getTechnicalIndicatorNames,
+  getScoreRulesForIndicator,
+  technicalDataAdd,
+} from '@/lib/api/technical';
+
 import CardWrapper from '@/components/ui/CardWrapper';
 import UniversalSearchDropdown from '@/components/ui/UniversalSearchDropdown';
 
-export default function IndicatorScoreView({
-  indicatorNames = [],        // ⬅️ lijst van useTechnicalData
-  selectedIndicator,
-  onSelectIndicator,          // ⬅️ loadScoreRules + setSelectedIndicator
-  scoreRules = [],
-  addTechnicalData,           // ⬅️ functie uit hook
-}) {
+export default function TechnicalIndicatorScoreView() {
+  const [allIndicators, setAllIndicators] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [scoreRules, setScoreRules] = useState([]);
   const [added, setAdded] = useState(false);
 
-  // ➕ Toevoegen aan technische analyse
-  const handleAdd = async () => {
-    if (!selectedIndicator?.name) return;
+  // -------------------------------------------------------
+  // 📡 Indicatorlijst ophalen
+  // -------------------------------------------------------
+  useEffect(() => {
+    async function load() {
+      try {
+        const list = await getTechnicalIndicatorNames();
+        setAllIndicators(list);
+      } catch (err) {
+        console.error('❌ technical indicators ophalen', err);
+      }
+    }
+    load();
+  }, []);
+
+  // -------------------------------------------------------
+  // 📊 Scoreregels ophalen bij selectie
+  // -------------------------------------------------------
+  const onSelect = async (indicator) => {
+    setSelected(indicator);
 
     try {
-      await addTechnicalData(selectedIndicator.name);
+      const rules = await getScoreRulesForIndicator(indicator.name);
+      setScoreRules(rules || []);
+    } catch (err) {
+      console.error('❌ scoreregels ophalen', err);
+    }
+  };
+
+  // -------------------------------------------------------
+  // ➕ Toevoegen aan technical analyse
+  // -------------------------------------------------------
+  const handleAdd = async () => {
+    if (!selected) return;
+
+    try {
+      await technicalDataAdd(selected.name);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
-    } catch (error) {
-      console.error('❌ Toevoegen mislukt:', error);
+    } catch (err) {
+      console.error('❌ Toevoegen mislukt', err);
+      alert('Toevoegen mislukt.');
     }
   };
 
   return (
-    <CardWrapper title="🔎 Bekijk Scorelogica">
-
+    <CardWrapper title="📐 Bekijk Technische Scorelogica">
       {/* =====================================================
-          🔍 Universele Zoek Dropdown
+          🔎 UNIVERSELE ZOEKDROPDOWN
       ===================================================== */}
       <UniversalSearchDropdown
         label="Zoek een technische indicator"
-        placeholder="Typ bijvoorbeeld RSI, MA200, Volume…"
-        items={indicatorNames}           // ⬅️ JUISTE PROP
-        selected={selectedIndicator}
-        onSelect={onSelectIndicator}     // ⬅️ JUISTE FUNCTIE
+        items={allIndicators}
+        selected={selected}
+        onSelect={onSelect}
+        placeholder="Typ bijvoorbeeld RSI, MA200, Volume..."
       />
 
-
       {/* =====================================================
-          📈 Score Regels
+          📊 Scoreregels tabel
       ===================================================== */}
-      {selectedIndicator && scoreRules.length > 0 && (
-        <div className="space-y-4 mt-4">
+      {selected && scoreRules.length > 0 && (
+        <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Scoreregels voor: {selectedIndicator.display_name}
+            Scoreregels voor: {selected.display_name}
           </h3>
 
           <table className="w-full text-sm border rounded">
@@ -74,7 +108,7 @@ export default function IndicatorScoreView({
                     </td>
                     <td className="p-2 italic">{r.trend}</td>
                     <td className="p-2">{r.interpretation}</td>
-                    <td className="p-2 text-gray-500">{r.action}</td>
+                    <td className="p-2">{r.action}</td>
                   </tr>
                 ))}
             </tbody>
@@ -82,21 +116,20 @@ export default function IndicatorScoreView({
         </div>
       )}
 
-      {!selectedIndicator && (
-        <p className="text-sm text-gray-500 italic mt-2">
-          Typ en selecteer een indicator om de scoreregels te bekijken.
+      {!selected && (
+        <p className="text-sm text-gray-500 italic">
+          Typ en selecteer een indicator om scoreregels te bekijken.
         </p>
       )}
 
-
       {/* =====================================================
-          ➕ Toevoegen
+          ➕ Toevoegen knop
       ===================================================== */}
       <div className="pt-4">
         <button
           onClick={handleAdd}
-          disabled={!selectedIndicator}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 hover:bg-blue-700 transition"
+          disabled={!selected}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
           ➕ Voeg toe aan technische analyse
         </button>
@@ -107,7 +140,6 @@ export default function IndicatorScoreView({
           </p>
         )}
       </div>
-
     </CardWrapper>
   );
 }

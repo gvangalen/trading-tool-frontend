@@ -4,16 +4,12 @@ import { useState } from 'react';
 import CardWrapper from '@/components/ui/CardWrapper';
 import UniversalSearchDropdown from '@/components/ui/UniversalSearchDropdown';
 
-import {
-  getScoreRulesForIndicator,
-  technicalDataAdd,
-} from '@/lib/api/technical';
-
 export default function IndicatorScoreView({
-  availableIndicators = [],
+  indicatorNames = [],        // ⬅️ lijst van useTechnicalData
   selectedIndicator,
-  selectIndicator,
+  onSelectIndicator,          // ⬅️ loadScoreRules + setSelectedIndicator
   scoreRules = [],
+  addTechnicalData,           // ⬅️ functie uit hook
 }) {
   const [added, setAdded] = useState(false);
 
@@ -22,7 +18,7 @@ export default function IndicatorScoreView({
     if (!selectedIndicator?.name) return;
 
     try {
-      await technicalDataAdd(selectedIndicator.name);
+      await addTechnicalData(selectedIndicator.name);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (error) {
@@ -39,9 +35,9 @@ export default function IndicatorScoreView({
       <UniversalSearchDropdown
         label="Zoek een technische indicator"
         placeholder="Typ bijvoorbeeld RSI, MA200, Volume…"
-        items={availableIndicators}
+        items={indicatorNames}           // ⬅️ JUISTE PROP
         selected={selectedIndicator}
-        onSelect={selectIndicator}
+        onSelect={onSelectIndicator}     // ⬅️ JUISTE FUNCTIE
       />
 
 

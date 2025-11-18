@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import {
   technicalDataDay,
   technicalDataWeek,
@@ -9,6 +10,7 @@ import {
   getIndicatorNames,
   getScoreRulesForIndicator,
   technicalDataAdd,
+  deleteTechnicalIndicator,
 } from '@/lib/api/technical';
 
 import { getDailyScores } from '@/lib/api/scores';
@@ -19,17 +21,9 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // 🔍 Indicatorlijst
   const [indicatorNames, setIndicatorNames] = useState([]);
-
-  // 🔽 Geselecteerde indicator (voor dropdown)
-  const [selectedIndicator, setSelectedIndicator] = useState(null);
-
-  // 🧠 Scoreregels
   const [scoreRules, setScoreRules] = useState([]);
 
-  // INIT
   useEffect(() => {
     loadData();
     loadIndicatorNames();
@@ -38,16 +32,15 @@ export function useTechnicalData(activeTab = 'Dag') {
     return () => clearInterval(interval);
   }, [activeTab]);
 
-  // ================================================================
-  // 📊 1 — DATA LADEN
-  // ================================================================
+  // ============================================================
+  // 📊 TECH DATA PER TIMEFRAME — exact parallel met macro hook
+  // ============================================================
   async function loadData() {
     setLoading(true);
     setError('');
 
     try {
       let data;
-
       switch (activeTab) {
         case 'Dag':
           data = await technicalDataDay();
@@ -68,40 +61,36 @@ export function useTechnicalData(activeTab = 'Dag') {
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
       const enriched = data.map((item) => ({
-        indicator: item.indicator || '–',
-        waarde: item.waarde ?? item.value ?? '–',
-        score: parseFloat(item.score) ?? null,
-        advies: item.advies || '–',
-        uitleg: item.uitleg || 'Geen uitleg beschikbaar',
-        symbol: item.symbol || '',
-        timestamp: item.timestamp || null,
+        name: item.indicator ?? '–',
+        value: item.value ?? item.waarde ?? '–',
+        score: item.score ?? null,
+        advies: item.advies ?? null,
+        uitleg: item.uitleg ?? null,
+        timestamp: item.timestamp ?? null,
         dateObj: item.timestamp ? new Date(item.timestamp) : null,
       }));
 
-      if (activeTab === 'Maand') setTechnicalData(groupByMonth(enriched));
+      if (activeTab === 'Week') setTechnicalData(groupByDay(enriched));
+      else if (activeTab === 'Maand') setTechnicalData(groupByMonth(enriched));
       else if (activeTab === 'Kwartaal') setTechnicalData(groupByQuarter(enriched));
       else setTechnicalData(enriched);
 
-      // Score ophalen
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
       if (backendScore !== null) {
-        const rounded = parseFloat(backendScore).toFixed(1);
-        setAvgScore(rounded);
+        setAvgScore(parseFloat(backendScore).toFixed(1));
         setAdvies(
-          backendScore >= 75
-            ? '🟢 Bullish'
-            : backendScore <= 25
-            ? '🔴 Bearish'
-            : '⚖️ Neutraal'
+          backendScore >= 75 ? '🟢 Bullish' :
+          backendScore <= 25 ? '🔴 Bearish' :
+          '⚖️ Neutraal'
         );
       } else {
         updateScore(enriched);
       }
 
     } catch (err) {
-      console.warn('⚠️ Technische data error:', err);
+      console.warn('⚠️ Technische data kon niet worden geladen:', err);
       setTechnicalData([]);
       setAvgScore('N/A');
       setAdvies('⚖️ Neutraal');
@@ -111,51 +100,70 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  // ================================================================
-  // 📋 2 — Indicatorlijst
-  // ================================================================
+  // ============================================================
+  // 📚 Indicatorlijst ophalen
+  // ============================================================
   async function loadIndicatorNames() {
     try {
-      const data = await getIndicatorNames();
-      setIndicatorNames(data);
+      const list = await getIndicatorNames();
+      setIndicatorNames(list);
     } catch (err) {
-      console.error('❌ Indicatornamen ophalen error:', err);
+      console.error('❌ Fout bij ophalen indicatornamen:', err);
     }
   }
 
-  // ================================================================
-  // 🧠 3 — Selecteren + scoreregels ophalen
-  // ================================================================
-  async function selectIndicator(indicatorObj) {
-    setSelectedIndicator(indicatorObj);
-    if (!indicatorObj?.name) return;
-
+  // ============================================================
+  // 🧠 Scoreregels — IDENTIEK aan macro hook
+  // ============================================================
+  async function loadScoreRules(indicatorName) {
     try {
-      const rules = await getScoreRulesForIndicator(indicatorObj.name);
+      const rules = await getScoreRulesForIndicator(indicatorName);
       setScoreRules(rules);
     } catch (err) {
-      console.error('❌ scoreregels ophalen error:', err);
+      console.error('❌ Fout bij ophalen scoreregels:', err);
     }
   }
 
-  // ================================================================
-  // ➕ 4 — Toevoegen indicator
-  // ================================================================
-  async function addTechnicalData(indicatorName) {
+  // ============================================================
+  // ➕ Toevoegen (technicalDataAdd)
+  // ============================================================
+  async function addTechnicalIndicator(indicatorName) {
     try {
       const result = await technicalDataAdd(indicatorName);
-      console.log('✅ Toegevoegd:', result);
       await loadData();
       return result;
     } catch (err) {
-      console.error('❌ addTechnicalData error:', err);
+      console.error('❌ Fout bij addTechnicalIndicator:', err);
       throw err;
     }
   }
 
-  // ================================================================
-  // 🔢 5 — Scoreberekening
-  // ================================================================
+  // ============================================================
+  // 🗑️ Verwijderen
+  // ============================================================
+  async function removeTechnicalIndicator(indicatorName) {
+    if (!indicatorName) return;
+
+    const confirmDelete = window.confirm(
+      `Weet je zeker dat je '${indicatorName}' wilt verwijderen?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await deleteTechnicalIndicator(indicatorName);
+      alert(`✅ Indicator '${indicatorName}' verwijderd`);
+      setTechnicalData((prev) =>
+        prev.filter((item) => item.name !== indicatorName)
+      );
+    } catch (err) {
+      console.error('❌ Verwijderen mislukt:', err);
+      alert(`❌ Verwijderen van '${indicatorName}' mislukt`);
+    }
+  }
+
+  // ============================================================
+  // 🔢 Gemiddelde score berekenen
+  // ============================================================
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -171,82 +179,84 @@ export function useTechnicalData(activeTab = 'Dag') {
     const avg = count ? (total / count).toFixed(1) : 'N/A';
     setAvgScore(avg);
 
-    setAdvies(avg >= 70 ? '🟢 Bullish' : avg <= 40 ? '🔴 Bearish' : '⚖️ Neutraal');
+    setAdvies(
+      avg >= 70 ? '🟢 Bullish' :
+      avg <= 40 ? '🔴 Bearish' :
+      '⚖️ Neutraal'
+    );
   }
 
-  // ================================================================
-  // 📅 6 — Groepering
-  // ================================================================
-  function groupByMonth(data) {
+  // ============================================================
+  // 📅 Groepering (week / maand / kwartaal)
+  // ============================================================
+  function groupByDay(data) {
     const grouped = {};
-
     for (const item of data) {
       if (!item.dateObj) continue;
 
-      const year = item.dateObj.getFullYear();
-      const month = item.dateObj.getMonth() + 1;
-      const key = `${year}-${month}`;
+      const date = item.dateObj;
+      const key = date.toISOString().slice(0, 10);
 
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
 
-    return Object.entries(grouped)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([key, items]) => {
-        const [year, month] = key.split('-');
-        return {
-          label: `📅 ${getMonthName(month)} ${year}`,
-          data: items,
-        };
-      });
+    return Object.entries(grouped).map(([label, items]) => ({
+      label: `📅 ${label}`,
+      data: items,
+    }));
+  }
+
+  function groupByMonth(data) {
+    const grouped = {};
+    for (const item of data) {
+      if (!item.dateObj) continue;
+      const year = item.dateObj.getFullYear();
+      const month = item.dateObj.getMonth() + 1;
+      const key = `${year}-${month}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    return Object.entries(grouped).map(([key, items]) => {
+      const [year, month] = key.split('-');
+      return { label: `📅 ${month} ${year}`, data: items };
+    });
   }
 
   function groupByQuarter(data) {
     const grouped = {};
-
     for (const item of data) {
       if (!item.dateObj) continue;
-
       const year = item.dateObj.getFullYear();
       const quarter = Math.floor(item.dateObj.getMonth() / 3) + 1;
       const key = `${year}-Q${quarter}`;
-
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
 
-    return Object.entries(grouped)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([key, items]) => ({
-        label: `📊 Kwartaal ${key.split('-Q')[1]} – ${key.split('-Q')[0]}`,
+    return Object.entries(grouped).map(([key, items]) => {
+      const [year, quarter] = key.split('-Q');
+      return {
+        label: `📊 Kwartaal ${quarter} – ${year}`,
         data: items,
-      }));
+      };
+    });
   }
 
-  function getMonthName(monthNum) {
-    const maanden = [
-      'Januari','Februari','Maart','April','Mei','Juni',
-      'Juli','Augustus','September','Oktober','November','December',
-    ];
-    return maanden[parseInt(monthNum, 10) - 1];
-  }
-
-  // ================================================================
-  // EXPORT
-  // ================================================================
+  // ============================================================
+  // EXPORT (zelfde naamstructuur als macro hook)
+  // ============================================================
   return {
     technicalData,
     avgScore,
     advies,
     loading,
     error,
-
     indicatorNames,
-    selectedIndicator,
     scoreRules,
-
-    selectIndicator,
-    addTechnicalData,
+    loadScoreRules,
+    addTechnicalIndicator,
+    removeTechnicalIndicator,
   };
 }

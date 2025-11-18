@@ -13,10 +13,10 @@ export default function TechnicalPage() {
   const [activeTab, setActiveTab] = useState('Dag');
   const [editIndicator, setEditIndicator] = useState(null);
 
-  // 📡 Haal technische data + handleRemove, loading, error op
+  // 📡 Haal technische data + remove functie op
   const {
     technicalData,
-    handleRemove,
+    removeTechnicalIndicator,   // <-- juiste functie
     loading: loadingIndicators,
     error,
   } = useTechnicalData(activeTab);
@@ -24,7 +24,7 @@ export default function TechnicalPage() {
   // 📊 Haal technische score uit algemene score-API
   const { technical, loading: loadingScore } = useScoresData();
 
-  // 🎨 Kleurcodering (zelfde als macro)
+  // 🎨 Kleurcodering
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -33,6 +33,7 @@ export default function TechnicalPage() {
     return 'text-yellow-600';
   };
 
+  // Advies bepalen uit score
   const adviesText =
     (technical?.score ?? 0) >= 75
       ? '📈 Bullish'
@@ -67,17 +68,17 @@ export default function TechnicalPage() {
       {/* 🔍 Scorelogica bekijken + indicator toevoegen */}
       <TechnicalIndicatorScoreView />
 
-      {/* 📅 Tabs met technische indicatoren per periode */}
+      {/* 📅 Tabs met data */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         technicalData={technicalData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={handleRemove}
+        handleRemove={removeTechnicalIndicator}   // <-- FIXED
       />
 
-      {/* 💬 Popup (optionele edit popup) */}
+      {/* 💬 Popup (optioneel) */}
       {editIndicator && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">

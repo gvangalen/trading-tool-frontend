@@ -1,32 +1,30 @@
 'use client';
 
 import { useState } from 'react';
+
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useScoresData } from '@/hooks/useScoresData';
 
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
-import IndicatorScoreView from '@/components/technical/IndicatorScoreView';
+import TechnicalIndicatorScoreView from '@/components/technical/TechnicalIndicatorScoreView';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {
   const [activeTab, setActiveTab] = useState('Dag');
+  const [editIndicator, setEditIndicator] = useState(null);
 
+  // 📡 Haal technische data + handleRemove, loading, error op
   const {
     technicalData,
     handleRemove,
     loading: loadingIndicators,
     error,
-
-    // 🔥 Deze 4 komen uit de hook — nodig voor de dropdown
-    indicatorNames,
-    scoreRules,
-    loadScoreRules,
-    addTechnicalData,
-
   } = useTechnicalData(activeTab);
 
+  // 📊 Haal technische score uit algemene score-API
   const { technical, loading: loadingScore } = useScoresData();
 
+  // 🎨 Kleurcodering (zelfde als macro)
   const getScoreColor = (score) => {
     const s = typeof score === 'number' ? score : parseFloat(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -36,49 +34,38 @@ export default function TechnicalPage() {
   };
 
   const adviesText =
-    technical.score >= 75
+    (technical?.score ?? 0) >= 75
       ? '📈 Bullish'
-      : technical.score <= 25
+      : (technical?.score ?? 0) <= 25
       ? '📉 Bearish'
       : '⚖️ Neutraal';
 
-  // 🔥 Selected indicator: simpele local state
-  const [selectedIndicator, setSelectedIndicator] = useState(null);
-
-  // Wanneer user iets selecteert in de dropdown:
-  const handleSelectIndicator = (item) => {
-    setSelectedIndicator(item);
-    loadScoreRules(item.name); // ⬅️ laad scoreregels uit de DB
-  };
-
   return (
     <div className="max-w-screen-xl mx-auto py-8 px-4 space-y-8">
-      <h1 className="text-2xl font-bold">📊 Technische Analyse</h1>
+      {/* 🔹 Titel */}
+      <h1 className="text-2xl font-bold">📐 Technische Analyse</h1>
 
-      {/* 📊 Score + advies */}
+      {/* ✅ Samenvatting */}
       <CardWrapper>
-        <p className="text-lg font-semibold">
-          🧮 Totale Technische Score:{' '}
-          <span className={getScoreColor(technical.score)}>
-            {loadingScore ? '⏳' : technical.score ?? '–'}
-          </span>
-        </p>
-        <p className="text-lg">
-          🧠 Advies:{' '}
-          <span className="text-blue-600">
-            {loadingScore ? '⏳' : adviesText}
-          </span>
-        </p>
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">
+            🧮 Totale Technische Score:{' '}
+            <span className={getScoreColor(technical?.score)}>
+              {loadingScore ? '⏳' : technical?.score ?? '–'}
+            </span>
+          </h3>
+
+          <h3 className="text-lg font-semibold">
+            🧠 Advies:{' '}
+            <span className="text-blue-600">
+              {loadingScore ? '⏳' : adviesText}
+            </span>
+          </h3>
+        </div>
       </CardWrapper>
 
-      {/* 🔍 Scorelogica bekijken — NU MET JUISTE PROPS */}
-      <IndicatorScoreView
-        indicatorNames={indicatorNames}              // ⬅️ lijst voor zoek dropdown
-        selectedIndicator={selectedIndicator}        // ⬅️ wat is geselecteerd
-        onSelectIndicator={handleSelectIndicator}    // ⬅️ laad regels
-        scoreRules={scoreRules}                      // ⬅️ regels uit DB
-        addTechnicalData={addTechnicalData}          // ⬅️ toevoegen aan dagtabel
-      />
+      {/* 🔍 Scorelogica bekijken + indicator toevoegen */}
+      <TechnicalIndicatorScoreView />
 
       {/* 📅 Tabs met technische indicatoren per periode */}
       <TechnicalTabs
@@ -89,6 +76,22 @@ export default function TechnicalPage() {
         error={error}
         handleRemove={handleRemove}
       />
+
+      {/* 💬 Popup (optionele edit popup) */}
+      {editIndicator && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
+            <h3 className="text-lg font-bold">✏️ Bewerk {editIndicator.name}</h3>
+
+            <button
+              onClick={() => setEditIndicator(null)}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Sluiten
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

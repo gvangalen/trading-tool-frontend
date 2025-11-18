@@ -6,7 +6,7 @@ import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useScoresData } from '@/hooks/useScoresData';
 
 import TechnicalTabs from '@/components/technical/TechnicalTabs';
-import TechnicalIndicatorScoreView from '@/components/technical/TechnicalIndicatorScoreView';
+import TechnicalIndicatorScoreView from '@/components/technical/IndicatorScoreView';
 import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function TechnicalPage() {

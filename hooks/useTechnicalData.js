@@ -21,48 +21,35 @@ export function useTechnicalData(activeTab = 'Dag') {
   const [advies, setAdvies] = useState('⚖️ Neutraal');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // dropdown
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
   useEffect(() => {
     loadData();
     loadIndicatorNames();
-
-    const interval = setInterval(loadData, 60000);
-    return () => clearInterval(interval);
   }, [activeTab]);
 
-  // ============================================================
-  // 📊 TECH DATA PER TIMEFRAME — exact parallel met macro hook
-  // ============================================================
+  // ============================================
+  // LADEN VAN DATA (exact als macro)
+  // ============================================
   async function loadData() {
     setLoading(true);
     setError('');
 
     try {
       let data;
-      switch (activeTab) {
-        case 'Dag':
-          data = await technicalDataDay();
-          break;
-        case 'Week':
-          data = await technicalDataWeek();
-          break;
-        case 'Maand':
-          data = await technicalDataMonth();
-          break;
-        case 'Kwartaal':
-          data = await technicalDataQuarter();
-          break;
-        default:
-          data = await technicalDataDay();
-      }
+      if (activeTab === 'Dag') data = await technicalDataDay();
+      else if (activeTab === 'Week') data = await technicalDataWeek();
+      else if (activeTab === 'Maand') data = await technicalDataMonth();
+      else if (activeTab === 'Kwartaal') data = await technicalDataQuarter();
 
       if (!Array.isArray(data)) throw new Error('Technische data is geen lijst');
 
       const enriched = data.map((item) => ({
-        name: item.indicator ?? '–',
-        value: item.value ?? item.waarde ?? '–',
+        indicator: item.indicator ?? item.name ?? '–',
+        waarde: item.value ?? item.waarde ?? '–',
         score: item.score ?? null,
         advies: item.advies ?? null,
         uitleg: item.uitleg ?? null,
@@ -79,11 +66,14 @@ export function useTechnicalData(activeTab = 'Dag') {
       const backendScore = scores?.technical_score ?? null;
 
       if (backendScore !== null) {
-        setAvgScore(parseFloat(backendScore).toFixed(1));
+        const rounded = parseFloat(backendScore).toFixed(1);
+        setAvgScore(rounded);
         setAdvies(
-          backendScore >= 75 ? '🟢 Bullish' :
-          backendScore <= 25 ? '🔴 Bearish' :
-          '⚖️ Neutraal'
+          backendScore >= 75
+            ? '🟢 Bullish'
+            : backendScore <= 25
+            ? '🔴 Bearish'
+            : '⚖️ Neutraal'
         );
       } else {
         updateScore(enriched);
@@ -100,70 +90,61 @@ export function useTechnicalData(activeTab = 'Dag') {
     }
   }
 
-  // ============================================================
-  // 📚 Indicatorlijst ophalen
-  // ============================================================
+  // ============================================
+  // Indicatornamen ophalen
+  // ============================================
   async function loadIndicatorNames() {
     try {
       const list = await getIndicatorNames();
       setIndicatorNames(list);
     } catch (err) {
-      console.error('❌ Fout bij ophalen indicatornamen:', err);
+      console.error('❌ Fout bij ophalen technical indicator names:', err);
     }
   }
 
-  // ============================================================
-  // 🧠 Scoreregels — IDENTIEK aan macro hook
-  // ============================================================
+  // ============================================
+  // Score rules ophalen
+  // ============================================
   async function loadScoreRules(indicatorName) {
     try {
       const rules = await getScoreRulesForIndicator(indicatorName);
       setScoreRules(rules);
     } catch (err) {
-      console.error('❌ Fout bij ophalen scoreregels:', err);
+      console.error('❌ Fout bij rules ophalen:', err);
     }
   }
 
-  // ============================================================
-  // ➕ Toevoegen (technicalDataAdd)
-  // ============================================================
+  // ============================================
+  // Indicator toevoegen
+  // ============================================
   async function addTechnicalIndicator(indicatorName) {
     try {
       const result = await technicalDataAdd(indicatorName);
       await loadData();
       return result;
     } catch (err) {
-      console.error('❌ Fout bij addTechnicalIndicator:', err);
+      console.error('❌ addTechnicalIndicator mislukt:', err);
       throw err;
     }
   }
 
-  // ============================================================
-  // 🗑️ Verwijderen
-  // ============================================================
+  // ============================================
+  // Verwijderen
+  // ============================================
   async function removeTechnicalIndicator(indicatorName) {
-    if (!indicatorName) return;
-
-    const confirmDelete = window.confirm(
-      `Weet je zeker dat je '${indicatorName}' wilt verwijderen?`
-    );
-    if (!confirmDelete) return;
-
     try {
-      const res = await deleteTechnicalIndicator(indicatorName);
-      alert(`✅ Indicator '${indicatorName}' verwijderd`);
+      await deleteTechnicalIndicator(indicatorName);
       setTechnicalData((prev) =>
-        prev.filter((item) => item.name !== indicatorName)
+        prev.filter((item) => item.indicator !== indicatorName)
       );
     } catch (err) {
-      console.error('❌ Verwijderen mislukt:', err);
-      alert(`❌ Verwijderen van '${indicatorName}' mislukt`);
+      console.error('❌ Verwijderen technical mislukt:', err);
     }
   }
 
-  // ============================================================
-  // 🔢 Gemiddelde score berekenen
-  // ============================================================
+  // ============================================
+  // Gemiddelde score
+  // ============================================
   function updateScore(data) {
     let total = 0;
     let count = 0;
@@ -180,27 +161,23 @@ export function useTechnicalData(activeTab = 'Dag') {
     setAvgScore(avg);
 
     setAdvies(
-      avg >= 70 ? '🟢 Bullish' :
-      avg <= 40 ? '🔴 Bearish' :
-      '⚖️ Neutraal'
+      avg >= 70 ? '🟢 Bullish'
+      : avg <= 40 ? '🔴 Bearish'
+      : '⚖️ Neutraal'
     );
   }
 
-  // ============================================================
-  // 📅 Groepering (week / maand / kwartaal)
-  // ============================================================
+  // ============================================
+  // Groeperingen
+  // ============================================
   function groupByDay(data) {
     const grouped = {};
     for (const item of data) {
       if (!item.dateObj) continue;
-
-      const date = item.dateObj;
-      const key = date.toISOString().slice(0, 10);
-
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(item);
+      const date = item.dateObj.toISOString().slice(0, 10);
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(item);
     }
-
     return Object.entries(grouped).map(([label, items]) => ({
       label: `📅 ${label}`,
       data: items,
@@ -211,17 +188,16 @@ export function useTechnicalData(activeTab = 'Dag') {
     const grouped = {};
     for (const item of data) {
       if (!item.dateObj) continue;
-      const year = item.dateObj.getFullYear();
-      const month = item.dateObj.getMonth() + 1;
-      const key = `${year}-${month}`;
+      const y = item.dateObj.getFullYear();
+      const m = item.dateObj.getMonth() + 1;
+      const key = `${y}-${m}`;
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
-
-    return Object.entries(grouped).map(([key, items]) => {
-      const [year, month] = key.split('-');
-      return { label: `📅 ${month} ${year}`, data: items };
-    });
+    return Object.entries(grouped).map(([key, items]) => ({
+      label: `📅 ${key}`,
+      data: items,
+    }));
   }
 
   function groupByQuarter(data) {
@@ -229,24 +205,17 @@ export function useTechnicalData(activeTab = 'Dag') {
     for (const item of data) {
       if (!item.dateObj) continue;
       const year = item.dateObj.getFullYear();
-      const quarter = Math.floor(item.dateObj.getMonth() / 3) + 1;
-      const key = `${year}-Q${quarter}`;
+      const q = Math.floor(item.dateObj.getMonth() / 3) + 1;
+      const key = `${year}-Q${q}`;
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     }
-
-    return Object.entries(grouped).map(([key, items]) => {
-      const [year, quarter] = key.split('-Q');
-      return {
-        label: `📊 Kwartaal ${quarter} – ${year}`,
-        data: items,
-      };
-    });
+    return Object.entries(grouped).map(([key, items]) => ({
+      label: `📊 ${key}`,
+      data: items,
+    }));
   }
 
-  // ============================================================
-  // EXPORT (zelfde naamstructuur als macro hook)
-  // ============================================================
   return {
     technicalData,
     avgScore,

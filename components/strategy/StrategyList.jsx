@@ -6,7 +6,6 @@ import StrategyCard from '@/components/strategy/StrategyCard';
 
 export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies } = useStrategyData();
-  const [sort, setSort] = useState('created_at');
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -41,28 +40,15 @@ export default function StrategyList({ searchTerm = '' }) {
     );
   });
 
-  // === Sort ===
-  const sortedStrategies = [...filtered].sort((a, b) => {
-    if (sort === 'score') return (b.score || 0) - (a.score || 0);
-    if (sort === 'favorite') return (b.favorite === true) - (a.favorite === true);
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  // === Sorteer altijd op nieuwste eerst ===
+  const sortedStrategies = [...filtered].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
   return (
     <div className="space-y-6">
 
-      {/* SORT ONLY */}
-      <div className="flex justify-end">
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="created_at">📅 Laatste</option>
-          <option value="score">📈 Score</option>
-          <option value="favorite">⭐ Favoriet</option>
-        </select>
-      </div>
+      {/* Geen sorteer-opties meer */}
 
       {/* STRATEGY CARDS */}
       {sortedStrategies.length === 0 ? (

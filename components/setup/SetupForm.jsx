@@ -114,17 +114,15 @@ export default function SetupForm({
 
     try {
       if (isEdit) {
-        // 🟦 UPDATE MODE
         await updateSetup(initialData.id, payload);
         setSuccess('✔ Setup succesvol bijgewerkt!');
       } else {
-        // 🟩 CREATE MODE
         await saveNewSetup(payload);
         setSuccess('✔ Setup succesvol opgeslagen!');
       }
 
       if (!isEdit) {
-        // Reset alleen bij NIEUWE setup
+        // Reset alleen bij nieuwe setups
         setFormData(emptyForm);
         setMacroScore([30, 70]);
         setTechnicalScore([40, 80]);
@@ -132,8 +130,8 @@ export default function SetupForm({
       }
 
       if (onSaved) await onSaved();
-
       setTimeout(() => setSuccess(''), 3000);
+
     } catch (err) {
       console.error('❌ Fout bij opslaan:', err);
       setError('❌ Opslaan mislukt. Controleer je velden.');
@@ -148,7 +146,11 @@ export default function SetupForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-6 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-900"
+      className="
+        max-w-2xl mx-auto p-6 space-y-8 
+        bg-white dark:bg-gray-900 
+        rounded-lg shadow-md
+      "
     >
       <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
         {isEdit ? '✏️ Setup Bewerken' : '➕ Nieuwe Setup'}
@@ -357,9 +359,10 @@ export default function SetupForm({
       </section>
 
       {/* ---------------------------------------------------------------- */}
-      {/* SUBMIT */}
+      {/* SUBMIT BUTTON (nu met ID!) */}
       {/* ---------------------------------------------------------------- */}
       <button
+        id="setup-edit-submit"        // ⬅️ BELANGRIJK: modal gebruikt dit
         type="submit"
         disabled={loading}
         className="mt-6 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 disabled:bg-blue-300"

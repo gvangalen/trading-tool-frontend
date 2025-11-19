@@ -9,7 +9,7 @@ import MarketForwardReturnTabs from '@/components/market/MarketForwardReturnTabs
 import CardWrapper from '@/components/ui/CardWrapper';
 
 import MarketIndicatorScoreView from '@/components/market/MarketIndicatorScoreView';
-import MarketDayTable from '@/components/market/MarketDayTable';
+import MarketDayTable from '@/components/market/MarketDayTable';   // ✔ TR-render component
 
 export default function MarketPage() {
   const {
@@ -17,7 +17,7 @@ export default function MarketPage() {
     sevenDayData,
     forwardReturns,
 
-    marketDayData,        // ✅ juiste variabele
+    marketDayData,
     availableIndicators,
     selectedIndicator,
     scoreRules,
@@ -39,8 +39,10 @@ export default function MarketPage() {
   };
 
   const adviesText =
-    market.score >= 75 ? '📈 Bullish'
-      : market.score <= 25 ? '📉 Bearish'
+    market?.score >= 75
+      ? '📈 Bullish'
+      : market?.score <= 25
+      ? '📉 Bearish'
       : '⚖️ Neutraal';
 
   return (
@@ -64,7 +66,9 @@ export default function MarketPage() {
 
           <h3 className="text-lg font-semibold">
             📈 Advies:{' '}
-            <span className="text-blue-600">{loading ? '⏳' : adviesText}</span>
+            <span className="text-blue-600">
+              {loading ? '⏳' : adviesText}
+            </span>
           </h3>
         </div>
       </CardWrapper>
@@ -77,7 +81,7 @@ export default function MarketPage() {
         timestamp={btcLive?.timestamp}
       />
 
-      {/* SCORE LOGICA */}
+      {/* SCORE LOGICA + TOEVOEGEN */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators}
         selectedIndicator={selectedIndicator}
@@ -100,9 +104,10 @@ export default function MarketPage() {
             </tr>
           </thead>
 
+          {/* ✔ MarketDayTable rendert alleen TR’s, dit is correct */}
           <tbody>
             <MarketDayTable
-              data={marketDayData}     // ✅ FIXED
+              data={marketDayData}
               onRemove={removeMarket}
             />
           </tbody>

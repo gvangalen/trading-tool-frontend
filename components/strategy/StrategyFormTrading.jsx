@@ -1,32 +1,28 @@
 'use client';
 
-import { toast } from 'react-hot-toast';
-import { useState } from 'react';
-import { createStrategy } from '@/lib/api/strategy';
-import { useStrategyData } from '@/hooks/useStrategyData';
-import { useSetupData } from '@/hooks/useSetupData';
-import InfoTooltip from '@/components/ui/InfoTooltip';
+import { useState, useMemo } from 'react';
 
-export default function StrategyForm() {
-  const { loadStrategies } = useStrategyData();
-  const { setups } = useSetupData();
-
+export default function StrategyFormTrading({ setups = [], onSubmit }) {
   const [form, setForm] = useState({
     setup_id: '',
-    setup_name: '',
     symbol: '',
     timeframe: '',
-    explanation: '',
     entry: '',
-    target: '',
+    targetsText: '',
     stop_loss: '',
+    explanation: '',
     favorite: false,
     tags: '',
   });
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const availableSetups = useMemo(
+    () => (Array.isArray(setups) ? setups : []),
+    [setups]
+  );
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -35,25 +31,22 @@ export default function StrategyForm() {
     setError('');
 
     if (name === 'setup_id') {
-      const selected = setups.find((s) => String(s.id) === String(val));
-      if (!selected) {
-        setError('❌ Ongeldige setup geselecteerd.');
-        setForm((prev) => ({ ...prev, setup_id: val }));
-        return;
-      }
+      const selected = availableSetups.find(
+        (s) => String(s.id) === String(val)
+      );
       setForm((prev) => ({
         ...prev,
         setup_id: val,
-        setup_name: selected.name?.trim() || '',
-        symbol: selected.symbol?.trim() || '',
-        timeframe: selected.timeframe?.trim() || '',
+        symbol: selected?.symbol || '',
+        timeframe: selected?.timeframe || '',
       }));
-    } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: type === 'checkbox' ? val : typeof val === 'string' ? val.trimStart() : val,
-      }));
+      return;
     }
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: typeof val === 'string' ? val.trimStart() : val,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -61,105 +54,86 @@ export default function StrategyForm() {
     setError('');
     setSuccess(false);
 
-    const requiredFields = ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'target', 'stop_loss'];
-    for (const field of requiredFields) {
-      if (!form[field]) {
-        setError(`❌ Veld "${field}" is verplicht.`);
-        return;
-      }
-    }
-
-    const entry = parseFloat(form.entry);
-    const target = parseFloat(form.target);
-    const stop_loss = parseFloat(form.stop_loss);
-
-    if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
-      setError('❌ Entry, target en stop-loss moeten geldige getallen zijn.');
+    if (!form.setup_id) {
+      setError('❌ Kies eerst een setup.');
       return;
     }
 
+    if (!form.entry || !form.targetsText || !form.stop_loss) {
+      setError('❌ Entry, targets en stop-loss zijn verplicht.');
+      return;
+    }
+
+    const entry = parseFloat(form.entry);
+    const stop_loss = parseFloat(form.stop_loss);
+    const targets = form.targetsText
+      .split(',')
+      .map((t) => parseFloat(t.trim()))
+      .filter((n) => !Number.isNaN(n));
+
+    if (Number.isNaN(entry) || Number.isNaN(stop_loss) || targets.length === 0) {
+      setError('❌ Gebruik geldige getallen voor entry/targets/stop-loss.');
+      return;
+    }
+
+    const tags = form.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
     const payload = {
       setup_id: form.setup_id,
-      setup_name: form.setup_name.trim(),
-      symbol: form.symbol.trim(),
-      timeframe: form.timeframe.trim(),
-      explanation: form.explanation.trim() || '',
+      explanation: form.explanation.trim(),
       entry,
-      targets: [target],
+      targets,
       stop_loss,
       favorite: form.favorite,
-      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      origin: 'Handmatig',
+      tags,
     };
 
-    setLoading(true);
     try {
-      await createStrategy(payload);
-
-      setForm({
-        setup_id: '',
-        setup_name: '',
-        symbol: '',
-        timeframe: '',
-        explanation: '',
-        entry: '',
-        target: '',
-        stop_loss: '',
-        favorite: false,
-        tags: '',
-      });
-
-      await loadStrategies();
+      setSaving(true);
+      if (onSubmit) {
+        await onSubmit(payload);
+      }
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(false), 2500);
     } catch (err) {
-      console.error('❌ Strategie maken mislukt:', err);
-      setError('Fout bij opslaan strategie.');
+      console.error('❌ Fout bij submit trading-strategie:', err);
+      setError('❌ Opslaan mislukt.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const isDisabled =
-    loading ||
+  const disabled =
+    saving ||
     !form.setup_id ||
-    !form.setup_name ||
-    !form.symbol ||
-    !form.timeframe ||
     !form.entry ||
-    !form.target ||
+    !form.targetsText ||
     !form.stop_loss;
 
-  const availableSetups = Array.isArray(setups)
-    ? setups.filter(
-        (s) =>
-          s &&
-          s.id &&
-          s.name &&
-          !['manual', 'ai', 'dca'].includes(s.strategy_type)
-      )
-    : [];
-
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
-      <h2 className="text-lg font-bold">➕ Nieuwe Strategie</h2>
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3"
+    >
+      <h3 className="text-lg font-semibold">➕ Nieuwe Tradingstrategie</h3>
 
       {success && (
-        <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-2 rounded">
-          ✅ Strategie succesvol opgeslagen!
+        <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-1 rounded text-sm">
+          ✅ Strategie opgeslagen!
         </div>
       )}
 
-      <div className="space-y-2">
-        <label className="block font-medium">
-          Koppel aan Setup <InfoTooltip text="Je kunt alleen kiezen uit bestaande setups zonder gekoppelde strategie." />
-        </label>
-
+      {/* Setup keuze */}
+      <label className="block text-sm font-medium">
+        Koppel aan Setup
         <select
           name="setup_id"
           value={form.setup_id}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded"
           required
         >
           <option value="">-- Kies een setup --</option>
@@ -169,95 +143,108 @@ export default function StrategyForm() {
             </option>
           ))}
         </select>
+      </label>
 
-        {availableSetups.length === 0 && (
-          <p className="text-red-500 text-sm mt-2">
-            ⚠️ Geen geschikte setups beschikbaar om een strategie aan toe te voegen.
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium">Symbol</label>
-            <input value={form.symbol} readOnly className="w-full border p-2 rounded bg-gray-100" />
-          </div>
-          <div>
-            <label className="block font-medium">Timeframe</label>
-            <input value={form.timeframe} readOnly className="w-full border p-2 rounded bg-gray-100" />
-          </div>
+      {/* Symbol + timeframe read-only */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Symbol</label>
+          <input
+            value={form.symbol}
+            readOnly
+            className="mt-1 w-full border p-2 rounded bg-gray-100"
+          />
         </div>
+        <div>
+          <label className="block text-sm font-medium">Timeframe</label>
+          <input
+            value={form.timeframe}
+            readOnly
+            className="mt-1 w-full border p-2 rounded bg-gray-100"
+          />
+        </div>
+      </div>
 
-        <label className="block font-medium">Entry prijs (€)</label>
+      {/* Entry / targets / SL */}
+      <label className="block text-sm font-medium">
+        Entry prijs
         <input
           name="entry"
           type="number"
           step="any"
           value={form.entry}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
+          className="mt-1 w-full border p-2 rounded"
         />
+      </label>
 
-        <label className="block font-medium">Target prijs (€)</label>
+      <label className="block text-sm font-medium">
+        Target prijzen (komma gescheiden)
         <input
-          name="target"
-          type="number"
-          step="any"
-          value={form.target}
+          name="targetsText"
+          type="text"
+          placeholder="Bijv. 32000, 34000, 36000"
+          value={form.targetsText}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
+          className="mt-1 w-full border p-2 rounded"
         />
+      </label>
 
-        <label className="block font-medium">Stop-loss (€)</label>
+      <label className="block text-sm font-medium">
+        Stop-loss
         <input
           name="stop_loss"
           type="number"
           step="any"
           value={form.stop_loss}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
+          className="mt-1 w-full border p-2 rounded"
         />
+      </label>
 
-        <label className="block font-medium">Uitleg</label>
+      <label className="block text-sm font-medium">
+        Uitleg / notities
         <textarea
           name="explanation"
+          rows={3}
           value={form.explanation}
           onChange={handleChange}
-          rows="3"
-          className="w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded"
         />
+      </label>
 
-        <label className="block font-medium">Tags (gescheiden door komma's)</label>
+      <label className="block text-sm font-medium">
+        Tags (komma gescheiden)
         <input
           name="tags"
           type="text"
           value={form.tags}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded"
         />
+      </label>
 
-        <label className="flex items-center space-x-4 mt-4">
+      <div className="flex items-center justify-between mt-3">
+        <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             name="favorite"
             checked={form.favorite}
             onChange={handleChange}
-            className="w-4 h-4"
           />
           <span>Favoriet</span>
-          <button
-            type="submit"
-            disabled={isDisabled}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
-          >
-            {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
-          </button>
         </label>
 
-        {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+        <button
+          type="submit"
+          disabled={disabled}
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 text-sm"
+        >
+          {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
+        </button>
       </div>
+
+      {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
     </form>
   );
 }

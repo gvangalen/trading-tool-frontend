@@ -1,11 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSetupData } from '@/hooks/useSetupData';
+import { useState, useMemo } from 'react';
 
-export default function StrategyFormManual({ onSubmit }) {
-  const { setups, loadSetups } = useSetupData();
-
+export default function StrategyFormManual({ onSubmit, setups = [], strategies = [] }) {
   const [form, setForm] = useState({
     setup_id: '',
     entry: '',
@@ -16,41 +13,44 @@ export default function StrategyFormManual({ onSubmit }) {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadSetups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // 🔍 Toon ALLEEN setups zonder een MANUAL-strategie
+  const filteredSetups = useMemo(
+    () =>
+      setups.filter(
+        (s) =>
+          !strategies.some(
+            (strat) => strat.setup_id === s.id && strat.strategy_type === 'manual'
+          )
+      ),
+    [setups, strategies]
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const val = ['explanation', 'setup_id'].includes(name)
-      ? value.trimStart()
-      : value;
 
     setForm((prev) => ({
       ...prev,
-      [name]: val,
+      [name]: value,
     }));
+
     setError('');
     setSuccess(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
 
     if (!form.setup_id) {
-      setError('⚠️ Je moet een setup kiezen.');
+      setError('⚠️ Kies eerst een setup.');
       return;
     }
 
-    const selectedSetup = setups.find(
-      (s) => String(s.id) === String(form.setup_id)
-    );
-    if (!selectedSetup) {
+    const setup = filteredSetups.find((s) => String(s.id) === String(form.setup_id));
+    if (!setup) {
       setError('⚠️ Ongeldige setup geselecteerd.');
       return;
     }
@@ -59,18 +59,16 @@ export default function StrategyFormManual({ onSubmit }) {
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
 
-    if (isNaN(entry) || isNaN(target) || isNaN(stop_loss)) {
-      setError(
-        '⚠️ Vul geldige numerieke waarden in voor entry, target en stop-loss.'
-      );
+    if ([entry, target, stop_loss].some((v) => isNaN(v))) {
+      setError('⚠️ Entry, target en stop-loss moeten geldige getallen zijn.');
       return;
     }
 
-    const strategy = {
-      setup_id: selectedSetup.id,
-      setup_name: selectedSetup.name,
-      symbol: selectedSetup.symbol,
-      timeframe: selectedSetup.timeframe,
+    const payload = {
+      setup_id: setup.id,
+      setup_name: setup.name,
+      symbol: setup.symbol,
+      timeframe: setup.timeframe,
       strategy_type: 'manual',
       entry,
       targets: [target],
@@ -79,12 +77,11 @@ export default function StrategyFormManual({ onSubmit }) {
       origin: 'Handmatig',
     };
 
-    console.log('📤 Strategie verstuurd naar parent:', strategy);
-    setLoading(true);
-
     try {
-      onSubmit(strategy);
+      setSaving(true);
+      await onSubmit(payload);
       setSuccess(true);
+
       setForm({
         setup_id: '',
         entry: '',
@@ -92,151 +89,120 @@ export default function StrategyFormManual({ onSubmit }) {
         stop_loss: '',
         explanation: '',
       });
-      setTimeout(() => setSuccess(false), 3000);
+
+      setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      console.error('❌ Fout bij submit:', err);
-      setError('Er is iets misgegaan bij het opslaan.');
+      console.error('❌ Error saving manual strategy:', err);
+      setError('❌ Opslaan mislukt.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const filteredSetups = setups.filter(
-    (s) => s && s.id && s.name && !['manual', 'ai', 'dca'].includes(s.strategy_type)
-  );
+  const disabled =
+    saving ||
+    !form.setup_id ||
+    !form.entry ||
+    !form.target ||
+    !form.stop_loss;
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded-md shadow"
-      aria-live="polite"
+      className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow"
     >
-      <div>
-        <label htmlFor="setup_id" className="block text-sm font-medium mb-1">
-          🔗 Koppel aan Setup
-        </label>
+      <h3 className="text-lg font-semibold">✍️ Nieuwe Handmatige Strategie</h3>
+
+      {success && (
+        <p className="text-green-600 text-sm">✅ Strategie opgeslagen!</p>
+      )}
+
+      {/* SETUP SELECT */}
+      <label className="block font-medium text-sm">
+        Koppel aan Setup
         <select
-          id="setup_id"
           name="setup_id"
-          className="w-full border p-2 rounded"
           value={form.setup_id}
           onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
           required
-          aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
         >
-          <option value="" disabled>
-            -- Kies een setup --
-          </option>
-
-          {filteredSetups.map((setup) => (
-            <option key={setup.id} value={setup.id}>
-              {setup.name} ({setup.symbol} – {setup.timeframe})
+          <option value="">-- Kies een setup --</option>
+          {filteredSetups.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.symbol} – {s.timeframe})
             </option>
           ))}
-
-          {filteredSetups.length === 0 && (
-            <option disabled>⚠️ Geen geschikte setups beschikbaar</option>
-          )}
         </select>
+      </label>
 
-        {filteredSetups.length === 0 && (
-          <p className="text-red-600 text-sm mt-2" role="alert">
-            ⚠️ Geen geschikte setups beschikbaar om een strategie aan toe te voegen.
-          </p>
-        )}
+      {filteredSetups.length === 0 && (
+        <p className="text-red-500 text-sm">
+          ⚠️ Geen setups beschikbaar zonder handmatige strategie.
+        </p>
+      )}
 
-        {error.includes('setup') && (
-          <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
-            {error}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="entry" className="block text-sm font-medium mb-1">
-          🎯 Entry prijs (€)
-        </label>
+      {/* ENTRY */}
+      <label className="block font-medium text-sm">
+        Entry prijs (€)
         <input
-          id="entry"
           name="entry"
           type="number"
           step="any"
-          placeholder="Bijv. 27000"
-          className="w-full border p-2 rounded"
           value={form.entry}
           onChange={handleChange}
-          required
+          className="mt-1 w-full border p-2 rounded"
         />
-      </div>
+      </label>
 
-      <div>
-        <label htmlFor="target" className="block text-sm font-medium mb-1">
-          📈 Target prijs (€)
-        </label>
+      {/* TARGET */}
+      <label className="block font-medium text-sm">
+        Target prijs (€)
         <input
-          id="target"
           name="target"
           type="number"
           step="any"
-          placeholder="Bijv. 31000"
-          className="w-full border p-2 rounded"
           value={form.target}
           onChange={handleChange}
-          required
+          className="mt-1 w-full border p-2 rounded"
         />
-      </div>
+      </label>
 
-      <div>
-        <label htmlFor="stop_loss" className="block text-sm font-medium mb-1">
-          🛑 Stop-loss (€)
-        </label>
+      {/* STOP LOSS */}
+      <label className="block font-medium text-sm">
+        Stop-loss (€)
         <input
-          id="stop_loss"
           name="stop_loss"
           type="number"
           step="any"
-          placeholder="Bijv. 25000"
-          className="w-full border p-2 rounded"
           value={form.stop_loss}
           onChange={handleChange}
-          required
+          className="mt-1 w-full border p-2 rounded"
         />
-      </div>
+      </label>
 
-      <div>
-        <label htmlFor="explanation" className="block text-sm font-medium mb-1">
-          📝 Uitleg / notities
-        </label>
+      {/* EXPLANATION */}
+      <label className="block font-medium text-sm">
+        Uitleg / notities
         <textarea
-          id="explanation"
           name="explanation"
-          placeholder="Waarom deze trade?"
-          className="w-full border p-2 rounded"
           rows={3}
           value={form.explanation}
           onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
         />
-      </div>
+      </label>
 
-      {error && !error.includes('setup') && (
-        <p className="text-red-600 text-sm" role="alert">
-          {error}
-        </p>
-      )}
+      {/* ERRORS */}
+      {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {success && (
-        <p className="text-green-600 text-sm" role="alert">
-          ✅ Strategie succesvol toegevoegd!
-        </p>
-      )}
-
+      {/* SAVE BUTTON */}
       <button
         type="submit"
-        disabled={loading || filteredSetups.length === 0}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 w-full"
-        aria-busy={loading}
+        disabled={disabled}
+        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
       >
-        {loading ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
+        {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
       </button>
     </form>
   );

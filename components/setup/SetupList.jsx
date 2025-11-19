@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
 import { generateExplanation } from '@/lib/api/setups';
 
-export default function SetupList({ searchTerm = '', strategyType = '', reloadSetups }) {
+export default function SetupList({ searchTerm = '', strategyType = '', onUpdated }) {
   const {
     setups,
     loading,
@@ -15,209 +15,131 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
     loadSetups,
   } = useSetupData();
 
-  const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest'); // ⭐ default newest first
   const [editingId, setEditingId] = useState(null);
   const [editingValues, setEditingValues] = useState({});
 
   const [aiLoading, setAiLoading] = useState({});
   const [aiStatus, setAiStatus] = useState({});
 
-  // ⭐ INITIAL LOAD — altijd volledige lijst ophalen
+  // ⭐ INITIAL LOAD
   useEffect(() => {
     loadSetups(strategyType);
   }, [strategyType]);
 
-  // ⭐ LIVE RELOAD support vanuit parent
-  useEffect(() => {
-    if (reloadSetups) reloadSetups();
-  }, []);
-
-  /** -------------------------------
-   *    FILTER + SORT LOGICA
-   * -------------------------------- */
-  const getFilteredSortedSetups = () => {
+  // ⭐ SEARCH
+  const filteredSetups = () => {
     let list = [...setups];
 
-    // 🔍 zoekfunctie
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
-      list = list.filter((s) => (s.name || '').toLowerCase().includes(q));
-    }
-
-    // 🎨 trends
-    if (filter !== 'all') {
-      list = list.filter(
-        (s) => (s.trend || '').toLowerCase() === filter.toLowerCase()
+      list = list.filter((s) =>
+        (s.name || '').toLowerCase().includes(q)
       );
-    }
-
-    // 🔽 sorteren
-    switch (sortBy) {
-      case 'name':
-        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        break;
-
-      case 'newest':
-        list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        break;
-
-      case 'favorite':
-        list.sort((a, b) => Number(b.favorite) - Number(a.favorite));
-        break;
     }
 
     return list;
   };
 
-  const setupsToShow = getFilteredSortedSetups();
-
-  /** --------------------------------
-   *     INLINE BEWERKEN
-   * -------------------------------- */
-  const handleEditChange = (id, field, value) => {
+  // ⭐ Inline editing
+  function handleEditChange(id, field, value) {
     setEditingValues((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
     }));
-  };
+  }
 
-  const handleSave = async (id) => {
+  async function handleSave(id) {
     const original = setups.find((s) => s.id === id);
     const updated = { ...original, ...editingValues[id] };
 
     try {
       await saveSetup(id, updated);
-
       setEditingId(null);
+
       setEditingValues((prev) => {
         const copy = { ...prev };
         delete copy[id];
         return copy;
       });
 
-      toast.success('Setup opgeslagen ✨');
-
       await loadSetups(strategyType);
-      if (reloadSetups) reloadSetups();
-    } catch (err) {
+      if (onUpdated) await onUpdated();
+
+      toast.success('Setup succesvol opgeslagen');
+    } catch (error) {
+      console.error(error);
       toast.error('Opslaan mislukt');
     }
-  };
+  }
 
-  /** --------------------------------
-   *     AI-UITLEG
-   * -------------------------------- */
-  const handleGenerateExplanation = async (id) => {
+  // ⭐ AI uitleg genereren
+  async function handleGenerateExplanation(id) {
     try {
       setAiLoading((prev) => ({ ...prev, [id]: true }));
-      setAiStatus((prev) => ({ ...prev, [id]: '⏳ Genereren...' }));
+      setAiStatus((prev) => ({ ...prev, [id]: '⏳ Uitleg wordt gegenereerd...' }));
 
       await generateExplanation(id);
 
       setAiStatus((prev) => ({ ...prev, [id]: '✅ Uitleg opgeslagen!' }));
-      toast.success('AI-uitleg geüpdatet');
+      toast.success('AI-uitleg opgeslagen');
 
       await loadSetups(strategyType);
+      if (onUpdated) await onUpdated();
 
-      if (reloadSetups) reloadSetups();
     } catch (err) {
-      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout' }));
-      toast.error('Fout bij genereren');
+      console.error(err);
+      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
+      toast.error('Fout bij uitleg genereren.');
     } finally {
+      setAiLoading((prev) => ({ ...prev, [id]: false }));
+
       setTimeout(() => {
-        setAiLoading((prev) => ({ ...prev, [id]: false }));
         setAiStatus((prev) => {
           const copy = { ...prev };
           delete copy[id];
           return copy;
         });
-      }, 3000);
+      }, 3500);
     }
-  };
+  }
 
-  /** --------------------------------
-   *     VERWIJDEREN
-   * -------------------------------- */
-  const handleRemove = async (id) => {
+  async function handleRemove(id) {
     try {
       await removeSetup(id);
-      toast.success('Setup verwijderd 🗑️');
+
+      toast.success('Setup verwijderd');
 
       await loadSetups(strategyType);
-      if (reloadSetups) reloadSetups();
+      if (onUpdated) await onUpdated();
     } catch (err) {
-      toast.error('Verwijderen mislukt');
+      console.error(err);
+      toast.error('Verwijderen mislukt.');
     }
-  };
+  }
 
-  const toggleFavorite = (id, current) => {
+  function toggleFavorite(id, current) {
     handleEditChange(id, 'favorite', !current);
     handleSave(id);
-  };
+  }
 
-  /** --------------------------------
-   *     LOADING SKELETONS
-   * -------------------------------- */
-  const LoadingSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="animate-pulse border rounded-lg p-4 shadow bg-gray-100">
-          <div className="h-4 w-2/3 bg-gray-300 rounded mb-3"></div>
-          <div className="h-3 w-1/2 bg-gray-300 rounded mb-2"></div>
-          <div className="h-3 w-1/3 bg-gray-300 rounded mb-6"></div>
-          <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
-          <div className="h-4 w-4/5 bg-gray-200 rounded"></div>
-        </div>
-      ))}
-    </div>
-  );
+  const setupsToShow = filteredSetups();
 
-  /** --------------------------------
-   *     RENDER
-   * -------------------------------- */
   return (
-    <div className="space-y-6 mt-6">
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="border p-2 rounded bg-white"
-        >
-          <option value="all">🔁 Alle trends</option>
-          <option value="bullish">📈 Bullish</option>
-          <option value="bearish">📉 Bearish</option>
-          <option value="range">⚖️ Range</option>
-        </select>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="border p-2 rounded bg-white"
-        >
-          <option value="newest">🆕 Nieuwste eerst</option>
-          <option value="name">🔤 Op naam</option>
-          <option value="favorite">⭐ Favorieten bovenaan</option>
-        </select>
-      </div>
+    <div className="space-y-6 mt-4">
 
       {/* Loading */}
-      {loading && <LoadingSkeleton />}
+      {loading && (
+        <div className="text-gray-500 text-sm">📡 Setups laden...</div>
+      )}
 
-      {/* Errors */}
-      {error && <div className="text-red-500 text-sm">{error}</div>}
+      {/* Error */}
+      {error && (
+        <div className="text-red-500 text-sm">{error}</div>
+      )}
 
-      {/* Setup Cards */}
+      {/* Setup cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {!loading && setupsToShow.length === 0 && (
-          <p className="text-sm text-gray-500 col-span-full mt-4">
-            📭 Geen setups gevonden.
-          </p>
-        )}
-
-        {!loading &&
+        {setupsToShow.length > 0 ? (
           setupsToShow.map((setup) => {
             const isEditing = editingId === setup.id;
             const trend = (setup.trend || '').toLowerCase();
@@ -236,7 +158,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                 key={setup.id}
                 className="border rounded-lg p-4 bg-white shadow relative transition"
               >
-                {/* ⭐ Favorite */}
+                {/* Favorite button */}
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => toggleFavorite(setup.id, setup.favorite)}
@@ -244,7 +166,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
 
-                {/* --------------- EDIT --------------- */}
+                {/* EDIT MODE */}
                 {isEditing ? (
                   <>
                     <input
@@ -265,8 +187,8 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
 
                     <input
                       className="border p-2 rounded w-full mb-2"
-                      type="number"
                       defaultValue={editingData.min_investment ?? setup.min_investment}
+                      type="number"
                       onChange={(e) =>
                         handleEditChange(setup.id, 'min_investment', e.target.value)
                       }
@@ -275,15 +197,9 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                     <label className="text-sm flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
-                        defaultChecked={
-                          editingData.dynamic_investment ?? setup.dynamic_investment
-                        }
+                        defaultChecked={editingData.dynamic_investment ?? setup.dynamic_investment}
                         onChange={(e) =>
-                          handleEditChange(
-                            setup.id,
-                            'dynamic_investment',
-                            e.target.checked
-                          )
+                          handleEditChange(setup.id, 'dynamic_investment', e.target.checked)
                         }
                       />
                       🔁 Dynamische investering
@@ -307,8 +223,9 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                         onClick={() => handleSave(setup.id)}
                         className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
                       >
-                        💾 Opslaan
+                        ✅ Opslaan
                       </button>
+
                       <button
                         onClick={() => setEditingId(null)}
                         className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-sm"
@@ -319,7 +236,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                   </>
                 ) : (
                   <>
-                    {/* --------------- VIEW --------------- */}
+                    {/* VIEW MODE */}
                     <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
 
                     <p className={`text-xs mb-1 ${trendColor}`}>
@@ -327,8 +244,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                     </p>
 
                     <p className="text-xs text-gray-500 mb-1">
-                      ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠{' '}
-                      {setup.strategy_type}
+                      ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}
                     </p>
 
                     <p className="text-xs text-gray-500 mb-1">
@@ -347,16 +263,14 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                       💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
                     </div>
 
-                    {/* AI KNOP */}
+                    {/* AI BTN */}
                     <button
                       onClick={() => handleGenerateExplanation(setup.id)}
                       disabled={aiLoading[setup.id]}
                       className={`text-xs px-3 py-1 rounded mb-2 text-white 
-                        ${
-                          aiLoading[setup.id]
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 hover:bg-indigo-700'
-                        }
+                        ${aiLoading[setup.id]
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-indigo-600 hover:bg-indigo-700'}
                       `}
                     >
                       {aiLoading[setup.id] ? '⏳ Bezig...' : '🔁 Genereer uitleg (AI)'}
@@ -378,14 +292,19 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                         onClick={() => handleRemove(setup.id)}
                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
                       >
-                        🗑️ Verwijderen
+                        ❌ Verwijderen
                       </button>
                     </div>
                   </>
                 )}
               </div>
             );
-          })}
+          })
+        ) : (
+          <p className="text-sm text-gray-500 col-span-full mt-4">
+            📭 Geen setups gevonden.
+          </p>
+        )}
       </div>
     </div>
   );

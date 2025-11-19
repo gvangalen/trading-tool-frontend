@@ -11,6 +11,8 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     target: '',
     stop_loss: '',
     explanation: '',
+    tags: '',
+    favorite: false,
   });
 
   const [error, setError] = useState('');
@@ -18,8 +20,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   const [saving, setSaving] = useState(false);
 
   // ---------------------------------------------------------
-  // 🔎 FILTER: alleen setups met type "manual"
-  // + nog GEEN bestaande manual strategie
+  // 🔎 FILTER: alleen setups van type "manual" zonder bestaande manual strategie
   // ---------------------------------------------------------
   const filteredSetups = useMemo(() => {
     return setups.filter((s) => {
@@ -40,7 +41,8 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   // 📝 Form change handler
   // ---------------------------------------------------------
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    const val = type === 'checkbox' ? checked : value;
 
     // Bij setup wissel → symbol + timeframe invullen
     if (name === 'setup_id') {
@@ -57,7 +59,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       return;
     }
 
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: val }));
     setError('');
     setSuccess(false);
   };
@@ -84,6 +86,11 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       return;
     }
 
+    const tags = form.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
     const payload = {
       setup_id: Number(form.setup_id),
       setup_name: filteredSetups.find((s) => String(s.id) === String(form.setup_id))?.name,
@@ -94,6 +101,8 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       targets: [target],
       stop_loss,
       explanation: form.explanation.trim(),
+      tags,
+      favorite: form.favorite,
       origin: 'Handmatig',
     };
 
@@ -111,6 +120,8 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         target: '',
         stop_loss: '',
         explanation: '',
+        tags: '',
+        favorite: false,
       });
 
       setTimeout(() => setSuccess(false), 2000);
@@ -236,6 +247,29 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           onChange={handleChange}
           className="mt-1 w-full border p-2 rounded"
         />
+      </label>
+
+      {/* TAGS */}
+      <label className="block text-sm font-medium">
+        Tags (komma gescheiden)
+        <input
+          name="tags"
+          type="text"
+          value={form.tags}
+          onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
+        />
+      </label>
+
+      {/* Favorite */}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="favorite"
+          checked={form.favorite}
+          onChange={handleChange}
+        />
+        <span>Favoriet</span>
       </label>
 
       {/* ERRORS */}

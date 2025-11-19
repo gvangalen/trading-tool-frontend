@@ -8,8 +8,8 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyTabs({
   onSubmit,
+  setupsTrading = [],
   setupsDCA = [],
-  setupsAI = [],
   setupsManual = [],
 }) {
   const [activeTab, setActiveTab] = useState('trading');
@@ -21,13 +21,16 @@ export default function StrategyTabs({
         : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
     }`;
 
-  const handleStandardSubmit = async (strategy, type = 'ai') => {
+  // Standaard handler: forms geven "kale" data terug, hier voeg ik strategy_type toe
+  const handleStandardSubmit = (strategy, type) => {
+    if (!onSubmit) return;
+
     const payload = {
       ...strategy,
-      strategy_type: type,
+      strategy_type: type, // 'trading' | 'dca' | 'manual'
     };
 
-    if (onSubmit) onSubmit(payload);
+    onSubmit(payload);
   };
 
   return (
@@ -57,22 +60,23 @@ export default function StrategyTabs({
         </button>
       </div>
 
-      {/* Tab content */}
+      {/* Trading (AI) */}
       {activeTab === 'trading' && (
         <div>
           <div className="flex items-center mb-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-1">
               Koppel aan Setup (AI)
             </label>
-            <InfoTooltip text="Alleen setups zonder bestaande AI-strategie worden hier weergegeven." />
+            <InfoTooltip text="Alleen setups zonder bestaande tradingstrategie worden hier weergegeven." />
           </div>
           <StrategyFormTrading
-            onSubmit={(strategy) => handleStandardSubmit(strategy, 'ai')}
-            setups={setupsAI}
+            setups={setupsTrading}
+            onSubmit={(strategy) => handleStandardSubmit(strategy, 'trading')}
           />
         </div>
       )}
 
+      {/* DCA */}
       {activeTab === 'dca' && (
         <div>
           <div className="flex items-center mb-2">
@@ -82,12 +86,13 @@ export default function StrategyTabs({
             <InfoTooltip text="Alleen setups zonder bestaande DCA-strategie worden hier weergegeven." />
           </div>
           <StrategyFormDCA
-            onSubmit={(strategy) => handleStandardSubmit(strategy, 'dca')}
             setups={setupsDCA}
+            onSubmit={(strategy) => handleStandardSubmit(strategy, 'dca')}
           />
         </div>
       )}
 
+      {/* Handmatig */}
       {activeTab === 'manual' && (
         <div>
           <div className="flex items-center mb-2">
@@ -97,8 +102,8 @@ export default function StrategyTabs({
             <InfoTooltip text="Alleen setups zonder bestaande handmatige strategie worden hier weergegeven." />
           </div>
           <StrategyFormManual
-            onSubmit={(strategy) => handleStandardSubmit(strategy, 'manual')}
             setups={setupsManual}
+            onSubmit={(strategy) => handleStandardSubmit(strategy, 'manual')}
           />
         </div>
       )}

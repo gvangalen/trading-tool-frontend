@@ -37,7 +37,7 @@ export default function StrategyPage() {
         ...strategy,
         setup_id: setup.id,
         setup_name: setup.name,
-        asset: setup.symbol,
+        symbol: setup.symbol,
         timeframe: setup.timeframe,
         explanation: strategy.explanation || strategy.rules || '',
         entry: strategy.entry || null,

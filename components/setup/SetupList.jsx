@@ -20,15 +20,15 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
   const [editingId, setEditingId] = useState(null);
   const [editingValues, setEditingValues] = useState({});
 
-  // Laad setups opnieuw als strategyType of searchTerm verandert
+  // 🔄 AI uitleg loading state per setup
+  const [aiLoading, setAiLoading] = useState({}); // { setupId: true/false }
+  const [aiStatus, setAiStatus] = useState({}); // { setupId: "text" }
+
   useEffect(() => {
-    // Bij manual en trading strategy types sluiten we 'dca' uit
     const excludeDca = (strategyType === 'manual' || strategyType === 'trading') ? ['dca'] : [];
     loadSetups(strategyType, excludeDca);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strategyType, searchTerm]);
 
-  // Filter en sorteer setups
   const filteredSortedSetups = () => {
     let list = [...setups];
 
@@ -62,10 +62,11 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
       await saveSetup(id, updated);
       setEditingId(null);
       setEditingValues((prev) => {
-        const newEditing = { ...prev };
-        delete newEditing[id];
-        return newEditing;
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
       });
+
       if (onUpdated) await onUpdated();
       toast.success('Setup succesvol opgeslagen');
     } catch (error) {
@@ -74,15 +75,35 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
     }
   }
 
+  // ✅ NIEUW: AI-UITLEG MET SPINNER + STATUS
   async function handleGenerateExplanation(id) {
     try {
+      setAiLoading((prev) => ({ ...prev, [id]: true }));
+      setAiStatus((prev) => ({ ...prev, [id]: '⏳ Uitleg wordt gegenereerd...' }));
+
       await generateExplanation(id);
-      toast.success('Uitleg gegenereerd!');
-      await loadSetups(strategyType); // forceer refresh van lijst met filter
+
+      // UI feedback
+      setAiStatus((prev) => ({ ...prev, [id]: '✅ Uitleg opgeslagen!' }));
+      toast.success('AI-uitleg opgeslagen');
+
+      await loadSetups(strategyType);
       if (onUpdated) await onUpdated();
     } catch (err) {
       console.error('❌ Fout bij AI-explanation:', err);
+      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
       toast.error('Fout bij uitleg genereren.');
+    } finally {
+      setAiLoading((prev) => ({ ...prev, [id]: false }));
+
+      // status na 4 sec weghalen
+      setTimeout(() => {
+        setAiStatus((prev) => {
+          const copy = { ...prev };
+          delete copy[id];
+          return copy;
+        });
+      }, 4000);
     }
   }
 
@@ -98,7 +119,6 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
   }
 
   function toggleFavorite(id, current) {
-    // Let op: handleSave is async, hier niet awaited — dat kan oké zijn
     handleEditChange(id, 'favorite', !current);
     handleSave(id);
   }
@@ -107,12 +127,12 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
 
   return (
     <div className="space-y-6 mt-6">
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="border p-2 rounded bg-white"
-          aria-label="Filter setups op trend"
         >
           <option value="all">🔁 Alle trends</option>
           <option value="bullish">📈 Bullish</option>
@@ -124,15 +144,16 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
           className="border p-2 rounded bg-white"
-          aria-label="Sorteer setups"
         >
           <option value="name">🔤 Sorteer op naam</option>
         </select>
       </div>
 
+      {/* Loading / Error */}
       {loading && <div className="text-gray-500 text-sm">📡 Laden setups...</div>}
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
+      {/* Setup kaarten */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {setupsToShow.length > 0 ? (
           setupsToShow.map((setup) => {
@@ -144,7 +165,6 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                 ? 'text-red-500'
                 : 'text-yellow-500';
 
-            // Gebruik bewerkte waarden als die er zijn, anders originele
             const editingData = editingValues[setup.id] || {};
 
             return (
@@ -152,17 +172,18 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                 key={setup.id}
                 className="border rounded-lg p-4 bg-white shadow relative transition"
               >
-                {/* ⭐ Favoriet */}
+                {/* ⭐ Favorite */}
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => toggleFavorite(setup.id, setup.favorite)}
-                  aria-label={`Toggle favoriet voor ${setup.name}`}
                 >
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
 
+                {/* ---------- EDIT MODE ---------- */}
                 {isEditing ? (
                   <>
+                    {/* 🔧 alle velden blijven exact hetzelfde */}
                     <input
                       className="border p-2 rounded w-full mb-2 font-semibold"
                       defaultValue={editingData.name ?? setup.name}
@@ -258,7 +279,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                         handleEditChange(
                           setup.id,
                           'tags',
-                          e.target.value.split(',').map((tag) => tag.trim())
+                          e.target.value.split(',').map(t => t.trim())
                         )
                       }
                     />
@@ -280,31 +301,50 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                   </>
                 ) : (
                   <>
+                    {/* ---------- VIEW MODE ---------- */}
                     <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
                     <p className="text-sm mb-1 text-gray-700">{setup.indicators}</p>
                     <p className={`text-xs mb-1 ${trendColor}`}>📊 {setup.trend}</p>
+
                     <p className="text-xs text-gray-500 mb-1">
                       ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}
                     </p>
+
                     <p className="text-xs text-gray-500 mb-1">💰 Min: €{setup.min_investment}</p>
+
                     <p className="text-xs text-gray-500 mb-1">
                       🔁 Dynamic: {setup.dynamic_investment ? '✅' : '❌'}
                     </p>
+
                     <p className="text-xs text-gray-500 mb-1">
                       📈 Score: {setup.score} ({setup.score_logic})
                     </p>
-                    <p className="text-xs text-gray-500 mb-1">🏷️ Tags: {(setup.tags || []).join(', ')}</p>
+
+                    <p className="text-xs text-gray-500 mb-1">
+                      🏷️ Tags: {(setup.tags || []).join(', ')}
+                    </p>
 
                     <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border mb-2">
                       💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
                     </div>
 
+                    {/* ⭐⭐⭐ NIEUWE AI BUTTON MET SPINNER + STATUS ⭐⭐⭐ */}
                     <button
                       onClick={() => handleGenerateExplanation(setup.id)}
-                      className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mb-2"
+                      disabled={aiLoading[setup.id]}
+                      className={`text-xs px-3 py-1 rounded mb-2 text-white 
+                        ${aiLoading[setup.id]
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-indigo-600 hover:bg-indigo-700'}
+                      `}
                     >
-                      🔁 Genereer uitleg (AI)
+                      {aiLoading[setup.id] ? '⏳ Bezig...' : '🔁 Genereer uitleg (AI)'}
                     </button>
+
+                    {/* Status onder knop */}
+                    {aiStatus[setup.id] && (
+                      <p className="text-xs text-gray-600 mt-1">{aiStatus[setup.id]}</p>
+                    )}
 
                     <div className="flex justify-end gap-2 mt-2">
                       <button

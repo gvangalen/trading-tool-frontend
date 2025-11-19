@@ -19,16 +19,18 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // ✅ Alleen setups van type "ai"
-  // (zoals jouw volledige systeem voorschrijft)
+  // ✅ FILTER: alleen setups met strategy_type "trading"
   const availableSetups = useMemo(
     () =>
       Array.isArray(setups)
-        ? setups.filter((s) => s.strategy_type === 'ai')
+        ? setups.filter((s) => s.strategy_type?.toLowerCase() === 'trading')
         : [],
     [setups]
   );
 
+  // -------------------------------------------------
+  // Form handlers
+  // -------------------------------------------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
@@ -118,6 +120,9 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
     !form.targetsText ||
     !form.stop_loss;
 
+  // -------------------------------------------------
+  // Render
+  // -------------------------------------------------
   return (
     <form
       onSubmit={handleSubmit}
@@ -150,7 +155,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         </select>
       </label>
 
-      {/* Symbol + timeframe read-only */}
+      {/* Rest hetzelfde */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Symbol</label>
@@ -170,7 +175,6 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         </div>
       </div>
 
-      {/* Entry / targets / SL */}
       <label className="block text-sm font-medium">
         Entry prijs
         <input
@@ -188,7 +192,6 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         <input
           name="targetsText"
           type="text"
-          placeholder="Bijv. 32000, 34000, 36000"
           value={form.targetsText}
           onChange={handleChange}
           className="mt-1 w-full border p-2 rounded"

@@ -8,13 +8,13 @@ import { useSetupData } from '@/hooks/useSetupData';
 export default function SetupPage() {
   const [search, setSearch] = useState('');
 
-  // Haal de echte loadSetups op uit de hook
+  // Haal loadSetups uit de hook
   const { loadSetups } = useSetupData();
 
-  // Functie die we doorgeven aan SetupForm én SetupList
+  // Universele reload functie die ALLE setups opnieuw laadt
   const reloadSetups = () => {
     console.log('🔄 [SetupPage] Reload setups triggered');
-    loadSetups('', ['dca']); // exclude DCA zoals je backend verwacht
+    loadSetups(); // <-- clean, geen filters, geen exclude
   };
 
   return (
@@ -43,14 +43,13 @@ export default function SetupPage() {
 
       {/* 🌀 Setup kaarten */}
       <section className="space-y-4">
-        <SetupList searchTerm={search} reloadSetups={reloadSetups} />
+        <SetupList searchTerm={search} onUpdated={reloadSetups} />
       </section>
 
       {/* ➕ Setup aanmaken */}
       <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow space-y-4">
         <h3 className="text-xl font-semibold">➕ Nieuwe Setup</h3>
 
-        {/* ⬅️ BELANGRIJK: correcte propnaam */}
         <SetupForm onSaved={reloadSetups} />
       </section>
 

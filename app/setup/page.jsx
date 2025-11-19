@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SetupForm from '@/components/setup/SetupForm';
 import SetupList from '@/components/setup/SetupList';
 import { useSetupData } from '@/hooks/useSetupData';
@@ -8,19 +8,30 @@ import { useSetupData } from '@/hooks/useSetupData';
 export default function SetupPage() {
   const [search, setSearch] = useState('');
 
-  // Haal de echte loadSetups op uit de hook
-  const { loadSetups } = useSetupData();
+  // ⭐ Centrale hook-instantie
+  const {
+    setups,
+    loading,
+    error,
+    loadSetups,
+    saveSetup,
+    removeSetup
+  } = useSetupData();
 
-  // ⭐ Universele reload functie die ALLES opnieuw laadt
+  // ⭐ Initial load
+  useEffect(() => {
+    loadSetups();
+  }, []);
+
   const reloadSetups = () => {
     console.log('🔄 [SetupPage] Reload setups triggered');
-    loadSetups(); // <-- GEEN filters, GEEN exclude, gewoon ALLES
+    loadSetups();
   };
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-10">
 
-      {/* 🧱 Titel */}
+      {/* Titel */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold">⚙️ Setup Editor</h2>
         <p className="text-gray-600 text-sm">
@@ -28,7 +39,7 @@ export default function SetupPage() {
         </p>
       </div>
 
-      {/* 🔍 Zoekveld */}
+      {/* Zoeken */}
       <div className="flex justify-between items-center mt-4">
         <h3 className="text-xl font-semibold">📋 Huidige Setups</h3>
 
@@ -41,15 +52,18 @@ export default function SetupPage() {
         />
       </div>
 
-      {/* 🌀 Setup kaarten (met modal edit) */}
-      <section className="space-y-4">
-        <SetupList 
-          searchTerm={search}
-          reloadSetups={reloadSetups}    // <-- BELANGRIJK VOOR MODAL, REMOVE, AI UPDATE
-        />
-      </section>
+      {/* Setup List */}
+      <SetupList
+        setups={setups}
+        loading={loading}
+        error={error}
+        searchTerm={search}
+        saveSetup={saveSetup}
+        removeSetup={removeSetup}
+        reload={reloadSetups}
+      />
 
-      {/* ➕ Setup aanmaken */}
+      {/* Nieuwe setup */}
       <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow space-y-4">
         <h3 className="text-xl font-semibold">➕ Nieuwe Setup</h3>
 

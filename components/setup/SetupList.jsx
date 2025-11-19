@@ -1,49 +1,42 @@
 'use client';
 
 import { toast } from 'react-hot-toast';
-import { useState, useEffect } from 'react';
-import { useSetupData } from '@/hooks/useSetupData';
+import { useState } from 'react';
+import SetupEditModal from '@/components/setup/SetupEditModal';
 import { generateExplanation } from '@/lib/api/setups';
 
-// Modal import
-import SetupEditModal from '@/components/setup/SetupEditModal';
-
-export default function SetupList({ searchTerm = '', strategyType = '', reloadSetups }) {
-  const {
-    setups,
-    loading,
-    error,
-    removeSetup,
-    loadSetups,
-  } = useSetupData();
-
-  const [aiLoading, setAiLoading] = useState({});
-  const [aiStatus, setAiStatus] = useState({});
+export default function SetupList({
+  setups = [],
+  loading,
+  error,
+  searchTerm = '',
+  saveSetup,
+  removeSetup,
+  reload,       // <-- centrale reload
+}) {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSetup, setSelectedSetup] = useState(null);
 
-  // ⭐ INITIAL LOAD
-  useEffect(() => {
-    loadSetups(strategyType);
-  }, [strategyType]);
+  // AI states
+  const [aiLoading, setAiLoading] = useState({});
+  const [aiStatus, setAiStatus] = useState({});
 
-  // ⭐ SEARCH
-  const filteredSetups = () => {
-    let list = [...setups];
+  // ---------------------------------------------
+  // 🔎 FILTEREN OP ZOEKTERM
+  // ---------------------------------------------
+  const filteredSetups = (() => {
+    if (!searchTerm.trim()) return setups;
+    const q = searchTerm.toLowerCase();
+    return setups.filter((s) =>
+      (s.name || '').toLowerCase().includes(q)
+    );
+  })();
 
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      list = list.filter((s) =>
-        (s.name || '').toLowerCase().includes(q)
-      );
-    }
-
-    return list;
-  };
-
-  // ⭐ AI uitleg genereren
+  // ---------------------------------------------
+  // 🤖 AI UITLEG GENEREREN
+  // ---------------------------------------------
   async function handleGenerateExplanation(id) {
     try {
       setAiLoading((prev) => ({ ...prev, [id]: true }));
@@ -54,73 +47,73 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
       setAiStatus((prev) => ({ ...prev, [id]: '✅ Uitleg opgeslagen!' }));
       toast.success('AI-uitleg opgeslagen');
 
-      await loadSetups(strategyType);
-      if (reloadSetups) await reloadSetups();
+      if (reload) await reload();
+
     } catch (err) {
       console.error(err);
-      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
       toast.error('Fout bij uitleg genereren.');
+      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
     } finally {
       setAiLoading((prev) => ({ ...prev, [id]: false }));
-
       setTimeout(() => {
         setAiStatus((prev) => {
-          const copy = { ...prev };
-          delete copy[id];
-          return copy;
+          const cp = { ...prev };
+          delete cp[id];
+          return cp;
         });
       }, 3500);
     }
   }
 
-  // ⭐ Verwijderen
+  // ---------------------------------------------
+  // 🗑️ VERWIJDEREN
+  // ---------------------------------------------
   async function handleRemove(id) {
     try {
       await removeSetup(id);
 
       toast.success('Setup verwijderd');
 
-      await loadSetups(strategyType);
-      if (reloadSetups) await reloadSetups();
+      if (reload) await reload();
     } catch (err) {
       console.error(err);
       toast.error('Verwijderen mislukt.');
     }
   }
 
-  // ⭐ Modal openen voor bewerken
+  // ---------------------------------------------
+  // 📝 MODAL OPENEN
+  // ---------------------------------------------
   function openEditModal(setup) {
     setSelectedSetup(setup);
     setModalOpen(true);
   }
 
-  const setupsToShow = filteredSetups();
-
   return (
     <div className="space-y-6 mt-4">
 
-      {/* Modal */}
+      {/* EDIT MODAL */}
       <SetupEditModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         setup={selectedSetup}
-        reload={reloadSetups}
+        reload={reload}
       />
 
-      {/* Loading */}
+      {/* LOADING */}
       {loading && (
-        <div className="text-gray-500 text-sm">📡 Setups laden...</div>
+        <p className="text-sm text-gray-500">📡 Setups laden...</p>
       )}
 
-      {/* Error */}
+      {/* ERROR */}
       {error && (
-        <div className="text-red-500 text-sm">{error}</div>
+        <p className="text-sm text-red-500">{error}</p>
       )}
 
-      {/* Setup Cards */}
+      {/* SETUP CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {setupsToShow.length > 0 ? (
-          setupsToShow.map((setup) => {
+        {filteredSetups.length > 0 ? (
+          filteredSetups.map((setup) => {
             const trend = (setup.trend || '').toLowerCase();
 
             const trendColor =
@@ -135,7 +128,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                 key={setup.id}
                 className="border rounded-lg p-4 bg-white shadow relative transition"
               >
-                {/* Favoriet */}
+                {/* FAVORIET */}
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => openEditModal({ ...setup, favorite: !setup.favorite })}
@@ -187,6 +180,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', reloadSe
                   <p className="text-xs text-gray-600 mt-1">{aiStatus[setup.id]}</p>
                 )}
 
+                {/* ACTIE KNOPPEN */}
                 <div className="flex justify-end gap-2 mt-2">
                   <button
                     onClick={() => openEditModal(setup)}

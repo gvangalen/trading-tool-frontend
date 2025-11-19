@@ -1,218 +1,252 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { updateStrategy, deleteStrategy } from '@/lib/api/strategy';
-import { generateStrategyForSetup } from '@/lib/api/strategy';
+import {
+  updateStrategy,
+  deleteStrategy,
+  generateStrategy,
+  fetchStrategyBySetup,
+} from '@/lib/api/strategy';
 
-export default function StrategyCard({ strategy, onEdit, onDelete }) {
+export default function StrategyCard({ strategy, onUpdated }) {
   const [editing, setEditing] = useState(false);
-  const [editFields, setEditFields] = useState({ ...strategy });
+  const [fields, setFields] = useState({ ...strategy });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [justUpdated, setJustUpdated] = useState(false);
 
-  // Sync editFields met strategy als die verandert
   useEffect(() => {
-    setEditFields({ ...strategy });
+    setFields({ ...strategy });
   }, [strategy]);
 
   if (!strategy) return null;
 
   const {
     id,
+    setup_id,
     setup_name,
     symbol,
     timeframe,
     strategy_type,
-    explanation,
-    favorite,
     entry,
     targets,
     stop_loss,
+    explanation,
+    ai_explanation,
+    favorite,
   } = strategy;
 
-  const lowerStrategyType = strategy_type?.toLowerCase() || '';
+  const isDCA = strategy_type === 'dca';
 
+  // ------------------------------
+  // SAVE STRATEGY
+  // ------------------------------
   const handleSave = async () => {
     try {
       setLoading(true);
       setError('');
-      // Cast numerieke velden correct
+
       const payload = {
-        ...editFields,
-        entry: editFields.entry ? Number(editFields.entry) : null,
-        stop_loss: editFields.stop_loss ? Number(editFields.stop_loss) : null,
-        targets: Array.isArray(editFields.targets)
-          ? editFields.targets.map((t) => Number(t))
-          : [],
+        ...fields,
+        targets:
+          Array.isArray(fields.targets) && fields.targets.length > 0
+            ? fields.targets
+            : [],
       };
+
       await updateStrategy(id, payload);
+
       setEditing(false);
-      onEdit && onEdit();
+      setJustUpdated(true);
+      onUpdated && onUpdated();
+
+      setTimeout(() => setJustUpdated(false), 2000);
     } catch (err) {
-      console.error('❌ Strategie opslaan mislukt:', err);
-      // Specifieke check voor duplicate error (status 409)
-      if (err.status === 409) {
-        setError('❌ Strategie bestaat al voor deze setup en type.');
-      } else if (err.message) {
-        setError(`Opslaan mislukt: ${err.message}`);
-      } else {
-        setError('Opslaan mislukt. Probeer het later opnieuw.');
-      }
+      console.error('❌ Update fout:', err);
+      setError(err?.message || 'Opslaan mislukt');
     } finally {
       setLoading(false);
     }
   };
 
+  // ------------------------------
+  // DELETE
+  // ------------------------------
   const handleDelete = async () => {
-    if (confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) {
-      try {
-        setLoading(true);
-        await deleteStrategy(id);
-        setEditing(false);
-        onDelete && onDelete();
-      } catch (err) {
-        console.error('❌ Verwijderen mislukt:', err);
-        setError('Verwijderen mislukt. Probeer het later opnieuw.');
-      } finally {
-        setLoading(false);
-      }
+    if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
+
+    try {
+      setLoading(true);
+      await deleteStrategy(id);
+      onUpdated && onUpdated();
+    } catch (err) {
+      console.error('❌ Delete fout:', err);
+      setError('Verwijderen mislukt');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ------------------------------
+  // GENERATE (AI)
+  // ------------------------------
   const handleGenerate = async () => {
     try {
       setLoading(true);
       setError('');
-      await generateStrategyForSetup(strategy.setup_id, true);
-      onEdit && onEdit();
+
+      const res = await generateStrategy(setup_id, true); // overwrite=true
+
+      if (!res?.task_id) {
+        setError('❌ Ongeldige respons');
+        return;
+      }
+
+      // Poll until done
+      let ready = false;
+      while (!ready) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const status = await fetchTaskStatus(res.task_id);
+        if (status?.state === 'SUCCESS') ready = true;
+      }
+
+      // fetch final strategy
+      const final = await fetchStrategyBySetup(setup_id);
+
+      onUpdated && onUpdated(final.strategy);
+      setJustUpdated(true);
+      setTimeout(() => setJustUpdated(false), 2000);
     } catch (err) {
-      console.error('❌ Generatie mislukt:', err);
-      setError('Generatie mislukt. Probeer het later opnieuw.');
+      console.error('❌ AI fout:', err);
+      setError('Generatie mislukt');
     } finally {
       setLoading(false);
     }
   };
 
-  const displayValue = (value) =>
-    value !== null && value !== undefined && value !== '' ? value : '-';
+  const display = (v) =>
+    v !== null && v !== undefined && v !== '' ? v : '-';
 
   return (
-    <div className="border rounded-lg shadow-md bg-white dark:bg-gray-900 dark:text-white p-4 flex flex-col justify-between h-full">
-      <div>
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold text-lg truncate">{setup_name || '🛠️ Onbekende setup'}</h3>
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setError('');
-                setEditing(!editing);
-              }}
-              className="text-blue-600 hover:text-blue-800 focus:outline-none"
-              aria-label="Bewerken"
-              title="Bewerken"
-              disabled={loading}
-            >
-              ✏️
-            </button>
-            <button
-              onClick={handleDelete}
-              className="text-red-600 hover:text-red-800 focus:outline-none"
-              aria-label="Verwijderen"
-              title="Verwijderen"
-              disabled={loading}
-            >
-              🗑️
-            </button>
-          </div>
-        </div>
+    <div
+      className={`
+        border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md
+        transition
+        ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
+      `}
+    >
 
-        {!editing ? (
-          <>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              <span className="uppercase font-medium">{lowerStrategyType}</span> | {symbol} {timeframe}
-            </p>
-            {lowerStrategyType !== 'dca' && (
-              <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300 mb-2">
-                <p title="Entry prijs">🎯 Entry: €{displayValue(entry)}</p>
-                <p title="Target prijs">
-                  🎯 Target: {Array.isArray(targets) && targets.length > 0 ? targets[0] : '-'}
-                </p>
-                <p title="Stop-loss">🛡️ SL: €{displayValue(stop_loss)}</p>
-              </div>
-            )}
-            {explanation && (
-              <p className="text-xs italic text-gray-500 dark:text-gray-400 mb-2">🧠 {explanation}</p>
-            )}
-            {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
-          </>
-        ) : (
-          <>
-            {lowerStrategyType !== 'dca' && (
-              <div className="grid grid-cols-3 gap-3 text-sm mb-2">
-                <input
-                  className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:text-white"
-                  placeholder="Entry"
-                  value={editFields.entry ?? ''}
-                  onChange={(e) =>
-                    setEditFields({ ...editFields, entry: e.target.value })
-                  }
-                  aria-label="Entry prijs"
-                  type="number"
-                  step="0.01"
-                />
-                <input
-                  className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:text-white"
-                  placeholder="Target"
-                  value={
-                    Array.isArray(editFields.targets) && editFields.targets.length > 0
-                      ? editFields.targets[0]
-                      : ''
-                  }
-                  onChange={(e) =>
-                    setEditFields({ ...editFields, targets: [e.target.value] })
-                  }
-                  aria-label="Target prijs"
-                  type="number"
-                  step="0.01"
-                />
-                <input
-                  className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:text-white"
-                  placeholder="Stop-loss"
-                  value={editFields.stop_loss ?? ''}
-                  onChange={(e) =>
-                    setEditFields({ ...editFields, stop_loss: e.target.value })
-                  }
-                  aria-label="Stop-loss prijs"
-                  type="number"
-                  step="0.01"
-                />
-              </div>
-            )}
-            {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
-            <button
-              onClick={handleSave}
-              className="w-full mt-1 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:bg-blue-300"
-              disabled={loading}
-              aria-label="Opslaan"
-            >
-              💾 Opslaan
-            </button>
-          </>
-        )}
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-semibold text-lg">{setup_name}</h3>
+
+        <div className="flex gap-3">
+          {/* EDIT */}
+          <button
+            disabled={loading}
+            onClick={() => setEditing(!editing)}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            ✏️
+          </button>
+
+          {/* DELETE */}
+          <button
+            disabled={loading}
+            onClick={handleDelete}
+            className="text-red-600 hover:text-red-800"
+          >
+            🗑️
+          </button>
+        </div>
       </div>
 
+      {/* TYPE / SYMBOL / TF */}
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+        <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
+      </p>
+
+      {/* ------------------------------
+          VIEW MODE
+      ------------------------------ */}
+      {!editing ? (
+        <>
+          {!isDCA && (
+            <div className="text-sm space-y-1 mb-2">
+              <p>🎯 Entry: {display(entry)}</p>
+              <p>🎯 Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</p>
+              <p>🛡️ Stop-loss: {display(stop_loss)}</p>
+            </div>
+          )}
+
+          {explanation && (
+            <p className="text-xs text-gray-500 italic py-1">
+              📝 {explanation}
+            </p>
+          )}
+
+          {ai_explanation && (
+            <p className="text-xs text-purple-500 italic py-1">
+              🤖 {ai_explanation}
+            </p>
+          )}
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+        </>
+      ) : (
+        <>
+          {!isDCA && (
+            <div className="grid grid-cols-3 gap-3 mb-2">
+              <input
+                className="border rounded px-2 py-1"
+                placeholder="Entry"
+                value={fields.entry || ''}
+                onChange={(e) =>
+                  setFields({ ...fields, entry: e.target.value })
+                }
+              />
+              <input
+                className="border rounded px-2 py-1"
+                placeholder="Targets (comma)"
+                value={Array.isArray(fields.targets) ? fields.targets.join(',') : ''}
+                onChange={(e) =>
+                  setFields({ ...fields, targets: e.target.value.split(',') })
+                }
+              />
+              <input
+                className="border rounded px-2 py-1"
+                placeholder="Stop-loss"
+                value={fields.stop_loss || ''}
+                onChange={(e) =>
+                  setFields({ ...fields, stop_loss: e.target.value })
+                }
+              />
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            💾 Opslaan
+          </button>
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+        </>
+      )}
+
+      {/* FOOTER */}
       <div className="flex justify-between items-center mt-4">
         <button
-          onClick={handleGenerate}
-          className="text-sm text-purple-600 underline hover:text-purple-800 focus:outline-none"
           disabled={loading}
-          aria-label="Genereer strategie via AI"
-          title="Genereer strategie via AI"
+          onClick={handleGenerate}
+          className="text-sm text-purple-600 underline hover:text-purple-800"
         >
           🔁 Genereer strategie (AI)
         </button>
 
-        <div className="text-yellow-500 text-xl select-none" title={favorite ? 'Favoriet' : 'Niet favoriet'}>
+        <div className="text-yellow-500 text-xl">
           {favorite ? '⭐' : '☆'}
         </div>
       </div>

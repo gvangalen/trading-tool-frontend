@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import StrategyList from '@/components/strategy/StrategyList';
 import StrategyTabs from '@/components/strategy/StrategyTabs';
 import { useSetupData } from '@/hooks/useSetupData';
@@ -11,22 +11,31 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
+
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
 
+  // 🔄 Bij laden pagina → altijd data ophalen
+  useEffect(() => {
+    loadSetups();
+    loadStrategies();
+  }, []);
+
+  // 🔄 Herladen na opslaan strategie
   const reloadAll = () => {
     loadSetups();
     loadStrategies();
   };
 
+  // 🎉 Toast helper
   const handleSuccess = (message) => {
     setToast(message);
     setTimeout(() => setToast(''), 4000);
   };
 
+  // 📤 STRATEGIE OPSLAAN
   const handleStrategySubmit = async (strategy) => {
     try {
-      // 🧠 Zoek de gekozen setup op
       const setup = setups.find(
         (s) => String(s.id) === String(strategy.setup_id)
       );
@@ -53,7 +62,10 @@ export default function StrategyPage() {
       console.log('📤 Strategie opslaan (payload):', payload);
 
       await createStrategy(payload);
+
       handleSuccess('✅ Strategie succesvol opgeslagen!');
+
+      // 🔄 DIRECT HERLADEN → nieuwe strategie verschijnt meteen!
       reloadAll();
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
@@ -61,14 +73,15 @@ export default function StrategyPage() {
     }
   };
 
-  // 🔎 Per type filteren welke setups nog geen strategie hebben
+  // 🔍 FILTERS PER TYPE (welke setups hebben nog géén strategie van dit type)
   const setupsWithoutTrading = useMemo(
     () =>
       setups.filter(
         (s) =>
           !strategies.some(
             (strat) =>
-              strat.setup_id === s.id && strat.strategy_type === 'trading'
+              String(strat.setup_id) === String(s.id) &&
+              String(strat.strategy_type) === 'trading'
           )
       ),
     [setups, strategies]
@@ -79,7 +92,9 @@ export default function StrategyPage() {
       setups.filter(
         (s) =>
           !strategies.some(
-            (strat) => strat.setup_id === s.id && strat.strategy_type === 'dca'
+            (strat) =>
+              String(strat.setup_id) === String(s.id) &&
+              String(strat.strategy_type) === 'dca'
           )
       ),
     [setups, strategies]
@@ -91,7 +106,8 @@ export default function StrategyPage() {
         (s) =>
           !strategies.some(
             (strat) =>
-              strat.setup_id === s.id && strat.strategy_type === 'manual'
+              String(strat.setup_id) === String(s.id) &&
+              String(strat.strategy_type) === 'manual'
           )
       ),
     [setups, strategies]
@@ -103,12 +119,11 @@ export default function StrategyPage() {
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-bold">📈 Strategieën</h1>
         <p className="text-gray-600 text-sm">
-          Bekijk en beheer je strategieën. Kies een methode: AI, DCA of
-          handmatig.
+          Bekijk en beheer je strategieën. Kies een methode: AI, DCA of handmatig.
         </p>
       </header>
 
-      {/* Zoekveld voor lijst */}
+      {/* Zoekveld */}
       <div className="flex justify-between items-center mt-4">
         <h3 className="text-xl font-semibold">📋 Huidige Strategieën</h3>
         <input
@@ -125,14 +140,14 @@ export default function StrategyPage() {
         <StrategyList searchTerm={search} />
       </section>
 
-      {/* Toast onder de lijst */}
+      {/* Toast */}
       {toast && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
           {toast}
         </div>
       )}
 
-      {/* Nieuwe strategie toevoegen */}
+      {/* Nieuwe strategie sectie */}
       <section className="pt-10 border-t">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-xl font-semibold">➕ Nieuwe Strategie Toevoegen</h2>

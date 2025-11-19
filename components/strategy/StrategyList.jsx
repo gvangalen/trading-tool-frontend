@@ -8,24 +8,25 @@ export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies } = useStrategyData();
   const [toast, setToast] = useState('');
 
+  // 🔄 Load strategies once on mount
   useEffect(() => {
     loadStrategies().catch((err) => {
       console.error('❌ Fout bij laden strategieën:', err);
     });
-  }, [loadStrategies]);
+  }, []); // ← geen dependencies = stabiel!
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   };
 
-  // === UPDATE / DELETE callback ===
+  // 🔄 After update/delete → reload list
   const handleUpdated = async () => {
     await loadStrategies();
     showToast('♻️ Strategie bijgewerkt!');
   };
 
-  // === Alleen zoeken ===
+  // 🔎 Filter op zoekterm
   const filtered = strategies.filter((s) => {
     if (!s || !s.id) return false;
 
@@ -40,17 +41,13 @@ export default function StrategyList({ searchTerm = '' }) {
     );
   });
 
-  // === Sorteer altijd op nieuwste eerst ===
+  // 🗂 Sorteer nieuwste eerst
   const sortedStrategies = [...filtered].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
 
   return (
     <div className="space-y-6">
-
-      {/* Geen sorteer-opties meer */}
-
-      {/* STRATEGY CARDS */}
       {sortedStrategies.length === 0 ? (
         <div className="text-center text-gray-500 pt-6">
           📭 Geen strategieën gevonden
@@ -65,7 +62,7 @@ export default function StrategyList({ searchTerm = '' }) {
         ))
       )}
 
-      {/* TOAST */}
+      {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 bg-black text-white px-4 py-2 rounded shadow-lg z-50">
           {toast}

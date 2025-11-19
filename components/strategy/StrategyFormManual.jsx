@@ -5,6 +5,8 @@ import { useState, useMemo } from 'react';
 export default function StrategyFormManual({ onSubmit, setups = [], strategies = [] }) {
   const [form, setForm] = useState({
     setup_id: '',
+    symbol: '',
+    timeframe: '',
     entry: '',
     target: '',
     stop_loss: '',
@@ -24,13 +26,13 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       const type = s.strategy_type?.toLowerCase();
       if (type !== 'manual') return false;
 
-      const alreadyHasManual = strategies.some(
-        (strat) =>
-          String(strat.setup_id) === String(s.id) &&
-          String(strat.strategy_type).toLowerCase() === 'manual'
+      const hasManual = strategies.some(
+        (st) =>
+          String(st.setup_id) === String(s.id) &&
+          String(st.strategy_type).toLowerCase() === 'manual'
       );
 
-      return !alreadyHasManual;
+      return !hasManual;
     });
   }, [setups, strategies]);
 
@@ -39,6 +41,22 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   // ---------------------------------------------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Bij setup wissel → symbol + timeframe invullen
+    if (name === 'setup_id') {
+      const selected = filteredSetups.find((s) => String(s.id) === String(value));
+
+      setForm((prev) => ({
+        ...prev,
+        setup_id: value,
+        symbol: selected?.symbol || '',
+        timeframe: selected?.timeframe || '',
+      }));
+
+      setError('');
+      return;
+    }
+
     setForm((prev) => ({ ...prev, [name]: value }));
     setError('');
     setSuccess(false);
@@ -57,13 +75,6 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       return;
     }
 
-    const setup = filteredSetups.find((s) => String(s.id) === String(form.setup_id));
-
-    if (!setup) {
-      setError('⚠️ Ongeldige setup geselecteerd.');
-      return;
-    }
-
     const entry = parseFloat(form.entry);
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
@@ -74,10 +85,10 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     }
 
     const payload = {
-      setup_id: setup.id,
-      setup_name: setup.name,
-      symbol: setup.symbol,
-      timeframe: setup.timeframe,
+      setup_id: Number(form.setup_id),
+      setup_name: filteredSetups.find((s) => String(s.id) === String(form.setup_id))?.name,
+      symbol: form.symbol,
+      timeframe: form.timeframe,
       strategy_type: 'manual',
       entry,
       targets: [target],
@@ -91,8 +102,11 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       await onSubmit(payload);
       setSuccess(true);
 
+      // reset
       setForm({
         setup_id: '',
+        symbol: '',
+        timeframe: '',
         entry: '',
         target: '',
         stop_loss: '',
@@ -122,117 +136,118 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     <form
       onSubmit={handleSubmit}
       className="
-        w-full max-w-xl mx-auto
-        bg-white dark:bg-gray-800
-        p-6 rounded-xl shadow
-        space-y-4
+        space-y-4 bg-white dark:bg-gray-800 
+        p-6 rounded-xl shadow-md 
+        max-w-xl mx-auto
       "
     >
-      <h3 className="text-xl font-semibold">✍️ Nieuwe Handmatige Strategie</h3>
+      <h3 className="text-xl font-bold mb-2">✍️ Nieuwe Handmatige Strategie</h3>
 
       {success && (
-        <p className="text-green-600 dark:text-green-400 text-sm">
-          ✅ Strategie opgeslagen!
-        </p>
+        <p className="text-green-600 text-sm">✅ Strategie opgeslagen!</p>
       )}
 
       {/* SETUP SELECT */}
-      <div>
-        <label className="block text-sm font-medium">
-          Koppel aan Setup
-          <select
-            name="setup_id"
-            value={form.setup_id}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
-            required
-          >
-            <option value="">-- Kies een setup --</option>
-            {filteredSetups.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.symbol} – {s.timeframe})
-              </option>
-            ))}
-          </select>
-        </label>
+      <label className="block text-sm font-medium">
+        Koppel aan Setup
+        <select
+          name="setup_id"
+          value={form.setup_id}
+          onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
+          required
+        >
+          <option value="">-- Kies een setup --</option>
+          {filteredSetups.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.symbol} – {s.timeframe})
+            </option>
+          ))}
+        </select>
+      </label>
 
-        {filteredSetups.length === 0 && (
-          <p className="text-red-500 text-sm mt-1">
-            ⚠️ Geen setups beschikbaar van type “manual” zonder bestaande strategie.
-          </p>
-        )}
-      </div>
-
-      {/* Entry */}
-      <div>
-        <label className="block font-medium text-sm">
-          Entry prijs (€)
+      {/* Symbol + timeframe */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Symbol</label>
           <input
-            name="entry"
-            type="number"
-            step="any"
-            value={form.entry}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
+            value={form.symbol}
+            readOnly
+            className="mt-1 w-full border p-2 rounded bg-gray-100"
           />
-        </label>
-      </div>
+        </div>
 
-      {/* Target */}
-      <div>
-        <label className="block font-medium text-sm">
-          Target prijs (€)
+        <div>
+          <label className="block text-sm font-medium">Timeframe</label>
           <input
-            name="target"
-            type="number"
-            step="any"
-            value={form.target}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
+            value={form.timeframe}
+            readOnly
+            className="mt-1 w-full border p-2 rounded bg-gray-100"
           />
-        </label>
+        </div>
       </div>
 
-      {/* Stop-loss */}
-      <div>
-        <label className="block font-medium text-sm">
-          Stop-loss (€)
-          <input
-            name="stop_loss"
-            type="number"
-            step="any"
-            value={form.stop_loss}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
-          />
-        </label>
-      </div>
+      {/* ENTRY */}
+      <label className="block text-sm font-medium">
+        Entry prijs (€)
+        <input
+          name="entry"
+          type="number"
+          step="any"
+          value={form.entry}
+          onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
+        />
+      </label>
 
-      {/* Explanation */}
-      <div>
-        <label className="block font-medium text-sm">
-          Uitleg / notities
-          <textarea
-            name="explanation"
-            rows={3}
-            value={form.explanation}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
-          />
-        </label>
-      </div>
+      {/* TARGET */}
+      <label className="block text-sm font-medium">
+        Target prijs (€)
+        <input
+          name="target"
+          type="number"
+          step="any"
+          value={form.target}
+          onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
+        />
+      </label>
 
-      {/* Errors */}
+      {/* STOP LOSS */}
+      <label className="block text-sm font-medium">
+        Stop-loss (€)
+        <input
+          name="stop_loss"
+          type="number"
+          step="any"
+          value={form.stop_loss}
+          onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
+        />
+      </label>
+
+      {/* EXPLANATION */}
+      <label className="block text-sm font-medium">
+        Uitleg / notities
+        <textarea
+          name="explanation"
+          rows={3}
+          value={form.explanation}
+          onChange={handleChange}
+          className="mt-1 w-full border p-2 rounded"
+        />
+      </label>
+
+      {/* ERRORS */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {/* Submit button */}
+      {/* SAVE BUTTON */}
       <button
         type="submit"
         disabled={disabled}
         className="
-          w-full bg-blue-600 text-white py-2 rounded
-          hover:bg-blue-700
-          disabled:bg-blue-300 disabled:cursor-not-allowed
+          w-full bg-blue-600 text-white py-2 rounded 
+          hover:bg-blue-700 disabled:bg-blue-300
         "
       >
         {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}

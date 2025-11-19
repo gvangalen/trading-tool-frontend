@@ -41,17 +41,18 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
 
     setError('');
 
-    // Setup wisselen → automatisch symbol/timeframe invullen
     if (name === 'setup_id') {
       const selected = availableSetups.find(
         (s) => String(s.id) === String(val)
       );
+
       setForm((prev) => ({
         ...prev,
         setup_id: val,
         symbol: selected?.symbol || '',
         timeframe: selected?.timeframe || '',
       }));
+
       return;
     }
 
@@ -80,6 +81,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
 
     const entry = parseFloat(form.entry);
     const stop_loss = parseFloat(form.stop_loss);
+
     const targets = form.targetsText
       .split(',')
       .map((t) => parseFloat(t.trim()))
@@ -107,13 +109,12 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
 
     try {
       setSaving(true);
-      if (onSubmit) {
-        await onSubmit(payload);
-      }
+      await onSubmit(payload);
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2500);
     } catch (err) {
-      console.error('❌ Fout bij submit trading-strategie:', err);
+      console.error('❌ Error saving trading strategy:', err);
       setError('❌ Opslaan mislukt.');
     } finally {
       setSaving(false);
@@ -128,29 +129,34 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
     !form.stop_loss;
 
   // -------------------------------------------------
-  // RENDER
+  // RENDER — Uniforme card stijl (max-w-xl + center)
   // -------------------------------------------------
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-lg shadow"
+      className="
+        w-full max-w-xl mx-auto
+        bg-white dark:bg-gray-800
+        p-6 rounded-xl shadow
+        space-y-4
+      "
     >
-      <h3 className="text-lg font-semibold">📈 Nieuwe Tradingstrategie</h3>
+      <h3 className="text-xl font-semibold">📈 Nieuwe Tradingstrategie</h3>
 
       {success && (
-        <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-1 rounded text-sm">
+        <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-300 px-3 py-1 rounded text-sm">
           ✅ Strategie opgeslagen!
         </div>
       )}
 
-      {/* SETUP SELECT */}
+      {/* Setup-selectie */}
       <label className="block text-sm font-medium">
         Koppel aan Setup
         <select
           name="setup_id"
           value={form.setup_id}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
           required
         >
           <option value="">-- Kies een setup --</option>
@@ -162,14 +168,14 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         </select>
       </label>
 
-      {/* Symbol + timeframe (read-only) */}
+      {/* Symbol + timeframe */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Symbol</label>
           <input
             value={form.symbol}
             readOnly
-            className="mt-1 w-full border p-2 rounded bg-gray-100"
+            className="mt-1 w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
           />
         </div>
 
@@ -178,7 +184,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
           <input
             value={form.timeframe}
             readOnly
-            className="mt-1 w-full border p-2 rounded bg-gray-100"
+            className="mt-1 w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
           />
         </div>
       </div>
@@ -192,7 +198,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
           step="any"
           value={form.entry}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -205,7 +211,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
           placeholder="Bijv. 32000, 34000, 36000"
           value={form.targetsText}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -218,7 +224,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
           step="any"
           value={form.stop_loss}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -230,7 +236,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
           rows={3}
           value={form.explanation}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -242,11 +248,11 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
           type="text"
           value={form.tags}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
-      {/* Bottom row */}
+      {/* Bottom */}
       <div className="flex items-center justify-between mt-3">
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -261,7 +267,12 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         <button
           type="submit"
           disabled={disabled}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 text-sm"
+          className="
+            bg-blue-600 text-white px-6 py-2 rounded
+            hover:bg-blue-700 
+            disabled:bg-blue-300 disabled:cursor-not-allowed
+            text-sm
+          "
         >
           {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
         </button>

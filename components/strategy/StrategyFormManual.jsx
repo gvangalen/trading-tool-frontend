@@ -15,20 +15,30 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   const [success, setSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // ✅ Alleen setups met strategy_type === 'manual'
-  // én die nog GEEN handmatige strategie hebben
-  const filteredSetups = useMemo(
-    () =>
-      setups.filter(
-        (s) =>
-          s.strategy_type === 'manual' &&
-          !strategies.some(
-            (strat) => strat.setup_id === s.id && strat.strategy_type === 'manual'
-          )
-      ),
-    [setups, strategies]
-  );
+  // ---------------------------------------------------------
+  // 🔎 FILTER: alleen setups met type "manual"
+  // + nog GEEN bestaande manual strategie
+  // (Alles lowercase voor consistency)
+  // ---------------------------------------------------------
+  const filteredSetups = useMemo(() => {
+    return setups.filter((s) => {
+      const type = s.strategy_type?.toLowerCase();
+      if (type !== 'manual') return false;
 
+      const alreadyHasManual = strategies.some((strat) => {
+        return (
+          String(strat.setup_id) === String(s.id) &&
+          String(strat.strategy_type).toLowerCase() === 'manual'
+        );
+      });
+
+      return !alreadyHasManual;
+    });
+  }, [setups, strategies]);
+
+  // ---------------------------------------------------------
+  // 📝 Form change handler
+  // ---------------------------------------------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -41,6 +51,9 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     setSuccess(false);
   };
 
+  // ---------------------------------------------------------
+  // 💾 SUBMIT
+  // ---------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -51,7 +64,9 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       return;
     }
 
-    const setup = filteredSetups.find((s) => String(s.id) === String(form.setup_id));
+    const setup = filteredSetups.find(
+      (s) => String(s.id) === String(form.setup_id)
+    );
     if (!setup) {
       setError('⚠️ Ongeldige setup geselecteerd.');
       return;
@@ -61,7 +76,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
 
-    if ([entry, target, stop_loss].some((v) => isNaN(v))) {
+    if ([entry, target, stop_loss].some((v) => Number.isNaN(v))) {
       setError('⚠️ Entry, target en stop-loss moeten geldige getallen zijn.');
       return;
     }
@@ -84,6 +99,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       await onSubmit(payload);
       setSuccess(true);
 
+      // Reset form
       setForm({
         setup_id: '',
         entry: '',
@@ -108,6 +124,9 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     !form.target ||
     !form.stop_loss;
 
+  // ---------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------
   return (
     <form
       onSubmit={handleSubmit}

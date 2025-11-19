@@ -8,13 +8,13 @@ import { useSetupData } from '@/hooks/useSetupData';
 export default function SetupPage() {
   const [search, setSearch] = useState('');
 
-  // Haal loadSetups uit de hook
+  // Haal de echte loadSetups op uit de hook
   const { loadSetups } = useSetupData();
 
-  // Universele reload functie die ALLE setups opnieuw laadt
+  // ⭐ Universele reload functie die ALLES opnieuw laadt
   const reloadSetups = () => {
     console.log('🔄 [SetupPage] Reload setups triggered');
-    loadSetups(); // <-- clean, geen filters, geen exclude
+    loadSetups(); // <-- GEEN filters, GEEN exclude, gewoon ALLES
   };
 
   return (
@@ -41,9 +41,12 @@ export default function SetupPage() {
         />
       </div>
 
-      {/* 🌀 Setup kaarten */}
+      {/* 🌀 Setup kaarten (met modal edit) */}
       <section className="space-y-4">
-        <SetupList searchTerm={search} onUpdated={reloadSetups} />
+        <SetupList 
+          searchTerm={search}
+          reloadSetups={reloadSetups}    // <-- BELANGRIJK VOOR MODAL, REMOVE, AI UPDATE
+        />
       </section>
 
       {/* ➕ Setup aanmaken */}

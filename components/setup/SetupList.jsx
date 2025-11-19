@@ -1,11 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { useState, useEffect } from 'react';
 import { useSetupData } from '@/hooks/useSetupData';
 import { generateExplanation } from '@/lib/api/setups';
 
-export default function SetupList({ searchTerm = '', strategyType = '', onUpdated }) {
+export default function SetupList({ searchTerm = '', strategyType = '', reloadSetups }) {
   const {
     setups,
     loading,
@@ -16,127 +16,166 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
   } = useSetupData();
 
   const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState('newest'); // ⭐ default newest first
   const [editingId, setEditingId] = useState(null);
   const [editingValues, setEditingValues] = useState({});
 
   const [aiLoading, setAiLoading] = useState({});
   const [aiStatus, setAiStatus] = useState({});
 
-  // ⭐ GEFIXTE INITIAL LOAD
+  // ⭐ INITIAL LOAD — altijd volledige lijst ophalen
   useEffect(() => {
-    loadSetups(strategyType); // ❌ geen excludeDca meer — volledige lijst
+    loadSetups(strategyType);
   }, [strategyType]);
 
-  // ⭐ FILTER + SORT + SEARCH
-  const filteredSortedSetups = () => {
+  // ⭐ LIVE RELOAD support vanuit parent
+  useEffect(() => {
+    if (reloadSetups) reloadSetups();
+  }, []);
+
+  /** -------------------------------
+   *    FILTER + SORT LOGICA
+   * -------------------------------- */
+  const getFilteredSortedSetups = () => {
     let list = [...setups];
 
-    // Trend filter FIX
-    if (filter !== 'all') {
-      list = list.filter((s) =>
-        (s.trend || '').toLowerCase() === filter.toLowerCase()
-      );
-    }
-
-    // Search FIX
+    // 🔍 zoekfunctie
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
-      list = list.filter((s) =>
-        (s.name || '').toLowerCase().includes(q)
+      list = list.filter((s) => (s.name || '').toLowerCase().includes(q));
+    }
+
+    // 🎨 trends
+    if (filter !== 'all') {
+      list = list.filter(
+        (s) => (s.trend || '').toLowerCase() === filter.toLowerCase()
       );
     }
 
-    // Sorting
-    if (sortBy === 'name') {
-      list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    // 🔽 sorteren
+    switch (sortBy) {
+      case 'name':
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        break;
+
+      case 'newest':
+        list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        break;
+
+      case 'favorite':
+        list.sort((a, b) => Number(b.favorite) - Number(a.favorite));
+        break;
     }
 
     return list;
   };
 
-  // ⭐ Inline editing
-  function handleEditChange(id, field, value) {
+  const setupsToShow = getFilteredSortedSetups();
+
+  /** --------------------------------
+   *     INLINE BEWERKEN
+   * -------------------------------- */
+  const handleEditChange = (id, field, value) => {
     setEditingValues((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
     }));
-  }
+  };
 
-  async function handleSave(id) {
+  const handleSave = async (id) => {
     const original = setups.find((s) => s.id === id);
     const updated = { ...original, ...editingValues[id] };
 
     try {
       await saveSetup(id, updated);
-      setEditingId(null);
 
+      setEditingId(null);
       setEditingValues((prev) => {
         const copy = { ...prev };
         delete copy[id];
         return copy;
       });
 
-      if (onUpdated) await onUpdated();
-      toast.success('Setup succesvol opgeslagen');
+      toast.success('Setup opgeslagen ✨');
 
-    } catch (error) {
+      await loadSetups(strategyType);
+      if (reloadSetups) reloadSetups();
+    } catch (err) {
       toast.error('Opslaan mislukt');
     }
-  }
+  };
 
-  // ⭐ AI uitleg genereren
-  async function handleGenerateExplanation(id) {
+  /** --------------------------------
+   *     AI-UITLEG
+   * -------------------------------- */
+  const handleGenerateExplanation = async (id) => {
     try {
       setAiLoading((prev) => ({ ...prev, [id]: true }));
-      setAiStatus((prev) => ({ ...prev, [id]: '⏳ Uitleg wordt gegenereerd...' }));
+      setAiStatus((prev) => ({ ...prev, [id]: '⏳ Genereren...' }));
 
       await generateExplanation(id);
 
       setAiStatus((prev) => ({ ...prev, [id]: '✅ Uitleg opgeslagen!' }));
-      toast.success('AI-uitleg opgeslagen');
+      toast.success('AI-uitleg geüpdatet');
 
       await loadSetups(strategyType);
 
-      if (onUpdated) await onUpdated();
-
+      if (reloadSetups) reloadSetups();
     } catch (err) {
-      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
-      toast.error('Fout bij uitleg genereren.');
+      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout' }));
+      toast.error('Fout bij genereren');
     } finally {
-      setAiLoading((prev) => ({ ...prev, [id]: false }));
-
       setTimeout(() => {
+        setAiLoading((prev) => ({ ...prev, [id]: false }));
         setAiStatus((prev) => {
           const copy = { ...prev };
           delete copy[id];
           return copy;
         });
-      }, 4000);
+      }, 3000);
     }
-  }
+  };
 
-  async function handleRemove(id) {
+  /** --------------------------------
+   *     VERWIJDEREN
+   * -------------------------------- */
+  const handleRemove = async (id) => {
     try {
       await removeSetup(id);
-      toast.success('Setup verwijderd');
+      toast.success('Setup verwijderd 🗑️');
 
       await loadSetups(strategyType);
-
-      if (onUpdated) await onUpdated();
-
+      if (reloadSetups) reloadSetups();
     } catch (err) {
-      toast.error('Verwijderen mislukt.');
+      toast.error('Verwijderen mislukt');
     }
-  }
+  };
 
-  function toggleFavorite(id, current) {
+  const toggleFavorite = (id, current) => {
     handleEditChange(id, 'favorite', !current);
     handleSave(id);
-  }
+  };
 
-  const setupsToShow = filteredSortedSetups();
+  /** --------------------------------
+   *     LOADING SKELETONS
+   * -------------------------------- */
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="animate-pulse border rounded-lg p-4 shadow bg-gray-100">
+          <div className="h-4 w-2/3 bg-gray-300 rounded mb-3"></div>
+          <div className="h-3 w-1/2 bg-gray-300 rounded mb-2"></div>
+          <div className="h-3 w-1/3 bg-gray-300 rounded mb-6"></div>
+          <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 w-4/5 bg-gray-200 rounded"></div>
+        </div>
+      ))}
+    </div>
+  );
 
+  /** --------------------------------
+   *     RENDER
+   * -------------------------------- */
   return (
     <div className="space-y-6 mt-6">
 
@@ -158,18 +197,27 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
           onChange={(e) => setSortBy(e.target.value)}
           className="border p-2 rounded bg-white"
         >
-          <option value="name">🔤 Sorteer op naam</option>
+          <option value="newest">🆕 Nieuwste eerst</option>
+          <option value="name">🔤 Op naam</option>
+          <option value="favorite">⭐ Favorieten bovenaan</option>
         </select>
       </div>
 
-      {/* Loading / Error */}
-      {loading && <div className="text-gray-500 text-sm">📡 Laden setups...</div>}
+      {/* Loading */}
+      {loading && <LoadingSkeleton />}
+
+      {/* Errors */}
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
-      {/* Setup cards */}
+      {/* Setup Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {!loading && setupsToShow.length === 0 && (
+          <p className="text-sm text-gray-500 col-span-full mt-4">
+            📭 Geen setups gevonden.
+          </p>
+        )}
 
-        {setupsToShow.length > 0 ? (
+        {!loading &&
           setupsToShow.map((setup) => {
             const isEditing = editingId === setup.id;
             const trend = (setup.trend || '').toLowerCase();
@@ -188,7 +236,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                 key={setup.id}
                 className="border rounded-lg p-4 bg-white shadow relative transition"
               >
-                {/* Favorite */}
+                {/* ⭐ Favorite */}
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => toggleFavorite(setup.id, setup.favorite)}
@@ -196,7 +244,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
 
-                {/* EDIT MODE */}
+                {/* --------------- EDIT --------------- */}
                 {isEditing ? (
                   <>
                     <input
@@ -217,8 +265,8 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
 
                     <input
                       className="border p-2 rounded w-full mb-2"
-                      defaultValue={editingData.min_investment ?? setup.min_investment}
                       type="number"
+                      defaultValue={editingData.min_investment ?? setup.min_investment}
                       onChange={(e) =>
                         handleEditChange(setup.id, 'min_investment', e.target.value)
                       }
@@ -227,9 +275,15 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                     <label className="text-sm flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
-                        defaultChecked={editingData.dynamic_investment ?? setup.dynamic_investment}
+                        defaultChecked={
+                          editingData.dynamic_investment ?? setup.dynamic_investment
+                        }
                         onChange={(e) =>
-                          handleEditChange(setup.id, 'dynamic_investment', e.target.checked)
+                          handleEditChange(
+                            setup.id,
+                            'dynamic_investment',
+                            e.target.checked
+                          )
                         }
                       />
                       🔁 Dynamische investering
@@ -253,7 +307,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                         onClick={() => handleSave(setup.id)}
                         className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
                       >
-                        ✅ Opslaan
+                        💾 Opslaan
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
@@ -265,7 +319,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                   </>
                 ) : (
                   <>
-                    {/* VIEW MODE */}
+                    {/* --------------- VIEW --------------- */}
                     <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
 
                     <p className={`text-xs mb-1 ${trendColor}`}>
@@ -273,7 +327,8 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                     </p>
 
                     <p className="text-xs text-gray-500 mb-1">
-                      ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}
+                      ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠{' '}
+                      {setup.strategy_type}
                     </p>
 
                     <p className="text-xs text-gray-500 mb-1">
@@ -292,14 +347,16 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                       💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
                     </div>
 
-                    {/* AI BTN */}
+                    {/* AI KNOP */}
                     <button
                       onClick={() => handleGenerateExplanation(setup.id)}
                       disabled={aiLoading[setup.id]}
                       className={`text-xs px-3 py-1 rounded mb-2 text-white 
-                        ${aiLoading[setup.id]
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-indigo-600 hover:bg-indigo-700'}
+                        ${
+                          aiLoading[setup.id]
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700'
+                        }
                       `}
                     >
                       {aiLoading[setup.id] ? '⏳ Bezig...' : '🔁 Genereer uitleg (AI)'}
@@ -321,20 +378,14 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                         onClick={() => handleRemove(setup.id)}
                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
                       >
-                        ❌ Verwijderen
+                        🗑️ Verwijderen
                       </button>
                     </div>
                   </>
                 )}
               </div>
             );
-          })
-        ) : (
-          <p className="text-sm text-gray-500 col-span-full mt-4">
-            📭 Geen setups gevonden. Voeg een nieuwe toe via het formulier hieronder.
-          </p>
-        )}
-
+          })}
       </div>
     </div>
   );

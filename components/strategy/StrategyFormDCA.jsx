@@ -23,9 +23,9 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     loadSetups();
   }, []);
 
-  // ✅ Alleen DCA setups tonen
+  // 👉 Filter alleen DCA setups
   const availableSetups = setups.filter(
-    (s) => s.strategy_type && s.strategy_type.toLowerCase() === 'dca'
+    (s) => s.strategy_type?.toLowerCase() === 'dca'
   );
 
   const handleChange = (e) => {
@@ -33,6 +33,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
     if (name === 'setup_id') {
       const selected = availableSetups.find((s) => String(s.id) === String(value));
+
       if (!selected) {
         setError('❌ Ongeldige setup geselecteerd.');
         return;
@@ -47,25 +48,17 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       }));
 
       setError('');
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-      setError('');
+      return;
     }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setError('');
   };
 
   const isFormValid = () => {
-    const { setup_id, setup_name, symbol, timeframe, amount, frequency } = form;
+    const { setup_id, amount, frequency } = form;
     const parsedAmount = Number(amount);
-    return (
-      setup_id &&
-      setup_name &&
-      symbol &&
-      timeframe &&
-      amount &&
-      !isNaN(parsedAmount) &&
-      parsedAmount > 0 &&
-      frequency
-    );
+    return setup_id && parsedAmount > 0 && frequency;
   };
 
   const handleSubmit = async (e) => {
@@ -77,7 +70,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       return;
     }
 
-    const strategy = {
+    const payload = {
       strategy_type: 'dca',
       amount: Number(form.amount),
       frequency: form.frequency,
@@ -90,7 +83,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     };
 
     try {
-      await onSubmit(strategy);
+      await onSubmit(payload);
+
+      toast.success('💾 DCA-strategie opgeslagen!');
+
       setForm({
         setup_id: '',
         setup_name: '',
@@ -100,41 +96,40 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         frequency: '',
         rules: '',
       });
-      toast.success('💾 DCA-strategie succesvol opgeslagen!');
     } catch (err) {
-      console.error('❌ Fout bij submit DCA-strategie:', err);
-      setError('❌ Fout bij opslaan strategie.');
+      console.error('❌ Fout bij opslaan strategie:', err);
+      setError('❌ Opslaan mislukt.');
     }
   };
 
-  const isValid = isFormValid();
+  const valid = isFormValid();
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded shadow-md max-w-md"
-      aria-live="polite"
-      noValidate
+      className="
+        w-full max-w-xl mx-auto
+        bg-white dark:bg-gray-800
+        p-6 rounded-xl shadow-md
+        space-y-4
+      "
     >
-      <h2 className="text-lg font-bold mb-2">💰 Nieuwe DCA-strategie</h2>
+      <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+        💰 Nieuwe DCA-strategie
+      </h2>
 
-      {/* Setup-selectie */}
+      {/* SETUP SELECT */}
       <div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="setup_id" className="block mb-1 font-medium">
-            🧩 Koppel aan Setup
-          </label>
-          <InfoTooltip text="Alleen setups van type ‘DCA’ worden hier getoond." />
+        <div className="flex items-center gap-2 mb-1">
+          <label className="font-medium">🧩 Koppel aan Setup</label>
+          <InfoTooltip text="Alleen setups van type ‘DCA’ worden getoond." />
         </div>
 
         <select
-          id="setup_id"
           name="setup_id"
           value={form.setup_id}
           onChange={handleChange}
-          className="w-full border px-3 py-2 rounded"
-          required
-          disabled={availableSetups.length === 0}
+          className="w-full border p-2 rounded dark:bg-gray-900"
         >
           <option value="">
             {availableSetups.length === 0
@@ -150,7 +145,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         </select>
 
         {error.includes('setup') && (
-          <p className="text-red-600 text-sm mt-1">{error}</p>
+          <p className="text-red-600 text-sm">{error}</p>
         )}
       </div>
 
@@ -160,7 +155,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         <input
           value={form.symbol}
           readOnly
-          className="w-full border px-3 py-2 rounded bg-gray-100"
+          className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
         />
       </div>
 
@@ -170,67 +165,67 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         <input
           value={form.timeframe}
           readOnly
-          className="w-full border px-3 py-2 rounded bg-gray-100"
+          className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
         />
       </div>
 
-      {/* Bedrag */}
+      {/* Amount */}
       <div>
         <label className="block mb-1 font-medium">💶 Bedrag per keer</label>
         <input
-          name="amount"
           type="number"
+          name="amount"
           min="1"
           step="1"
           value={form.amount}
           onChange={handleChange}
           placeholder="Bijv. 100"
-          className="w-full border px-3 py-2 rounded"
-          required
+          className="w-full border p-2 rounded dark:bg-gray-900"
         />
       </div>
 
-      {/* Frequentie */}
+      {/* Frequency */}
       <div>
         <label className="block mb-1 font-medium">⏰ Frequentie</label>
         <select
           name="frequency"
           value={form.frequency}
           onChange={handleChange}
-          className="w-full border px-3 py-2 rounded"
-          required
+          className="w-full border p-2 rounded dark:bg-gray-900"
         >
-          <option value="" disabled>Kies frequentie...</option>
+          <option value="">-- Kies frequentie --</option>
           <option value="weekly">Wekelijks</option>
           <option value="monthly">Maandelijks</option>
         </select>
       </div>
 
-      {/* Koopregels */}
+      {/* Rules */}
       <div>
         <label className="block mb-1 font-medium">📋 Koopregels (optioneel)</label>
         <textarea
           name="rules"
+          rows={3}
           value={form.rules}
           onChange={handleChange}
-          rows={3}
           placeholder="Bijv. koop alleen bij F&G < 30"
-          className="w-full border px-3 py-2 rounded resize-none"
+          className="w-full border p-2 rounded resize-none dark:bg-gray-900"
         />
       </div>
 
-      {/* Foutmelding */}
+      {/* Error */}
       {error && !error.includes('setup') && (
         <p className="text-red-600 text-sm">{error}</p>
       )}
 
-      {/* Submit */}
       <button
         type="submit"
-        disabled={!isValid}
-        className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full ${
-          !isValid ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
+        disabled={!valid}
+        className="
+          w-full py-2 rounded
+          bg-blue-600 text-white
+          hover:bg-blue-700
+          disabled:bg-blue-300 disabled:cursor-not-allowed
+        "
       >
         💾 DCA-strategie opslaan
       </button>

@@ -20,27 +20,34 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
   const [editingId, setEditingId] = useState(null);
   const [editingValues, setEditingValues] = useState({});
 
-  // 🔄 AI uitleg loading state per setup
-  const [aiLoading, setAiLoading] = useState({}); // { setupId: true/false }
-  const [aiStatus, setAiStatus] = useState({}); // { setupId: "text" }
+  const [aiLoading, setAiLoading] = useState({});
+  const [aiStatus, setAiStatus] = useState({});
 
+  // ⭐ GEFIXTE INITIAL LOAD
   useEffect(() => {
-    const excludeDca = (strategyType === 'manual' || strategyType === 'trading') ? ['dca'] : [];
-    loadSetups(strategyType, excludeDca);
-  }, [strategyType, searchTerm]);
+    loadSetups(strategyType); // ❌ geen excludeDca meer — volledige lijst
+  }, [strategyType]);
 
+  // ⭐ FILTER + SORT + SEARCH
   const filteredSortedSetups = () => {
     let list = [...setups];
 
+    // Trend filter FIX
     if (filter !== 'all') {
-      list = list.filter((s) => s.trend === filter);
+      list = list.filter((s) =>
+        (s.trend || '').toLowerCase() === filter.toLowerCase()
+      );
     }
 
+    // Search FIX
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
-      list = list.filter((s) => (s.name || '').toLowerCase().includes(q));
+      list = list.filter((s) =>
+        (s.name || '').toLowerCase().includes(q)
+      );
     }
 
+    // Sorting
     if (sortBy === 'name') {
       list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
@@ -48,6 +55,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
     return list;
   };
 
+  // ⭐ Inline editing
   function handleEditChange(id, field, value) {
     setEditingValues((prev) => ({
       ...prev,
@@ -58,9 +66,11 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
   async function handleSave(id) {
     const original = setups.find((s) => s.id === id);
     const updated = { ...original, ...editingValues[id] };
+
     try {
       await saveSetup(id, updated);
       setEditingId(null);
+
       setEditingValues((prev) => {
         const copy = { ...prev };
         delete copy[id];
@@ -69,13 +79,13 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
 
       if (onUpdated) await onUpdated();
       toast.success('Setup succesvol opgeslagen');
+
     } catch (error) {
       toast.error('Opslaan mislukt');
-      console.error('❌ saveSetup error:', error);
     }
   }
 
-  // ✅ NIEUW: AI-UITLEG MET SPINNER + STATUS
+  // ⭐ AI uitleg genereren
   async function handleGenerateExplanation(id) {
     try {
       setAiLoading((prev) => ({ ...prev, [id]: true }));
@@ -83,20 +93,19 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
 
       await generateExplanation(id);
 
-      // UI feedback
       setAiStatus((prev) => ({ ...prev, [id]: '✅ Uitleg opgeslagen!' }));
       toast.success('AI-uitleg opgeslagen');
 
       await loadSetups(strategyType);
+
       if (onUpdated) await onUpdated();
+
     } catch (err) {
-      console.error('❌ Fout bij AI-explanation:', err);
       setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
       toast.error('Fout bij uitleg genereren.');
     } finally {
       setAiLoading((prev) => ({ ...prev, [id]: false }));
 
-      // status na 4 sec weghalen
       setTimeout(() => {
         setAiStatus((prev) => {
           const copy = { ...prev };
@@ -111,10 +120,13 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
     try {
       await removeSetup(id);
       toast.success('Setup verwijderd');
+
+      await loadSetups(strategyType);
+
       if (onUpdated) await onUpdated();
+
     } catch (err) {
       toast.error('Verwijderen mislukt.');
-      console.error('❌ removeSetup error:', err);
     }
   }
 
@@ -127,6 +139,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
 
   return (
     <div className="space-y-6 mt-6">
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
         <select
@@ -137,7 +150,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
           <option value="all">🔁 Alle trends</option>
           <option value="bullish">📈 Bullish</option>
           <option value="bearish">📉 Bearish</option>
-          <option value="neutral">⚖️ Neutraal</option>
+          <option value="range">⚖️ Range</option>
         </select>
 
         <select
@@ -153,15 +166,18 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
       {loading && <div className="text-gray-500 text-sm">📡 Laden setups...</div>}
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
-      {/* Setup kaarten */}
+      {/* Setup cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
         {setupsToShow.length > 0 ? (
           setupsToShow.map((setup) => {
             const isEditing = editingId === setup.id;
+            const trend = (setup.trend || '').toLowerCase();
+
             const trendColor =
-              setup.trend === 'bullish'
+              trend === 'bullish'
                 ? 'text-green-600'
-                : setup.trend === 'bearish'
+                : trend === 'bearish'
                 ? 'text-red-500'
                 : 'text-yellow-500';
 
@@ -172,7 +188,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                 key={setup.id}
                 className="border rounded-lg p-4 bg-white shadow relative transition"
               >
-                {/* ⭐ Favorite */}
+                {/* Favorite */}
                 <button
                   className="absolute top-3 right-3 text-2xl"
                   onClick={() => toggleFavorite(setup.id, setup.favorite)}
@@ -180,10 +196,9 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
 
-                {/* ---------- EDIT MODE ---------- */}
+                {/* EDIT MODE */}
                 {isEditing ? (
                   <>
-                    {/* 🔧 alle velden blijven exact hetzelfde */}
                     <input
                       className="border p-2 rounded w-full mb-2 font-semibold"
                       defaultValue={editingData.name ?? setup.name}
@@ -191,13 +206,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                         handleEditChange(setup.id, 'name', e.target.value)
                       }
                     />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      defaultValue={editingData.indicators ?? setup.indicators}
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'indicators', e.target.value)
-                      }
-                    />
+
                     <textarea
                       className="border p-2 rounded w-full mb-2"
                       defaultValue={editingData.explanation ?? setup.explanation}
@@ -205,6 +214,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                         handleEditChange(setup.id, 'explanation', e.target.value)
                       }
                     />
+
                     <input
                       className="border p-2 rounded w-full mb-2"
                       defaultValue={editingData.min_investment ?? setup.min_investment}
@@ -213,6 +223,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                         handleEditChange(setup.id, 'min_investment', e.target.value)
                       }
                     />
+
                     <label className="text-sm flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
@@ -223,63 +234,16 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                       />
                       🔁 Dynamische investering
                     </label>
+
                     <input
                       className="border p-2 rounded w-full mb-2"
-                      defaultValue={editingData.score ?? setup.score}
-                      type="number"
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'score', e.target.value)
-                      }
-                    />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      placeholder="Score logica"
-                      defaultValue={editingData.score_logic ?? setup.score_logic}
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'score_logic', e.target.value)
-                      }
-                    />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      placeholder="Timeframe"
-                      defaultValue={editingData.timeframe ?? setup.timeframe}
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'timeframe', e.target.value)
-                      }
-                    />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      placeholder="Symbol"
-                      defaultValue={editingData.symbol ?? setup.symbol}
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'symbol', e.target.value)
-                      }
-                    />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      placeholder="Strategy type"
-                      defaultValue={editingData.strategy_type ?? setup.strategy_type}
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'strategy_type', e.target.value)
-                      }
-                    />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      placeholder="Account type"
-                      defaultValue={editingData.account_type ?? setup.account_type}
-                      onChange={(e) =>
-                        handleEditChange(setup.id, 'account_type', e.target.value)
-                      }
-                    />
-                    <input
-                      className="border p-2 rounded w-full mb-2"
-                      placeholder="Tags (komma's)"
-                      defaultValue={((editingData.tags ?? setup.tags) || []).join(', ')}
+                      placeholder="Tags"
+                      defaultValue={(editingData.tags ?? setup.tags)?.join(', ')}
                       onChange={(e) =>
                         handleEditChange(
                           setup.id,
                           'tags',
-                          e.target.value.split(',').map(t => t.trim())
+                          e.target.value.split(',').map((t) => t.trim())
                         )
                       }
                     />
@@ -301,23 +265,23 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                   </>
                 ) : (
                   <>
-                    {/* ---------- VIEW MODE ---------- */}
+                    {/* VIEW MODE */}
                     <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
-                    <p className="text-sm mb-1 text-gray-700">{setup.indicators}</p>
-                    <p className={`text-xs mb-1 ${trendColor}`}>📊 {setup.trend}</p>
+
+                    <p className={`text-xs mb-1 ${trendColor}`}>
+                      📊 {setup.trend || 'Onbekend'}
+                    </p>
 
                     <p className="text-xs text-gray-500 mb-1">
                       ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}
                     </p>
 
-                    <p className="text-xs text-gray-500 mb-1">💰 Min: €{setup.min_investment}</p>
-
                     <p className="text-xs text-gray-500 mb-1">
-                      🔁 Dynamic: {setup.dynamic_investment ? '✅' : '❌'}
+                      💰 Min investering: €{setup.min_investment ?? 0}
                     </p>
 
                     <p className="text-xs text-gray-500 mb-1">
-                      📈 Score: {setup.score} ({setup.score_logic})
+                      🔁 Dynamic: {setup.dynamic_investment ? '✅' : '❌'}
                     </p>
 
                     <p className="text-xs text-gray-500 mb-1">
@@ -328,7 +292,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                       💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
                     </div>
 
-                    {/* ⭐⭐⭐ NIEUWE AI BUTTON MET SPINNER + STATUS ⭐⭐⭐ */}
+                    {/* AI BTN */}
                     <button
                       onClick={() => handleGenerateExplanation(setup.id)}
                       disabled={aiLoading[setup.id]}
@@ -341,7 +305,6 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                       {aiLoading[setup.id] ? '⏳ Bezig...' : '🔁 Genereer uitleg (AI)'}
                     </button>
 
-                    {/* Status onder knop */}
                     {aiStatus[setup.id] && (
                       <p className="text-xs text-gray-600 mt-1">{aiStatus[setup.id]}</p>
                     )}
@@ -353,6 +316,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
                       >
                         ✏️ Bewerken
                       </button>
+
                       <button
                         onClick={() => handleRemove(setup.id)}
                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
@@ -370,6 +334,7 @@ export default function SetupList({ searchTerm = '', strategyType = '', onUpdate
             📭 Geen setups gevonden. Voeg een nieuwe toe via het formulier hieronder.
           </p>
         )}
+
       </div>
     </div>
   );

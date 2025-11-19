@@ -4,7 +4,7 @@ import 'rc-slider/assets/index.css';
 import Slider from 'rc-slider';
 
 import React, { useState } from 'react';
-import { saveNewSetup } from '@/lib/api/setups'; // <-- NIEUW: API import
+import { addSetup } from '@/lib/api/setups'; // <-- CORRECTE API FUNCTIE!
 
 export default function SetupForm({ onSaved }) {
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ export default function SetupForm({ onSaved }) {
     const payload = {
       name: formData.name,
       symbol: formData.symbol,
-      strategy_type: formData.strategyType, // <-- correct veldnaam backend
+      strategy_type: formData.strategyType, 
       timeframe: formData.timeframe,
       trend: formData.trend,
       account_type: formData.accountType,
@@ -69,8 +69,10 @@ export default function SetupForm({ onSaved }) {
     };
 
     try {
-      await saveNewSetup(payload);
+      await addSetup(payload);  // <-- FIXED
       setSuccess('✔ Setup succesvol opgeslagen!');
+
+      // Reset form
       setFormData({
         name: '',
         symbol: 'BTC',
@@ -87,14 +89,13 @@ export default function SetupForm({ onSaved }) {
         favorite: false,
       });
 
-      // sliders reset
+      // Sliders terugzetten
       setMacroScore([30, 70]);
       setTechnicalScore([40, 80]);
       setMarketScore([20, 60]);
 
-      // 🔥 belangrijk: lijst direct verversen in parent
       if (onSaved) {
-        await onSaved();
+        await onSaved(); // Refresh parent list
       }
 
       setTimeout(() => setSuccess(''), 2500);

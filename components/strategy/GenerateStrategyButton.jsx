@@ -1,11 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { generateStrategy } from '@/lib/api/strategy';
+import { generateStrategy, getTaskStatus } from '@/lib/api/strategy';
 
 export default function GenerateStrategyButton({ setupId, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
+
+  // Poll Celery elke 1.5 sec
+  async function waitForTask(taskId) {
+    return new Promise((resolve) => {
+      const interval = setInterval(async () => {
+        const res = await getTaskStatus(taskId);
+
+        if (res?.state === 'SUCCESS' || res?.result?.success) {
+          clearInterval(interval);
+          resolve(res);
+        }
+      }, 1500);
+    });
+  }
 
   const handleGenerate = async () => {
     if (!setupId) {
@@ -17,36 +31,36 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
     setStatus('⏳ Strategie wordt gegenereerd...');
 
     try {
-      const data = await generateStrategy(setupId, true); // overwrite = true
+      // Stap 1 – call API (start Celery)
+      const data = await generateStrategy(setupId, true);
 
-      if (data && typeof data === 'object') {
-        if (data?.task_id) {
-          setStatus('✅ Strategie gegenereerd — AI taak gestart');
-          if (onSuccess) onSuccess();
-        } else if (data?.status === 'completed') {
-          setStatus('✅ Strategie direct gegenereerd');
-          if (onSuccess) onSuccess();
-        } else {
-          setStatus('⚠️ Geen geldige response ontvangen');
-        }
-      } else {
-        setStatus('❌ Ongeldige respons van server');
+      if (!data?.task_id) {
+        setStatus('❌ Foute server-respons');
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      console.error('❌ Fout bij strategie-generatie:', err);
-      setStatus('❌ Fout bij genereren');
-    } finally {
-      setLoading(false);
 
-      // status automatisch laten wegfaden
-      setTimeout(() => setStatus(''), 3000);
+      setStatus('🤖 AI is strategie aan het maken...');
+
+      // Stap 2 – wachten tot Celery klaar is
+      const done = await waitForTask(data.task_id);
+
+      setStatus('✅ Strategie klaar!');
+
+      if (onSuccess) onSuccess(done?.result?.strategy);
+
+      setTimeout(() => setStatus(''), 2000);
+
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ Fout bij genereren');
     }
+
+    setLoading(false);
   };
 
   return (
     <div className="space-y-2">
-
-      {/* BUTTON */}
       <button
         onClick={handleGenerate}
         disabled={loading}
@@ -55,14 +69,13 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
         {loading ? (
           <>
             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Even geduld...
+            Even wachten...
           </>
         ) : (
           <>🔁 Genereer Strategie (AI)</>
         )}
       </button>
 
-      {/* STATUS MESSAGE */}
       {status && (
         <p className="text-xs text-gray-600 fade-in">
           {status}

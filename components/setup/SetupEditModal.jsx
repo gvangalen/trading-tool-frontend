@@ -16,16 +16,14 @@ export default function SetupEditModal({ open, onClose, setup, reload }) {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
 
-      {/* --- MODAL WRAPPER --- */}
       <div
         className="
           bg-white dark:bg-gray-900 rounded-xl shadow-xl 
-          w-full max-w-xl                     /* ✔ SMALLER WIDTH */
-          max-h-[85vh] overflow-y-auto        /* ✔ SCROLLABLE */
+          w-full max-w-xl
+          max-h-[85vh] overflow-y-auto
           relative p-6
         "
       >
-
         {/* Close button */}
         <button
           onClick={onClose}
@@ -43,6 +41,36 @@ export default function SetupEditModal({ open, onClose, setup, reload }) {
             onClose();
           }}
         />
+
+        {/* --- FOOTER BUTTONS --- */}
+        <div className="flex justify-between mt-6 pt-4 border-t border-gray-300 dark:border-gray-700">
+          <button
+            onClick={onClose}
+            className="
+              px-4 py-2 rounded-md 
+              bg-gray-200 hover:bg-gray-300 
+              dark:bg-gray-700 dark:hover:bg-gray-600
+              text-gray-700 dark:text-gray-200
+              font-medium
+            "
+          >
+            ❌ Annuleren
+          </button>
+
+          <button
+            onClick={() => {
+              // Triggert de submit-button in SetupForm
+              document.querySelector('#setup-edit-submit')?.click();
+            }}
+            className="
+              px-4 py-2 rounded-md 
+              bg-blue-600 hover:bg-blue-700 
+              text-white font-semibold
+            "
+          >
+            💾 Update uitvoeren
+          </button>
+        </div>
       </div>
     </div>
   );

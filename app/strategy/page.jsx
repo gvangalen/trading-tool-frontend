@@ -11,10 +11,10 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
+
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
 
-  // 🔁 Herlaad alles na opslaan
   const reloadAll = () => {
     loadSetups();
     loadStrategies();
@@ -47,17 +47,17 @@ export default function StrategyPage() {
         tags: [],
       };
 
-      console.log('📤 Strategie opslaan:', payload);
       await createStrategy(payload);
       handleSuccess('✅ Strategie succesvol opgeslagen!');
       reloadAll();
+
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
       setToast('❌ Strategie opslaan mislukt.');
     }
   };
 
-  // 🧠 Filter setups per strategie-type
+  // Setup-filters per strategie-type (blijven nodig)
   const setupsWithoutDCA = useMemo(
     () =>
       setups.filter(
@@ -93,7 +93,8 @@ export default function StrategyPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-10">
-      {/* 🧠 Titel en uitleg */}
+
+      {/* Header */}
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-bold">📈 Strategieën</h1>
         <p className="text-gray-600 text-sm">
@@ -101,7 +102,7 @@ export default function StrategyPage() {
         </p>
       </header>
 
-      {/* 🔍 Zoek/filter boven de lijst */}
+      {/* Zoekveld */}
       <div className="flex justify-between items-center mt-4">
         <h3 className="text-xl font-semibold">📋 Huidige Strategieën</h3>
         <input
@@ -113,24 +114,25 @@ export default function StrategyPage() {
         />
       </div>
 
-      {/* 📋 Strategieënlijst */}
+      {/* StrategyList */}
       <section>
         <StrategyList searchTerm={search} />
       </section>
 
-      {/* 🔔 Succesmelding */}
+      {/* Toast */}
       {toast && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
           {toast}
         </div>
       )}
 
-      {/* ➕ Strategie toevoegen */}
+      {/* Strategie toevoegen */}
       <section className="pt-10 border-t">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-xl font-semibold">➕ Nieuwe Strategie Toevoegen</h2>
           <InfoTooltip text="Alleen setups zonder bestaande strategie (AI, DCA of handmatig) zijn hier zichtbaar." />
         </div>
+
         <StrategyTabs
           onSubmit={handleStrategySubmit}
           setupsDCA={setupsWithoutDCA}
@@ -139,6 +141,7 @@ export default function StrategyPage() {
           reloadSetups={reloadAll}
         />
       </section>
+
     </div>
   );
 }

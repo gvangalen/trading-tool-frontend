@@ -19,17 +19,21 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // ✅ FILTER: alleen setups met strategy_type "trading"
+  // -------------------------------------------------
+  // 🔍 FILTER: alleen setups met strategy_type "trading"
+  // -------------------------------------------------
   const availableSetups = useMemo(
     () =>
       Array.isArray(setups)
-        ? setups.filter((s) => s.strategy_type?.toLowerCase() === 'trading')
+        ? setups.filter(
+            (s) => String(s.strategy_type).toLowerCase() === 'trading'
+          )
         : [],
     [setups]
   );
 
   // -------------------------------------------------
-  // Form handlers
+  // 📝 Form change handler
   // -------------------------------------------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -37,6 +41,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
 
     setError('');
 
+    // Setup wisselen → automatisch symbol/timeframe invullen
     if (name === 'setup_id') {
       const selected = availableSetups.find(
         (s) => String(s.id) === String(val)
@@ -56,6 +61,9 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
     }));
   };
 
+  // -------------------------------------------------
+  // 💾 Submit
+  // -------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -65,7 +73,6 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
       setError('❌ Kies eerst een setup.');
       return;
     }
-
     if (!form.entry || !form.targetsText || !form.stop_loss) {
       setError('❌ Entry, targets en stop-loss zijn verplicht.');
       return;
@@ -121,14 +128,14 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
     !form.stop_loss;
 
   // -------------------------------------------------
-  // Render
+  // RENDER
   // -------------------------------------------------
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3"
+      className="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-lg shadow"
     >
-      <h3 className="text-lg font-semibold">➕ Nieuwe Tradingstrategie</h3>
+      <h3 className="text-lg font-semibold">📈 Nieuwe Tradingstrategie</h3>
 
       {success && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-3 py-1 rounded text-sm">
@@ -136,7 +143,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         </div>
       )}
 
-      {/* Setup keuze */}
+      {/* SETUP SELECT */}
       <label className="block text-sm font-medium">
         Koppel aan Setup
         <select
@@ -155,7 +162,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         </select>
       </label>
 
-      {/* Rest hetzelfde */}
+      {/* Symbol + timeframe (read-only) */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Symbol</label>
@@ -165,6 +172,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
             className="mt-1 w-full border p-2 rounded bg-gray-100"
           />
         </div>
+
         <div>
           <label className="block text-sm font-medium">Timeframe</label>
           <input
@@ -175,8 +183,9 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         </div>
       </div>
 
+      {/* Entry */}
       <label className="block text-sm font-medium">
-        Entry prijs
+        Entry prijs (€)
         <input
           name="entry"
           type="number"
@@ -187,19 +196,22 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         />
       </label>
 
+      {/* Targets */}
       <label className="block text-sm font-medium">
         Target prijzen (komma gescheiden)
         <input
           name="targetsText"
           type="text"
+          placeholder="Bijv. 32000, 34000, 36000"
           value={form.targetsText}
           onChange={handleChange}
           className="mt-1 w-full border p-2 rounded"
         />
       </label>
 
+      {/* Stop-loss */}
       <label className="block text-sm font-medium">
-        Stop-loss
+        Stop-loss (€)
         <input
           name="stop_loss"
           type="number"
@@ -210,6 +222,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         />
       </label>
 
+      {/* Explanation */}
       <label className="block text-sm font-medium">
         Uitleg / notities
         <textarea
@@ -221,6 +234,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         />
       </label>
 
+      {/* Tags */}
       <label className="block text-sm font-medium">
         Tags (komma gescheiden)
         <input
@@ -232,6 +246,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
         />
       </label>
 
+      {/* Bottom row */}
       <div className="flex items-center justify-between mt-3">
         <label className="flex items-center gap-2 text-sm">
           <input

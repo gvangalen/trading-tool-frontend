@@ -6,6 +6,7 @@ import {
   deleteStrategy,
   generateStrategy,
   fetchStrategyBySetup,
+  fetchTaskStatus,
 } from '@/lib/api/strategy';
 
 export default function StrategyCard({ strategy, onUpdated }) {
@@ -38,9 +39,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
   const isDCA = strategy_type === 'dca';
 
-  // ------------------------------
-  // SAVE STRATEGY
-  // ------------------------------
+  // SAVE
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -69,9 +68,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // ------------------------------
   // DELETE
-  // ------------------------------
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
 
@@ -87,35 +84,50 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // ------------------------------
-  // GENERATE (AI)
-  // ------------------------------
+  // AI GENERATE
   const handleGenerate = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const res = await generateStrategy(setup_id, true); // overwrite=true
+      const res = await generateStrategy(setup_id, true);
 
       if (!res?.task_id) {
         setError('❌ Ongeldige respons');
         return;
       }
 
-      // Poll until done
+      // Poll Celery
+      let attempts = 0;
       let ready = false;
-      while (!ready) {
+
+      while (!ready && attempts < 20) {
         await new Promise((r) => setTimeout(r, 1500));
         const status = await fetchTaskStatus(res.task_id);
-        if (status?.state === 'SUCCESS') ready = true;
+
+        if (status?.state === 'SUCCESS') {
+          ready = true;
+          break;
+        }
+
+        if (status?.state === 'FAILURE') {
+          throw new Error('Celery taak mislukt');
+        }
+
+        attempts++;
       }
 
-      // fetch final strategy
+      if (!ready) {
+        throw new Error('AI duurde te lang, stopgezet');
+      }
+
+      // Fetch updated strategy
       const final = await fetchStrategyBySetup(setup_id);
 
       onUpdated && onUpdated(final.strategy);
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2000);
+
     } catch (err) {
       console.error('❌ AI fout:', err);
       setError('Generatie mislukt');
@@ -124,14 +136,13 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  const display = (v) =>
-    v !== null && v !== undefined && v !== '' ? v : '-';
+  const display = (v) => (v !== null && v !== undefined && v !== '' ? v : '-');
 
   return (
     <div
       className={`
-        border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md
-        transition
+        border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md 
+        transition 
         ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
       `}
     >
@@ -141,7 +152,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
         <h3 className="font-semibold text-lg">{setup_name}</h3>
 
         <div className="flex gap-3">
-          {/* EDIT */}
           <button
             disabled={loading}
             onClick={() => setEditing(!editing)}
@@ -150,7 +160,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
             ✏️
           </button>
 
-          {/* DELETE */}
           <button
             disabled={loading}
             onClick={handleDelete}
@@ -161,14 +170,11 @@ export default function StrategyCard({ strategy, onUpdated }) {
         </div>
       </div>
 
-      {/* TYPE / SYMBOL / TF */}
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
         <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
       </p>
 
-      {/* ------------------------------
-          VIEW MODE
-      ------------------------------ */}
+      {/* VIEW MODE */}
       {!editing ? (
         <>
           {!isDCA && (
@@ -180,15 +186,11 @@ export default function StrategyCard({ strategy, onUpdated }) {
           )}
 
           {explanation && (
-            <p className="text-xs text-gray-500 italic py-1">
-              📝 {explanation}
-            </p>
+            <p className="text-xs text-gray-500 italic py-1">📝 {explanation}</p>
           )}
 
           {ai_explanation && (
-            <p className="text-xs text-purple-500 italic py-1">
-              🤖 {ai_explanation}
-            </p>
+            <p className="text-xs text-purple-500 italic py-1">🤖 {ai_explanation}</p>
           )}
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -199,24 +201,24 @@ export default function StrategyCard({ strategy, onUpdated }) {
             <div className="grid grid-cols-3 gap-3 mb-2">
               <input
                 className="border rounded px-2 py-1"
-                placeholder="Entry"
                 value={fields.entry || ''}
+                placeholder="Entry"
                 onChange={(e) =>
                   setFields({ ...fields, entry: e.target.value })
                 }
               />
               <input
                 className="border rounded px-2 py-1"
-                placeholder="Targets (comma)"
                 value={Array.isArray(fields.targets) ? fields.targets.join(',') : ''}
+                placeholder="Targets"
                 onChange={(e) =>
                   setFields({ ...fields, targets: e.target.value.split(',') })
                 }
               />
               <input
                 className="border rounded px-2 py-1"
-                placeholder="Stop-loss"
                 value={fields.stop_loss || ''}
+                placeholder="Stop-loss"
                 onChange={(e) =>
                   setFields({ ...fields, stop_loss: e.target.value })
                 }
@@ -225,8 +227,8 @@ export default function StrategyCard({ strategy, onUpdated }) {
           )}
 
           <button
-            onClick={handleSave}
             disabled={loading}
+            onClick={handleSave}
             className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           >
             💾 Opslaan

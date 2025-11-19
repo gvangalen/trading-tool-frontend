@@ -19,8 +19,13 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // ✅ Alleen setups van type "ai"
+  // (zoals jouw volledige systeem voorschrijft)
   const availableSetups = useMemo(
-    () => (Array.isArray(setups) ? setups : []),
+    () =>
+      Array.isArray(setups)
+        ? setups.filter((s) => s.strategy_type === 'ai')
+        : [],
     [setups]
   );
 

@@ -23,9 +23,9 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     loadSetups();
   }, []);
 
-  // 🔍 Filter setups zonder bestaande DCA-strategie
+  // ✅ Alleen DCA setups tonen
   const availableSetups = setups.filter(
-    (s) => !s.strategy_type || s.strategy_type.toLowerCase() !== 'dca'
+    (s) => s.strategy_type && s.strategy_type.toLowerCase() === 'dca'
   );
 
   const handleChange = (e) => {
@@ -34,10 +34,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     if (name === 'setup_id') {
       const selected = availableSetups.find((s) => String(s.id) === String(value));
       if (!selected) {
-        const errMsg = '❌ Ongeldige setup geselecteerd.';
-        setError(errMsg);
+        setError('❌ Ongeldige setup geselecteerd.');
         return;
       }
+
       setForm((prev) => ({
         ...prev,
         setup_id: selected.id,
@@ -45,12 +45,10 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         symbol: selected.symbol || '',
         timeframe: selected.timeframe || '',
       }));
+
       setError('');
     } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setForm((prev) => ({ ...prev, [name]: value }));
       setError('');
     }
   };
@@ -79,10 +77,9 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       return;
     }
 
-    const parsedAmount = Number(form.amount);
     const strategy = {
       strategy_type: 'dca',
-      amount: parsedAmount,
+      amount: Number(form.amount),
       frequency: form.frequency,
       rules: form.rules?.trim() || '',
       setup_id: form.setup_id,
@@ -127,8 +124,9 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           <label htmlFor="setup_id" className="block mb-1 font-medium">
             🧩 Koppel aan Setup
           </label>
-          <InfoTooltip text="Alleen setups zonder bestaande DCA-strategie worden hier getoond." />
+          <InfoTooltip text="Alleen setups van type ‘DCA’ worden hier getoond." />
         </div>
+
         <select
           id="setup_id"
           name="setup_id"
@@ -136,36 +134,30 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded"
           required
-          aria-invalid={error.includes('setup') ? 'true' : 'false'}
-          aria-describedby={error.includes('setup') ? 'error-setup_id' : undefined}
           disabled={availableSetups.length === 0}
         >
           <option value="">
             {availableSetups.length === 0
-              ? '⚠️ Geen beschikbare setups (alle gekoppeld?)'
+              ? '⚠️ Geen DCA-setups beschikbaar'
               : '-- Kies een setup --'}
           </option>
+
           {availableSetups.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name} ({s.symbol} – {s.timeframe})
             </option>
           ))}
         </select>
+
         {error.includes('setup') && (
-          <p id="error-setup_id" className="text-red-600 text-sm mt-1" role="alert">
-            {error}
-          </p>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
         )}
       </div>
 
       {/* Symbol */}
       <div>
-        <label htmlFor="symbol" className="block mb-1 font-medium">
-          📈 Symbol (automatisch)
-        </label>
+        <label className="block mb-1 font-medium">📈 Symbol (automatisch)</label>
         <input
-          id="symbol"
-          name="symbol"
           value={form.symbol}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
@@ -174,12 +166,8 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
       {/* Timeframe */}
       <div>
-        <label htmlFor="timeframe" className="block mb-1 font-medium">
-          ⏱️ Timeframe (automatisch)
-        </label>
+        <label className="block mb-1 font-medium">⏱️ Timeframe (automatisch)</label>
         <input
-          id="timeframe"
-          name="timeframe"
           value={form.timeframe}
           readOnly
           className="w-full border px-3 py-2 rounded bg-gray-100"
@@ -188,11 +176,8 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
       {/* Bedrag */}
       <div>
-        <label htmlFor="amount" className="block mb-1 font-medium">
-          💶 Bedrag per keer
-        </label>
+        <label className="block mb-1 font-medium">💶 Bedrag per keer</label>
         <input
-          id="amount"
           name="amount"
           type="number"
           min="1"
@@ -207,20 +192,15 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
       {/* Frequentie */}
       <div>
-        <label htmlFor="frequency" className="block mb-1 font-medium">
-          ⏰ Frequentie
-        </label>
+        <label className="block mb-1 font-medium">⏰ Frequentie</label>
         <select
-          id="frequency"
           name="frequency"
           value={form.frequency}
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded"
           required
         >
-          <option value="" disabled>
-            Kies frequentie...
-          </option>
+          <option value="" disabled>Kies frequentie...</option>
           <option value="weekly">Wekelijks</option>
           <option value="monthly">Maandelijks</option>
         </select>
@@ -228,25 +208,20 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
 
       {/* Koopregels */}
       <div>
-        <label htmlFor="rules" className="block mb-1 font-medium">
-          📋 Koopregels (optioneel)
-        </label>
+        <label className="block mb-1 font-medium">📋 Koopregels (optioneel)</label>
         <textarea
-          id="rules"
           name="rules"
           value={form.rules}
           onChange={handleChange}
           rows={3}
-          placeholder="Bijv. koop alleen bij Fear & Greed < 30"
+          placeholder="Bijv. koop alleen bij F&G < 30"
           className="w-full border px-3 py-2 rounded resize-none"
         />
       </div>
 
       {/* Foutmelding */}
       {error && !error.includes('setup') && (
-        <p className="text-red-600 text-sm" role="alert">
-          {error}
-        </p>
+        <p className="text-red-600 text-sm">{error}</p>
       )}
 
       {/* Submit */}
@@ -256,7 +231,6 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full ${
           !isValid ? 'opacity-50 cursor-not-allowed' : ''
         }`}
-        aria-disabled={!isValid}
       >
         💾 DCA-strategie opslaan
       </button>

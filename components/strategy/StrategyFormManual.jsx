@@ -15,11 +15,13 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   const [success, setSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // 🔍 Toon ALLEEN setups zonder een MANUAL-strategie
+  // ✅ Alleen setups met strategy_type === 'manual'
+  // én die nog GEEN handmatige strategie hebben
   const filteredSetups = useMemo(
     () =>
       setups.filter(
         (s) =>
+          s.strategy_type === 'manual' &&
           !strategies.some(
             (strat) => strat.setup_id === s.id && strat.strategy_type === 'manual'
           )
@@ -138,7 +140,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
 
       {filteredSetups.length === 0 && (
         <p className="text-red-500 text-sm">
-          ⚠️ Geen setups beschikbaar zonder handmatige strategie.
+          ⚠️ Geen setups beschikbaar van type “manual” zonder bestaande manual strategie.
         </p>
       )}
 

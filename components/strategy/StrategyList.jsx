@@ -7,7 +7,6 @@ import StrategyCard from '@/components/strategy/StrategyCard';
 export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies } = useStrategyData();
   const [sort, setSort] = useState('created_at');
-  const [filters, setFilters] = useState({ symbol: '', timeframe: '', tag: '' });
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -21,47 +20,28 @@ export default function StrategyList({ searchTerm = '' }) {
     setTimeout(() => setToast(''), 3000);
   };
 
-  // === OPTIE B: de callback vanuit StrategyCard ===
-  const handleUpdated = async (deletedIdOrStrategy) => {
-    // DELETE => StrategyCard geeft ID terug
-    if (typeof deletedIdOrStrategy === 'number') {
-      console.log("🗑 ID uit StrategyCard:", deletedIdOrStrategy);
-      setStrategies((prev) => prev.filter((s) => s.id !== deletedIdOrStrategy));
-      showToast('🗑️ Strategie verwijderd!');
-      return;
-    }
-
-    // UPDATE of AI GENERATED => StrategyCard geeft strategy data terug
-    if (typeof deletedIdOrStrategy === 'object') {
-      await loadStrategies();
-      showToast('♻️ Strategie bijgewerkt!');
-      return;
-    }
-
-    // fallback
+  // === UPDATE / DELETE callback ===
+  const handleUpdated = async () => {
     await loadStrategies();
+    showToast('♻️ Strategie bijgewerkt!');
   };
 
-  // === FILTERS ===
-  const filtered = strategies
-    .filter((s) => s && s.id)
-    .filter((s) => {
-      const matchesSymbol = !filters.symbol || s.symbol === filters.symbol;
-      const matchesTimeframe = !filters.timeframe || s.timeframe === filters.timeframe;
-      const matchesTag = !filters.tag || (s.tags || []).includes(filters.tag);
+  // === Alleen zoeken ===
+  const filtered = strategies.filter((s) => {
+    if (!s || !s.id) return false;
 
-      const lowerSearch = searchTerm.toLowerCase();
-      const matchesSearch =
-        !searchTerm ||
-        (s.symbol || '').toLowerCase().includes(lowerSearch) ||
-        (s.tags || [])
-          .map((t) => t.toLowerCase())
-          .some((t) => t.includes(lowerSearch));
+    const lower = searchTerm.toLowerCase();
 
-      return matchesSymbol && matchesTimeframe && matchesTag && matchesSearch;
-    });
+    return (
+      !searchTerm ||
+      (s.symbol || '').toLowerCase().includes(lower) ||
+      (s.tags || [])
+        .map((t) => t.toLowerCase())
+        .some((t) => t.includes(lower))
+    );
+  });
 
-  // === SORT ===
+  // === Sort ===
   const sortedStrategies = [...filtered].sort((a, b) => {
     if (sort === 'score') return (b.score || 0) - (a.score || 0);
     if (sort === 'favorite') return (b.favorite === true) - (a.favorite === true);
@@ -71,40 +51,8 @@ export default function StrategyList({ searchTerm = '' }) {
   return (
     <div className="space-y-6">
 
-      {/* FILTERS */}
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <div className="flex gap-2">
-          <select
-            value={filters.symbol}
-            onChange={(e) => setFilters({ ...filters, symbol: e.target.value })}
-            className="border p-2 rounded"
-          >
-            <option value="">Symbol</option>
-            <option value="BTC">BTC</option>
-            <option value="ETH">ETH</option>
-          </select>
-
-          <select
-            value={filters.timeframe}
-            onChange={(e) => setFilters({ ...filters, timeframe: e.target.value })}
-            className="border p-2 rounded"
-          >
-            <option value="">Timeframe</option>
-            <option value="1D">1D</option>
-            <option value="4H">4H</option>
-          </select>
-
-          <select
-            value={filters.tag}
-            onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
-            className="border p-2 rounded"
-          >
-            <option value="">Tag</option>
-            <option value="breakout">Breakout</option>
-            <option value="retracement">Retracement</option>
-          </select>
-        </div>
-
+      {/* SORT ONLY */}
+      <div className="flex justify-end">
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
@@ -126,7 +74,7 @@ export default function StrategyList({ searchTerm = '' }) {
           <StrategyCard
             key={s.id}
             strategy={s}
-            onUpdated={handleUpdated}   // 🔥 Belangrijk
+            onUpdated={handleUpdated}
           />
         ))
       )}

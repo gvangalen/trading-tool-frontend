@@ -47,17 +47,15 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       const payload = {
         ...fields,
-        targets:
-          Array.isArray(fields.targets) && fields.targets.length > 0
-            ? fields.targets
-            : [],
+        targets: Array.isArray(fields.targets) ? fields.targets : [],
       };
 
       await updateStrategy(id, payload);
 
       setEditing(false);
       setJustUpdated(true);
-      onUpdated && onUpdated();
+
+      onUpdated && onUpdated(); // bij save geen ID nodig
 
       setTimeout(() => setJustUpdated(false), 2000);
     } catch (err) {
@@ -75,7 +73,10 @@ export default function StrategyCard({ strategy, onUpdated }) {
     try {
       setLoading(true);
       await deleteStrategy(id);
-      onUpdated && onUpdated();
+
+      // 👉 OPTIE B FIX — direct uit UI verwijderen
+      onUpdated && onUpdated(id);
+
     } catch (err) {
       console.error('❌ Delete fout:', err);
       setError('Verwijderen mislukt');
@@ -97,7 +98,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
         return;
       }
 
-      // Poll Celery
       let attempts = 0;
       let ready = false;
 
@@ -109,22 +109,19 @@ export default function StrategyCard({ strategy, onUpdated }) {
           ready = true;
           break;
         }
-
         if (status?.state === 'FAILURE') {
           throw new Error('Celery taak mislukt');
         }
-
         attempts++;
       }
 
-      if (!ready) {
-        throw new Error('AI duurde te lang, stopgezet');
-      }
+      if (!ready) throw new Error('AI duurde te lang');
 
-      // Fetch updated strategy
+      // vernieuwde strategy ophalen
       const final = await fetchStrategyBySetup(setup_id);
 
       onUpdated && onUpdated(final.strategy);
+
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2000);
 
@@ -136,13 +133,14 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  const display = (v) => (v !== null && v !== undefined && v !== '' ? v : '-');
+  const display = (v) =>
+    v !== null && v !== undefined && v !== '' ? v : '-';
 
   return (
     <div
       className={`
-        border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md 
-        transition 
+        border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md
+        transition
         ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
       `}
     >
@@ -174,7 +172,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
         <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
       </p>
 
-      {/* VIEW MODE */}
+      {/* VIEW */}
       {!editing ? (
         <>
           {!isDCA && (

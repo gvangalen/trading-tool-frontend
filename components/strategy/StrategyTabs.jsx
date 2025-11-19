@@ -4,8 +4,6 @@ import { useState } from 'react';
 import StrategyFormTrading from './StrategyFormTrading';
 import StrategyFormDCA from './StrategyFormDCA';
 import StrategyFormManual from './StrategyFormManual';
-import { createStrategy } from '@/lib/api/strategy';
-import { useStrategyData } from '@/hooks/useStrategyData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyTabs({
@@ -15,7 +13,6 @@ export default function StrategyTabs({
   setupsManual = [],
 }) {
   const [activeTab, setActiveTab] = useState('trading');
-  const { loadStrategies } = useStrategyData();
 
   const tabStyle = (tab) =>
     `px-4 py-2 text-sm rounded-md font-medium border ${
@@ -25,24 +22,17 @@ export default function StrategyTabs({
     }`;
 
   const handleStandardSubmit = async (strategy, type = 'ai') => {
-    try {
-      const payload = {
-        ...strategy,
-        strategy_type: type,
-      };
-      console.log('📤 Strategie opslaan:', payload);
-      await createStrategy(payload);
-      await loadStrategies();
-      if (onSubmit) onSubmit(`✅ ${type.toUpperCase()}-strategie succesvol opgeslagen!`);
-    } catch (err) {
-      console.error(`❌ Fout bij opslaan ${type}-strategie:`, err);
-      alert(`❌ Fout bij opslaan ${type}-strategie.`);
-    }
+    const payload = {
+      ...strategy,
+      strategy_type: type,
+    };
+
+    if (onSubmit) onSubmit(payload);
   };
 
   return (
     <div>
-      {/* Tab buttons */}
+      {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-4">
         <button
           className={tabStyle('trading')}
@@ -67,7 +57,7 @@ export default function StrategyTabs({
         </button>
       </div>
 
-      {/* Tab content met tooltips */}
+      {/* Tab content */}
       {activeTab === 'trading' && (
         <div>
           <div className="flex items-center mb-2">

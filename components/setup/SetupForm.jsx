@@ -33,10 +33,10 @@ export default function SetupForm({ onSaved }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === 'checkbox' ? checked : value,
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -48,7 +48,7 @@ export default function SetupForm({ onSaved }) {
     const payload = {
       name: formData.name,
       symbol: formData.symbol,
-      strategy_type: formData.strategyType,
+      strategy_type: formData.strategyType, // ✅ backend veldnaam
       timeframe: formData.timeframe,
       trend: formData.trend,
       account_type: formData.accountType,
@@ -59,7 +59,6 @@ export default function SetupForm({ onSaved }) {
       tags: formData.tags,
       dynamic_investment: formData.dynamicInvestment,
       favorite: formData.favorite,
-
       min_macro_score: macroScore[0],
       max_macro_score: macroScore[1],
       min_technical_score: technicalScore[0],
@@ -69,10 +68,11 @@ export default function SetupForm({ onSaved }) {
     };
 
     try {
-      await saveNewSetup(payload); // <-- FIXED
+      // ✅ juiste API-functie
+      await saveNewSetup(payload);
       setSuccess('✔ Setup succesvol opgeslagen!');
 
-      // Form reset
+      // formulier resetten
       setFormData({
         name: '',
         symbol: 'BTC',
@@ -89,17 +89,15 @@ export default function SetupForm({ onSaved }) {
         favorite: false,
       });
 
-      // Slider reset
       setMacroScore([30, 70]);
       setTechnicalScore([40, 80]);
       setMarketScore([20, 60]);
 
       if (onSaved) {
-        await onSaved(); // refresh parent list
+        await onSaved(); // lijst in parent verversen
       }
 
       setTimeout(() => setSuccess(''), 2500);
-
     } catch (err) {
       console.error('❌ Setup opslaan mislukt:', err);
       setError('❌ Opslaan mislukt. Controleer je velden.');
@@ -164,9 +162,9 @@ export default function SetupForm({ onSaved }) {
             className="border p-2 rounded w-full bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">Strategie Type*</option>
+            {/* ✅ alleen deze drie types */}
             <option value="dca">DCA</option>
             <option value="manual">Manual</option>
-            <option value="ai">AI</option>
             <option value="trading">Trading</option>
           </select>
 
@@ -203,18 +201,42 @@ export default function SetupForm({ onSaved }) {
 
         <div className="space-y-4">
           <div>
-            <label className="block font-medium mb-1">Macro Score: {macroScore[0]}–{macroScore[1]}</label>
-            <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
+            <label className="block font-medium mb-1">
+              Macro Score: {macroScore[0]}–{macroScore[1]}
+            </label>
+            <Slider
+              range
+              min={0}
+              max={100}
+              value={macroScore}
+              onChange={setMacroScore}
+            />
           </div>
 
           <div>
-            <label className="block font-medium mb-1">Technical Score: {technicalScore[0]}–{technicalScore[1]}</label>
-            <Slider range min={0} max={100} value={technicalScore} onChange={setTechnicalScore} />
+            <label className="block font-medium mb-1">
+              Technical Score: {technicalScore[0]}–{technicalScore[1]}
+            </label>
+            <Slider
+              range
+              min={0}
+              max={100}
+              value={technicalScore}
+              onChange={setTechnicalScore}
+            />
           </div>
 
           <div>
-            <label className="block font-medium mb-1">Market Score: {marketScore[0]}–{marketScore[1]}</label>
-            <Slider range min={0} max={100} value={marketScore} onChange={setMarketScore} />
+            <label className="block font-medium mb-1">
+              Market Score: {marketScore[0]}–{marketScore[1]}
+            </label>
+            <Slider
+              range
+              min={0}
+              max={100}
+              value={marketScore}
+              onChange={setMarketScore}
+            />
           </div>
         </div>
       </section>

@@ -10,122 +10,111 @@ import {
 } from '@/lib/api/setups';
 
 export function useSetupData() {
-  const [setups, setSetups] = useState([]);
-  const [dcaSetups, setDcaSetups] = useState([]);
-  const [topSetups, setTopSetups] = useState([]);
+  const [setups, setSetups] = useState([]);          // ALLE setups (onbewerkt)
+  const [dcaSetups, setDcaSetups] = useState([]);    // Alleen DCA setups
+  const [topSetups, setTopSetups] = useState([]);    // Top setups
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // ⬇ Alles één keer laden bij mount
   useEffect(() => {
-    console.log('🚀 useSetupData mounted: laden van setups, top setups en DCA setups gestart');
-    loadSetups('', ['dca']);  // DCA setups uitsluiten bij generiek laden
+    loadSetups();
     loadTopSetups();
     loadDcaSetups();
   }, []);
 
-  // 🔁 Setup lijst ophalen en filteren op has_strategy = false
-  async function loadSetups(strategyType = '', excludeStrategyTypes = []) {
-    console.log(`🔍 loadSetups gestart met strategyType='${strategyType}', excludeStrategyTypes=${excludeStrategyTypes}`);
+  // ============================================================
+  // 🔁 1. ALLE setups ophalen (GEEN filtering)
+  // ============================================================
+  async function loadSetups() {
+    console.log(`🔍 loadSetups gestart`);
     setLoading(true);
     setError('');
+
     try {
-      const data = await fetchSetups(strategyType, excludeStrategyTypes);
-      const filtered = (Array.isArray(data) ? data : []).filter((s) => !s.has_strategy); // ✅ Alleen zonder strategie
-      setSetups(
-        filtered.map((s) => ({
-          ...s,
-          explanation: s.explanation || '',
-        }))
-      );
+      const data = await fetchSetups();   // ⬅️ GEEN filters meer
+      setSetups(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('❌ loadSetups: fout bij laden setups:', err);
+      console.error('❌ loadSetups fout:', err);
       setError('Kan setups niet laden.');
       setSetups([]);
     } finally {
       setLoading(false);
-      console.log('ℹ️ loadSetups: klaar');
     }
   }
 
-  // 🔁 Alleen DCA setups ophalen (zonder strategie)
+  // ============================================================
+  // 🔁 2. Alleen DCA setups ophalen
+  // ============================================================
   async function loadDcaSetups() {
     console.log('🔍 loadDcaSetups gestart');
-    setError('');
     try {
-      const data = await fetchDcaSetups();
-      const filtered = (Array.isArray(data) ? data : []).filter((s) => !s.has_strategy); // ✅ Alleen zonder strategie
-      setDcaSetups(
-        filtered.map((s) => ({
-          ...s,
-          explanation: s.explanation || '',
-        }))
-      );
-      if (!filtered.length) {
-        console.warn('⚠️ loadDcaSetups: lege lijst ontvangen');
-      }
+      const data = await fetchDcaSetups();  
+      setDcaSetups(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('❌ loadDcaSetups: fout bij laden DCA setups:', err);
+      console.error('❌ loadDcaSetups fout:', err);
       setError('Kan DCA setups niet laden.');
       setDcaSetups([]);
-    } finally {
-      console.log('ℹ️ loadDcaSetups: klaar');
     }
   }
 
-  // ⭐ Top setups ophalen (zonder filtering)
+  // ============================================================
+  // ⭐ 3. Top setups (bijv. 3 nieuwste)
+  // ============================================================
   async function loadTopSetups() {
-    console.log('🔍 loadTopSetups gestart');
     try {
       const data = await fetchTopSetups();
       setTopSetups(Array.isArray(data) ? data : []);
-      if (!Array.isArray(data) || data.length === 0) {
-        console.warn('⚠️ loadTopSetups: lege lijst ontvangen');
-      }
     } catch (err) {
-      console.error('❌ loadTopSetups: fout bij laden top setups:', err);
+      console.error('❌ loadTopSetups fout:', err);
       setTopSetups([]);
-    } finally {
-      console.log('ℹ️ loadTopSetups: klaar');
     }
   }
 
-  // 💾 Setup opslaan
+  // ============================================================
+  // 💾 4. Setup bijwerken
+  // ============================================================
   async function saveSetup(id, updatedData) {
-    console.log(`💾 saveSetup gestart voor ID ${id} met data:`, updatedData);
     try {
       await updateSetup(id, updatedData);
       setSuccessMessage('Setup succesvol opgeslagen.');
-      console.log('✅ saveSetup: setup succesvol opgeslagen, herladen...');
-      await loadSetups('', ['dca']); // ook hier uitsluiten bij reload
+      await loadSetups();
       await loadDcaSetups();
     } catch (err) {
-      console.error('❌ saveSetup: fout bij opslaan setup:', err);
+      console.error('❌ saveSetup fout:', err);
       setError('Opslaan mislukt.');
     }
   }
 
-  // 🗑️ Setup verwijderen
+  // ============================================================
+  // 🗑 5. Setup verwijderen (nu werkt CASCADE perfect)
+  // ============================================================
   async function removeSetup(id) {
-    console.log(`🗑️ removeSetup gestart voor ID ${id}`);
     try {
       await deleteSetup(id);
-      console.log('✅ removeSetup: setup succesvol verwijderd');
-      await loadSetups('', ['dca']);
+      await loadSetups();
       await loadDcaSetups();
     } catch (err) {
-      console.error('❌ removeSetup: fout bij verwijderen setup:', err);
+      console.error('❌ removeSetup fout:', err);
       setError('Verwijderen mislukt.');
     }
   }
 
-  // 🔎 Naam bestaat al?
+  // ============================================================
+  // 🔍 6. Naam-check
+  // ============================================================
   function checkSetupNameExists(name) {
-    return setups.some((setup) => setup.name.toLowerCase() === name.toLowerCase());
+    return setups.some(
+      (s) => s.name.toLowerCase() === name.toLowerCase()
+    );
   }
 
+  // ============================================================
+  // 📤 PUBLIC API
+  // ============================================================
   return {
-    setups,
+    setups,          // ALLE setups - ongefilterd
     dcaSetups,
     topSetups,
     loading,
@@ -133,7 +122,6 @@ export function useSetupData() {
     successMessage,
     loadSetups,
     loadDcaSetups,
-    reloadSetups: loadSetups,
     loadTopSetups,
     saveSetup,
     removeSetup,

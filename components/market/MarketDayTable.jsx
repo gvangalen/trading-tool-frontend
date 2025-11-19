@@ -5,12 +5,10 @@ import { useState, useEffect } from 'react';
 export default function MarketDayTable({ data = [], onRemove }) {
   const [localData, setLocalData] = useState([]);
 
-  // Sync met parent
   useEffect(() => {
     setLocalData(Array.isArray(data) ? data : []);
   }, [data]);
 
-  // 🎨 Scorekleur bepalen
   const getScoreColor = (score) => {
     const s = Number(score);
     if (isNaN(s)) return 'text-gray-600';
@@ -19,70 +17,52 @@ export default function MarketDayTable({ data = [], onRemove }) {
     return 'text-yellow-600';
   };
 
-  // 🔢 Waarde formatter
   const formatValue = (val) => {
     if (val === null || val === undefined) return '–';
     const n = Number(val);
-    if (isNaN(n)) return val;
-    return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    return isNaN(n)
+      ? val
+      : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
-  // 🗑️ Verwijderen op basis van indicator NAME
   const handleDelete = async (name) => {
     if (!name) return;
 
-    const sure = window.confirm(
-      `Weet je zeker dat je "${name}" wilt verwijderen uit de dagelijkse analyse?`
-    );
-    if (!sure) return;
+    if (!window.confirm(`Weet je zeker dat je "${name}" wilt verwijderen?`)) return;
 
     try {
-      await onRemove(name);     // ⬅ Hook regelt backend DELETE
+      await onRemove(name);
       setLocalData(localData.filter((i) => i.name !== name));
     } catch (err) {
       console.error('❌ Verwijderen mislukt:', err);
-      alert('❌ Verwijderen mislukt. Check console.');
+      alert('❌ Verwijderen mislukt.');
     }
   };
 
-  // 🧠 Geen data fallback
   if (!localData || localData.length === 0) {
     return (
-      <tr>
-        <td colSpan={6} className="p-6 text-center text-gray-500">
-          ⚠️ Geen actieve market-indicatoren.<br />
-          ➕ Voeg er één toe in de ScoreView.
-        </td>
-      </tr>
+      <>
+        <tr>
+          <td colSpan={6} className="p-6 text-center text-gray-500">
+            ⚠️ Geen actieve market-indicatoren.<br />
+            ➕ Voeg er één toe in de ScoreView.
+          </td>
+        </tr>
+      </>
     );
   }
 
-  // 📋 Tabellenrijen renderen
   return (
     <>
       {localData.map((item) => (
-        <tr
-          key={item.name}
-          className="border-t dark:border-gray-700"
-        >
-          {/* 🔸 Naam */}
+        <tr key={item.name} className="border-t dark:border-gray-700">
           <td className="p-2 font-medium">{item.name}</td>
-
-          {/* 🔸 Value */}
           <td className="p-2 text-center">{formatValue(item.value)}</td>
-
-          {/* 🔸 Score */}
           <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
             {item.score ?? '–'}
           </td>
-
-          {/* 🔸 Actie */}
           <td className="p-2 text-center">{item.action || '–'}</td>
-
-          {/* 🔸 Uitleg */}
           <td className="p-2">{item.interpretation || 'Geen uitleg'}</td>
-
-          {/* 🗑 Delete */}
           <td className="p-2 text-center">
             <button
               onClick={() => handleDelete(item.name)}

@@ -13,16 +13,13 @@ import StrategyEditModal from '@/components/strategy/StrategyEditModal';
 
 export default function StrategyCard({ strategy, onUpdated }) {
   const [editing, setEditing] = useState(false);
-  const [fields, setFields] = useState({ ...strategy });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);       // AI loading
   const [error, setError] = useState('');
   const [justUpdated, setJustUpdated] = useState(false);
 
   useEffect(() => {
-    setFields({ ...strategy });
+    setError('');
   }, [strategy]);
-
-  if (!strategy) return null;
 
   const {
     id,
@@ -41,66 +38,84 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
   const isDCA = strategy_type === 'dca';
 
-  const display = (v) =>
-    v !== null && v !== undefined && v !== '' ? v : '-';
-
+  // -------------------------------------------------------------
   // DELETE
+  // -------------------------------------------------------------
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
 
     try {
       setLoading(true);
       await deleteStrategy(id);
+
       onUpdated && onUpdated(id);
     } catch (err) {
+      console.error('❌ Delete fout:', err);
       setError('Verwijderen mislukt');
     } finally {
       setLoading(false);
     }
   };
 
-  // AI GENERATE
+  // -------------------------------------------------------------
+  // AI GENERATE STRATEGY
+  // -------------------------------------------------------------
   const handleGenerate = async () => {
     try {
       setLoading(true);
       setError('');
 
       const res = await generateStrategy(setup_id, true);
+
       if (!res?.task_id) {
-        setError('❌ Ongeldige respons');
+        setError('❌ Ongeldige respons van server.');
+        setLoading(false);
         return;
       }
 
-      let ready = false;
       let attempts = 0;
+      let ready = false;
 
-      while (!ready && attempts < 20) {
+      while (!ready && attempts < 25) {
         await new Promise((r) => setTimeout(r, 1500));
         const status = await fetchTaskStatus(res.task_id);
 
-        if (status?.state === 'SUCCESS') ready = true;
-        if (status?.state === 'FAILURE') throw new Error('Celery taak mislukt');
-
+        if (status?.state === 'SUCCESS') {
+          ready = true;
+          break;
+        }
+        if (status?.state === 'FAILURE') {
+          throw new Error('Celery task mislukt');
+        }
         attempts++;
       }
 
       if (!ready) throw new Error('AI duurde te lang');
 
       const final = await fetchStrategyBySetup(setup_id);
+
       onUpdated && onUpdated(final.strategy);
 
       setJustUpdated(true);
-      setTimeout(() => setJustUpdated(false), 2000);
+      setTimeout(() => setJustUpdated(false), 2500);
+
     } catch (err) {
-      setError('Generatie mislukt');
+      console.error('❌ AI fout:', err);
+      setError('AI generatie mislukt.');
     } finally {
       setLoading(false);
     }
   };
 
+  const display = (v) =>
+    v !== null && v !== undefined && v !== '' ? v : '-';
+
+  // -------------------------------------------------------------
+  // UI
+  // -------------------------------------------------------------
   return (
     <>
-      {/* EDIT MODAL */}
+      {/* MODAL */}
       <StrategyEditModal
         open={editing}
         strategy={strategy}
@@ -110,109 +125,86 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       <div
         className={`
-          bg-white dark:bg-gray-900 
-          border rounded-xl shadow-md p-5 
-          transition-all
+          border rounded-xl p-5 bg-white dark:bg-gray-900 shadow-lg relative
+          transition-all duration-300
           ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
         `}
       >
-        {/* HEADER */}
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">{setup_name}</h3>
 
-            <div className="flex gap-2 mt-1">
-              <span className="px-2 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200">
-                {strategy_type.toUpperCase()}
-              </span>
-
-              <span className="px-2 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-700">
-                {symbol}
-              </span>
-
-              <span className="px-2 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-700">
-                {timeframe}
-              </span>
+        {/* Blur overlay during AI */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <p className="mt-2 text-purple-700 font-medium">AI strategie genereren…</p>
             </div>
           </div>
+        )}
 
-          {/* ACTION BUTTONS */}
+        {/* HEADER */}
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-bold text-lg">{setup_name}</h3>
+
           <div className="flex gap-3 text-xl">
             <button
-              onClick={() => setEditing(true)}
               disabled={loading}
-              className="text-blue-600 hover:text-blue-800"
+              onClick={() => setEditing(true)}
+              className="text-blue-500 hover:text-blue-700"
             >
               ✏️
             </button>
+
             <button
-              onClick={handleDelete}
               disabled={loading}
-              className="text-red-600 hover:text-red-800"
+              onClick={handleDelete}
+              className="text-red-500 hover:text-red-700"
             >
               🗑️
             </button>
           </div>
         </div>
 
-        {/* BODY */}
-        <div className="space-y-3 text-sm">
-          {!isDCA && (
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <p className="text-gray-400 text-xs">Entry</p>
-                <p className="font-medium">{display(entry)}</p>
-              </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
+        </p>
 
-              <div>
-                <p className="text-gray-400 text-xs">Targets</p>
-                <p className="font-medium">
-                  {Array.isArray(targets) ? targets.join(', ') : '-'}
-                </p>
-              </div>
+        {/* ENTRY / TARGETS */}
+        {!isDCA && (
+          <div className="text-sm space-y-1 mb-2">
+            <p>🎯 Entry: {display(entry)}</p>
+            <p>🎯 Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</p>
+            <p>🛡️ Stop-loss: {display(stop_loss)}</p>
+          </div>
+        )}
 
-              <div>
-                <p className="text-gray-400 text-xs">Stop-loss</p>
-                <p className="font-medium">{display(stop_loss)}</p>
-              </div>
-            </div>
-          )}
+        {explanation && (
+          <p className="text-xs text-gray-500 italic py-1">📝 {explanation}</p>
+        )}
 
-          {explanation && (
-            <p className="text-xs italic text-gray-600 dark:text-gray-400">
-              📝 {explanation}
-            </p>
-          )}
+        {ai_explanation && (
+          <p className="text-xs text-purple-500 italic py-1">🤖 {ai_explanation}</p>
+        )}
 
-          {ai_explanation && (
-            <p className="text-xs italic text-purple-500 dark:text-purple-300">
-              🤖 {ai_explanation}
-            </p>
-          )}
-
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-        </div>
+        {/* ERROR */}
+        {error && (
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        )}
 
         {/* FOOTER */}
         <div className="flex justify-between items-center mt-4">
           <button
-            onClick={handleGenerate}
             disabled={loading}
-            className="
-              text-sm text-purple-600 dark:text-purple-300 
-              underline hover:text-purple-800
-            "
+            onClick={handleGenerate}
+            className="text-sm text-purple-600 underline hover:text-purple-800 disabled:opacity-50"
           >
             🔁 Genereer strategie (AI)
           </button>
 
-          <button
-            disabled={loading}
-            className="text-yellow-400 text-2xl hover:text-yellow-300"
-          >
+          <div className="text-yellow-500 text-xl">
             {favorite ? '⭐' : '☆'}
-          </button>
+          </div>
         </div>
+
       </div>
     </>
   );

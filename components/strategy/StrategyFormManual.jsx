@@ -1,27 +1,40 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-export default function StrategyFormManual({ onSubmit, setups = [], strategies = [] }) {
+export default function StrategyFormManual({
+  onSubmit,
+  setups = [],
+  strategies = [],
+  initialData = null,
+  mode = 'create',       // "create" | "edit"
+  hideSubmit = false     // gebruikt in StrategyEditModal
+}) {
+  // ---------------------------
+  // 🌱 Form state
+  // ---------------------------
   const [form, setForm] = useState({
-    setup_id: '',
-    symbol: '',
-    timeframe: '',
-    entry: '',
-    target: '',
-    stop_loss: '',
-    explanation: '',
-    tags: '',
-    favorite: false,
+    setup_id: initialData?.setup_id || '',
+    symbol: initialData?.symbol || '',
+    timeframe: initialData?.timeframe || '',
+    entry: initialData?.entry || '',
+    target:
+      Array.isArray(initialData?.targets) && initialData.targets.length > 0
+        ? initialData.targets[0]
+        : '',
+    stop_loss: initialData?.stop_loss || '',
+    explanation: initialData?.explanation || '',
+    tags: initialData?.tags?.join(', ') || '',
+    favorite: initialData?.favorite || false,
   });
 
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  // ---------------------------------------------------------
-  // 🔎 Alleen setups van type "manual" + nog geen manual strategy
-  // ---------------------------------------------------------
+  // ---------------------------
+  // 🔍 Alleen setups van type "manual" zonder bestaande manual strategy
+  // ---------------------------
   const filteredSetups = useMemo(() => {
     return setups.filter((s) => {
       if (s.strategy_type?.toLowerCase() !== 'manual') return false;
@@ -32,16 +45,20 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           String(st.strategy_type).toLowerCase() === 'manual'
       );
 
+      // In EDIT mode mag de huidige setup wél blijven staan
+      if (mode === 'edit' && String(s.id) === String(initialData?.setup_id)) {
+        return true;
+      }
+
       return !already;
     });
-  }, [setups, strategies]);
+  }, [setups, strategies, mode, initialData]);
 
-  // ---------------------------------------------------------
-  // 📝 Form change handler
-  // ---------------------------------------------------------
+  // ---------------------------
+  // 📝 Change handler
+  // ---------------------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const val = type === 'checkbox' ? checked : value;
 
     if (name === 'setup_id') {
       const selected = filteredSetups.find((s) => String(s.id) === String(value));
@@ -53,25 +70,28 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         timeframe: selected?.timeframe || '',
       }));
 
-      setError('');
       return;
     }
 
-    setForm((prev) => ({ ...prev, [name]: val }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+
     setError('');
     setSuccess(false);
   };
 
-  // ---------------------------------------------------------
-  // 💾 SUBMIT LOGIC
-  // ---------------------------------------------------------
+  // ---------------------------
+  // 💾 Submit handler
+  // ---------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
 
     if (!form.setup_id) {
-      setError('⚠️ Kies eerst een setup.');
+      setError('⚠️ Kies een setup.');
       return;
     }
 
@@ -86,13 +106,17 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
 
     const tags =
       form.tags
-        .split(',')
+        ?.split(',')
         .map((t) => t.trim())
         .filter(Boolean) || [];
 
+    const setupObj = filteredSetups.find(
+      (s) => String(s.id) === String(form.setup_id)
+    );
+
     const payload = {
       setup_id: Number(form.setup_id),
-      setup_name: filteredSetups.find((s) => String(s.id) === String(form.setup_id))?.name,
+      setup_name: setupObj?.name || initialData?.setup_name,
       symbol: form.symbol,
       timeframe: form.timeframe,
       strategy_type: 'manual',
@@ -110,22 +134,23 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       await onSubmit(payload);
       setSuccess(true);
 
-      // Reset form
-      setForm({
-        setup_id: '',
-        symbol: '',
-        timeframe: '',
-        entry: '',
-        target: '',
-        stop_loss: '',
-        explanation: '',
-        tags: '',
-        favorite: false,
-      });
+      if (mode === 'create') {
+        setForm({
+          setup_id: '',
+          symbol: '',
+          timeframe: '',
+          entry: '',
+          target: '',
+          stop_loss: '',
+          explanation: '',
+          tags: '',
+          favorite: false,
+        });
+      }
 
       setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      console.error('❌ Fout bij opslaan strategie:', err);
+      console.error('❌ Error saving manual strategy:', err);
       setError('❌ Opslaan mislukt.');
     } finally {
       setSaving(false);
@@ -139,9 +164,9 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     !form.target ||
     !form.stop_loss;
 
-  // ---------------------------------------------------------
-  // UI RENDER
-  // ---------------------------------------------------------
+  // ---------------------------
+  // UI
+  // ---------------------------
   return (
     <form
       onSubmit={handleSubmit}
@@ -151,7 +176,9 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         max-w-xl mx-auto
       "
     >
-      <h3 className="text-xl font-bold mb-2">✍️ Nieuwe Handmatige Strategie</h3>
+      <h3 className="text-xl font-bold mb-2">
+        ✍️ {mode === 'edit' ? 'Handmatige strategie bewerken' : 'Nieuwe Handmatige Strategie'}
+      </h3>
 
       {success && (
         <p className="text-green-600 text-sm">✅ Strategie opgeslagen!</p>
@@ -163,8 +190,9 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         <select
           name="setup_id"
           value={form.setup_id}
+          disabled={mode === 'edit'}   // tijdens edit NIET wijzigbaar
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
+          className="mt-1 w-full border p-2 rounded bg-white dark:bg-gray-900 disabled:opacity-50"
           required
         >
           <option value="">-- Kies een setup --</option>
@@ -176,7 +204,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         </select>
       </label>
 
-      {/* SYMBOL + TIMEFRAME */}
+      {/* Symbol + timeframe */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Symbol</label>
@@ -268,23 +296,32 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           checked={form.favorite}
           onChange={handleChange}
         />
-        <span>Favoriet</span>
+        ⭐ Favoriet
       </label>
 
       {/* ERROR */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {/* SAVE BUTTON */}
-      <button
-        type="submit"
-        disabled={disabled}
-        className="
-          w-full bg-blue-600 text-white py-2 rounded 
-          hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed
-        "
-      >
-        {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
-      </button>
+      {/* SUBMIT BUTTON */}
+      {!hideSubmit && (
+        <button
+          type="submit"
+          disabled={disabled}
+          className="
+            w-full bg-blue-600 text-white py-2 rounded 
+            hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed
+          "
+        >
+          {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
+        </button>
+      )}
+
+      {/* Verborgen knop voor StrategyEditModal */}
+      {hideSubmit && mode === 'edit' && (
+        <button id="strategy-edit-submit" type="submit" className="hidden">
+          Submit
+        </button>
+      )}
     </form>
   );
 }

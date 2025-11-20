@@ -20,20 +20,19 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   const [saving, setSaving] = useState(false);
 
   // ---------------------------------------------------------
-  // 🔎 FILTER: alleen setups van type "manual" zonder bestaande manual strategie
+  // 🔎 Alleen setups van type "manual" + nog geen manual strategy
   // ---------------------------------------------------------
   const filteredSetups = useMemo(() => {
     return setups.filter((s) => {
-      const type = s.strategy_type?.toLowerCase();
-      if (type !== 'manual') return false;
+      if (s.strategy_type?.toLowerCase() !== 'manual') return false;
 
-      const hasManual = strategies.some(
+      const already = strategies.some(
         (st) =>
           String(st.setup_id) === String(s.id) &&
           String(st.strategy_type).toLowerCase() === 'manual'
       );
 
-      return !hasManual;
+      return !already;
     });
   }, [setups, strategies]);
 
@@ -44,7 +43,6 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
 
-    // Bij setup wissel → symbol + timeframe invullen
     if (name === 'setup_id') {
       const selected = filteredSetups.find((s) => String(s.id) === String(value));
 
@@ -65,7 +63,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
   };
 
   // ---------------------------------------------------------
-  // 💾 SUBMIT
+  // 💾 SUBMIT LOGIC
   // ---------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,10 +84,11 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       return;
     }
 
-    const tags = form.tags
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const tags =
+      form.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean) || [];
 
     const payload = {
       setup_id: Number(form.setup_id),
@@ -111,7 +110,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
       await onSubmit(payload);
       setSuccess(true);
 
-      // reset
+      // Reset form
       setForm({
         setup_id: '',
         symbol: '',
@@ -126,7 +125,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
 
       setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      console.error('❌ Error saving manual strategy:', err);
+      console.error('❌ Fout bij opslaan strategie:', err);
       setError('❌ Opslaan mislukt.');
     } finally {
       setSaving(false);
@@ -141,7 +140,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
     !form.stop_loss;
 
   // ---------------------------------------------------------
-  // RENDER
+  // UI RENDER
   // ---------------------------------------------------------
   return (
     <form
@@ -165,7 +164,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           name="setup_id"
           value={form.setup_id}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
           required
         >
           <option value="">-- Kies een setup --</option>
@@ -177,14 +176,14 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         </select>
       </label>
 
-      {/* Symbol + timeframe */}
+      {/* SYMBOL + TIMEFRAME */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Symbol</label>
           <input
             value={form.symbol}
             readOnly
-            className="mt-1 w-full border p-2 rounded bg-gray-100"
+            className="mt-1 w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
           />
         </div>
 
@@ -193,7 +192,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           <input
             value={form.timeframe}
             readOnly
-            className="mt-1 w-full border p-2 rounded bg-gray-100"
+            className="mt-1 w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
           />
         </div>
       </div>
@@ -207,7 +206,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           step="any"
           value={form.entry}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -220,7 +219,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           step="any"
           value={form.target}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -233,7 +232,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           step="any"
           value={form.stop_loss}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -245,7 +244,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           rows={3}
           value={form.explanation}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
@@ -257,11 +256,11 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
           type="text"
           value={form.tags}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded"
+          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
         />
       </label>
 
-      {/* Favorite */}
+      {/* FAVORIET */}
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
@@ -272,7 +271,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         <span>Favoriet</span>
       </label>
 
-      {/* ERRORS */}
+      {/* ERROR */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {/* SAVE BUTTON */}
@@ -281,7 +280,7 @@ export default function StrategyFormManual({ onSubmit, setups = [], strategies =
         disabled={disabled}
         className="
           w-full bg-blue-600 text-white py-2 rounded 
-          hover:bg-blue-700 disabled:bg-blue-300
+          hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed
         "
       >
         {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}

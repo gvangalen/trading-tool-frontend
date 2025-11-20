@@ -11,23 +11,30 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);  // ✅ trigger voor rerender filters
 
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
 
-  // 🔄 Bij laden pagina → altijd data ophalen
+  // Initial load
   useEffect(() => {
     loadSetups();
     loadStrategies();
   }, []);
 
-  // 🔄 Herladen na opslaan strategie
-  const reloadAll = () => {
-    loadSetups();
+  // 🔄 Trigger alle lijst-herberekeningen
+  const refreshEverything = () => {
+    // 1. Eerst strategies & setups herladen
     loadStrategies();
+    loadSetups();
+
+    // 2. Daarna rerender & recalculation for tabs
+    setTimeout(() => {
+      setRefreshKey((k) => k + 1);   // 🔥 Force full recalculation
+    }, 30);
   };
 
-  // 🎉 Toast helper
+  // Toast helper
   const handleSuccess = (message) => {
     setToast(message);
     setTimeout(() => setToast(''), 4000);
@@ -59,59 +66,51 @@ export default function StrategyPage() {
         tags: strategy.tags || [],
       };
 
-      console.log('📤 Strategie opslaan (payload):', payload);
-
       await createStrategy(payload);
-
       handleSuccess('✅ Strategie succesvol opgeslagen!');
 
-      // 🔄 DIRECT HERLADEN → nieuwe strategie verschijnt meteen!
-      reloadAll();
+      // 🔥 De echte fix → realtime refresh
+      refreshEverything();
+
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
       setToast('❌ Strategie opslaan mislukt.');
     }
   };
 
-  // 🔍 FILTERS PER TYPE (welke setups hebben nog géén strategie van dit type)
-  const setupsWithoutTrading = useMemo(
-    () =>
-      setups.filter(
-        (s) =>
-          !strategies.some(
-            (strat) =>
-              String(strat.setup_id) === String(s.id) &&
-              String(strat.strategy_type) === 'trading'
-          )
-      ),
-    [setups, strategies]
-  );
+  // 🔍 FILTERS PER TYPE (nu afhankelijk van refreshKey!)
+  const setupsWithoutTrading = useMemo(() => {
+    return setups.filter(
+      (s) =>
+        !strategies.some(
+          (strat) =>
+            String(strat.setup_id) === String(s.id) &&
+            String(strat.strategy_type).toLowerCase() === 'trading'
+        )
+    );
+  }, [setups, strategies, refreshKey]);
 
-  const setupsWithoutDCA = useMemo(
-    () =>
-      setups.filter(
-        (s) =>
-          !strategies.some(
-            (strat) =>
-              String(strat.setup_id) === String(s.id) &&
-              String(strat.strategy_type) === 'dca'
-          )
-      ),
-    [setups, strategies]
-  );
+  const setupsWithoutDCA = useMemo(() => {
+    return setups.filter(
+      (s) =>
+        !strategies.some(
+          (strat) =>
+            String(strat.setup_id) === String(s.id) &&
+            String(strat.strategy_type).toLowerCase() === 'dca'
+        )
+    );
+  }, [setups, strategies, refreshKey]);
 
-  const setupsWithoutManual = useMemo(
-    () =>
-      setups.filter(
-        (s) =>
-          !strategies.some(
-            (strat) =>
-              String(strat.setup_id) === String(s.id) &&
-              String(strat.strategy_type) === 'manual'
-          )
-      ),
-    [setups, strategies]
-  );
+  const setupsWithoutManual = useMemo(() => {
+    return setups.filter(
+      (s) =>
+        !strategies.some(
+          (strat) =>
+            String(strat.setup_id) === String(s.id) &&
+            String(strat.strategy_type).toLowerCase() === 'manual'
+        )
+    );
+  }, [setups, strategies, refreshKey]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-10">
@@ -123,7 +122,7 @@ export default function StrategyPage() {
         </p>
       </header>
 
-      {/* Zoekveld */}
+      {/* Zoek + lijst */}
       <div className="flex justify-between items-center mt-4">
         <h3 className="text-xl font-semibold">📋 Huidige Strategieën</h3>
         <input
@@ -135,19 +134,17 @@ export default function StrategyPage() {
         />
       </div>
 
-      {/* Strategielijst */}
       <section>
-        <StrategyList searchTerm={search} />
+        <StrategyList searchTerm={search} key={refreshKey} />
       </section>
 
-      {/* Toast */}
       {toast && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
           {toast}
         </div>
       )}
 
-      {/* Nieuwe strategie sectie */}
+      {/* Nieuwe strategie */}
       <section className="pt-10 border-t">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-xl font-semibold">➕ Nieuwe Strategie Toevoegen</h2>
@@ -155,6 +152,7 @@ export default function StrategyPage() {
         </div>
 
         <StrategyTabs
+          key={refreshKey}               // 🔥 Force fully refreshed tabs
           onSubmit={handleStrategySubmit}
           setupsTrading={setupsWithoutTrading}
           setupsDCA={setupsWithoutDCA}

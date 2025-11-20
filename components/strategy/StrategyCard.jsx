@@ -12,7 +12,7 @@ import {
 import StrategyEditModal from '@/components/strategy/StrategyEditModal';
 
 export default function StrategyCard({ strategy, onUpdated }) {
-  const [editing, setEditing] = useState(false);         // ← opent modal
+  const [editing, setEditing] = useState(false);
   const [fields, setFields] = useState({ ...strategy });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,6 +41,9 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
   const isDCA = strategy_type === 'dca';
 
+  const display = (v) =>
+    v !== null && v !== undefined && v !== '' ? v : '-';
+
   // DELETE
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
@@ -50,7 +53,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
       await deleteStrategy(id);
       onUpdated && onUpdated(id);
     } catch (err) {
-      console.error('❌ Delete fout:', err);
       setError('Verwijderen mislukt');
     } finally {
       setLoading(false);
@@ -64,26 +66,21 @@ export default function StrategyCard({ strategy, onUpdated }) {
       setError('');
 
       const res = await generateStrategy(setup_id, true);
-
       if (!res?.task_id) {
         setError('❌ Ongeldige respons');
         return;
       }
 
-      let attempts = 0;
       let ready = false;
+      let attempts = 0;
 
       while (!ready && attempts < 20) {
         await new Promise((r) => setTimeout(r, 1500));
         const status = await fetchTaskStatus(res.task_id);
 
-        if (status?.state === 'SUCCESS') {
-          ready = true;
-          break;
-        }
-        if (status?.state === 'FAILURE') {
-          throw new Error('Celery taak mislukt');
-        }
+        if (status?.state === 'SUCCESS') ready = true;
+        if (status?.state === 'FAILURE') throw new Error('Celery taak mislukt');
+
         attempts++;
       }
 
@@ -94,21 +91,16 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2000);
-
     } catch (err) {
-      console.error('❌ AI fout:', err);
       setError('Generatie mislukt');
     } finally {
       setLoading(false);
     }
   };
 
-  const display = (v) =>
-    v !== null && v !== undefined && v !== '' ? v : '-';
-
   return (
     <>
-      {/* MODAL */}
+      {/* EDIT MODAL */}
       <StrategyEditModal
         open={editing}
         strategy={strategy}
@@ -118,27 +110,44 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       <div
         className={`
-          border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md
-          transition
+          bg-white dark:bg-gray-900 
+          border rounded-xl shadow-md p-5 
+          transition-all
           ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
         `}
       >
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-semibold text-lg">{setup_name}</h3>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">{setup_name}</h3>
 
-          <div className="flex gap-3">
+            <div className="flex gap-2 mt-1">
+              <span className="px-2 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200">
+                {strategy_type.toUpperCase()}
+              </span>
+
+              <span className="px-2 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-700">
+                {symbol}
+              </span>
+
+              <span className="px-2 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-700">
+                {timeframe}
+              </span>
+            </div>
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="flex gap-3 text-xl">
             <button
-              disabled={loading}
               onClick={() => setEditing(true)}
+              disabled={loading}
               className="text-blue-600 hover:text-blue-800"
             >
               ✏️
             </button>
-
             <button
-              disabled={loading}
               onClick={handleDelete}
+              disabled={loading}
               className="text-red-600 hover:text-red-800"
             >
               🗑️
@@ -146,44 +155,63 @@ export default function StrategyCard({ strategy, onUpdated }) {
           </div>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
-        </p>
-
-        {/* VIEW MODE */}
-        <div className="text-sm space-y-1 mb-2">
+        {/* BODY */}
+        <div className="space-y-3 text-sm">
           {!isDCA && (
-            <>
-              <p>🎯 Entry: {display(entry)}</p>
-              <p>🎯 Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</p>
-              <p>🛡️ Stop-loss: {display(stop_loss)}</p>
-            </>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-gray-400 text-xs">Entry</p>
+                <p className="font-medium">{display(entry)}</p>
+              </div>
+
+              <div>
+                <p className="text-gray-400 text-xs">Targets</p>
+                <p className="font-medium">
+                  {Array.isArray(targets) ? targets.join(', ') : '-'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-gray-400 text-xs">Stop-loss</p>
+                <p className="font-medium">{display(stop_loss)}</p>
+              </div>
+            </div>
           )}
+
+          {explanation && (
+            <p className="text-xs italic text-gray-600 dark:text-gray-400">
+              📝 {explanation}
+            </p>
+          )}
+
+          {ai_explanation && (
+            <p className="text-xs italic text-purple-500 dark:text-purple-300">
+              🤖 {ai_explanation}
+            </p>
+          )}
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
         </div>
-
-        {explanation && (
-          <p className="text-xs text-gray-500 italic py-1">📝 {explanation}</p>
-        )}
-
-        {ai_explanation && (
-          <p className="text-xs text-purple-500 italic py-1">🤖 {ai_explanation}</p>
-        )}
-
-        {error && <p className="text-red-600 text-sm">{error}</p>}
 
         {/* FOOTER */}
         <div className="flex justify-between items-center mt-4">
           <button
-            disabled={loading}
             onClick={handleGenerate}
-            className="text-sm text-purple-600 underline hover:text-purple-800"
+            disabled={loading}
+            className="
+              text-sm text-purple-600 dark:text-purple-300 
+              underline hover:text-purple-800
+            "
           >
             🔁 Genereer strategie (AI)
           </button>
 
-          <div className="text-yellow-500 text-xl">
+          <button
+            disabled={loading}
+            className="text-yellow-400 text-2xl hover:text-yellow-300"
+          >
             {favorite ? '⭐' : '☆'}
-          </div>
+          </button>
         </div>
       </div>
     </>

@@ -9,8 +9,10 @@ import {
   fetchTaskStatus,
 } from '@/lib/api/strategy';
 
+import StrategyEditModal from '@/components/strategy/StrategyEditModal';
+
 export default function StrategyCard({ strategy, onUpdated }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(false);         // ← opent modal
   const [fields, setFields] = useState({ ...strategy });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,33 +41,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
   const isDCA = strategy_type === 'dca';
 
-  // SAVE
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const payload = {
-        ...fields,
-        targets: Array.isArray(fields.targets) ? fields.targets : [],
-      };
-
-      await updateStrategy(id, payload);
-
-      setEditing(false);
-      setJustUpdated(true);
-
-      onUpdated && onUpdated(); // bij save geen ID nodig
-
-      setTimeout(() => setJustUpdated(false), 2000);
-    } catch (err) {
-      console.error('❌ Update fout:', err);
-      setError(err?.message || 'Opslaan mislukt');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // DELETE
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
@@ -73,10 +48,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
     try {
       setLoading(true);
       await deleteStrategy(id);
-
-      // 👉 OPTIE B FIX — direct uit UI verwijderen
       onUpdated && onUpdated(id);
-
     } catch (err) {
       console.error('❌ Delete fout:', err);
       setError('Verwijderen mislukt');
@@ -117,9 +89,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       if (!ready) throw new Error('AI duurde te lang');
 
-      // vernieuwde strategy ophalen
       const final = await fetchStrategyBySetup(setup_id);
-
       onUpdated && onUpdated(final.strategy);
 
       setJustUpdated(true);
@@ -137,119 +107,85 @@ export default function StrategyCard({ strategy, onUpdated }) {
     v !== null && v !== undefined && v !== '' ? v : '-';
 
   return (
-    <div
-      className={`
-        border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md
-        transition
-        ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
-      `}
-    >
+    <>
+      {/* MODAL */}
+      <StrategyEditModal
+        open={editing}
+        strategy={strategy}
+        onClose={() => setEditing(false)}
+        reload={onUpdated}
+      />
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="font-semibold text-lg">{setup_name}</h3>
+      <div
+        className={`
+          border rounded-lg p-4 bg-white dark:bg-gray-900 shadow-md
+          transition
+          ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
+        `}
+      >
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="font-semibold text-lg">{setup_name}</h3>
 
-        <div className="flex gap-3">
-          <button
-            disabled={loading}
-            onClick={() => setEditing(!editing)}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            ✏️
-          </button>
+          <div className="flex gap-3">
+            <button
+              disabled={loading}
+              onClick={() => setEditing(true)}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              ✏️
+            </button>
 
-          <button
-            disabled={loading}
-            onClick={handleDelete}
-            className="text-red-600 hover:text-red-800"
-          >
-            🗑️
-          </button>
+            <button
+              disabled={loading}
+              onClick={handleDelete}
+              className="text-red-600 hover:text-red-800"
+            >
+              🗑️
+            </button>
+          </div>
         </div>
-      </div>
 
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-        <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
-      </p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
+        </p>
 
-      {/* VIEW */}
-      {!editing ? (
-        <>
+        {/* VIEW MODE */}
+        <div className="text-sm space-y-1 mb-2">
           {!isDCA && (
-            <div className="text-sm space-y-1 mb-2">
+            <>
               <p>🎯 Entry: {display(entry)}</p>
               <p>🎯 Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</p>
               <p>🛡️ Stop-loss: {display(stop_loss)}</p>
-            </div>
+            </>
           )}
+        </div>
 
-          {explanation && (
-            <p className="text-xs text-gray-500 italic py-1">📝 {explanation}</p>
-          )}
+        {explanation && (
+          <p className="text-xs text-gray-500 italic py-1">📝 {explanation}</p>
+        )}
 
-          {ai_explanation && (
-            <p className="text-xs text-purple-500 italic py-1">🤖 {ai_explanation}</p>
-          )}
+        {ai_explanation && (
+          <p className="text-xs text-purple-500 italic py-1">🤖 {ai_explanation}</p>
+        )}
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-        </>
-      ) : (
-        <>
-          {!isDCA && (
-            <div className="grid grid-cols-3 gap-3 mb-2">
-              <input
-                className="border rounded px-2 py-1"
-                value={fields.entry || ''}
-                placeholder="Entry"
-                onChange={(e) =>
-                  setFields({ ...fields, entry: e.target.value })
-                }
-              />
-              <input
-                className="border rounded px-2 py-1"
-                value={Array.isArray(fields.targets) ? fields.targets.join(',') : ''}
-                placeholder="Targets"
-                onChange={(e) =>
-                  setFields({ ...fields, targets: e.target.value.split(',') })
-                }
-              />
-              <input
-                className="border rounded px-2 py-1"
-                value={fields.stop_loss || ''}
-                placeholder="Stop-loss"
-                onChange={(e) =>
-                  setFields({ ...fields, stop_loss: e.target.value })
-                }
-              />
-            </div>
-          )}
+        {error && <p className="text-red-600 text-sm">{error}</p>}
 
+        {/* FOOTER */}
+        <div className="flex justify-between items-center mt-4">
           <button
             disabled={loading}
-            onClick={handleSave}
-            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            onClick={handleGenerate}
+            className="text-sm text-purple-600 underline hover:text-purple-800"
           >
-            💾 Opslaan
+            🔁 Genereer strategie (AI)
           </button>
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-        </>
-      )}
-
-      {/* FOOTER */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          disabled={loading}
-          onClick={handleGenerate}
-          className="text-sm text-purple-600 underline hover:text-purple-800"
-        >
-          🔁 Genereer strategie (AI)
-        </button>
-
-        <div className="text-yellow-500 text-xl">
-          {favorite ? '⭐' : '☆'}
+          <div className="text-yellow-500 text-xl">
+            {favorite ? '⭐' : '☆'}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

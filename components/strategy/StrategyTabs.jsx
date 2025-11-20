@@ -4,7 +4,6 @@ import { useState } from 'react';
 import StrategyFormTrading from './StrategyFormTrading';
 import StrategyFormDCA from './StrategyFormDCA';
 import StrategyFormManual from './StrategyFormManual';
-import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function StrategyTabs({
   onSubmit,
@@ -15,27 +14,28 @@ export default function StrategyTabs({
   const [activeTab, setActiveTab] = useState('trading');
 
   const tabStyle = (tab) =>
-    `px-4 py-2 text-sm rounded-md font-medium border ${
+    `px-4 py-2 text-sm rounded-md font-medium border transition ${
       activeTab === tab
         ? 'bg-blue-600 text-white border-blue-600'
         : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
     }`;
 
-  // Standaard handler: forms geven "kale" data terug, hier voeg ik strategy_type toe
+  // Standaard handler: formulier returned “kale strategy”
   const handleStandardSubmit = (strategy, type) => {
     if (!onSubmit) return;
 
     const payload = {
       ...strategy,
-      strategy_type: type, // 'trading' | 'dca' | 'manual'
+      strategy_type: type, // trading | dca | manual
     };
 
     onSubmit(payload);
   };
 
   return (
-    <div>
-      {/* Tabs */}
+    <div className="space-y-6">
+
+      {/* ======= TABS ======= */}
       <div className="flex flex-wrap gap-2 mb-4">
         <button
           className={tabStyle('trading')}
@@ -44,6 +44,7 @@ export default function StrategyTabs({
         >
           📈 Tradingstrategie (AI)
         </button>
+
         <button
           className={tabStyle('dca')}
           onClick={() => setActiveTab('dca')}
@@ -51,6 +52,7 @@ export default function StrategyTabs({
         >
           💰 DCA-strategie
         </button>
+
         <button
           className={tabStyle('manual')}
           onClick={() => setActiveTab('manual')}
@@ -60,15 +62,15 @@ export default function StrategyTabs({
         </button>
       </div>
 
-      {/* Trading (AI) */}
+      {/* ======= TRADING TAB ======= */}
       {activeTab === 'trading' && (
-        <div>
-          <div className="flex items-center mb-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-1">
-              Koppel aan Setup (AI)
-            </label>
-            <InfoTooltip text="Alleen setups zonder bestaande tradingstrategie worden hier weergegeven." />
-          </div>
+        <div className="space-y-2">
+
+          {/* Sub-title */}
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Koppel aan een setup zonder bestaande tradingstrategie.
+          </p>
+
           <StrategyFormTrading
             setups={setupsTrading}
             onSubmit={(strategy) => handleStandardSubmit(strategy, 'trading')}
@@ -76,15 +78,14 @@ export default function StrategyTabs({
         </div>
       )}
 
-      {/* DCA */}
+      {/* ======= DCA TAB ======= */}
       {activeTab === 'dca' && (
-        <div>
-          <div className="flex items-center mb-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-1">
-              Koppel aan Setup (DCA)
-            </label>
-            <InfoTooltip text="Alleen setups zonder bestaande DCA-strategie worden hier weergegeven." />
-          </div>
+        <div className="space-y-2">
+
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Alleen setups die nog geen DCA-strategie hebben worden getoond.
+          </p>
+
           <StrategyFormDCA
             setups={setupsDCA}
             onSubmit={(strategy) => handleStandardSubmit(strategy, 'dca')}
@@ -92,15 +93,14 @@ export default function StrategyTabs({
         </div>
       )}
 
-      {/* Handmatig */}
+      {/* ======= MANUAL TAB ======= */}
       {activeTab === 'manual' && (
-        <div>
-          <div className="flex items-center mb-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-1">
-              Koppel aan Setup (Handmatig)
-            </label>
-            <InfoTooltip text="Alleen setups zonder bestaande handmatige strategie worden hier weergegeven." />
-          </div>
+        <div className="space-y-2">
+
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Koppel aan een setup zonder bestaande handmatige strategie.
+          </p>
+
           <StrategyFormManual
             setups={setupsManual}
             onSubmit={(strategy) => handleStandardSubmit(strategy, 'manual')}

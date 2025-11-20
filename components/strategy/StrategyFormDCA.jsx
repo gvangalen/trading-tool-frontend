@@ -9,12 +9,13 @@ export default function StrategyFormDCA({
   onSubmit,
   setups = [],
   initialData = null,
-  mode = 'create',         // 'create' | 'edit'
-  hideSubmit = false       // gebruikt door StrategyEditModal
+  mode = 'create',       // 'create' | 'edit'
+  hideSubmit = false     // voor StrategyEditModal
 }) {
   const { loadSetups } = useSetupData();
 
   const [error, setError] = useState('');
+
   const [form, setForm] = useState({
     setup_id: initialData?.setup_id || '',
     setup_name: initialData?.setup_name || '',
@@ -31,28 +32,27 @@ export default function StrategyFormDCA({
     loadSetups();
   }, []);
 
-  // 👉 Alleen setups van type "dca"
+  // 👉 Filter alleen DCA setups
   const availableSetups = setups.filter(
     (s) => s.strategy_type?.toLowerCase() === 'dca'
   );
 
   // ---------------------------------------------------
-  // Handle field changes
+  // Change handler
   // ---------------------------------------------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    // Checkbox
     if (type === 'checkbox') {
       setForm((prev) => ({ ...prev, [name]: checked }));
       return;
     }
 
-    // Setup select
     if (name === 'setup_id') {
       const selected = availableSetups.find(
         (s) => String(s.id) === String(value)
       );
+
       if (!selected) {
         setError('❌ Ongeldige setup geselecteerd.');
         return;
@@ -70,15 +70,14 @@ export default function StrategyFormDCA({
       return;
     }
 
-    // Normal fields
     setForm((prev) => ({ ...prev, [name]: value }));
     setError('');
   };
 
-  const isFormValid = () => {
-    const parsedAmount = Number(form.amount);
-    return form.setup_id && parsedAmount > 0 && form.frequency;
-  };
+  // ---------------------------------------------------
+  // Validation
+  // ---------------------------------------------------
+  const isFormValid = () => form.setup_id && Number(form.amount) > 0 && form.frequency;
 
   // ---------------------------------------------------
   // Submit
@@ -125,9 +124,8 @@ export default function StrategyFormDCA({
           tags: '',
         });
       }
-
     } catch (err) {
-      console.error('❌ Fout bij opslaan strategie:', err);
+      console.error('❌ Fout bij opslaan DCA strategie:', err);
       setError('❌ Opslaan mislukt.');
     }
   };
@@ -135,7 +133,7 @@ export default function StrategyFormDCA({
   const valid = isFormValid();
 
   // ---------------------------------------------------
-  // Render
+  // UI render
   // ---------------------------------------------------
   return (
     <form
@@ -143,15 +141,16 @@ export default function StrategyFormDCA({
       className="
         w-full max-w-xl mx-auto
         bg-white dark:bg-gray-800
-        p-6 rounded-xl shadow-md
+        p-6 rounded-xl shadow-lg
         space-y-4
       "
     >
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+      {/* Titel */}
+      <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
         💰 {mode === 'edit' ? 'DCA-strategie bewerken' : 'Nieuwe DCA-strategie'}
       </h2>
 
-      {/* SETUP SELECT */}
+      {/* SETUP */}
       <div>
         <div className="flex items-center gap-2 mb-1">
           <label className="font-medium">🧩 Koppel aan Setup</label>
@@ -161,9 +160,13 @@ export default function StrategyFormDCA({
         <select
           name="setup_id"
           value={form.setup_id}
-          disabled={mode === 'edit'} 
+          disabled={mode === 'edit'}
           onChange={handleChange}
-          className="w-full border p-2 rounded dark:bg-gray-900 disabled:opacity-50"
+          className="
+            w-full border p-2 rounded
+            bg-gray-50 dark:bg-gray-900
+            disabled:opacity-50 disabled:cursor-not-allowed
+          "
         >
           <option value="">
             {availableSetups.length === 0
@@ -185,7 +188,7 @@ export default function StrategyFormDCA({
         <input
           value={form.symbol}
           readOnly
-          className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
+          className="w-full border p-2 rounded bg-gray-200 dark:bg-gray-900"
         />
       </div>
 
@@ -195,7 +198,7 @@ export default function StrategyFormDCA({
         <input
           value={form.timeframe}
           readOnly
-          className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
+          className="w-full border p-2 rounded bg-gray-200 dark:bg-gray-900"
         />
       </div>
 
@@ -205,11 +208,9 @@ export default function StrategyFormDCA({
         <input
           type="number"
           name="amount"
-          min="1"
-          step="1"
           value={form.amount}
+          min="1"
           onChange={handleChange}
-          placeholder="Bijv. 100"
           className="w-full border p-2 rounded dark:bg-gray-900"
         />
       </div>
@@ -231,26 +232,26 @@ export default function StrategyFormDCA({
 
       {/* RULES */}
       <div>
-        <label className="block mb-1 font-medium">📋 Koopregels (optioneel)</label>
+        <label className="block mb-1 font-medium">📋 Koopregels</label>
         <textarea
           name="rules"
           rows={3}
           value={form.rules}
           onChange={handleChange}
+          className="w-full border p-2 rounded dark:bg-gray-900"
           placeholder="Bijv. koop alleen bij F&G < 30"
-          className="w-full border p-2 rounded resize-none dark:bg-gray-900"
         />
       </div>
 
       {/* TAGS */}
       <div>
-        <label className="block mb-1 font-medium">🏷️ Tags (comma gescheiden)</label>
+        <label className="block mb-1 font-medium">🏷️ Tags</label>
         <input
           name="tags"
           value={form.tags}
           onChange={handleChange}
-          placeholder="Bijv. longterm, btc, dca"
           className="w-full border p-2 rounded dark:bg-gray-900"
+          placeholder="Bijv. longterm, btc, dca"
         />
       </div>
 
@@ -268,8 +269,8 @@ export default function StrategyFormDCA({
       {/* ERROR */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {/* SUBMIT (verborgen in edit mode) */}
-      {!hideSubmit && (
+      {/* SUBMIT button — alleen in create mode */}
+      {!hideSubmit && mode === 'create' && (
         <button
           type="submit"
           disabled={!valid}
@@ -284,14 +285,10 @@ export default function StrategyFormDCA({
         </button>
       )}
 
-      {/* Verborgen submit button voor modal */}
+      {/* Verborgen submit voor EDIT modal */}
       {hideSubmit && mode === 'edit' && (
-        <button
-          id="strategy-edit-submit"
-          type="submit"
-          className="hidden"
-        >
-          Submit
+        <button id="strategy-edit-submit" type="submit" className="hidden">
+          submit
         </button>
       )}
     </form>

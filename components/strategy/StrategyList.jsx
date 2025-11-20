@@ -8,25 +8,34 @@ export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies } = useStrategyData();
   const [toast, setToast] = useState('');
 
-  // 🔄 Load strategies once on mount
+  // ---------------------------------------------------------
+  // 🔄 Load strategies bij eerste render
+  // ---------------------------------------------------------
   useEffect(() => {
-    loadStrategies().catch((err) => {
-      console.error('❌ Fout bij laden strategieën:', err);
-    });
-  }, []); // ← geen dependencies = stabiel!
+    loadStrategies().catch((err) =>
+      console.error('❌ Fout bij laden strategieën:', err)
+    );
+  }, []); // ← géén dependencies → voorkomt loops
 
+  // ---------------------------------------------------------
+  // 🔔 Toast helper
+  // ---------------------------------------------------------
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   };
 
-  // 🔄 After update/delete → reload list
+  // ---------------------------------------------------------
+  // ♻️ Reload na update of delete
+  // ---------------------------------------------------------
   const handleUpdated = async () => {
     await loadStrategies();
     showToast('♻️ Strategie bijgewerkt!');
   };
 
-  // 🔎 Filter op zoekterm
+  // ---------------------------------------------------------
+  // 🔍 Filter + zoeken
+  // ---------------------------------------------------------
   const filtered = strategies.filter((s) => {
     if (!s || !s.id) return false;
 
@@ -41,13 +50,17 @@ export default function StrategyList({ searchTerm = '' }) {
     );
   });
 
-  // 🗂 Sorteer nieuwste eerst
+  // ---------------------------------------------------------
+  // 🗂 Sorteren op nieuwste eerst
+  // ---------------------------------------------------------
   const sortedStrategies = [...filtered].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
 
   return (
     <div className="space-y-6">
+
+      {/* Geen resultaten */}
       {sortedStrategies.length === 0 ? (
         <div className="text-center text-gray-500 pt-6">
           📭 Geen strategieën gevonden
@@ -64,7 +77,12 @@ export default function StrategyList({ searchTerm = '' }) {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 bg-black text-white px-4 py-2 rounded shadow-lg z-50">
+        <div className="
+          fixed top-4 right-4 
+          bg-black text-white 
+          px-4 py-2 rounded shadow-lg 
+          z-50 text-sm
+        ">
           {toast}
         </div>
       )}

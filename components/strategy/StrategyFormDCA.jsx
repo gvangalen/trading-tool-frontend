@@ -17,19 +17,26 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
     amount: '',
     frequency: '',
     rules: '',
+    favorite: false,
+    tags: '',
   });
 
   useEffect(() => {
     loadSetups();
   }, []);
 
-  // 👉 Filter alleen DCA setups
+  // 👉 Filter alleen setups met type "dca"
   const availableSetups = setups.filter(
     (s) => s.strategy_type?.toLowerCase() === 'dca'
   );
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+
+    if (type === 'checkbox') {
+      setForm((prev) => ({ ...prev, [name]: checked }));
+      return;
+    }
 
     if (name === 'setup_id') {
       const selected = availableSetups.find((s) => String(s.id) === String(value));
@@ -56,9 +63,8 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
   };
 
   const isFormValid = () => {
-    const { setup_id, amount, frequency } = form;
-    const parsedAmount = Number(amount);
-    return setup_id && parsedAmount > 0 && frequency;
+    const parsedAmount = Number(form.amount);
+    return form.setup_id && parsedAmount > 0 && form.frequency;
   };
 
   const handleSubmit = async (e) => {
@@ -79,12 +85,15 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
       setup_name: form.setup_name,
       symbol: form.symbol,
       timeframe: form.timeframe,
+      favorite: !!form.favorite,
+      tags: form.tags
+        ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : [],
       origin: 'DCA',
     };
 
     try {
       await onSubmit(payload);
-
       toast.success('💾 DCA-strategie opgeslagen!');
 
       setForm({
@@ -95,6 +104,8 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         amount: '',
         frequency: '',
         rules: '',
+        favorite: false,
+        tags: '',
       });
     } catch (err) {
       console.error('❌ Fout bij opslaan strategie:', err);
@@ -149,7 +160,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         )}
       </div>
 
-      {/* Symbol */}
+      {/* SYMBOL */}
       <div>
         <label className="block mb-1 font-medium">📈 Symbol (automatisch)</label>
         <input
@@ -159,7 +170,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
-      {/* Timeframe */}
+      {/* TIMEFRAME */}
       <div>
         <label className="block mb-1 font-medium">⏱️ Timeframe (automatisch)</label>
         <input
@@ -169,7 +180,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
-      {/* Amount */}
+      {/* AMOUNT */}
       <div>
         <label className="block mb-1 font-medium">💶 Bedrag per keer</label>
         <input
@@ -184,7 +195,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
-      {/* Frequency */}
+      {/* FREQUENCY */}
       <div>
         <label className="block mb-1 font-medium">⏰ Frequentie</label>
         <select
@@ -199,7 +210,7 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         </select>
       </div>
 
-      {/* Rules */}
+      {/* RULES */}
       <div>
         <label className="block mb-1 font-medium">📋 Koopregels (optioneel)</label>
         <textarea
@@ -212,11 +223,35 @@ export default function StrategyFormDCA({ onSubmit, setups = [] }) {
         />
       </div>
 
-      {/* Error */}
+      {/* TAGS */}
+      <div>
+        <label className="block mb-1 font-medium">🏷️ Tags (komma gescheiden)</label>
+        <input
+          name="tags"
+          value={form.tags}
+          onChange={handleChange}
+          placeholder="Bijv. longterm, btc, dca"
+          className="w-full border p-2 rounded dark:bg-gray-900"
+        />
+      </div>
+
+      {/* FAVORIET */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          name="favorite"
+          checked={form.favorite}
+          onChange={handleChange}
+        />
+        <label className="font-medium">⭐ Favoriet</label>
+      </div>
+
+      {/* ERROR */}
       {error && !error.includes('setup') && (
         <p className="text-red-600 text-sm">{error}</p>
       )}
 
+      {/* SUBMIT */}
       <button
         type="submit"
         disabled={!valid}

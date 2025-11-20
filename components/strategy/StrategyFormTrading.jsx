@@ -129,7 +129,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
     !form.stop_loss;
 
   // -------------------------------------------------
-  // RENDER — Uniforme card stijl (max-w-xl + center)
+  // RENDER — Uniforme card stijl
   // -------------------------------------------------
   return (
     <form
@@ -137,7 +137,7 @@ export default function StrategyFormTrading({ setups = [], onSubmit }) {
       className="
         w-full max-w-xl mx-auto
         bg-white dark:bg-gray-800
-        p-6 rounded-xl shadow
+        p-6 rounded-xl shadow-md
         space-y-4
       "
     >

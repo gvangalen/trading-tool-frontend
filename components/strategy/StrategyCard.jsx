@@ -57,58 +57,74 @@ export default function StrategyCard({ strategy, onUpdated }) {
   };
 
   // -------------------------------------------------------------
-  // AI GENERATE STRATEGY
-  // -------------------------------------------------------------
-  const handleGenerate = async () => {
-    try {
-      setLoading(true);
-      setError('');
+// AI GENERATE STRATEGY (NEW – ultra stable)
+// -------------------------------------------------------------
+const handleGenerate = async () => {
+  try {
+    setLoading(true);
+    setError('');
 
-      const res = await generateStrategy(setup_id, true);
+    // 1. Start celery task
+    const res = await generateStrategy(setup_id, true);
 
-      if (!res?.task_id) {
-        setError('❌ Ongeldige respons van server.');
-        setLoading(false);
-        return;
-      }
-
-      let attempts = 0;
-      let ready = false;
-
-      while (!ready && attempts < 25) {
-        await new Promise((r) => setTimeout(r, 1500));
-        const status = await fetchTaskStatus(res.task_id);
-
-        if (status?.state === 'SUCCESS') {
-          ready = true;
-          break;
-        }
-        if (status?.state === 'FAILURE') {
-          throw new Error('Celery task mislukt');
-        }
-
-        attempts++;
-      }
-
-      if (!ready) throw new Error('AI duurde te lang');
-
-      const final = await fetchStrategyBySetup(setup_id);
-
-      onUpdated && onUpdated(final.strategy);
-
-      setJustUpdated(true);
-      setTimeout(() => setJustUpdated(false), 2500);
-
-    } catch (err) {
-      console.error('❌ AI fout:', err);
-      setError('AI generatie mislukt.');
-    } finally {
+    if (!res?.task_id) {
+      setError('❌ Ongeldige respons van server.');
       setLoading(false);
+      return;
     }
-  };
 
-  const display = (v) =>
-    v !== null && v !== undefined && v !== '' ? v : '-';
+    const taskId = res.task_id;
+
+    // 2. Poll Celery (max 45 sec)
+    let attempts = 0;
+    const maxAttempts = 30; // 30 × 1.5 sec = 45 sec
+
+    let status = null;
+
+    while (attempts < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 1500));
+
+      status = await fetchTaskStatus(taskId);
+
+      // console.log("🔥 task status:", status);
+
+      if (!status) continue;
+
+      // Hard fail?
+      if (status.state === 'FAILURE') {
+        throw new Error('Celery task mislukt');
+      }
+
+      // Success → break direct
+      if (status.state === 'SUCCESS') break;
+
+      attempts++;
+    }
+
+    if (status?.state !== 'SUCCESS') {
+      throw new Error('AI duurde te lang');
+    }
+
+    // 3. Strategy opnieuw ophalen
+    const final = await fetchStrategyBySetup(setup_id);
+
+    if (!final?.strategy) {
+      throw new Error('Strategie opgehaald maar niet gevonden');
+    }
+
+    // 4. UI updaten
+    onUpdated && onUpdated(final.strategy);
+
+    setJustUpdated(true);
+    setTimeout(() => setJustUpdated(false), 2500);
+
+  } catch (err) {
+    console.error('❌ AI fout:', err);
+    setError('AI generatie mislukt.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // -------------------------------------------------------------
   // UI

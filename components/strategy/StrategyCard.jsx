@@ -10,10 +10,11 @@ import {
 } from '@/lib/api/strategy';
 
 import StrategyEditModal from '@/components/strategy/StrategyEditModal';
+import AILoader from '@/components/ui/AILoader';
 
 export default function StrategyCard({ strategy, onUpdated }) {
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); 
   const [error, setError] = useState('');
   const [justUpdated, setJustUpdated] = useState(false);
 
@@ -129,15 +130,14 @@ export default function StrategyCard({ strategy, onUpdated }) {
         `}
       >
 
-        {/* AI Loading Overlay */}
+        {/* AI Loading Overlay (nu met AILoader component!) */}
         {loading && (
           <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-              <p className="mt-2 text-purple-700 dark:text-purple-300 font-medium">
-                AI strategie genereren…
-              </p>
-            </div>
+            <AILoader
+              variant="dots"
+              size="md"
+              text="AI strategie genereren…"
+            />
           </div>
         )}
 
@@ -176,7 +176,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
           </div>
         )}
 
-        {/* AI EXPLANATION — ENIGE UITLEG */}
+        {/* AI EXPLANATION — enkel AI inzicht */}
         {ai_explanation && (
           <div className="
             text-xs text-purple-600 dark:text-purple-300
@@ -202,9 +202,12 @@ export default function StrategyCard({ strategy, onUpdated }) {
             onClick={handleGenerate}
             className="
               text-sm text-purple-600 hover:text-purple-800 underline
-              disabled:opacity-50
+              disabled:opacity-50 flex items-center gap-2
             "
           >
+            {loading && (
+              <AILoader variant="spinner" size="sm" text="" />
+            )}
             🔁 Genereer strategie (AI)
           </button>
 

@@ -13,7 +13,7 @@ import StrategyEditModal from '@/components/strategy/StrategyEditModal';
 
 export default function StrategyCard({ strategy, onUpdated }) {
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);       // AI loading
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [justUpdated, setJustUpdated] = useState(false);
 
@@ -31,7 +31,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
     entry,
     targets,
     stop_loss,
-    explanation,
     ai_explanation,
     favorite,
   } = strategy;
@@ -47,7 +46,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
     try {
       setLoading(true);
       await deleteStrategy(id);
-
       onUpdated && onUpdated(id);
     } catch (err) {
       console.error('❌ Delete fout:', err);
@@ -87,6 +85,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
         if (status?.state === 'FAILURE') {
           throw new Error('Celery task mislukt');
         }
+
         attempts++;
       }
 
@@ -115,7 +114,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
   // -------------------------------------------------------------
   return (
     <>
-      {/* MODAL */}
       <StrategyEditModal
         open={editing}
         strategy={strategy}
@@ -131,12 +129,14 @@ export default function StrategyCard({ strategy, onUpdated }) {
         `}
       >
 
-        {/* Blur overlay during AI */}
+        {/* AI Loading Overlay */}
         {loading && (
           <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
             <div className="flex flex-col items-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-              <p className="mt-2 text-purple-700 font-medium">AI strategie genereren…</p>
+              <p className="mt-2 text-purple-700 dark:text-purple-300 font-medium">
+                AI strategie genereren…
+              </p>
             </div>
           </div>
         )}
@@ -145,7 +145,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-bold text-lg">{setup_name}</h3>
 
-          <div className="flex gap-3 text-xl">
+          <div className="flex gap-4 text-xl">
             <button
               disabled={loading}
               onClick={() => setEditing(true)}
@@ -153,7 +153,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
             >
               ✏️
             </button>
-
             <button
               disabled={loading}
               onClick={handleDelete}
@@ -168,26 +167,32 @@ export default function StrategyCard({ strategy, onUpdated }) {
           <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
         </p>
 
-        {/* ENTRY / TARGETS */}
+        {/* ENTRY + TARGETS (niet voor DCA) */}
         {!isDCA && (
-          <div className="text-sm space-y-1 mb-2">
+          <div className="text-sm space-y-1 mb-3">
             <p>🎯 Entry: {display(entry)}</p>
             <p>🎯 Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</p>
             <p>🛡️ Stop-loss: {display(stop_loss)}</p>
           </div>
         )}
 
-        {explanation && (
-          <p className="text-xs text-gray-500 italic py-1">📝 {explanation}</p>
-        )}
-
+        {/* AI EXPLANATION — ENIGE UITLEG */}
         {ai_explanation && (
-          <p className="text-xs text-purple-500 italic py-1">🤖 {ai_explanation}</p>
+          <div className="
+            text-xs text-purple-600 dark:text-purple-300
+            italic bg-purple-50 dark:bg-purple-900/20
+            border border-purple-200 dark:border-purple-700
+            p-3 rounded-lg whitespace-pre-line leading-relaxed
+            mt-3
+          ">
+            🤖 <strong>AI Insight:</strong><br />
+            {ai_explanation}
+          </div>
         )}
 
         {/* ERROR */}
         {error && (
-          <p className="text-red-600 text-sm mt-1">{error}</p>
+          <p className="text-red-600 text-sm mt-2">{error}</p>
         )}
 
         {/* FOOTER */}
@@ -195,7 +200,10 @@ export default function StrategyCard({ strategy, onUpdated }) {
           <button
             disabled={loading}
             onClick={handleGenerate}
-            className="text-sm text-purple-600 underline hover:text-purple-800 disabled:opacity-50"
+            className="
+              text-sm text-purple-600 hover:text-purple-800 underline
+              disabled:opacity-50
+            "
           >
             🔁 Genereer strategie (AI)
           </button>

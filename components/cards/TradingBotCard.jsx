@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { Bot } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import AILoader from '@/components/ui/AILoader';
-import { fetchLatestStrategy } from '@/lib/api/strategy';
+
+// ⬅️ BELANGRIJK: juiste functie importeren!
+import { fetchLastStrategy } from '@/lib/api/strategy';
 
 export default function TradingBotCard() {
   const [strategy, setStrategy] = useState(null);
@@ -12,14 +14,23 @@ export default function TradingBotCard() {
   const [error, setError] = useState('');
 
   // -------------------------------------------------------------
-  // Load last strategy
+  // Load last strategy (met veilige fallback)
   // -------------------------------------------------------------
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const data = await fetchLatestStrategy();
-        setStrategy(data?.strategy || null);
+        setError('');
+
+        const data = await fetchLastStrategy();
+
+        // backend geeft direct strategy terug, niet {strategy: ...}
+        if (data && typeof data === 'object' && !data.message) {
+          setStrategy(data);
+        } else {
+          setStrategy(null);
+        }
+
       } catch (err) {
         console.error('❌ Fout bij ophalen laatste strategy:', err);
         setError('Kan laatste strategy niet laden');
@@ -27,6 +38,7 @@ export default function TradingBotCard() {
         setLoading(false);
       }
     }
+
     load();
   }, []);
 
@@ -68,19 +80,19 @@ export default function TradingBotCard() {
         {!loading && strategy && (
           <div className="space-y-1 text-sm">
             <p className="text-gray-800 dark:text-gray-100">
-              <strong>Setup:</strong> {strategy.setup_name}
+              <strong>Setup:</strong> {strategy.setup_name || '-'}
             </p>
 
             <p className="text-gray-800 dark:text-gray-100">
-              <strong>Type:</strong> {strategy.strategy_type}
+              <strong>Type:</strong> {strategy.strategy_type || '-'}
             </p>
 
             <p className="text-gray-800 dark:text-gray-100">
-              <strong>Asset:</strong> {strategy.symbol}
+              <strong>Asset:</strong> {strategy.symbol || '-'}
             </p>
 
             <p className="text-gray-800 dark:text-gray-100">
-              <strong>Timeframe:</strong> {strategy.timeframe}
+              <strong>Timeframe:</strong> {strategy.timeframe || '-'}
             </p>
 
             {strategy.entry && (
@@ -89,7 +101,7 @@ export default function TradingBotCard() {
               </p>
             )}
 
-            {strategy.targets?.length > 0 && (
+            {Array.isArray(strategy.targets) && strategy.targets.length > 0 && (
               <p className="text-gray-800 dark:text-gray-100">
                 <strong>Targets:</strong> {strategy.targets.join(', ')}
               </p>
@@ -102,16 +114,19 @@ export default function TradingBotCard() {
             )}
 
             {strategy.ai_explanation && (
-              <p className="
+              <p
+                className="
                 text-xs text-purple-800 dark:text-purple-200 
                 italic mt-2 bg-purple-50/50 dark:bg-purple-900/30 
                 p-2 rounded border border-purple-200/40 dark:border-purple-800
-              ">
-                🤖 {strategy.ai_explanation.slice(0, 120)}…
+              "
+              >
+                🤖 {strategy.ai_explanation.slice(0, 140)}…
               </p>
             )}
           </div>
         )}
+
       </CardContent>
     </Card>
   );

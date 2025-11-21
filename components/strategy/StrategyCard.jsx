@@ -13,23 +13,19 @@ import StrategyEditModal from '@/components/strategy/StrategyEditModal';
 import AILoader from '@/components/ui/AILoader';
 
 export default function StrategyCard({ strategy, onUpdated }) {
-  // -----------------------------
-  // NULL SAFETY — voorkomt crash
-  // -----------------------------
   if (!strategy) return null;
 
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [softWarning, setSoftWarning] = useState('');
   const [justUpdated, setJustUpdated] = useState(false);
 
   useEffect(() => {
     setError('');
+    setSoftWarning('');
   }, [strategy]);
 
-  // -----------------------------------
-  // Veilige destructuring met fallbacks
-  // -----------------------------------
   const {
     id = null,
     setup_id = null,
@@ -45,12 +41,11 @@ export default function StrategyCard({ strategy, onUpdated }) {
   } = strategy || {};
 
   const isDCA = strategy_type === 'dca';
-
   const display = (v) => (v ? v : '-');
 
-  // -----------------------------
+  // -------------------------------------------------------------
   // DELETE
-  // -----------------------------
+  // -------------------------------------------------------------
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
 
@@ -60,24 +55,25 @@ export default function StrategyCard({ strategy, onUpdated }) {
       onUpdated && onUpdated(id);
     } catch (err) {
       console.error('❌ Delete fout:', err);
-      setError('Verwijderen mislukt');
+      setError('Verwijderen mislukt.');
     } finally {
       setLoading(false);
     }
   };
 
   // -------------------------------------------------------------
-  // AI GENERATE — **Fix: robuuste polling**
+  // AI GENERATE — met soft-warning i.p.v. error
   // -------------------------------------------------------------
   const handleGenerate = async () => {
     try {
       setLoading(true);
       setError('');
+      setSoftWarning('');
 
       const res = await generateStrategy(setup_id, true);
 
       if (!res?.task_id) {
-        setError('❌ Ongeldige respons van server.');
+        setError('❌ Ongeldige response van de server.');
         setLoading(false);
         return;
       }
@@ -85,25 +81,25 @@ export default function StrategyCard({ strategy, onUpdated }) {
       const taskId = res.task_id;
 
       let attempts = 0;
-      const maxAttempts = 40;      // 40 × 1.5s = 60 seconden
+      const maxAttempts = 40; // 40 × 1.5s = 60s
       let status = null;
 
       while (attempts < maxAttempts) {
         await new Promise((r) => setTimeout(r, 1500));
         status = await fetchTaskStatus(taskId);
 
-        // ⛔ Backend geeft vaak `{}` → stil overslaan, NIET stoppen
+        // Lege {} mag gewoon genegeerd worden
         if (!status || Object.keys(status).length === 0) {
           attempts++;
           continue;
         }
 
-        // ⛔ Hard fail
+        // Hard fail
         if (status.state === 'FAILURE') {
           throw new Error('Celery task mislukt');
         }
 
-        // ✅ SUCCESS!
+        // Success
         if (status.state === 'SUCCESS' || status?.result?.success) {
           break;
         }
@@ -111,12 +107,12 @@ export default function StrategyCard({ strategy, onUpdated }) {
         attempts++;
       }
 
-      // ⛔ Timeout → maar niet meteen fout want misschien klaar op de backend
+      // ⛔ Timeout — maar niet stoppen, strategy wórdt vaak wel gemaakt!
       if (!status || status.state !== 'SUCCESS') {
-        throw new Error('AI duurde te lang');
+        setSoftWarning('⚠️ AI duurde lang — data wordt opgehaald...');
       }
 
-      // Always fetch latest strategy
+      // Haal altijd laatste strategy op
       const final = await fetchStrategyBySetup(setup_id);
 
       if (!final?.strategy) {
@@ -136,9 +132,9 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // -----------------------------
+  // -------------------------------------------------------------
   // UI
-  // -----------------------------
+  // -------------------------------------------------------------
   return (
     <>
       <StrategyEditModal
@@ -156,7 +152,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
         `}
       >
 
-        {/* AI Loading Overlay */}
+        {/* AI LOADER */}
         {loading && (
           <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
             <AILoader variant="dots" size="md" text="AI strategie genereren…" />
@@ -189,7 +185,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
           <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
         </p>
 
-        {/* ENTRY + TARGETS (niet voor DCA) */}
+        {/* ENTRY / TARGETS — Alleen voor trading/manual */}
         {!isDCA && (
           <div className="text-sm space-y-1 mb-3">
             <p>🎯 Entry: {display(entry)}</p>
@@ -198,7 +194,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
           </div>
         )}
 
-        {/* AI INSIGHT */}
+        {/* AI-UITLEG */}
         {ai_explanation && (
           <div className="
             text-xs text-purple-600 dark:text-purple-300
@@ -212,6 +208,14 @@ export default function StrategyCard({ strategy, onUpdated }) {
           </div>
         )}
 
+        {/* SOFT WARNING */}
+        {softWarning && (
+          <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-2">
+            {softWarning}
+          </p>
+        )}
+
+        {/* ERROR */}
         {error && (
           <p className="text-red-600 text-sm mt-2">{error}</p>
         )}

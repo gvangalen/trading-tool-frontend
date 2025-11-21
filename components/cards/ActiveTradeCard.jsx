@@ -25,7 +25,9 @@ export default function ActiveTradeCard() {
     }
   }
 
-  // 🎨 Trend kleuren
+  // -------------------------------
+  // 🎨 Trend kleur logica
+  // -------------------------------
   const trend = strategy?.trend || 'neutral';
   const trendClass =
     trend.toLowerCase() === 'bullish'
@@ -34,6 +36,27 @@ export default function ActiveTradeCard() {
       ? 'border-red-600 bg-red-50 dark:bg-red-900 dark:border-red-700'
       : 'border-gray-400 bg-gray-50 dark:bg-gray-800 dark:border-gray-600';
 
+  // -------------------------------
+  // 🧮 Entry formatter (geen NaN)
+  // -------------------------------
+  function formatNumber(value) {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'number') return value.toLocaleString();
+    if (!isNaN(Number(value))) return Number(value).toLocaleString();
+    return value; // fallback: raw string
+  }
+
+  const entryDisplay = formatNumber(strategy?.entry);
+  const stopDisplay = formatNumber(strategy?.stop_loss);
+
+  const targetsDisplay =
+    Array.isArray(strategy?.targets) && strategy.targets.length > 0
+      ? strategy.targets.map(formatNumber).join(' / ')
+      : '-';
+
+  // -------------------------------
+  // UI
+  // -------------------------------
   return (
     <Card className={`shadow-sm ${trendClass}`}>
       <CardContent className="p-4">
@@ -44,27 +67,27 @@ export default function ActiveTradeCard() {
           <span className="text-sm">Actieve Strategie</span>
         </div>
 
-        {/* Loading state */}
+        {/* Loading */}
         {loading ? (
           <p className="text-sm text-gray-500 italic">⏳ Laden...</p>
         ) : !strategy ? (
-          <p className="text-sm text-gray-500 italic">
-            Geen strategie beschikbaar.
-          </p>
+          <p className="text-sm text-gray-500 italic">Geen strategie beschikbaar.</p>
         ) : (
           <div className="text-sm text-gray-800 dark:text-gray-100 space-y-1">
-            <p><strong>Setup:</strong> {strategy.setup_name}</p>
-            <p><strong>Trend:</strong> {strategy.trend}</p>
-            <p><strong>Entry:</strong> ${Number(strategy.entry).toLocaleString()}</p>
+            <p><strong>Setup:</strong> {strategy.setup_name || '-'}</p>
+            <p><strong>Trend:</strong> {strategy.trend || '-'}</p>
 
             <p>
-              <strong>Targets:</strong>{' '}
-              {Array.isArray(strategy.targets) && strategy.targets.length > 0
-                ? strategy.targets.join(' / ')
-                : '-'}
+              <strong>Entry:</strong> ${entryDisplay}
             </p>
 
-            <p><strong>Stop:</strong> {strategy.stop_loss ?? '-'}</p>
+            <p>
+              <strong>Targets:</strong> {targetsDisplay}
+            </p>
+
+            <p>
+              <strong>Stop:</strong> {stopDisplay}
+            </p>
           </div>
         )}
       </CardContent>

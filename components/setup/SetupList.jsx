@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import SetupEditModal from '@/components/setup/SetupEditModal';
 import { generateExplanation } from '@/lib/api/setups';
+import AILoader from '@/components/ui/AILoader';
 
 export default function SetupList({
   setups = [],
@@ -12,66 +13,58 @@ export default function SetupList({
   searchTerm = '',
   saveSetup,
   removeSetup,
-  reload,       // <-- centrale reload
+  reload,
 }) {
-
-  // Modal state
+  // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSetup, setSelectedSetup] = useState(null);
 
-  // AI states
+  // AI loading per ID
   const [aiLoading, setAiLoading] = useState({});
-  const [aiStatus, setAiStatus] = useState({});
+  const [justUpdated, setJustUpdated] = useState({});
 
-  // ---------------------------------------------
-  // 🔎 FILTEREN OP ZOEKTERM
-  // ---------------------------------------------
-  const filteredSetups = (() => {
-    if (!searchTerm.trim()) return setups;
-    const q = searchTerm.toLowerCase();
-    return setups.filter((s) =>
-      (s.name || '').toLowerCase().includes(q)
-    );
-  })();
+  // ---------------------------------------------------------
+  // 🔍 FILTER SETUPS
+  // ---------------------------------------------------------
+  const filteredSetups = !searchTerm
+    ? setups
+    : setups.filter((s) =>
+        s.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
-  // ---------------------------------------------
-  // 🤖 AI UITLEG GENEREREN
-  // ---------------------------------------------
+  // ---------------------------------------------------------
+  // 🤖 GENERATE AI EXPLANATION (met AILoader overlay)
+  // ---------------------------------------------------------
   async function handleGenerateExplanation(id) {
     try {
       setAiLoading((prev) => ({ ...prev, [id]: true }));
-      setAiStatus((prev) => ({ ...prev, [id]: '⏳ Uitleg wordt gegenereerd...' }));
 
       await generateExplanation(id);
 
-      setAiStatus((prev) => ({ ...prev, [id]: '✅ Uitleg opgeslagen!' }));
       toast.success('AI-uitleg opgeslagen');
+
+      // Highlight effect
+      setJustUpdated((prev) => ({ ...prev, [id]: true }));
+      setTimeout(() => {
+        setJustUpdated((prev) => ({ ...prev, [id]: false }));
+      }, 2500);
 
       if (reload) await reload();
 
     } catch (err) {
       console.error(err);
-      toast.error('Fout bij uitleg genereren.');
-      setAiStatus((prev) => ({ ...prev, [id]: '❌ Fout bij genereren' }));
+      toast.error('❌ Fout bij AI-generatie');
     } finally {
       setAiLoading((prev) => ({ ...prev, [id]: false }));
-      setTimeout(() => {
-        setAiStatus((prev) => {
-          const cp = { ...prev };
-          delete cp[id];
-          return cp;
-        });
-      }, 3500);
     }
   }
 
-  // ---------------------------------------------
+  // ---------------------------------------------------------
   // 🗑️ VERWIJDEREN
-  // ---------------------------------------------
+  // ---------------------------------------------------------
   async function handleRemove(id) {
     try {
       await removeSetup(id);
-
       toast.success('Setup verwijderd');
 
       if (reload) await reload();
@@ -81,18 +74,20 @@ export default function SetupList({
     }
   }
 
-  // ---------------------------------------------
-  // 📝 MODAL OPENEN
-  // ---------------------------------------------
+  // ---------------------------------------------------------
+  // ✏️ MODAL OPENEN
+  // ---------------------------------------------------------
   function openEditModal(setup) {
     setSelectedSetup(setup);
     setModalOpen(true);
   }
 
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-6 mt-4">
 
-      {/* EDIT MODAL */}
       <SetupEditModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -100,22 +95,13 @@ export default function SetupList({
         reload={reload}
       />
 
-      {/* LOADING */}
-      {loading && (
-        <p className="text-sm text-gray-500">📡 Setups laden...</p>
-      )}
+      {loading && <p className="text-sm text-gray-500">📡 Setups laden...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* ERROR */}
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
-
-      {/* SETUP CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredSetups.length > 0 ? (
           filteredSetups.map((setup) => {
             const trend = (setup.trend || '').toLowerCase();
-
             const trendColor =
               trend === 'bullish'
                 ? 'text-green-600'
@@ -126,8 +112,30 @@ export default function SetupList({
             return (
               <div
                 key={setup.id}
-                className="border rounded-lg p-4 bg-white shadow relative transition"
+                className={`
+                  relative border rounded-lg p-4 bg-white dark:bg-gray-900 shadow transition-all
+                  ${justUpdated[setup.id] ? 'ring-2 ring-green-500 ring-offset-2' : ''}
+                `}
               >
+
+                {/* AI overlay */}
+                {aiLoading[setup.id] && (
+                  <div className="
+                    absolute inset-0 
+                    bg-white/40 dark:bg-black/30 
+                    backdrop-blur-sm 
+                    z-20 
+                    rounded-lg 
+                    flex items-center justify-center
+                  ">
+                    <AILoader
+                      variant="dots"
+                      size="md"
+                      text="AI-uitleg genereren…"
+                    />
+                  </div>
+                )}
+
                 {/* FAVORIET */}
                 <button
                   className="absolute top-3 right-3 text-2xl"
@@ -136,7 +144,6 @@ export default function SetupList({
                   {setup.favorite ? '⭐️' : '☆'}
                 </button>
 
-                {/* VIEW MODE */}
                 <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
 
                 <p className={`text-xs mb-1 ${trendColor}`}>
@@ -163,7 +170,7 @@ export default function SetupList({
                   💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
                 </div>
 
-                {/* AI BTN */}
+                {/* AI BUTTON */}
                 <button
                   onClick={() => handleGenerateExplanation(setup.id)}
                   disabled={aiLoading[setup.id]}
@@ -173,14 +180,10 @@ export default function SetupList({
                       : 'bg-indigo-600 hover:bg-indigo-700'}
                   `}
                 >
-                  {aiLoading[setup.id] ? '⏳ Bezig...' : '🔁 Genereer uitleg (AI)'}
+                  {aiLoading[setup.id] ? '⏳ Bezig...' : '🤖 Genereer uitleg (AI)'}
                 </button>
 
-                {aiStatus[setup.id] && (
-                  <p className="text-xs text-gray-600 mt-1">{aiStatus[setup.id]}</p>
-                )}
-
-                {/* ACTIE KNOPPEN */}
+                {/* ACTIONS */}
                 <div className="flex justify-end gap-2 mt-2">
                   <button
                     onClick={() => openEditModal(setup)}
@@ -200,9 +203,7 @@ export default function SetupList({
             );
           })
         ) : (
-          <p className="text-sm text-gray-500 col-span-full mt-4">
-            📭 Geen setups gevonden.
-          </p>
+          <p className="text-sm text-gray-500">📭 Geen setups gevonden.</p>
         )}
       </div>
     </div>

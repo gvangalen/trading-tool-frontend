@@ -14,7 +14,7 @@ import AILoader from '@/components/ui/AILoader';
 
 export default function StrategyCard({ strategy, onUpdated }) {
   // -----------------------------
-  // NULL SAFETY → voorkomt crash
+  // NULL SAFETY — voorkomt crash
   // -----------------------------
   if (!strategy) return null;
 
@@ -46,9 +46,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
   const isDCA = strategy_type === 'dca';
 
-  // -----------------------------------
-  // VEILIGE display()
-  // -----------------------------------
   const display = (v) => (v ? v : '-');
 
   // -----------------------------
@@ -69,9 +66,9 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // -----------------------------
-  // AI GENERATE STRATEGY
-  // -----------------------------
+  // -------------------------------------------------------------
+  // AI GENERATE — **Fix: robuuste polling**
+  // -------------------------------------------------------------
   const handleGenerate = async () => {
     try {
       setLoading(true);
@@ -88,28 +85,38 @@ export default function StrategyCard({ strategy, onUpdated }) {
       const taskId = res.task_id;
 
       let attempts = 0;
-      const maxAttempts = 30;
+      const maxAttempts = 40;      // 40 × 1.5s = 60 seconden
       let status = null;
 
       while (attempts < maxAttempts) {
         await new Promise((r) => setTimeout(r, 1500));
         status = await fetchTaskStatus(taskId);
 
-        if (!status) continue;
+        // ⛔ Backend geeft vaak `{}` → stil overslaan, NIET stoppen
+        if (!status || Object.keys(status).length === 0) {
+          attempts++;
+          continue;
+        }
 
+        // ⛔ Hard fail
         if (status.state === 'FAILURE') {
           throw new Error('Celery task mislukt');
         }
 
-        if (status.state === 'SUCCESS') break;
+        // ✅ SUCCESS!
+        if (status.state === 'SUCCESS' || status?.result?.success) {
+          break;
+        }
 
         attempts++;
       }
 
-      if (status?.state !== 'SUCCESS') {
+      // ⛔ Timeout → maar niet meteen fout want misschien klaar op de backend
+      if (!status || status.state !== 'SUCCESS') {
         throw new Error('AI duurde te lang');
       }
 
+      // Always fetch latest strategy
       const final = await fetchStrategyBySetup(setup_id);
 
       if (!final?.strategy) {

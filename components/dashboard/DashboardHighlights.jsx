@@ -1,7 +1,7 @@
 'use client';
 
 import ReportCard from '@/components/cards/ReportCard';
-import ActiveTradeCard from '@/components/cards/ActiveTradeCard';
+import ActiveTradeCard from '@/components/cards/ActiveSetupCard';
 import MasterScoreCard from '@/components/cards/MasterScoreCard';
 import TradingBotCard from '@/components/cards/TradingBotCard';
 

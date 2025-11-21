@@ -13,8 +13,13 @@ import StrategyEditModal from '@/components/strategy/StrategyEditModal';
 import AILoader from '@/components/ui/AILoader';
 
 export default function StrategyCard({ strategy, onUpdated }) {
+  // -----------------------------
+  // NULL SAFETY → voorkomt crash
+  // -----------------------------
+  if (!strategy) return null;
+
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [justUpdated, setJustUpdated] = useState(false);
 
@@ -22,25 +27,33 @@ export default function StrategyCard({ strategy, onUpdated }) {
     setError('');
   }, [strategy]);
 
+  // -----------------------------------
+  // Veilige destructuring met fallbacks
+  // -----------------------------------
   const {
-    id,
-    setup_id,
-    setup_name,
-    symbol,
-    timeframe,
-    strategy_type,
-    entry,
-    targets,
-    stop_loss,
-    ai_explanation,
-    favorite,
-  } = strategy;
+    id = null,
+    setup_id = null,
+    setup_name = '',
+    symbol = '',
+    timeframe = '',
+    strategy_type = '',
+    entry = '',
+    targets = [],
+    stop_loss = '',
+    ai_explanation = '',
+    favorite = false,
+  } = strategy || {};
 
   const isDCA = strategy_type === 'dca';
 
-  // -------------------------------------------------------------
+  // -----------------------------------
+  // VEILIGE display()
+  // -----------------------------------
+  const display = (v) => (v ? v : '-');
+
+  // -----------------------------
   // DELETE
-  // -------------------------------------------------------------
+  // -----------------------------
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
 
@@ -56,79 +69,69 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // -------------------------------------------------------------
-// AI GENERATE STRATEGY (NEW – ultra stable)
-// -------------------------------------------------------------
-const handleGenerate = async () => {
-  try {
-    setLoading(true);
-    setError('');
+  // -----------------------------
+  // AI GENERATE STRATEGY
+  // -----------------------------
+  const handleGenerate = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-    // 1. Start celery task
-    const res = await generateStrategy(setup_id, true);
+      const res = await generateStrategy(setup_id, true);
 
-    if (!res?.task_id) {
-      setError('❌ Ongeldige respons van server.');
-      setLoading(false);
-      return;
-    }
-
-    const taskId = res.task_id;
-
-    // 2. Poll Celery (max 45 sec)
-    let attempts = 0;
-    const maxAttempts = 30; // 30 × 1.5 sec = 45 sec
-
-    let status = null;
-
-    while (attempts < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 1500));
-
-      status = await fetchTaskStatus(taskId);
-
-      // console.log("🔥 task status:", status);
-
-      if (!status) continue;
-
-      // Hard fail?
-      if (status.state === 'FAILURE') {
-        throw new Error('Celery task mislukt');
+      if (!res?.task_id) {
+        setError('❌ Ongeldige respons van server.');
+        setLoading(false);
+        return;
       }
 
-      // Success → break direct
-      if (status.state === 'SUCCESS') break;
+      const taskId = res.task_id;
 
-      attempts++;
+      let attempts = 0;
+      const maxAttempts = 30;
+      let status = null;
+
+      while (attempts < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 1500));
+        status = await fetchTaskStatus(taskId);
+
+        if (!status) continue;
+
+        if (status.state === 'FAILURE') {
+          throw new Error('Celery task mislukt');
+        }
+
+        if (status.state === 'SUCCESS') break;
+
+        attempts++;
+      }
+
+      if (status?.state !== 'SUCCESS') {
+        throw new Error('AI duurde te lang');
+      }
+
+      const final = await fetchStrategyBySetup(setup_id);
+
+      if (!final?.strategy) {
+        throw new Error('Strategie opgehaald maar niet gevonden');
+      }
+
+      onUpdated && onUpdated(final.strategy);
+
+      setJustUpdated(true);
+      setTimeout(() => setJustUpdated(false), 2500);
+
+    } catch (err) {
+      console.error('❌ AI fout:', err);
+      setError('AI generatie mislukt.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (status?.state !== 'SUCCESS') {
-      throw new Error('AI duurde te lang');
-    }
-
-    // 3. Strategy opnieuw ophalen
-    const final = await fetchStrategyBySetup(setup_id);
-
-    if (!final?.strategy) {
-      throw new Error('Strategie opgehaald maar niet gevonden');
-    }
-
-    // 4. UI updaten
-    onUpdated && onUpdated(final.strategy);
-
-    setJustUpdated(true);
-    setTimeout(() => setJustUpdated(false), 2500);
-
-  } catch (err) {
-    console.error('❌ AI fout:', err);
-    setError('AI generatie mislukt.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // -------------------------------------------------------------
+  // -----------------------------
   // UI
-  // -------------------------------------------------------------
+  // -----------------------------
   return (
     <>
       <StrategyEditModal
@@ -146,14 +149,10 @@ const handleGenerate = async () => {
         `}
       >
 
-        {/* AI Loading Overlay (nu met AILoader component!) */}
+        {/* AI Loading Overlay */}
         {loading && (
           <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
-            <AILoader
-              variant="dots"
-              size="md"
-              text="AI strategie genereren…"
-            />
+            <AILoader variant="dots" size="md" text="AI strategie genereren…" />
           </div>
         )}
 
@@ -192,7 +191,7 @@ const handleGenerate = async () => {
           </div>
         )}
 
-        {/* AI EXPLANATION — enkel AI inzicht */}
+        {/* AI INSIGHT */}
         {ai_explanation && (
           <div className="
             text-xs text-purple-600 dark:text-purple-300
@@ -206,7 +205,6 @@ const handleGenerate = async () => {
           </div>
         )}
 
-        {/* ERROR */}
         {error && (
           <p className="text-red-600 text-sm mt-2">{error}</p>
         )}
@@ -221,9 +219,7 @@ const handleGenerate = async () => {
               disabled:opacity-50 flex items-center gap-2
             "
           >
-            {loading && (
-              <AILoader variant="spinner" size="sm" text="" />
-            )}
+            {loading && <AILoader variant="spinner" size="sm" />}
             🔁 Genereer strategie (AI)
           </button>
 

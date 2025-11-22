@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Bot } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import CardWrapper from '@/components/ui/CardWrapper';
 import AILoader from '@/components/ui/AILoader';
-
-// ⬅️ BELANGRIJK: juiste functie importeren!
 import { fetchLastStrategy } from '@/lib/api/strategy';
 
 export default function TradingBotCard() {
@@ -14,7 +12,7 @@ export default function TradingBotCard() {
   const [error, setError] = useState('');
 
   // -------------------------------------------------------------
-  // Load last strategy (met veilige fallback)
+  // Load last strategy
   // -------------------------------------------------------------
   useEffect(() => {
     async function load() {
@@ -24,7 +22,6 @@ export default function TradingBotCard() {
 
         const data = await fetchLastStrategy();
 
-        // backend geeft direct strategy terug, niet {strategy: ...}
         if (data && typeof data === 'object' && !data.message) {
           setStrategy(data);
         } else {
@@ -43,91 +40,90 @@ export default function TradingBotCard() {
   }, []);
 
   // -------------------------------------------------------------
-  // Render
+  // UI (CardWrapper 2.5)
   // -------------------------------------------------------------
   return (
-    <Card className="bg-purple-100 dark:bg-purple-900 shadow-lg">
-      <CardContent className="p-4">
+    <CardWrapper>
+      <div
+        className="
+          p-5 rounded-xl
+          border border-[var(--card-border)]
+          bg-[var(--card-bg)]
+          shadow-sm
+          transition-all
+          hover:shadow-md hover:-translate-y-[1px]
+        "
+      >
+        
+        {/* HEADER */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900 shadow-sm">
+            <Bot className="w-5 h-5 text-purple-600 dark:text-purple-300" />
+          </div>
 
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-2">
-          <Bot className="text-purple-700 dark:text-purple-300 w-5 h-5" />
-          <span className="text-sm font-semibold text-purple-900 dark:text-purple-200">
+          <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
             AI TradingBot
-          </span>
+          </h2>
         </div>
 
-        {/* Loader */}
+        {/* LOADER */}
         {loading && (
           <div className="flex justify-center py-4">
             <AILoader variant="dots" size="md" text="Strategy laden…" />
           </div>
         )}
 
-        {/* Error */}
+        {/* ERROR */}
         {!loading && error && (
-          <p className="text-sm text-red-700">{error}</p>
+          <p className="text-sm text-red-600">{error}</p>
         )}
 
-        {/* Empty state */}
+        {/* EMPTY STATE */}
         {!loading && !error && !strategy && (
-          <p className="text-sm text-gray-800 dark:text-gray-200 italic">
+          <p className="text-sm italic text-[var(--text-light)]">
             Nog geen strategie beschikbaar.
           </p>
         )}
 
-        {/* Last strategy */}
+        {/* STRATEGY DETAILS */}
         {!loading && strategy && (
-          <div className="space-y-1 text-sm">
-            <p className="text-gray-800 dark:text-gray-100">
-              <strong>Setup:</strong> {strategy.setup_name || '-'}
-            </p>
+          <div className="space-y-[6px] text-sm text-[var(--text-dark)]">
 
-            <p className="text-gray-800 dark:text-gray-100">
-              <strong>Type:</strong> {strategy.strategy_type || '-'}
-            </p>
-
-            <p className="text-gray-800 dark:text-gray-100">
-              <strong>Asset:</strong> {strategy.symbol || '-'}
-            </p>
-
-            <p className="text-gray-800 dark:text-gray-100">
-              <strong>Timeframe:</strong> {strategy.timeframe || '-'}
-            </p>
+            <p><strong>Setup:</strong> {strategy.setup_name || '-'}</p>
+            <p><strong>Type:</strong> {strategy.strategy_type || '-'}</p>
+            <p><strong>Asset:</strong> {strategy.symbol || '-'}</p>
+            <p><strong>Timeframe:</strong> {strategy.timeframe || '-'}</p>
 
             {strategy.entry && (
-              <p className="text-gray-800 dark:text-gray-100">
-                <strong>Entry:</strong> {strategy.entry}
-              </p>
+              <p><strong>Entry:</strong> {strategy.entry}</p>
             )}
 
             {Array.isArray(strategy.targets) && strategy.targets.length > 0 && (
-              <p className="text-gray-800 dark:text-gray-100">
+              <p>
                 <strong>Targets:</strong> {strategy.targets.join(', ')}
               </p>
             )}
 
             {strategy.stop_loss && (
-              <p className="text-gray-800 dark:text-gray-100">
-                <strong>SL:</strong> {strategy.stop_loss}
-              </p>
+              <p><strong>SL:</strong> {strategy.stop_loss}</p>
             )}
 
             {strategy.ai_explanation && (
               <p
                 className="
-                text-xs text-purple-800 dark:text-purple-200 
-                italic mt-2 bg-purple-50/50 dark:bg-purple-900/30 
-                p-2 rounded border border-purple-200/40 dark:border-purple-800
-              "
+                  text-xs italic mt-2 p-2 rounded-lg
+                  bg-purple-100/60 dark:bg-purple-900/40
+                  text-purple-700 dark:text-purple-200
+                  border border-purple-200/40 dark:border-purple-800
+                "
               >
-                🤖 {strategy.ai_explanation.slice(0, 140)}…
+                🤖 {strategy.ai_explanation.slice(0, 150)}…
               </p>
             )}
           </div>
         )}
 
-      </CardContent>
-    </Card>
+      </div>
+    </CardWrapper>
   );
 }

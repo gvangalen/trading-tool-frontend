@@ -3,16 +3,20 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/lib/config';
 
+// Lucide Icons (voor lijst)
+import { TrendingUp, TrendingDown, Scale, Brain, Filter } from 'lucide-react';
+
 export default function TopSetupsMini() {
   const [topSetups, setTopSetups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendFilter, setTrendFilter] = useState('all');
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // -----------------------------
+  // Data ophalen
+  // -----------------------------
   useEffect(() => {
     loadTopSetups();
-
-    // ⏱️ Auto-refresh elke 60 sec
     const interval = setInterval(() => loadTopSetups(), 60000);
     return () => clearInterval(interval);
   }, []);
@@ -24,15 +28,13 @@ export default function TopSetupsMini() {
 
       try {
         res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
-        if (!res.ok) throw new Error('Top setups endpoint faalt');
+        if (!res.ok) throw new Error('Top endpoint faalt');
       } catch {
-        console.warn('⚠️ /api/setups/top faalt, fallback naar /api/setups');
         res = await fetch(`${API_BASE_URL}/api/setups`);
-        if (!res.ok) throw new Error('Fallback endpoint faalt ook');
+        if (!res.ok) throw new Error('Fallback faalt');
       }
 
       const data = await res.json();
-
       const setups = Array.isArray(data)
         ? data
         : Array.isArray(data.setups)
@@ -48,28 +50,25 @@ export default function TopSetupsMini() {
       setLastUpdated(new Date());
     } catch (error) {
       console.error('❌ Fout bij laden setups:', error);
-      setTopSetups([
-        {
-          id: 'fallback', // string ID, let op consistentie met backend data
-          name: 'Voorbeeld Setup',
-          trend: 'neutral',
-          indicators: 'RSI, Volume',
-          score: 0,
-        },
-      ]);
+      setTopSetups([]);
     } finally {
       setLoading(false);
     }
   }
 
-  // Filter op trend en top 3 per filter
+  // -----------------------------
+  // Filter
+  // -----------------------------
   const filteredSetups = topSetups
     .filter((s) => trendFilter === 'all' || s.trend === trendFilter)
     .slice(0, 3);
 
+  // -----------------------------
+  // Loading / Empty states
+  // -----------------------------
   if (loading) {
     return (
-      <div className="text-gray-500 text-sm text-center py-4">
+      <div className="text-[var(--text-light)] text-sm text-center py-4">
         📡 Setups laden...
       </div>
     );
@@ -77,86 +76,102 @@ export default function TopSetupsMini() {
 
   if (topSetups.length === 0) {
     return (
-      <div className="text-gray-500 text-sm text-center py-4">
+      <div className="text-[var(--text-light)] text-sm text-center py-4">
         ⚠️ Geen actieve setups gevonden.
       </div>
     );
   }
 
+  // -----------------------------
+  // Trend icon functie
+  // -----------------------------
+  const trendIcon = (trend) => {
+    switch (trend) {
+      case 'bullish':
+        return <TrendingUp size={14} className="text-green-600" />;
+      case 'bearish':
+        return <TrendingDown size={14} className="text-red-600" />;
+      default:
+        return <Scale size={14} className="text-gray-500" />;
+    }
+  };
+
+  // -----------------------------
+  // Component
+  // -----------------------------
   return (
-    <div className="space-y-4 text-left text-sm">
+    <div className="space-y-4 text-sm">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h4 className="font-semibold">🏆 Top Setups</h4>
+        <h4 className="font-semibold text-[var(--text-dark)] flex items-center gap-2">
+          <Brain size={16} className="text-[var(--primary-dark)]" />
+          Top Setups
+        </h4>
+
         {lastUpdated && (
-          <span className="text-xs text-gray-500 italic">
-            Laatst geüpdatet: {lastUpdated.toLocaleTimeString()}
+          <span className="text-xs text-[var(--text-light)] italic">
+            {lastUpdated.toLocaleTimeString()}
           </span>
         )}
       </div>
 
-      {/* 🔍 Filter */}
+      {/* Filter */}
       <div className="flex items-center gap-2">
-        <label htmlFor="trendFilter" className="text-xs">
-          Filter:
-        </label>
+        <Filter size={14} className="text-[var(--text-light)]" />
         <select
-          id="trendFilter"
           value={trendFilter}
           onChange={(e) => setTrendFilter(e.target.value)}
-          className="border p-1 rounded text-xs"
+          className="
+            text-xs px-2 py-1 rounded-lg border border-[var(--border)]
+            bg-[var(--bg-soft)]
+            text-[var(--text-dark)]
+            focus:ring-1 focus:ring-[var(--primary)]
+            cursor-pointer
+          "
         >
-          <option value="all">🔁 Alle</option>
-          <option value="bullish">📈 Bullish</option>
-          <option value="bearish">📉 Bearish</option>
-          <option value="neutral">⚖️ Neutraal</option>
+          <option value="all">Alle trends</option>
+          <option value="bullish">Bullish</option>
+          <option value="bearish">Bearish</option>
+          <option value="neutral">Neutraal</option>
         </select>
       </div>
 
-      {/* 📋 Setups */}
-      <ul className="list-disc list-inside space-y-1">
+      {/* Setup lijst */}
+      <ul className="space-y-2">
         {filteredSetups.length === 0 ? (
-          <li className="text-gray-400">Geen setups voor deze trend.</li>
+          <p className="text-[var(--text-light)] text-sm italic">
+            Geen setups voor deze trend.
+          </p>
         ) : (
-          filteredSetups.map((setup) => {
-            const trendIcon =
-              setup.trend === 'bullish'
-                ? '📈'
-                : setup.trend === 'bearish'
-                ? '📉'
-                : '⚖️';
+          filteredSetups.map((setup) => (
+            <li
+              key={setup.id}
+              className="
+                bg-[var(--bg-soft)] hover:bg-white 
+                border border-[var(--border)]
+                rounded-xl px-3 py-2 flex items-center justify-between
+                transition-all shadow-sm
+              "
+            >
+              <div className="flex items-center gap-2">
+                {trendIcon(setup.trend)}
 
-            const scoreColor =
-              setup.score >= 2
-                ? 'text-green-600'
-                : setup.score <= -2
-                ? 'text-red-600'
-                : 'text-gray-600';
-
-            // Veilig eerste indicator pakken
-            const firstIndicator =
-              typeof setup.indicators === 'string' && setup.indicators.length > 0
-                ? setup.indicators.split(',')[0]
-                : '-';
-
-            return (
-              <li key={setup.id} className="hover:bg-gray-50 rounded px-1 py-1">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <strong>{setup.name}</strong> {trendIcon}
-                    <span
-                      className="ml-2 text-xs text-gray-500"
-                      title={`Indicators: ${setup.indicators || '-'}`}
-                    >
-                      🧠 {firstIndicator}
-                    </span>
-                  </div>
-                  <span className={`font-semibold ${scoreColor}`}>
-                    {setup.score?.toFixed(1) ?? '-'}
+                <div>
+                  <span className="font-semibold text-[var(--text-dark)]">
+                    {setup.name}
+                  </span>
+                  <span className="ml-2 text-xs text-[var(--text-light)]">
+                    {setup.indicators?.split(',')[0] || '–'}
                   </span>
                 </div>
-              </li>
-            );
-          })
+              </div>
+
+              <span className="font-semibold text-[var(--text-dark)]">
+                {setup.score?.toFixed(1) ?? '-'}
+              </span>
+            </li>
+          ))
         )}
       </ul>
     </div>

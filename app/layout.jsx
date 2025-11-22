@@ -2,8 +2,8 @@ import 'rc-slider/assets/index.css';
 import '../styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 
-import NavBar from '@/components/ui/NavBar';     // ← DIT WORDT DE NIEUWE SIDEBAR
-import TopBar from '@/components/ui/TopBar';     // ← NIEUWE TOPBAR
+import NavBar from '@/components/ui/NavBar';     // Sidebar
+import TopBar from '@/components/ui/TopBar';     // Topbar
 
 export const metadata = {
   title: 'Trading Dashboard',
@@ -13,24 +13,26 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body className="bg-background text-foreground">
+      <body className="bg-gray-50 text-gray-900">
 
         <Toaster position="top-right" />
 
         <div className="flex">
 
-          {/* SIDEBAR */}
+          {/* SIDEBAR (fixed) */}
           <NavBar />
 
           {/* PAGE CONTENT */}
-          <div className="flex-1 ml-64">  
-            {/* TOPBAR */}
+          <div className="flex-1 ml-64">
+
+            {/* TOPBAR (fixed) */}
             <TopBar />
 
-            {/* MAIN */}
-            <main className="px-6 py-6">
+            {/* MAIN CONTENT */}
+            <main className="px-6 pt-20 pb-6">
               {children}
             </main>
+
           </div>
 
         </div>

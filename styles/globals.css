@@ -8,14 +8,21 @@
 
 /* BRAND THEME VARIABLES */
 :root {
-  /* Primary Brand (Blue theme) */
+  /* Primary Brand (Blue) */
   --primary: #3B82F6;             /* Premium blauw */
-  --primary-light: #E9F2FF;       /* Light accent */
-  --primary-dark: #1E40AF;        /* Voor active states */
+  --primary-light: #E9F2FF;       /* Sidebar + soft backgrounds */
+  --primary-hover: #DCE9FF;       /* Hover state sidebar */
+  --primary-dark: #1E40AF;        /* Actieve item kleur */
 
   /* Backgrounds */
-  --bg: #FFFFFF;
-  --bg-soft: #F7FAFF;
+  --bg: #FFFFFF;                  /* Hoofd-achtergrond */
+  --bg-soft: #F7FAFF;             /* Heel zachte grijs/blauw */
+
+  /* UI Cards */
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
+  --card-radius: 14px;
+  --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
   /* Borders */
   --border: #E5E7EB;
@@ -24,39 +31,49 @@
   --text-dark: #1F2937;
   --text-light: #6B7280;
 
-  /* Success / Danger */
+  /* Status colors */
   --green: #10B981;
   --green-light: #D1FAE5;
   --red: #EF4444;
   --red-light: #FEE2E2;
 
-  /* UI shape */
+  /* Radius + Shadows */
   --radius: 12px;
   --radius-sm: 8px;
-
-  /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
   --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
 }
 
-/* DARK MODE (later optioneel) */
+/* DARK MODE (future optional) */
 .dark {
   --primary: #1F6FEB;
   --primary-light: #1A2634;
+  --primary-hover: #223041;
   --primary-dark: #1158C7;
 
   --bg: #0D1117;
   --bg-soft: #161B22;
+
+  --card-bg: #161B22;
+  --card-border: #30363D;
 
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
 
   --border: #30363D;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.25);
-  --shadow-lg: 0 4px 20px rgba(0,0,0,0.30);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.30);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.35);
+}
+
+/* CARDS – UNIVERSAL */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
 }
 
 /* ANIMATIONS */

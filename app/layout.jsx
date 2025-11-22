@@ -1,7 +1,9 @@
-import 'rc-slider/assets/index.css';        // ✅ rc-slider CSS importeren
-import '../styles/globals.css';             // ✅ Tailwind CSS
-import NavBar from '@/components/ui/NavBar';
+import 'rc-slider/assets/index.css';
+import '../styles/globals.css';
 import { Toaster } from 'react-hot-toast';
+
+import NavBar from '@/components/ui/NavBar';     // ← DIT WORDT DE NIEUWE SIDEBAR
+import TopBar from '@/components/ui/TopBar';     // ← NIEUWE TOPBAR
 
 export const metadata = {
   title: 'Trading Dashboard',
@@ -12,9 +14,27 @@ export default function RootLayout({ children }) {
   return (
     <html lang="nl">
       <body className="bg-background text-foreground">
+
         <Toaster position="top-right" />
-        <NavBar />
-        <main className="p-4">{children}</main>
+
+        <div className="flex">
+
+          {/* SIDEBAR */}
+          <NavBar />
+
+          {/* PAGE CONTENT */}
+          <div className="flex-1 ml-64">  
+            {/* TOPBAR */}
+            <TopBar />
+
+            {/* MAIN */}
+            <main className="px-6 py-6">
+              {children}
+            </main>
+          </div>
+
+        </div>
+
       </body>
     </html>
   );

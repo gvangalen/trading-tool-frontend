@@ -4,57 +4,150 @@ import React from 'react';
 import CardWrapper from './CardWrapper';
 import clsx from 'clsx';
 
+// Luxe lucide icons
+import {
+  TrendingUp,
+  TrendingDown,
+  BarChart2,
+  ChevronUp,
+  ChevronDown,
+  Circle,
+  Activity,
+} from "lucide-react";
+
 export default function TechnicalTableDesign({ data }) {
   return (
-    <CardWrapper title="📊 Technische Analyse">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-xs uppercase text-gray-500 dark:text-gray-400">
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="px-4 py-2 font-semibold">Asset</th>
-              <th className="px-4 py-2 font-semibold">Timeframe</th>
-              <th className="px-4 py-2 font-semibold">Volume</th>
-              <th className="px-4 py-2 font-semibold">RSI</th>
-              <th className="px-4 py-2 font-semibold">200MA</th>
-              <th className="px-4 py-2 font-semibold">Trend</th>
+    <CardWrapper
+      title={
+        <div className="flex items-center gap-2">
+          <Activity className="w-5 h-5 text-[var(--text-dark)]" />
+          <span>Technische Analyse</span>
+        </div>
+      }
+    >
+      <div className="overflow-x-auto mt-2">
+        <table className="w-full text-sm">
+
+          {/* ---------------- HEADER ---------------- */}
+          <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
+            <tr className="border-b border-[var(--border)]">
+              <th className="px-4 py-3 font-semibold">
+                <div className="flex items-center gap-2">
+                  <Circle className="w-3 h-3" /> Asset
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold">Timeframe</th>
+              <th className="px-4 py-3 font-semibold">Volume</th>
+              <th className="px-4 py-3 font-semibold">RSI</th>
+              <th className="px-4 py-3 font-semibold">200MA</th>
+              <th className="px-4 py-3 font-semibold">Trend</th>
             </tr>
           </thead>
+
+          {/* ---------------- BODY ---------------- */}
           <tbody>
-            {data.map((row) => (
-              <tr
-                key={row.asset + row.timeframe}
-                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-              >
-                <td className="px-4 py-2 font-medium text-gray-900 dark:text-white">{row.asset}</td>
-                <td className="px-4 py-2">{row.timeframe}</td>
-                <td className="px-4 py-2">
-                  {row.volume} {row.volumeTrend === 'up' ? '↑' : row.volumeTrend === 'down' ? '↓' : ''}
-                </td>
-                <td
-                  className={clsx(
-                    'px-4 py-2 font-semibold',
-                    row.rsi >= 70
-                      ? 'text-red-500'
-                      : row.rsi <= 30
-                      ? 'text-green-500'
-                      : 'text-yellow-500'
-                  )}
+            {data.map((row) => {
+              const VolumeIcon =
+                row.volumeTrend === "up"
+                  ? ChevronUp
+                  : row.volumeTrend === "down"
+                  ? ChevronDown
+                  : Circle;
+
+              const TrendIcon =
+                row.trend === "Up"
+                  ? TrendingUp
+                  : row.trend === "Down"
+                  ? TrendingDown
+                  : BarChart2;
+
+              return (
+                <tr
+                  key={row.asset + row.timeframe}
+                  className="
+                    border-b border-[var(--border)]
+                    hover:bg-[var(--bg-soft)]
+                    transition-all
+                  "
                 >
-                  {row.rsi}
-                </td>
-                <td className="px-4 py-2">
-                  <span
+
+                  {/* Asset */}
+                  <td className="px-4 py-3 font-medium text-[var(--text-dark)]">
+                    <div className="flex items-center gap-2">
+                      <Circle className="w-4 h-4 text-[var(--text-light)]" />
+                      {row.asset}
+                    </div>
+                  </td>
+
+                  {/* Timeframe */}
+                  <td className="px-4 py-3 text-[var(--text-dark)]">
+                    {row.timeframe}
+                  </td>
+
+                  {/* Volume + trend */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <VolumeIcon
+                        className={clsx(
+                          "w-4 h-4",
+                          row.volumeTrend === "up"
+                            ? "text-green-600"
+                            : row.volumeTrend === "down"
+                            ? "text-red-500"
+                            : "text-gray-400"
+                        )}
+                      />
+                      {Number(row.volume).toLocaleString()}
+                    </div>
+                  </td>
+
+                  {/* RSI ± kleurcode */}
+                  <td
                     className={clsx(
-                      'font-semibold',
-                      row.ma200 === 'Above' ? 'text-green-600' : 'text-red-600'
+                      "px-4 py-3 font-semibold",
+                      row.rsi >= 70
+                        ? "text-red-500"
+                        : row.rsi <= 30
+                        ? "text-green-600"
+                        : "text-yellow-500"
                     )}
                   >
-                    {row.ma200}
-                  </span>
-                </td>
-                <td className="px-4 py-2 font-semibold">{row.trend}</td>
-              </tr>
-            ))}
+                    {row.rsi}
+                  </td>
+
+                  {/* 200MA */}
+                  <td className="px-4 py-3">
+                    <span
+                      className={clsx(
+                        "font-semibold flex items-center gap-1",
+                        row.ma200 === "Above"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      )}
+                    >
+                      <Circle className="w-3 h-3" />
+                      {row.ma200}
+                    </span>
+                  </td>
+
+                  {/* Trend */}
+                  <td
+                    className={clsx(
+                      "px-4 py-3 font-semibold flex items-center gap-2",
+                      row.trend === "Up"
+                        ? "text-green-600"
+                        : row.trend === "Down"
+                        ? "text-red-600"
+                        : "text-gray-500"
+                    )}
+                  >
+                    <TrendIcon className="w-4 h-4" />
+                    {row.trend}
+                  </td>
+
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

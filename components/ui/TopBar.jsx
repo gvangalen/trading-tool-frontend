@@ -30,13 +30,16 @@ export default function TopBar() {
         px-8
         w-[calc(100%-16rem)] ml-64
 
-        /* ✨ Glassmorphism */
-        bg-[var(--bg)]/80 
+        /* ✨ Glass effect */
+        bg-[var(--bg)]/70
         backdrop-blur-xl
 
-        /* Border + schaduw */
+        /* Border + soft shadow */
         border-b border-[var(--border)]
-        shadow-[0_2px_6px_rgba(0,0,0,0.04)]
+        shadow-[0_2px_6px_rgba(0,0,0,0.05)]
+
+        /* Match sidebar curve */
+        rounded-bl-3xl
       "
     >
       {/* Titel */}
@@ -44,18 +47,19 @@ export default function TopBar() {
         {title}
       </h1>
 
-      {/* Rechterkant */}
+      {/* Rechtersectie */}
       <div className="flex items-center gap-6">
-        
+
         {/* Searchbar */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2
-            rounded-xl border border-[var(--border)]
+            rounded-xl
+            border border-[var(--border)]
 
             bg-[var(--bg-soft)]
-            transition-all duration-200
+            transition-all duration-200 ease-out
 
             hover:bg-white
             hover:shadow-sm
@@ -77,7 +81,7 @@ export default function TopBar() {
           />
         </div>
 
-        {/* Avatar */}
+        {/* Avatar Dropdown */}
         <AvatarMenu />
       </div>
     </header>

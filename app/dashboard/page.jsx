@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 
-// 📦 Components
 import DashboardGauges from '@/components/dashboard/DashboardGauges';
 import TradingAdvice from '@/components/dashboard/TradingAdvice';
 import TechnicalDayTableForDashboard from '@/components/technical/TechnicalDayTableForDashboard';
@@ -13,7 +12,6 @@ import RightSidebarCard from '@/components/cards/RightSidebarCard';
 import CardWrapper from '@/components/ui/CardWrapper';
 import MarketSummaryForDashboard from '@/components/market/MarketSummaryForDashboard';
 
-// 🧠 Hooks
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useMacroData } from '@/hooks/useMacroData';
 import { useMarketData } from '@/hooks/useMarketData';
@@ -35,34 +33,35 @@ export default function DashboardPage() {
   const { sevenDayData, btcLive } = useMarketData();
 
   useEffect(() => {
-    const handleScroll = () => setShowScroll(window.scrollY > 300);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handler = () => setShowScroll(window.scrollY > 300);
+    window.addEventListener('scroll', handler);
+    return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = () =>
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
-    <div className="p-6">
+    <div className="p-6 pt-24 bg-[var(--bg)] text-[var(--text-dark)] min-h-screen">
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 w-full">
 
-        {/* 🔽 Linkerkolom */}
         <div className="space-y-10">
 
           <DashboardHighlights />
 
           <DashboardGauges />
 
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
-            <MarketSummaryForDashboard sevenDayData={sevenDayData} btcLive={btcLive} />
+          <CardWrapper title="💰 Market Data">
+            <MarketSummaryForDashboard
+              sevenDayData={sevenDayData}
+              btcLive={btcLive}
+            />
           </CardWrapper>
 
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
+          <CardWrapper title="📈 Technische Analyse">
             {technicalLoading ? (
-              <p className="text-gray-500">⏳ Laden...</p>
+              <p className="text-[var(--text-light)]">⏳ Laden...</p>
             ) : (
               <TechnicalDayTableForDashboard
                 data={technicalData}
@@ -72,12 +71,11 @@ export default function DashboardPage() {
             )}
           </CardWrapper>
 
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
+          <CardWrapper title="🌍 Macro Indicatoren">
             {macroLoading ? (
-              <p className="text-gray-500">⏳ Laden...</p>
+              <p className="text-[var(--text-light)]">⏳ Laden...</p>
             ) : macroError ? (
-              <p className="text-red-600">{macroError}</p>
+              <p className="text-[var(--red)]">{macroError}</p>
             ) : (
               <MacroSummaryTableForDashboard
                 data={macroData}
@@ -89,32 +87,34 @@ export default function DashboardPage() {
             )}
           </CardWrapper>
 
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
+          <CardWrapper title="🚀 AI Tradingadvies">
             <TradingAdvice />
           </CardWrapper>
 
-          <CardWrapper>
-            <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
+          <CardWrapper title="🏆 Top 3 Setups">
             <TopSetupsMini />
           </CardWrapper>
 
         </div>
 
-        {/* 🧠 Sticky rechterzijde */}
         <div className="hidden xl:block w-full max-w-xs">
-          <div className="sticky top-20">
+          <div className="sticky top-24">
             <RightSidebarCard />
           </div>
         </div>
 
       </div>
 
-      {/* Scroll to top */}
       {showScroll && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-md hover:bg-blue-700 transition"
+          className="
+            fixed bottom-6 right-6
+            bg-[var(--primary)] text-white
+            p-3 rounded-full shadow-md
+            hover:bg-[var(--primary-dark)]
+            transition
+          "
         >
           ⬆️
         </button>

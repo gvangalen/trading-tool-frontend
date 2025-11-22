@@ -16,15 +16,12 @@ import MarketSummaryForDashboard from '@/components/market/MarketSummaryForDashb
 // 🧠 Hooks
 import { useTechnicalData } from '@/hooks/useTechnicalData';
 import { useMacroData } from '@/hooks/useMacroData';
-import { useMarketData } from '@/hooks/useMarketData'; // ✅ Toegevoegd
+import { useMarketData } from '@/hooks/useMarketData';
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  // ✅ Technische data (correct veldnamen)
   const { technicalData, handleRemove, loading: technicalLoading } = useTechnicalData();
-
-  // ✅ Macro data
   const {
     macroData,
     loading: macroLoading,
@@ -35,7 +32,6 @@ export default function DashboardPage() {
     getExplanation,
   } = useMacroData();
 
-  // ✅ Market data
   const { sevenDayData, btcLive } = useMarketData();
 
   useEffect(() => {
@@ -47,106 +43,82 @@ export default function DashboardPage() {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
-    <main className="bg-gray-50 dark:bg-black min-h-screen py-8 px-4">
-      <div className="relative max-w-screen-xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+    <div className="p-6">
 
-          {/* 🔽 Linker hoofdkolom */}
-          <div className="space-y-10">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 w-full">
 
-            {/* 🔷 Highlights */}
-            <section>
-              <DashboardHighlights />
-            </section>
+        {/* 🔽 Linkerkolom */}
+        <div className="space-y-10">
 
-            {/* 📊 Meters */}
-            <section>
-              <DashboardGauges />
-            </section>
+          <DashboardHighlights />
 
-            {/* 💰 Market Data */}
-            <section>
-              <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
-                <MarketSummaryForDashboard
-                  sevenDayData={sevenDayData}
-                  btcLive={btcLive}
-                />
-              </CardWrapper>
-            </section>
+          <DashboardGauges />
 
-            {/* 📈 Technische Analyse */}
-            <section>
-              <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
-                {technicalLoading ? (
-                  <p className="text-gray-500">⏳ Laden...</p>
-                ) : (
-                  <TechnicalDayTableForDashboard
-                    data={technicalData}
-                    loading={technicalLoading}
-                    onRemove={handleRemove}
-                  />
-                )}
-              </CardWrapper>
-            </section>
+          <CardWrapper>
+            <h2 className="text-xl font-semibold mb-2">💰 Market Data</h2>
+            <MarketSummaryForDashboard sevenDayData={sevenDayData} btcLive={btcLive} />
+          </CardWrapper>
 
-            {/* 🌍 Macro Indicatoren */}
-            <section>
-              <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
-                {macroLoading ? (
-                  <p className="text-gray-500">⏳ Laden...</p>
-                ) : macroError ? (
-                  <p className="text-red-600">{macroError}</p>
-                ) : (
-                  <MacroSummaryTableForDashboard
-                    data={macroData}
-                    calculateScore={calculateMacroScore}
-                    getExplanation={getExplanation}
-                    onEdit={handleEdit}
-                    onRemove={handleMacroRemove}
-                  />
-                )}
-              </CardWrapper>
-            </section>
+          <CardWrapper>
+            <h2 className="text-xl font-semibold mb-2">📈 Technische Analyse</h2>
+            {technicalLoading ? (
+              <p className="text-gray-500">⏳ Laden...</p>
+            ) : (
+              <TechnicalDayTableForDashboard
+                data={technicalData}
+                loading={technicalLoading}
+                onRemove={handleRemove}
+              />
+            )}
+          </CardWrapper>
 
-            {/* 🚀 AI Advies */}
-            <section>
-              <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
-                <TradingAdvice />
-              </CardWrapper>
-            </section>
+          <CardWrapper>
+            <h2 className="text-xl font-semibold mb-2">🌍 Macro Indicatoren</h2>
+            {macroLoading ? (
+              <p className="text-gray-500">⏳ Laden...</p>
+            ) : macroError ? (
+              <p className="text-red-600">{macroError}</p>
+            ) : (
+              <MacroSummaryTableForDashboard
+                data={macroData}
+                calculateScore={calculateMacroScore}
+                getExplanation={getExplanation}
+                onEdit={handleEdit}
+                onRemove={handleMacroRemove}
+              />
+            )}
+          </CardWrapper>
 
-            {/* 🏆 Top 3 Setups */}
-            <section>
-              <CardWrapper>
-                <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
-                <TopSetupsMini />
-              </CardWrapper>
-            </section>
-          </div>
+          <CardWrapper>
+            <h2 className="text-xl font-semibold mb-2">🚀 AI Tradingadvies</h2>
+            <TradingAdvice />
+          </CardWrapper>
 
-          {/* 🧠 Sticky rechterzijde met rapport/tradingbot */}
-          <div className="hidden xl:block w-full max-w-xs">
-            <div className="sticky top-6 min-h-full">
-              <RightSidebarCard />
-            </div>
+          <CardWrapper>
+            <h2 className="text-xl font-semibold mb-2">🏆 Top 3 Setups</h2>
+            <TopSetupsMini />
+          </CardWrapper>
+
+        </div>
+
+        {/* 🧠 Sticky rechterzijde */}
+        <div className="hidden xl:block w-full max-w-xs">
+          <div className="sticky top-20">
+            <RightSidebarCard />
           </div>
         </div>
+
       </div>
 
-      {/* 🔝 Scroll naar boven */}
+      {/* Scroll to top */}
       {showScroll && (
         <button
           onClick={scrollToTop}
           className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-md hover:bg-blue-700 transition"
-          title="Terug naar boven"
         >
           ⬆️
         </button>
       )}
-    </main>
+    </div>
   );
 }

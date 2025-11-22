@@ -1,9 +1,65 @@
-/* styles/globals.css */
+/* ================================
+   GLOBAL THEME (Fintech 2.0)
+================================ */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* BRAND THEME VARIABLES */
+:root {
+  /* Primary Brand (Blue theme) */
+  --primary: #3B82F6;             /* Premium blauw */
+  --primary-light: #E9F2FF;       /* Light accent */
+  --primary-dark: #1E40AF;        /* Voor active states */
+
+  /* Backgrounds */
+  --bg: #FFFFFF;
+  --bg-soft: #F7FAFF;
+
+  /* Borders */
+  --border: #E5E7EB;
+
+  /* Text */
+  --text-dark: #1F2937;
+  --text-light: #6B7280;
+
+  /* Success / Danger */
+  --green: #10B981;
+  --green-light: #D1FAE5;
+  --red: #EF4444;
+  --red-light: #FEE2E2;
+
+  /* UI shape */
+  --radius: 12px;
+  --radius-sm: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* DARK MODE (later optioneel) */
+.dark {
+  --primary: #1F6FEB;
+  --primary-light: #1A2634;
+  --primary-dark: #1158C7;
+
+  --bg: #0D1117;
+  --bg-soft: #161B22;
+
+  --text-dark: #E6EDF3;
+  --text-light: #9BA1A6;
+
+  --border: #30363D;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.25);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.30);
+}
+
+/* ANIMATIONS */
 @keyframes fade-slide {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -12,4 +68,3 @@
 .animate-fade-slide {
   animation: fade-slide 0.12s ease-out;
 }
-

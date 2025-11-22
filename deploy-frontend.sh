@@ -1,21 +1,26 @@
 #!/bin/bash
-set -e  # Stop direct bij fout
+set -e
 
 echo "📦 Start frontend deploy op $(date)"
 
 # -------------------------
-# 0. LOAD NVM FIRST (essentieel!)
+# 1. Load NVM + export PM2 path
 # -------------------------
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
 
+# Zorg dat PM2 altijd gevonden wordt
+export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
+
+echo "🔧 PM2 pad: $(which pm2 || echo '❌ Niet gevonden')"
+
 # -------------------------
-# 1. Projectmap
+# 2. Projectmap
 # -------------------------
 cd ~/trading-tool-frontend || { echo "❌ Map niet gevonden"; exit 1; }
 
 # -------------------------
-# 2. Stop PM2 proces vóór cleanup
+# 3. Stop PM2 proces vóór cleanup
 # -------------------------
 if pm2 list | grep -q frontend; then
   echo "🛑 Stop frontend..."
@@ -23,59 +28,56 @@ if pm2 list | grep -q frontend; then
 fi
 
 # -------------------------
-# 3. Pull laatste code
+# 4. Pull code
 # -------------------------
-echo "⬇️ Pull laatste code van GitHub..."
+echo "⬇️ Pull laatste code..."
 git fetch origin main
 git reset --hard origin/main
 
 # -------------------------
-# 4. Activeer Node 20
+# 5. Activeer Node 20
 # -------------------------
 nvm use 20 || { echo "❌ Node 20 niet beschikbaar"; exit 1; }
-
-echo "🔢 Node versie: $(node -v)"
-echo "📦 NPM versie: $(npm -v)"
+echo "Node: $(node -v)"
 
 # -------------------------
-# 5. Opschonen
+# 6. Opschonen
 # -------------------------
-echo "🧨 Verwijder node_modules en .next..."
+echo "🧨 Verwijder node_modules + .next..."
 rm -rf node_modules .next package-lock.json
-rm -rf node_modules/.cache 2>/dev/null || true
 
 # -------------------------
-# 6. Dependencies installeren
+# 7. Dependencies installeren
 # -------------------------
 echo "📦 Install dependencies..."
-npm install || { echo "❌ npm install faalde"; exit 1; }
+npm install
 
-echo "💠 Install framer-motion + lucide-react"
+# -------------------------
+# 8. Installeer extra libs (NOOIT overslaan)
+# -------------------------
+echo "➕ Install framer-motion + lucide-react"
 npm install framer-motion lucide-react --legacy-peer-deps
 
 # -------------------------
-# 7. Build
+# 9. Build
 # -------------------------
-echo "🏗️ Build Next.js project..."
+echo "🏗️ Build..."
 npm run build || { echo "❌ Build faalde"; exit 1; }
 
 # -------------------------
-# 8. Build check
+# 10. Check build
 # -------------------------
 if [ ! -f ".next/BUILD_ID" ]; then
-  echo "❌ .next/BUILD_ID ontbreekt → build mislukt"
+  echo "❌ Build ID ontbreekt"
   exit 1
 fi
 
 # -------------------------
-# 9. PM2 start
+# 11. Start PM2
 # -------------------------
-echo "🚀 Start frontend opnieuw..."
+echo "🚀 Start frontend via PM2..."
 pm2 start npm --name "frontend" -- run start
 
-# -------------------------
-# 10. PM2 save
-# -------------------------
 pm2 save
 
-echo "✅ Frontend deployment succesvol afgerond op $(date)"
+echo "✅ Deployment afgerond op $(date)"

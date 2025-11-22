@@ -12,7 +12,8 @@ export default function NavBar() {
     <aside
       className="
         fixed left-0 top-0 h-screen w-64 
-        bg-[var(--bg-sidebar)] border-r border-[var(--border)]
+        bg-[var(--primary-light)] 
+        border-r border-[var(--border)]
         flex flex-col p-4 shadow-sm z-50 select-none
       "
     >
@@ -32,42 +33,37 @@ export default function NavBar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1">
+
         <SidebarLink href="/" active={isActive("/")}>
           🌡️ Scores
         </SidebarLink>
-
         <SidebarLink href="/market" active={isActive("/market")}>
           💰 Market
         </SidebarLink>
-
         <SidebarLink href="/macro" active={isActive("/macro")}>
           🌍 Macro
         </SidebarLink>
-
         <SidebarLink href="/technical" active={isActive("/technical")}>
           📈 Technisch
         </SidebarLink>
-
         <SidebarLink href="/setup" active={isActive("/setup")}>
           ⚙️ Setups
         </SidebarLink>
-
         <SidebarLink href="/strategy" active={isActive("/strategy")}>
           📊 Strategieën
         </SidebarLink>
-
         <SidebarLink href="/report" active={isActive("/report")}>
           📄 Rapport
         </SidebarLink>
+
       </nav>
 
-      {/* ruimte onderin voor evt. future items */}
       <div className="flex-grow" />
     </aside>
   );
 }
 
-/* ---------------------- COMPONENT ---------------------- */
+/* ---------------------- LINKS ---------------------- */
 
 function SidebarLink({ href, active, children }) {
   return (
@@ -78,7 +74,7 @@ function SidebarLink({ href, active, children }) {
         ${
           active
             ? "bg-[var(--primary)] text-white shadow-sm"
-            : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
+            : "text-[var(--text-dark)] hover:bg-[var(--primary-hover)]"
         }
       `}
     >

@@ -2,10 +2,25 @@
 
 export default function CardWrapper({ title, children }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 space-y-4">
+    <div
+      className="
+        card
+        p-6
+        space-y-4
+      "
+      style={{
+        background: "var(--card-bg)",
+        borderRadius: "var(--card-radius)",
+        border: "1px solid var(--card-border)",
+        boxShadow: "var(--card-shadow)",
+      }}
+    >
       {title && (
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <h3 className="text-lg font-semibold" style={{ color: "var(--text-dark)" }}>
+          {title}
+        </h3>
       )}
+
       <div>{children}</div>
     </div>
   );

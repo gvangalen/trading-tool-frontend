@@ -6,6 +6,23 @@ import SetupEditModal from '@/components/setup/SetupEditModal';
 import { generateExplanation } from '@/lib/api/setups';
 import AILoader from '@/components/ui/AILoader';
 
+// Nieuwe Lucide Icons
+import {
+  Star,
+  StarOff,
+  Bot,
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  Clock,
+  User,
+  Brain,
+  DollarSign,
+  Tag,
+  Pencil,
+  Trash,
+} from 'lucide-react';
+
 export default function SetupList({
   setups = [],
   loading,
@@ -15,7 +32,6 @@ export default function SetupList({
   removeSetup,
   reload,
 }) {
-  // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSetup, setSelectedSetup] = useState(null);
 
@@ -24,7 +40,7 @@ export default function SetupList({
   const [justUpdated, setJustUpdated] = useState({});
 
   // ---------------------------------------------------------
-  // 🔍 FILTER SETUPS
+  // 🔍 FILTERS
   // ---------------------------------------------------------
   const filteredSetups = !searchTerm
     ? setups
@@ -33,49 +49,46 @@ export default function SetupList({
       );
 
   // ---------------------------------------------------------
-  // 🤖 GENERATE AI EXPLANATION (met AILoader overlay)
+  // 🤖 AI EXPLANATION GENERATOR
   // ---------------------------------------------------------
   async function handleGenerateExplanation(id) {
     try {
-      setAiLoading((prev) => ({ ...prev, [id]: true }));
-
+      setAiLoading((p) => ({ ...p, [id]: true }));
       await generateExplanation(id);
 
       toast.success('AI-uitleg opgeslagen');
 
-      // Highlight effect
-      setJustUpdated((prev) => ({ ...prev, [id]: true }));
+      // highlight effect
+      setJustUpdated((p) => ({ ...p, [id]: true }));
       setTimeout(() => {
-        setJustUpdated((prev) => ({ ...prev, [id]: false }));
-      }, 2500);
+        setJustUpdated((p) => ({ ...p, [id]: false }));
+      }, 2000);
 
-      if (reload) await reload();
-
+      reload && reload();
     } catch (err) {
       console.error(err);
-      toast.error('❌ Fout bij AI-generatie');
+      toast.error('❌ AI generatie mislukt');
     } finally {
-      setAiLoading((prev) => ({ ...prev, [id]: false }));
+      setAiLoading((p) => ({ ...p, [id]: false }));
     }
   }
 
   // ---------------------------------------------------------
-  // 🗑️ VERWIJDEREN
+  // 🗑️ DELETE SETUP
   // ---------------------------------------------------------
   async function handleRemove(id) {
     try {
       await removeSetup(id);
       toast.success('Setup verwijderd');
-
-      if (reload) await reload();
+      reload && reload();
     } catch (err) {
       console.error(err);
-      toast.error('Verwijderen mislukt.');
+      toast.error('Verwijderen mislukt');
     }
   }
 
   // ---------------------------------------------------------
-  // ✏️ MODAL OPENEN
+  // ✏️ EDIT MODAL
   // ---------------------------------------------------------
   function openEditModal(setup) {
     setSelectedSetup(setup);
@@ -102,102 +115,145 @@ export default function SetupList({
         {filteredSetups.length > 0 ? (
           filteredSetups.map((setup) => {
             const trend = (setup.trend || '').toLowerCase();
-            const trendColor =
+
+            const trendIcon =
               trend === 'bullish'
-                ? 'text-green-600'
+                ? <TrendingUp size={16} className="text-green-600" />
                 : trend === 'bearish'
-                ? 'text-red-500'
-                : 'text-yellow-500';
+                ? <TrendingDown size={16} className="text-red-600" />
+                : <Scale size={16} className="text-yellow-600" />;
 
             return (
               <div
                 key={setup.id}
                 className={`
-                  relative border rounded-lg p-4 bg-white dark:bg-gray-900 shadow transition-all
-                  ${justUpdated[setup.id] ? 'ring-2 ring-green-500 ring-offset-2' : ''}
+                  relative rounded-2xl p-5 
+                  border border-[var(--card-border)]
+                  bg-[var(--card-bg)] shadow-sm
+
+                  transition-all duration-200
+                  hover:shadow-md hover:-translate-y-[2px]
+
+                  ${justUpdated[setup.id] ? 'ring-2 ring-green-500' : ''}
                 `}
               >
-
                 {/* AI overlay */}
                 {aiLoading[setup.id] && (
                   <div className="
-                    absolute inset-0 
-                    bg-white/40 dark:bg-black/30 
-                    backdrop-blur-sm 
-                    z-20 
-                    rounded-lg 
+                    absolute inset-0 rounded-2xl
+                    bg-white/50 dark:bg-black/40
+                    backdrop-blur-sm z-20 
                     flex items-center justify-center
                   ">
                     <AILoader
                       variant="dots"
                       size="md"
-                      text="AI-uitleg genereren…"
+                      text="AI-analyse..."
                     />
                   </div>
                 )}
 
-                {/* FAVORIET */}
+                {/* Favoriet */}
                 <button
-                  className="absolute top-3 right-3 text-2xl"
                   onClick={() => openEditModal({ ...setup, favorite: !setup.favorite })}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500 transition"
                 >
-                  {setup.favorite ? '⭐️' : '☆'}
+                  {setup.favorite ? (
+                    <Star size={20} className="text-yellow-500" />
+                  ) : (
+                    <StarOff size={20} />
+                  )}
                 </button>
 
-                <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
+                {/* Titel */}
+                <h3 className="font-bold text-lg text-[var(--text-dark)] mb-2">
+                  {setup.name}
+                </h3>
 
-                <p className={`text-xs mb-1 ${trendColor}`}>
-                  📊 {setup.trend || 'Onbekend'}
-                </p>
-
-                <p className="text-xs text-gray-500 mb-1">
-                  ⏱️ {setup.timeframe} | 💼 {setup.account_type} | 🧠 {setup.strategy_type}
-                </p>
-
-                <p className="text-xs text-gray-500 mb-1">
-                  💰 Min investering: €{setup.min_investment ?? 0}
-                </p>
-
-                <p className="text-xs text-gray-500 mb-1">
-                  🔁 Dynamic: {setup.dynamic_investment ? '✅' : '❌'}
-                </p>
-
-                <p className="text-xs text-gray-500 mb-1">
-                  🏷️ Tags: {(setup.tags || []).join(', ')}
-                </p>
-
-                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border mb-2">
-                  💬 {setup.explanation || 'Geen uitleg beschikbaar.'}
+                {/* Trend */}
+                <div className="flex items-center gap-2 mb-1 text-sm">
+                  {trendIcon}
+                  <span className="text-[var(--text-light)]">
+                    {setup.trend || 'Onbekend'}
+                  </span>
                 </div>
 
-                {/* AI BUTTON */}
+                {/* Details */}
+                <div className="space-y-1 text-xs text-[var(--text-light)]">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} /> {setup.timeframe}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <User size={14} /> {setup.account_type}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Brain size={14} /> {setup.strategy_type}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <DollarSign size={14} />
+                    Min: €{setup.min_investment ?? 0}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Tag size={14} />
+                    {(setup.tags || []).join(', ') || 'Geen tags'}
+                  </div>
+                </div>
+
+                {/* Uitleg */}
+                <div className="
+                  text-xs text-[var(--text-light)]
+                  bg-[var(--bg-soft)] p-3 rounded-xl border border-[var(--border)]
+                  mt-3
+                ">
+                  {setup.explanation || 'Geen uitleg beschikbaar.'}
+                </div>
+
+                {/* AI knop */}
                 <button
                   onClick={() => handleGenerateExplanation(setup.id)}
                   disabled={aiLoading[setup.id]}
-                  className={`text-xs px-3 py-1 rounded mb-2 text-white 
-                    ${aiLoading[setup.id]
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-indigo-600 hover:bg-indigo-700'}
+                  className={`
+                    mt-3 flex items-center gap-2 w-full justify-center
+                    px-3 py-2 rounded-xl text-xs font-medium text-white
+                    bg-[var(--primary)] hover:bg-[var(--primary-dark)]
+                    transition
+
+                    disabled:bg-gray-400 disabled:cursor-not-allowed
                   `}
                 >
-                  {aiLoading[setup.id] ? '⏳ Bezig...' : '🤖 Genereer uitleg (AI)'}
+                  <Bot size={15} />
+                  {aiLoading[setup.id] ? 'Bezig…' : 'Genereer AI-uitleg'}
                 </button>
 
-                {/* ACTIONS */}
-                <div className="flex justify-end gap-2 mt-2">
+                {/* Acties */}
+                <div className="flex justify-end gap-2 mt-4">
+
                   <button
                     onClick={() => openEditModal(setup)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                    className="
+                      flex items-center gap-1 px-3 py-1 rounded-lg text-sm
+                      bg-blue-500 hover:bg-blue-600 text-white
+                    "
                   >
-                    ✏️ Bewerken
+                    <Pencil size={14} />
+                    Bewerken
                   </button>
 
                   <button
                     onClick={() => handleRemove(setup.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    className="
+                      flex items-center gap-1 px-3 py-1 rounded-lg text-sm
+                      bg-red-500 hover:bg-red-600 text-white
+                    "
                   >
-                    ❌ Verwijderen
+                    <Trash size={14} />
+                    Verwijder
                   </button>
+
                 </div>
               </div>
             );

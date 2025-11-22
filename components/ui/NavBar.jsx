@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export default function NavBar() {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -11,102 +11,119 @@ export default function NavBar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const isActive = (path) => pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md py-3 px-6 flex justify-between items-center rounded mb-8">
-      <Link href="/" className="flex items-center space-x-3">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#F7FAFF] border-r border-gray-200 flex flex-col p-4 shadow-sm z-50 select-none">
+
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-2 mb-8 mt-2">
         <Image
-  src="/logo.png"
-  alt="TradeLayer Logo"
-  width={80}
-  height={80}
-  className="w-20 h-20 object-contain"
-  priority
-/>
-        <div className="flex flex-col leading-none mt-[1px]">
-          <span className="text-lg font-medium text-gray-700">
-            Trade your way. <span className="font-semibold">Build your edge.</span>
-          </span>
-        </div>
-      </Link>
-
-      <div className="flex flex-wrap items-center gap-6">
-        <div className="flex flex-wrap gap-4 text-sm">
-          <NavLink href="/">🌡️ Scores</NavLink>
-          <NavLink href="/market">💰 Market</NavLink>
-          <NavLink href="/macro">🌍 Macro</NavLink>
-          <NavLink href="/technical">📈 Technisch</NavLink>
-          <NavLink href="/setup">⚙️ Setups</NavLink>
-          <NavLink href="/strategy">📊 Strategieën</NavLink>
-          <NavLink href="/report">📄 Rapport</NavLink>
-        </div>
-
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold hover:ring-2 ring-blue-400 transition"
-            title="Open profielmenu"
-          >
-            G
-          </button>
-          {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-md z-50">
-              <ul className="py-1 text-sm text-gray-800 dark:text-gray-200">
-                <li>
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    👤 Profiel
-                  </Link>
-                </li>
-                <li>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    🌐 Taal & Regio
-                  </button>
-                </li>
-                <li>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    🧠 AI Instellingen
-                  </button>
-                </li>
-                <li>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    📈 Tradingstijl
-                  </button>
-                </li>
-                <li>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    📤 Uitloggen
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
+          src="/logo.png"
+          alt="TradeLayer Logo"
+          width={40}
+          height={40}
+          className="object-contain"
+        />
+        <span className="text-xl font-semibold text-gray-800">TradeLayer</span>
       </div>
-    </nav>
-  );
 
-  function NavLink({ href, children }) {
-    const isCurrent = isActive(href);
-    return (
-      <Link
-        href={href}
-        className={`hover:underline ${isCurrent ? 'font-bold text-blue-600' : ''}`}
-      >
-        {children}
-      </Link>
-    );
-  }
+      {/* Navigation Links */}
+      <nav className="flex flex-col gap-1">
+        <SidebarLink href="/" active={isActive("/")}>
+          🌡️ Scores
+        </SidebarLink>
+
+        <SidebarLink href="/market" active={isActive("/market")}>
+          💰 Market
+        </SidebarLink>
+
+        <SidebarLink href="/macro" active={isActive("/macro")}>
+          🌍 Macro
+        </SidebarLink>
+
+        <SidebarLink href="/technical" active={isActive("/technical")}>
+          📈 Technisch
+        </SidebarLink>
+
+        <SidebarLink href="/setup" active={isActive("/setup")}>
+          ⚙️ Setups
+        </SidebarLink>
+
+        <SidebarLink href="/strategy" active={isActive("/strategy")}>
+          📊 Strategieën
+        </SidebarLink>
+
+        <SidebarLink href="/report" active={isActive("/report")}>
+          📄 Rapport
+        </SidebarLink>
+      </nav>
+
+      {/* Push profile dropdown to bottom */}
+      <div className="flex-grow" />
+
+      {/* Profile dropdown */}
+      <div className="relative px-2" ref={dropdownRef}>
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold hover:ring-2 ring-blue-300 transition"
+          title="Open profielmenu"
+        >
+          G
+        </button>
+
+        {showDropdown && (
+          <div className="absolute left-0 bottom-12 w-48 bg-white border border-gray-200 rounded shadow-lg py-2">
+            <LinkMenu href="/profile">👤 Profiel</LinkMenu>
+            <MenuButton>🌐 Taal & Regio</MenuButton>
+            <MenuButton>🧠 AI Instellingen</MenuButton>
+            <MenuButton>📈 Tradingstijl</MenuButton>
+            <MenuButton>📤 Uitloggen</MenuButton>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+/* ---------------------- COMPONENTS ---------------------- */
+
+function SidebarLink({ href, active, children }) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition 
+      ${active ? "bg-blue-600 text-white shadow-sm" : "text-gray-700 hover:bg-blue-50"}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function LinkMenu({ href, children }) {
+  return (
+    <Link
+      href={href}
+      className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MenuButton({ children }) {
+  return (
+    <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-gray-700">
+      {children}
+    </button>
+  );
 }

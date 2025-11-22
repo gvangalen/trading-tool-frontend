@@ -1,27 +1,38 @@
-'use client';
+"use client";
 
-export default function CardWrapper({ title, children }) {
+export default function CardWrapper({ title, children, icon }) {
   return (
     <div
       className="
-        card
+        rounded-2xl
+        bg-[var(--card-bg)]
+        border border-[var(--card-border)]
+        shadow-[0_4px_12px_rgba(0,0,0,0.04)]
         p-6
-        space-y-4
+        transition-all
+        duration-200
+        hover:shadow-[0_6px_18px_rgba(0,0,0,0.06)]
+        hover:-translate-y-[2px]
       "
       style={{
-        background: "var(--card-bg)",
         borderRadius: "var(--card-radius)",
-        border: "1px solid var(--card-border)",
-        boxShadow: "var(--card-shadow)",
       }}
     >
+      {/* ---- Titel (optioneel) ---- */}
       {title && (
-        <h3 className="text-lg font-semibold" style={{ color: "var(--text-dark)" }}>
-          {title}
-        </h3>
+        <div className="mb-4 flex items-center gap-2 pb-2 border-b border-[var(--border)]/60">
+          {icon && <span className="text-xl">{icon}</span>}
+
+          <h3 className="text-lg font-semibold text-[var(--text-dark)]">
+            {title}
+          </h3>
+        </div>
       )}
 
-      <div>{children}</div>
+      {/* ---- Content ---- */}
+      <div className="text-[var(--text-dark)]">
+        {children}
+      </div>
     </div>
   );
 }

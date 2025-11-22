@@ -4,16 +4,15 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function Sidebar() {
+export default function NavBar() {
   const pathname = usePathname();
   const isActive = (path) => pathname === path;
 
   return (
     <aside
       className="
-        fixed left-0 top-0 h-screen w-64
-        bg-[var(--bg-soft)]
-        border-r border-[var(--border)]
+        fixed left-0 top-0 h-screen w-64 
+        bg-[var(--bg-sidebar)] border-r border-[var(--border)]
         flex flex-col p-4 shadow-sm z-50 select-none
       "
     >
@@ -33,7 +32,6 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1">
-
         <SidebarLink href="/" active={isActive("/")}>
           🌡️ Scores
         </SidebarLink>
@@ -61,31 +59,30 @@ export default function Sidebar() {
         <SidebarLink href="/report" active={isActive("/report")}>
           📄 Rapport
         </SidebarLink>
-
       </nav>
 
+      {/* ruimte onderin voor evt. future items */}
       <div className="flex-grow" />
     </aside>
   );
 }
 
-/* ---------------------- COMPONENTS ---------------------- */
+/* ---------------------- COMPONENT ---------------------- */
 
 function SidebarLink({ href, active, children }) {
   return (
     <Link
       href={href}
       className={`
-        flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition
+        flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition 
         ${
           active
             ? "bg-[var(--primary)] text-white shadow-sm"
-            : "text-[var(--text-dark)] hover:bg-[var(--primary-light)]"
+            : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
         }
       `}
     >
       {children}
     </Link>
   );
-}
 }

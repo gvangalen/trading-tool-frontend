@@ -1,27 +1,49 @@
 'use client';
 
-import { MessageSquare } from 'lucide-react'; 
-import { Card, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
+import { MessageSquare } from "lucide-react";
+import CardWrapper from "@/components/ui/CardWrapper";
+import Link from "next/link";
 
 export default function ReportCard() {
   return (
-    <Card className="bg-green-50 border-green-200">
-      <CardContent>
-        <div className="flex items-center mb-2 text-sm font-medium text-green-600">
-          <MessageSquare className="w-4 h-4 mr-2 text-green-500" />
-          Daily rapport
+    <CardWrapper>
+      <div
+        className="
+          p-5 rounded-xl
+          bg-[var(--card-bg)]
+          border border-[var(--card-border)]
+          shadow-sm
+          transition hover:shadow-md hover:-translate-y-[1px]
+        "
+      >
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="p-2 rounded-lg bg-[var(--bg-soft)] shadow-sm text-[var(--text-dark)]">
+            <MessageSquare className="w-4 h-4" />
+          </div>
+
+          <h2 className="text-sm font-semibold text-[var(--text-dark)]">
+            Daily Rapport
+          </h2>
         </div>
-        <p className="text-sm text-gray-800 italic">
+
+        {/* Quote */}
+        <p className="text-sm italic text-[var(--text-light)] leading-relaxed">
           “We blijven bullish zolang $101.500 standhoudt.”
         </p>
+
+        {/* Link */}
         <Link
           href="/report"
-          className="text-xs text-blue-600 mt-2 inline-block hover:underline"
+          className="
+            mt-3 inline-block text-xs 
+            text-[var(--primary-dark)] 
+            hover:underline hover:text-[var(--primary)]
+          "
         >
           Bekijk volledig rapport →
         </Link>
-      </CardContent>
-    </Card>
+      </div>
+    </CardWrapper>
   );
 }

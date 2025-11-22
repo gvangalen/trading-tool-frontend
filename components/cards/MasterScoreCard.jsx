@@ -1,71 +1,86 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Brain } from 'lucide-react';
-import { useScoresData } from '@/hooks/useScoresData';
+import CardWrapper from "@/components/ui/CardWrapper";
+import { Brain } from "lucide-react";
+import { useScoresData } from "@/hooks/useScoresData";
 
 export default function MasterScoreCard() {
   const { master, loading, error } = useScoresData();
 
-  if (loading) {
-    return (
-      <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm">
-        <CardContent className="p-4 text-center text-gray-500 dark:text-gray-400">
-          ⏳ Laden van AI Master Score...
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error || !master) {
-    return (
-      <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm">
-        <CardContent className="p-4 text-center text-red-500">
-          ❌ Fout bij laden van AI Master Score
-        </CardContent>
-      </Card>
-    );
-  }
-
   // 🎨 Dynamische kleur op basis van score
   const getScoreColor = (score) => {
-    if (score >= 70) return 'text-green-600 dark:text-green-300';
-    if (score <= 40) return 'text-red-600 dark:text-red-300';
-    return 'text-yellow-600 dark:text-yellow-300';
+    if (score >= 70) return "text-green-600 dark:text-green-300";
+    if (score <= 40) return "text-red-600 dark:text-red-300";
+    return "text-yellow-500 dark:text-yellow-300";
   };
 
+  // 🧠 Bepaal waarde
+  const scoreValue = master?.score ? master.score.toFixed(1) : "–";
+
   return (
-    <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-md transition-transform hover:scale-[1.02]">
-      <CardContent className="p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <Brain className="w-5 h-5 text-purple-500" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <CardWrapper>
+      <div className="p-5 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm">
+
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300">
+            <Brain className="w-4 h-4" />
+          </div>
+
+          <h2 className="text-sm font-semibold text-[var(--text-dark)]">
             AI Master Score
           </h2>
         </div>
 
-        {/* Hoofdscore */}
-        <p className={`text-3xl font-bold ${getScoreColor(master.score)}`}>
-          {master.score ? master.score.toFixed(1) : '–'}
-        </p>
+        {/* Loading */}
+        {loading && (
+          <p className="text-center text-gray-500 dark:text-gray-400 italic">
+            ⏳ Laden…
+          </p>
+        )}
 
-        {/* Details */}
-        <div className="mt-3 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-          <p>
-            <strong>Trend:</strong> {master.trend || '–'}
+        {/* Error */}
+        {!loading && (error || !master) && (
+          <p className="text-center text-red-500 dark:text-red-400 font-medium">
+            ❌ Fout bij laden van AI Master Score
           </p>
-          <p>
-            <strong>Bias:</strong> {master.bias || '–'}
-          </p>
-          <p>
-            <strong>Risico:</strong> {master.risk || '–'}
-          </p>
-          <p>
-            <strong>Outlook:</strong>{' '}
-            <span className="italic">{master.outlook || '–'}</span>
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+
+        {/* Success view */}
+        {!loading && master && (
+          <>
+            {/* Score */}
+            <p
+              className={`text-4xl font-bold tracking-tight ${getScoreColor(
+                master.score
+              )}`}
+            >
+              {scoreValue}
+            </p>
+
+            {/* Details */}
+            <div className="mt-4 space-y-1.5 text-sm text-[var(--text-light)]">
+              <p>
+                <strong className="text-[var(--text-dark)]">Trend:</strong>{" "}
+                {master.trend || "–"}
+              </p>
+              <p>
+                <strong className="text-[var(--text-dark)]">Bias:</strong>{" "}
+                {master.bias || "–"}
+              </p>
+              <p>
+                <strong className="text-[var(--text-dark)]">Risico:</strong>{" "}
+                {master.risk || "–"}
+              </p>
+              <p>
+                <strong className="text-[var(--text-dark)]">Outlook:</strong>{" "}
+                <span className="italic">{master.outlook || "–"}</span>
+              </p>
+            </div>
+          </>
+        )}
+
+      </div>
+    </CardWrapper>
   );
 }

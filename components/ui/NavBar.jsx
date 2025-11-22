@@ -9,12 +9,14 @@ export default function Sidebar() {
   const isActive = (path) => pathname === path;
 
   return (
-    <aside className="
-      fixed left-0 top-0 h-screen w-64 
-      bg-[#F7FAFF] border-r border-gray-200
-      flex flex-col p-4 shadow-sm z-50 select-none
-    ">
-      
+    <aside
+      className="
+        fixed left-0 top-0 h-screen w-64
+        bg-[var(--bg-soft)]
+        border-r border-[var(--border)]
+        flex flex-col p-4 shadow-sm z-50 select-none
+      "
+    >
       {/* Logo + Title */}
       <div className="flex items-center gap-3 px-2 mb-8 mt-2">
         <Image
@@ -24,7 +26,9 @@ export default function Sidebar() {
           height={40}
           className="object-contain"
         />
-        <span className="text-xl font-semibold text-gray-800">TradeLayer</span>
+        <span className="text-xl font-semibold text-[var(--text-dark)]">
+          TradeLayer
+        </span>
       </div>
 
       {/* Navigation */}
@@ -60,7 +64,6 @@ export default function Sidebar() {
 
       </nav>
 
-      {/* Rest van sidebar is leeg — profielmenu gaat naar topbar */}
       <div className="flex-grow" />
     </aside>
   );
@@ -73,14 +76,16 @@ function SidebarLink({ href, active, children }) {
     <Link
       href={href}
       className={`
-        flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition 
-        ${active 
-          ? "bg-blue-600 text-white shadow-sm" 
-          : "text-gray-700 hover:bg-blue-50"
+        flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition
+        ${
+          active
+            ? "bg-[var(--primary)] text-white shadow-sm"
+            : "text-[var(--text-dark)] hover:bg-[var(--primary-light)]"
         }
       `}
     >
       {children}
     </Link>
   );
+}
 }

@@ -1,17 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
-import { fetchLastSetup } from '@/lib/api/setups'; // <-- Nieuwe API call nodig!
+import { fetchLastSetup } from '@/lib/api/setups';
+import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function ActiveSetupCard() {
   const [setup, setSetup] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // --------------------------------
-  // Load nieuwste setup
-  // --------------------------------
   useEffect(() => {
     load();
   }, []);
@@ -28,26 +25,20 @@ export default function ActiveSetupCard() {
     }
   }
 
-  // --------------------------------
-  // Trend styling
-  // --------------------------------
   const trend = setup?.trend || 'neutral';
   const trendClass =
     trend.toLowerCase() === 'bullish'
-      ? 'border-green-600 bg-green-50 dark:bg-green-900 dark:border-green-700'
+      ? 'border-green-500 bg-green-50 dark:bg-green-900'
       : trend.toLowerCase() === 'bearish'
-      ? 'border-red-600 bg-red-50 dark:bg-red-900 dark:border-red-700'
-      : 'border-gray-400 bg-gray-50 dark:bg-gray-800 dark:border-gray-600';
+      ? 'border-red-500 bg-red-50 dark:bg-red-900'
+      : 'border-gray-300 bg-gray-50 dark:bg-gray-800';
 
-  // --------------------------------
-  // UI
-  // --------------------------------
   return (
-    <Card className={`shadow-sm ${trendClass}`}>
-      <CardContent className="p-4">
+    <CardWrapper>
+      <div className={`rounded-xl p-4 border ${trendClass}`}>
 
         {/* Titel */}
-        <div className="flex items-center gap-2 mb-1 font-semibold">
+        <div className="flex items-center gap-2 mb-2 font-semibold text-[var(--text-dark)]">
           <TrendingUp className="w-4 h-4" />
           <span className="text-sm">Actieve Setup</span>
         </div>
@@ -58,35 +49,21 @@ export default function ActiveSetupCard() {
         ) : !setup ? (
           <p className="text-sm text-gray-500 italic">Geen actieve setup gevonden.</p>
         ) : (
-          <div className="text-sm text-gray-800 dark:text-gray-100 space-y-1">
+          <div className="text-sm text-[var(--text-dark)] space-y-1">
 
-            <p>
-              <strong>Naam:</strong> {setup.name}
-            </p>
+            <p><strong>Naam:</strong> {setup.name}</p>
+            <p><strong>Trend:</strong> {setup.trend || '-'}</p>
+            <p><strong>Timeframe:</strong> {setup.timeframe}</p>
+            <p><strong>Type:</strong> {setup.strategy_type}</p>
+            <p><strong>Asset:</strong> {setup.symbol}</p>
 
-            <p>
-              <strong>Trend:</strong> {setup.trend || '-'}
-            </p>
-
-            <p>
-              <strong>Timeframe:</strong> {setup.timeframe}
-            </p>
-
-            <p>
-              <strong>Type:</strong> {setup.strategy_type}
-            </p>
-
-            <p>
-              <strong>Asset:</strong> {setup.symbol}
-            </p>
-
-            <p className="text-xs mt-2 italic text-gray-600 dark:text-gray-300">
+            <p className="text-xs mt-2 italic text-[var(--text-light)]">
               Klik voor details op de setups-pagina.
             </p>
 
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </CardWrapper>
   );
 }

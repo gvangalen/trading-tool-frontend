@@ -5,17 +5,29 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
+/* Lucide Icons */
+import {
+  Gauge,
+  LineChart,
+  Globe,
+  Settings2,
+  Layers,
+  FileText,
+  BarChart3,
+} from "lucide-react";
+
 export default function NavBar() {
   const pathname = usePathname();
 
+  /* Sidebar links */
   const links = [
-    { href: "/", label: "Scores", icon: "🌡️" },
-    { href: "/market", label: "Market", icon: "💰" },
-    { href: "/macro", label: "Macro", icon: "🌍" },
-    { href: "/technical", label: "Technisch", icon: "📈" },
-    { href: "/setup", label: "Setups", icon: "⚙️" },
-    { href: "/strategy", label: "Strategieën", icon: "📊" },
-    { href: "/report", label: "Rapport", icon: "📄" },
+    { href: "/", label: "Scores", icon: <Gauge className="w-5 h-5" /> },
+    { href: "/market", label: "Market", icon: <BarChart3 className="w-5 h-5" /> },
+    { href: "/macro", label: "Macro", icon: <Globe className="w-5 h-5" /> },
+    { href: "/technical", label: "Technisch", icon: <LineChart className="w-5 h-5" /> },
+    { href: "/setup", label: "Setups", icon: <Settings2 className="w-5 h-5" /> },
+    { href: "/strategy", label: "Strategieën", icon: <Layers className="w-5 h-5" /> },
+    { href: "/report", label: "Rapport", icon: <FileText className="w-5 h-5" /> },
   ];
 
   return (
@@ -24,18 +36,24 @@ export default function NavBar() {
         fixed left-0 top-0 h-screen w-64 
         bg-[var(--primary-light)]
         border-r border-[var(--border)]
-        flex flex-col p-4 shadow-sm z-50 select-none
+        flex flex-col p-5 shadow-md z-50 select-none
       "
     >
-      {/* Logo + Title */}
-      <div className="flex items-center gap-3 px-2 mb-10 mt-2">
-        <Image src="/logo.png" alt="TradeLayer Logo" width={42} height={42} />
-        <span className="text-xl font-semibold text-[var(--text-dark)]">
+      {/* LOGO SECTION */}
+      <div className="flex items-center gap-3 px-1 mb-10">
+        <Image
+          src="/logo.png"
+          alt="TradeLayer Logo"
+          width={34}
+          height={34}
+          className="object-contain rounded-md shadow-sm"
+        />
+        <span className="text-xl font-semibold text-[var(--text-dark)] tracking-tight">
           TradeLayer
         </span>
       </div>
 
-      {/* Navigation */}
+      {/* LINKS */}
       <nav className="flex flex-col gap-1 relative">
         {links.map((item) => {
           const isActive = pathname === item.href;
@@ -53,38 +71,39 @@ export default function NavBar() {
         })}
       </nav>
 
-      <div className="flex-grow" />
+      <div className="flex-grow"></div>
     </aside>
   );
 }
 
-/* ---------------------- ITEM COMPONENT ---------------------- */
+/* ---------------------- SIDEBAR ITEM ---------------------- */
 
 function SidebarItem({ href, active, icon, children }) {
   return (
     <Link
       href={href}
-      className={`
-        group flex items-center gap-3 px-4 py-2 text-sm rounded-lg relative
-        transition-all duration-200 font-medium
-        ${active ? "text-white" : "text-[var(--text-dark)]"}
-      `}
+      className="
+        group flex items-center gap-3 px-4 py-2 
+        text-sm font-medium rounded-lg relative
+        transition-all duration-200
+      "
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
-      {/* Active Background Animatie */}
+      {/* ACTIVE Background */}
       {active && (
         <motion.div
-          layoutId="active-bg"
+          layoutId="active-pill"
           className="
             absolute inset-0 
             rounded-lg 
-            bg-[var(--primary)] shadow-md
+            bg-[var(--primary)]
+            shadow-md
           "
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          transition={{ type: "spring", stiffness: 300, damping: 24 }}
         />
       )}
 
-      {/* Hover Glow Accent (alleen bij inactive) */}
+      {/* Hover background (alleen inactief) */}
       {!active && (
         <div
           className="
@@ -99,8 +118,8 @@ function SidebarItem({ href, active, icon, children }) {
       {/* ICON */}
       <span
         className={`
-          relative z-10 text-lg
-          transition-transform duration-200
+          relative z-10 
+          transition-transform duration-200 
           group-hover:scale-110
           ${active ? "text-white" : "text-[var(--text-dark)]"}
         `}
@@ -109,7 +128,14 @@ function SidebarItem({ href, active, icon, children }) {
       </span>
 
       {/* TEXT */}
-      <span className="relative z-10 group-hover:translate-x-1 transition-all duration-200">
+      <span
+        className={`
+          relative z-10 
+          group-hover:translate-x-1 
+          transition-all duration-200
+          ${active ? "text-white" : "text-[var(--text-dark)]"}
+        `}
+      >
         {children}
       </span>
     </Link>

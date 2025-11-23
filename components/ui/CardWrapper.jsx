@@ -20,10 +20,14 @@ export default function CardWrapper({ title, children, icon }) {
     >
       {/* ---- Titel (optioneel) ---- */}
       {title && (
-        <div className="mb-4 flex items-center gap-2 pb-2 border-b border-[var(--border)]/60">
-          {icon && <span className="text-xl">{icon}</span>}
+        <div className="mb-5 flex items-center gap-3">
+          {icon && (
+            <span className="p-2 rounded-xl bg-[var(--card-icon-bg)] text-[var(--primary)]">
+              {icon}
+            </span>
+          )}
 
-          <h3 className="text-lg font-semibold text-[var(--text-dark)]">
+          <h3 className="text-base font-semibold text-[var(--text-dark)] tracking-tight">
             {title}
           </h3>
         </div>

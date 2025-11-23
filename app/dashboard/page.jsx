@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+// Lucide icons
+import {
+  BarChart3,
+  Coins,
+  TrendingUp,
+  Globe2,
+  Rocket,
+  Trophy,
+  ChevronsUp,
+} from "lucide-react";
+
 import DashboardGauges from "@/components/dashboard/DashboardGauges";
 import TradingAdvice from "@/components/dashboard/TradingAdvice";
 import TechnicalDayTableForDashboard from "@/components/technical/TechnicalDayTableForDashboard";
@@ -19,11 +30,8 @@ import { useMarketData } from "@/hooks/useMarketData";
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  const {
-    technicalData,
-    handleRemove,
-    loading: technicalLoading,
-  } = useTechnicalData();
+  const { technicalData, handleRemove, loading: technicalLoading } =
+    useTechnicalData();
 
   const {
     macroData,
@@ -54,40 +62,54 @@ export default function DashboardPage() {
         bg-[var(--bg)]
         text-[var(--text-dark)]
         min-h-screen
-        space-y-8
-        animate-fade-slide
+        space-y-10
       "
     >
-      {/* HEADER */}
+      {/* ================= HEADER ================ */}
       <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-            📊 Trading Dashboard
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-[var(--text-dark)]" />
+            Trading Dashboard
           </h1>
+
           <p className="text-sm text-[var(--text-light)]">
             Eén overzicht voor markt, macro, technische analyse en je beste setups.
           </p>
         </div>
       </header>
 
-      {/* MAIN GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 w-full">
-        {/* LINKERKOLOM */}
-        <div className="space-y-8 md:space-y-10">
-          <DashboardHighlights />
+      {/* ================= HIGHLIGHTS – full-width ================= */}
+      <DashboardHighlights />
 
+      {/* ================= MAIN CONTENT + SIDEBAR ================= */}
+      <div className="flex flex-col xl:flex-row gap-8">
+        {/* MAIN COLUMN */}
+        <div className="flex-1 space-y-10">
           <DashboardGauges />
 
-          {/* MARKET DATA – zelfde functionaliteit als voorheen */}
-          <CardWrapper title="💰 Market Data">
+          {/* MARKET DATA */}
+          <CardWrapper
+            title={
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4" /> Market Data
+              </div>
+            }
+          >
             <MarketSummaryForDashboard
               sevenDayData={sevenDayData}
               btcLive={btcLive}
             />
           </CardWrapper>
 
-          {/* TECHNISCHE ANALYSE */}
-          <CardWrapper title="📈 Technische Analyse">
+          {/* TECHNICAL ANALYSIS */}
+          <CardWrapper
+            title={
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" /> Technische Analyse
+              </div>
+            }
+          >
             {technicalLoading ? (
               <p className="text-[var(--text-light)] text-sm">
                 ⏳ Technische data laden...
@@ -102,7 +124,13 @@ export default function DashboardPage() {
           </CardWrapper>
 
           {/* MACRO INDICATOREN */}
-          <CardWrapper title="🌍 Macro Indicatoren">
+          <CardWrapper
+            title={
+              <div className="flex items-center gap-2">
+                <Globe2 className="w-4 h-4" /> Macro Indicatoren
+              </div>
+            }
+          >
             {macroLoading ? (
               <p className="text-[var(--text-light)] text-sm">
                 ⏳ Macrodata laden...
@@ -121,25 +149,37 @@ export default function DashboardPage() {
           </CardWrapper>
 
           {/* AI TRADINGADVIES */}
-          <CardWrapper title="🚀 AI Tradingadvies">
+          <CardWrapper
+            title={
+              <div className="flex items-center gap-2">
+                <Rocket className="w-4 h-4" /> AI Tradingadvies
+              </div>
+            }
+          >
             <TradingAdvice />
           </CardWrapper>
 
           {/* TOP SETUPS */}
-          <CardWrapper title="🏆 Top 3 Setups">
+          <CardWrapper
+            title={
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4" /> Top 3 Setups
+              </div>
+            }
+          >
             <TopSetupsMini />
           </CardWrapper>
         </div>
 
-        {/* RECHTER SIDEBAR */}
-        <div className="hidden xl:block w-full max-w-xs">
+        {/* SIDEBAR */}
+        <div className="w-full xl:w-[320px]">
           <div className="sticky top-24">
             <RightSidebarCard />
           </div>
         </div>
       </div>
 
-      {/* SCROLL NAAR BOVEN KNOP */}
+      {/* ================= SCROLL BUTTON ================= */}
       {showScroll && (
         <button
           onClick={scrollToTop}
@@ -153,7 +193,7 @@ export default function DashboardPage() {
           "
           aria-label="Scroll naar boven"
         >
-          ⬆️
+          <ChevronsUp className="w-5 h-5" />
         </button>
       )}
     </div>

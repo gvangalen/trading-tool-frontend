@@ -39,73 +39,47 @@ export default function ActiveSetupCard() {
   const boxClass = trendClasses[trend] || trendClasses.neutral;
 
   return (
-    <CardWrapper>
-      <div
-        className="
-          p-5 rounded-xl
-          border border-[var(--card-border)]
-          bg-[var(--card-bg)]
-          shadow-sm
-          flex flex-col gap-4
-          min-h-[200px]
-        "
-      >
-        {/* HEADER */}
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg shadow-sm ${boxClass}`}>
-            <TrendingUp className="w-5 h-5 text-[var(--text-dark)] dark:text-[var(--text-light)]" />
-          </div>
-
-          <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
-            Actieve Setup
-          </h2>
-        </div>
+    <CardWrapper
+      title="Actieve Setup"
+      icon={<TrendingUp className="w-4 h-4 text-[var(--text-dark)]" />}
+    >
+      <div className="flex flex-col gap-4 text-sm text-[var(--text-dark)]">
 
         {/* LOADING */}
         {loading && (
-          <p className="text-sm text-[var(--text-light)] italic py-4">
+          <p className="text-[var(--text-light)] italic py-2">
             ⏳ Laden…
           </p>
         )}
 
         {/* EMPTY */}
         {!loading && !setup && (
-          <p className="text-sm italic text-[var(--text-light)] py-4">
+          <p className="italic text-[var(--text-light)] py-2">
             Geen actieve setup gevonden.
           </p>
         )}
 
         {/* DATA */}
         {!loading && setup && (
-          <div className="flex flex-col gap-3 text-sm text-[var(--text-dark)]">
-
-            <p>
-              <strong>Naam:</strong> {setup.name || "–"}
-            </p>
-            <p>
-              <strong>Trend:</strong> {setup.trend || "–"}
-            </p>
-            <p>
-              <strong>Timeframe:</strong> {setup.timeframe || "–"}
-            </p>
-            <p>
-              <strong>Type:</strong> {setup.strategy_type || "–"}
-            </p>
-            <p>
-              <strong>Asset:</strong> {setup.symbol || "–"}
-            </p>
+          <>
+            <div className="space-y-[3px]">
+              <p><strong>Naam:</strong> {setup.name || "–"}</p>
+              <p><strong>Trend:</strong> {setup.trend || "–"}</p>
+              <p><strong>Timeframe:</strong> {setup.timeframe || "–"}</p>
+              <p><strong>Type:</strong> {setup.strategy_type || "–"}</p>
+              <p><strong>Asset:</strong> {setup.symbol || "–"}</p>
+            </div>
 
             <div
-              className="
-                mt-2 text-xs italic p-2 rounded-lg
-                bg-gray-100/50 dark:bg-gray-900/30
-                border border-gray-200/40 dark:border-gray-800
+              className={`
+                mt-2 text-xs italic p-2 rounded-lg 
+                border ${boxClass}
                 text-[var(--text-light)]
-              "
+              `}
             >
               Bekijk details op de setups-pagina.
             </div>
-          </div>
+          </>
         )}
       </div>
     </CardWrapper>

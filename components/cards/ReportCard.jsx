@@ -6,44 +6,38 @@ import Link from "next/link";
 
 export default function ReportCard() {
   return (
-    <CardWrapper>
-      <div
-        className="
-          p-5 rounded-xl
-          bg-[var(--card-bg)]
-          border border-[var(--card-border)]
-          shadow-sm
-          transition hover:shadow-md hover:-translate-y-[1px]
-        "
-      >
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="p-2 rounded-lg bg-[var(--bg-soft)] shadow-sm text-[var(--text-dark)]">
-            <MessageSquare className="w-4 h-4" />
-          </div>
+    <CardWrapper title="Daily Rapport">
 
-          <h2 className="text-sm font-semibold text-[var(--text-dark)]">
-            Daily Rapport
-          </h2>
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-3 mt-1">
+        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 shadow-sm">
+          <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-300" />
         </div>
 
-        {/* Quote */}
-        <p className="text-sm italic text-[var(--text-light)] leading-relaxed">
-          “We blijven bullish zolang $101.500 standhoudt.”
-        </p>
-
-        {/* Link */}
-        <Link
-          href="/report"
-          className="
-            mt-3 inline-block text-xs 
-            text-[var(--primary-dark)] 
-            hover:underline hover:text-[var(--primary)]
-          "
-        >
-          Bekijk volledig rapport →
-        </Link>
+        <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
+          Laatste Marktupdate
+        </h2>
       </div>
+
+      {/* QUOTE */}
+      <p className="text-sm italic text-[var(--text-light)] leading-relaxed">
+        “We blijven bullish zolang $101.500 standhoudt.”
+      </p>
+
+      {/* LINK */}
+      <Link
+        href="/report"
+        className="
+          mt-3 inline-block text-xs font-medium
+          text-[var(--primary-dark)]
+          hover:text-[var(--primary)]
+          hover:underline
+          transition
+        "
+      >
+        Bekijk volledig rapport →
+      </Link>
+
     </CardWrapper>
   );
 }

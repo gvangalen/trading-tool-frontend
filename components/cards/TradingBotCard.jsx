@@ -34,16 +34,16 @@ export default function TradingBotCard() {
     <CardWrapper>
       <div
         className="
-          h-[260px]          
           p-5 rounded-xl
           border border-[var(--card-border)]
           bg-[var(--card-bg)]
           shadow-sm
-          flex flex-col justify-between
+          flex flex-col
+          min-h-[240px]             /* ⭐ dynamisch, geen vaste h */
         "
       >
         {/* HEADER */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-3">
           <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/40 shadow-sm">
             <Bot className="w-5 h-5 text-purple-600 dark:text-purple-300" />
           </div>
@@ -65,18 +65,18 @@ export default function TradingBotCard() {
           <p className="text-sm text-red-600">{error}</p>
         )}
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
         {!loading && !error && !strategy && (
           <p className="text-sm italic text-[var(--text-light)]">
             Nog geen strategie beschikbaar.
           </p>
         )}
 
-        {/* STRATEGIE-INFORMATIE */}
+        {/* STRATEGIE CONTENT */}
         {!loading && strategy && (
-          <div className="flex flex-col justify-between flex-1">
+          <div className="flex flex-col gap-3 flex-1">
 
-            {/* BASIC FIELDS */}
+            {/* BASIC STRATEGY FIELDS */}
             <div className="space-y-[2px] text-sm text-[var(--text-dark)]">
               <p><strong>Setup:</strong> {strategy.setup_name}</p>
               <p><strong>Type:</strong> {strategy.strategy_type}</p>
@@ -87,12 +87,14 @@ export default function TradingBotCard() {
               {strategy.targets && (
                 <p><strong>Targets:</strong> {strategy.targets.join(', ')}</p>
               )}
-              {strategy.stop_loss && <p><strong>SL:</strong> {strategy.stop_loss}</p>}
+              {strategy.stop_loss && (
+                <p><strong>SL:</strong> {strategy.stop_loss}</p>
+              )}
             </div>
 
             {/* COLLAPSIBLE AI-UITLEG */}
             {explanation && (
-              <div className="mt-3">
+              <div className="mt-auto">
                 <div
                   className={`
                     text-xs italic p-2 rounded-lg
@@ -100,7 +102,7 @@ export default function TradingBotCard() {
                     text-purple-700 dark:text-purple-200
                     border border-purple-200/40 dark:border-purple-800
                     transition-all duration-300
-                    ${expanded ? 'h-auto' : 'line-clamp-2'}
+                    ${expanded ? '' : 'line-clamp-2'}
                   `}
                 >
                   <div className="flex items-start gap-1">
@@ -129,7 +131,6 @@ export default function TradingBotCard() {
                 </button>
               </div>
             )}
-
           </div>
         )}
       </div>

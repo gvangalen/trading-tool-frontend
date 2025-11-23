@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 
 // Lucide icons
-import {
-  BarChart3,
-  Coins,
-  TrendingUp,
-  Globe2,
-  Rocket,
-  Trophy,
-  ChevronsUp,
-} from "lucide-react";
+import { BarChart3, Coins, TrendingUp, Globe2, Rocket, Trophy, ChevronsUp } from "lucide-react";
 
 import DashboardGauges from "@/components/dashboard/DashboardGauges";
 import TradingAdvice from "@/components/dashboard/TradingAdvice";
@@ -30,8 +22,7 @@ import { useMarketData } from "@/hooks/useMarketData";
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  const { technicalData, handleRemove, loading: technicalLoading } =
-    useTechnicalData();
+  const { technicalData, handleRemove, loading: technicalLoading } = useTechnicalData();
 
   const {
     macroData,
@@ -40,7 +31,7 @@ export default function DashboardPage() {
     handleEdit,
     handleRemove: handleMacroRemove,
     calculateMacroScore,
-    getExplanation,
+    getExplanation
   } = useMacroData();
 
   const { sevenDayData, btcLive } = useMarketData();
@@ -51,32 +42,26 @@ export default function DashboardPage() {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  const scrollToTop = () =>
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <div
       className="
         max-w-screen-xl mx-auto
-        pt-24 pb-10 px-4
-        bg-[var(--bg)]
+        pt-12 pb-10 px-4        /* ⭐ minder ruimte bovenaan */
+        bg-[var(--bg-soft)]     /* ⭐ zelfde achtergrondkleur als Market/Macro */
         text-[var(--text-dark)]
         min-h-screen
         space-y-10
       "
     >
       {/* ================= HEADER ================ */}
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-[var(--text-dark)]" />
-            Trading Dashboard
-          </h1>
-
-          <p className="text-sm text-[var(--text-light)]">
-            Eén overzicht voor markt, macro, technische analyse en je beste setups.
-          </p>
-        </div>
+      <header className="pt-2 pb-4">
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-[var(--text-dark)]" />
+          Trading Dashboard
+        </h1>
+        {/* tagline VERWIJDERD */}
       </header>
 
       {/* ================= HIGHLIGHTS – full-width ================= */}
@@ -86,6 +71,7 @@ export default function DashboardPage() {
       <div className="flex flex-col xl:flex-row gap-8">
         {/* MAIN COLUMN */}
         <div className="flex-1 space-y-10">
+
           <DashboardGauges />
 
           {/* MARKET DATA */}
@@ -96,13 +82,10 @@ export default function DashboardPage() {
               </div>
             }
           >
-            <MarketSummaryForDashboard
-              sevenDayData={sevenDayData}
-              btcLive={btcLive}
-            />
+            <MarketSummaryForDashboard sevenDayData={sevenDayData} btcLive={btcLive} />
           </CardWrapper>
 
-          {/* TECHNICAL ANALYSIS */}
+          {/* TECH ANALYSIS */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -111,9 +94,7 @@ export default function DashboardPage() {
             }
           >
             {technicalLoading ? (
-              <p className="text-[var(--text-light)] text-sm">
-                ⏳ Technische data laden...
-              </p>
+              <p className="text-[var(--text-light)] text-sm">⏳ Technische data laden...</p>
             ) : (
               <TechnicalDayTableForDashboard
                 data={technicalData}
@@ -132,9 +113,7 @@ export default function DashboardPage() {
             }
           >
             {macroLoading ? (
-              <p className="text-[var(--text-light)] text-sm">
-                ⏳ Macrodata laden...
-              </p>
+              <p className="text-[var(--text-light)] text-sm">⏳ Macrodata laden...</p>
             ) : macroError ? (
               <p className="text-[var(--red)] text-sm">{macroError}</p>
             ) : (
@@ -159,7 +138,7 @@ export default function DashboardPage() {
             <TradingAdvice />
           </CardWrapper>
 
-          {/* TOP SETUPS */}
+          {/* TOP 3 SETUPS */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">

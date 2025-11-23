@@ -1,6 +1,20 @@
+"use client";
+
 export default function ReportContainer({ children }) {
   return (
-    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6 shadow-sm">
+    <div
+      className="
+        animate-fade-slide
+
+        bg-[var(--card-bg)]
+        border border-[var(--card-border)]
+        rounded-[var(--card-radius)]
+        shadow-md
+
+        p-6 md:p-8
+        space-y-8
+      "
+    >
       {children}
     </div>
   );

@@ -1,17 +1,23 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+
+import { LineChart, Search, PlusCircle, ClipboardList } from 'lucide-react';
+
 import StrategyList from '@/components/strategy/StrategyList';
 import StrategyTabs from '@/components/strategy/StrategyTabs';
+
 import { useSetupData } from '@/hooks/useSetupData';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import { createStrategy } from '@/lib/api/strategy';
+
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import CardWrapper from '@/components/ui/CardWrapper';
 
 export default function StrategyPage() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
-  const [refreshKey, setRefreshKey] = useState(0);  // ✅ trigger voor rerender filters
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
@@ -22,21 +28,16 @@ export default function StrategyPage() {
     loadStrategies();
   }, []);
 
-  // 🔄 Trigger alle lijst-herberekeningen
+  // 🔄 Force full refresh (tabs, filters, lists)
   const refreshEverything = () => {
-    // 1. Eerst strategies & setups herladen
     loadStrategies();
     loadSetups();
 
-    // 2. Daarna rerender & recalculation for tabs
-    setTimeout(() => {
-      setRefreshKey((k) => k + 1);   // 🔥 Force full recalculation
-    }, 30);
+    setTimeout(() => setRefreshKey((k) => k + 1), 30);
   };
 
-  // Toast helper
-  const handleSuccess = (message) => {
-    setToast(message);
+  const handleSuccess = (msg) => {
+    setToast(msg);
     setTimeout(() => setToast(''), 4000);
   };
 
@@ -69,16 +70,15 @@ export default function StrategyPage() {
       await createStrategy(payload);
       handleSuccess('✅ Strategie succesvol opgeslagen!');
 
-      // 🔥 De echte fix → realtime refresh
       refreshEverything();
 
     } catch (err) {
-      console.error('❌ Fout bij opslaan strategie:', err);
+      console.error('❌ Strategie opslaan mislukt:', err);
       setToast('❌ Strategie opslaan mislukt.');
     }
   };
 
-  // 🔍 FILTERS PER TYPE (nu afhankelijk van refreshKey!)
+  // 🔍 FILTERS
   const setupsWithoutTrading = useMemo(() => {
     return setups.filter(
       (s) =>
@@ -113,30 +113,58 @@ export default function StrategyPage() {
   }, [setups, strategies, refreshKey]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-10">
-      {/* Header */}
-      <header className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">📈 Strategieën</h1>
-        <p className="text-gray-600 text-sm">
-          Bekijk en beheer je strategieën. Kies een methode: AI, DCA of handmatig.
-        </p>
-      </header>
+    <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* Zoek + lijst */}
-      <div className="flex justify-between items-center mt-4">
-        <h3 className="text-xl font-semibold">📋 Huidige Strategieën</h3>
-        <input
-          type="text"
-          placeholder="🔎 Zoek op asset of tag..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 border rounded-md w-60 text-sm dark:bg-gray-800 dark:text-white"
-        />
+      {/* -------------------------------------------------- */}
+      {/* 🧭 Titel */}
+      {/* -------------------------------------------------- */}
+      <div className="flex items-center gap-3 mb-2">
+        <LineChart size={28} className="text-[var(--primary)]" />
+        <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
+          Strategieën
+        </h1>
       </div>
 
-      <section>
+      <p className="text-[var(--text-light)] max-w-2xl">
+        Bouw, beheer en optimaliseer je tradingstrategieën. AI ondersteunt bij
+        validatie en automatische generaties.
+      </p>
+
+      {/* -------------------------------------------------- */}
+      {/* 📋 Huidige strategieën */}
+      {/* -------------------------------------------------- */}
+      <CardWrapper
+        title={
+          <div className="flex items-center gap-2">
+            <ClipboardList className="text-[var(--primary)]" size={20} />
+            <span>Huidige Strategieën</span>
+          </div>
+        }
+      >
+        <div className="flex justify-between items-center mb-4">
+
+          {/* 🔎 Zoekbalk */}
+          <div
+            className="
+              flex items-center px-3 py-2
+              bg-[var(--bg-soft)] border border-[var(--border)]
+              rounded-lg gap-2
+              focus-within:ring-1 focus-within:ring-[var(--primary)]
+            "
+          >
+            <Search size={18} className="text-[var(--text-light)]" />
+            <input
+              type="text"
+              placeholder="Zoek op asset of tag…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent outline-none text-sm w-48"
+            />
+          </div>
+        </div>
+
         <StrategyList searchTerm={search} key={refreshKey} />
-      </section>
+      </CardWrapper>
 
       {toast && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
@@ -144,21 +172,31 @@ export default function StrategyPage() {
         </div>
       )}
 
-      {/* Nieuwe strategie */}
-      <section className="pt-10 border-t">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-semibold">➕ Nieuwe Strategie Toevoegen</h2>
-          <InfoTooltip text="Per tab zie je alleen setups die nog geen strategie van dat type hebben." />
-        </div>
+      {/* -------------------------------------------------- */}
+      {/* ➕ Nieuwe strategie */}
+      {/* -------------------------------------------------- */}
+      <CardWrapper
+        title={
+          <div className="flex items-center gap-2">
+            <PlusCircle className="text-[var(--primary)]" size={20} />
+            <span>Nieuwe Strategie</span>
+          </div>
+        }
+      >
+        <p className="text-sm text-[var(--text-light)] mb-4">
+          Kies welke setup je wilt gebruiken en genereer een strategie via AI,
+          of voer hem zelf handmatig in.
+        </p>
 
         <StrategyTabs
-          key={refreshKey}               // 🔥 Force fully refreshed tabs
+          key={refreshKey}
           onSubmit={handleStrategySubmit}
           setupsTrading={setupsWithoutTrading}
           setupsDCA={setupsWithoutDCA}
           setupsManual={setupsWithoutManual}
         />
-      </section>
+      </CardWrapper>
+
     </div>
   );
 }

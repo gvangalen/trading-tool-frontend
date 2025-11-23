@@ -9,22 +9,20 @@ echo "📦 Start frontend deploy op $(date)"
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
 
-# Zorg dat PM2 altijd gevonden wordt
 export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
-
 echo "🔧 PM2 pad: $(which pm2 || echo '❌ Niet gevonden')"
 
 # -------------------------
-# 2. Projectmap
+# 2. Ga naar project
 # -------------------------
 cd ~/trading-tool-frontend || { echo "❌ Map niet gevonden"; exit 1; }
 
 # -------------------------
-# 3. Stop PM2 proces vóór cleanup
+# 3. PM2 stoppen
 # -------------------------
 if pm2 list | grep -q frontend; then
   echo "🛑 Stop frontend..."
-  pm2 stop frontend
+  pm2 stop frontend || true
 fi
 
 # -------------------------
@@ -35,7 +33,7 @@ git fetch origin main
 git reset --hard origin/main
 
 # -------------------------
-# 5. Activeer Node 20
+# 5. Node activeren
 # -------------------------
 nvm use 20 || { echo "❌ Node 20 niet beschikbaar"; exit 1; }
 echo "Node: $(node -v)"
@@ -43,20 +41,29 @@ echo "Node: $(node -v)"
 # -------------------------
 # 6. Opschonen
 # -------------------------
-echo "🧨 Verwijder node_modules + .next..."
+echo "🧨 Verwijder node_modules + .next + lockfile..."
 rm -rf node_modules .next package-lock.json
 
 # -------------------------
-# 7. Dependencies installeren
+# 7. Install dependencies
 # -------------------------
 echo "📦 Install dependencies..."
 npm install
 
 # -------------------------
-# 8. Installeer extra libs (NOOIT overslaan)
+# 8. EXTRA: installeer libs die UI-2.5 vereist
 # -------------------------
-echo "➕ Install framer-motion + lucide-react"
-npm install framer-motion lucide-react --legacy-peer-deps
+echo "➕ Install framer-motion + lucide-react + clsx"
+
+npm install framer-motion lucide-react clsx --legacy-peer-deps
+
+# Safety check voor clsx:
+if ! npm list clsx >/dev/null 2>&1; then
+  echo "⚠️ clsx niet gevonden → opnieuw installeren..."
+  npm install clsx
+fi
+
+echo "🟢 Extra libs geïnstalleerd"
 
 # -------------------------
 # 9. Build
@@ -77,7 +84,6 @@ fi
 # -------------------------
 echo "🚀 Start frontend via PM2..."
 pm2 start npm --name "frontend" -- run start
-
 pm2 save
 
 echo "✅ Deployment afgerond op $(date)"

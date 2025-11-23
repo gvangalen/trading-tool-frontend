@@ -4,16 +4,13 @@ import { useEffect, useState } from "react";
 
 import DashboardGauges from "@/components/dashboard/DashboardGauges";
 import TradingAdvice from "@/components/dashboard/TradingAdvice";
+import TechnicalDayTableForDashboard from "@/components/technical/TechnicalDayTableForDashboard";
+import MacroSummaryTableForDashboard from "@/components/macro/MacroSummaryTableForDashboard";
+import TopSetupsMini from "@/components/setup/TopSetupsMini";
 import DashboardHighlights from "@/components/dashboard/DashboardHighlights";
 import RightSidebarCard from "@/components/cards/RightSidebarCard";
-import TopSetupsMini from "@/components/setup/TopSetupsMini";
-
 import CardWrapper from "@/components/ui/CardWrapper";
-
-// ⭐ Nieuwe 2.5 Tabellensets
-import MarketTableDesign from "@/components/ui/MarketTableDesign";
-import MacroTableDesign from "@/components/ui/MacroTableDesign";
-import TechnicalTableDesign from "@/components/ui/TechnicalTableDesign";
+import MarketSummaryForDashboard from "@/components/market/MarketSummaryForDashboard";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";
@@ -22,8 +19,11 @@ import { useMarketData } from "@/hooks/useMarketData";
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  const { technicalData, handleRemove, loading: technicalLoading } =
-    useTechnicalData();
+  const {
+    technicalData,
+    handleRemove,
+    loading: technicalLoading,
+  } = useTechnicalData();
 
   const {
     macroData,
@@ -31,6 +31,8 @@ export default function DashboardPage() {
     error: macroError,
     handleEdit,
     handleRemove: handleMacroRemove,
+    calculateMacroScore,
+    getExplanation,
   } = useMacroData();
 
   const { sevenDayData, btcLive } = useMarketData();
@@ -45,43 +47,80 @@ export default function DashboardPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <div className="p-6 pt-24 bg-[var(--bg)] text-[var(--text-dark)] min-h-screen">
+    <div
+      className="
+        max-w-screen-xl mx-auto
+        pt-24 pb-10 px-4
+        bg-[var(--bg)]
+        text-[var(--text-dark)]
+        min-h-screen
+        space-y-8
+        animate-fade-slide
+      "
+    >
+      {/* HEADER */}
+      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+            📊 Trading Dashboard
+          </h1>
+          <p className="text-sm text-[var(--text-light)]">
+            Eén overzicht voor markt, macro, technische analyse en je beste setups.
+          </p>
+        </div>
+      </header>
 
+      {/* MAIN GRID */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 w-full">
-
-        {/* ================== MAIN COLUMN ================== */}
-        <div className="space-y-10">
-
+        {/* LINKERKOLOM */}
+        <div className="space-y-8 md:space-y-10">
           <DashboardHighlights />
 
           <DashboardGauges />
 
-          {/* MARKET */}
+          {/* MARKET DATA – zelfde functionaliteit als voorheen */}
           <CardWrapper title="💰 Market Data">
-            <MarketTableDesign data={sevenDayData} />
+            <MarketSummaryForDashboard
+              sevenDayData={sevenDayData}
+              btcLive={btcLive}
+            />
           </CardWrapper>
 
-          {/* TECHNICAL */}
+          {/* TECHNISCHE ANALYSE */}
           <CardWrapper title="📈 Technische Analyse">
             {technicalLoading ? (
-              <p className="text-[var(--text-light)]">⏳ Laden...</p>
+              <p className="text-[var(--text-light)] text-sm">
+                ⏳ Technische data laden...
+              </p>
             ) : (
-              <TechnicalTableDesign data={technicalData} />
+              <TechnicalDayTableForDashboard
+                data={technicalData}
+                loading={technicalLoading}
+                onRemove={handleRemove}
+              />
             )}
           </CardWrapper>
 
-          {/* MACRO */}
+          {/* MACRO INDICATOREN */}
           <CardWrapper title="🌍 Macro Indicatoren">
             {macroLoading ? (
-              <p className="text-[var(--text-light)]">⏳ Laden...</p>
+              <p className="text-[var(--text-light)] text-sm">
+                ⏳ Macrodata laden...
+              </p>
             ) : macroError ? (
-              <p className="text-[var(--red)]">{macroError}</p>
+              <p className="text-[var(--red)] text-sm">{macroError}</p>
             ) : (
-              <MacroTableDesign data={macroData} />
+              <MacroSummaryTableForDashboard
+                data={macroData}
+                calculateScore={calculateMacroScore}
+                getExplanation={getExplanation}
+                onEdit={handleEdit}
+                onRemove={handleMacroRemove}
+              />
             )}
           </CardWrapper>
 
-          {/* TRADING ADVICE */}
+          {/* AI TRADINGADVIES */}
           <CardWrapper title="🚀 AI Tradingadvies">
             <TradingAdvice />
           </CardWrapper>
@@ -90,19 +129,17 @@ export default function DashboardPage() {
           <CardWrapper title="🏆 Top 3 Setups">
             <TopSetupsMini />
           </CardWrapper>
-
         </div>
 
-        {/* ================== RIGHT SIDEBAR ================== */}
+        {/* RECHTER SIDEBAR */}
         <div className="hidden xl:block w-full max-w-xs">
           <div className="sticky top-24">
             <RightSidebarCard />
           </div>
         </div>
-
       </div>
 
-      {/* ================== SCROLL BUTTON ================== */}
+      {/* SCROLL NAAR BOVEN KNOP */}
       {showScroll && (
         <button
           onClick={scrollToTop}
@@ -111,8 +148,10 @@ export default function DashboardPage() {
             bg-[var(--primary)] text-white
             p-3 rounded-full shadow-md
             hover:bg-[var(--primary-dark)]
+            focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2
             transition
           "
+          aria-label="Scroll naar boven"
         >
           ⬆️
         </button>

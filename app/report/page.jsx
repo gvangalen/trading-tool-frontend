@@ -1,5 +1,4 @@
 'use client';
-console.log('✅ ReportPage component geladen');
 
 import { useState, useEffect } from 'react';
 import {
@@ -28,9 +27,20 @@ import {
   generateQuarterlyReport,
   fetchQuarterlyReportPDF,
 } from '@/lib/api/report';
+
 import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
+import CardWrapper from '@/components/ui/CardWrapper';
+
+import {
+  FileText,
+  CalendarRange,
+  Download,
+  RefreshCw,
+  AlertTriangle,
+  Loader2,
+} from 'lucide-react';
 
 // 🔁 Valuta formatter
 const formatCurrency = (amount, currency = 'EUR') =>
@@ -122,10 +132,9 @@ export default function ReportPage() {
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
         console.warn(`⚙️ Geen ${reportType}-rapport. Start automatische generatie...`);
         await current.generate();
-        setError(`Er was nog geen ${reportType}-rapport. Generatie gestart — ververs over 1 minuut.`);
-
-        // Optioneel automatisch herladen na 60 sec
-        // setTimeout(() => loadData('latest'), 60000);
+        setError(
+          `Er was nog geen ${fallbackLabel.toLowerCase()}rapport. Generatie gestart — ververs over 1 minuut.`
+        );
         return;
       }
 
@@ -140,6 +149,7 @@ export default function ReportPage() {
 
   useEffect(() => {
     loadData('latest');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportType]);
 
   const handleGenerate = async () => {
@@ -167,80 +177,265 @@ export default function ReportPage() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">
-        📊 Rapportage ({fallbackLabel}){' '}
-        {report?.report_date && (
-          <span className="text-gray-500 text-base font-normal">— {report.report_date}</span>
-        )}
-      </h1>
+    <div
+      className="
+        max-w-screen-xl mx-auto 
+        pt-24 pb-10 px-4 
+        space-y-8 
+        bg-[var(--bg)]
+        text-[var(--text-dark)]
+        animate-fade-slide
+      "
+    >
+      {/* HEADER */}
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div
+              className="
+                inline-flex items-center justify-center 
+                w-9 h-9 rounded-xl 
+                bg-[var(--primary-light)] 
+                text-[var(--primary)]
+              "
+            >
+              <FileText size={18} />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+              Rapportage ({fallbackLabel})
+            </h1>
+          </div>
 
-      <ReportTabs selected={reportType} onChange={setReportType} />
+          <p className="text-sm text-[var(--text-light)]">
+            Overzicht van je AI-gegenereerde dagelijkse, wekelijkse, maandelijkse en kwartaalrapporten.
+          </p>
+        </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <label htmlFor="reportDateSelect" className="font-semibold">
-          📅 Selecteer datum:
-        </label>
-        <select
-          id="reportDateSelect"
-          className="p-2 border rounded"
-          value={selectedDate}
-          onChange={async (e) => {
-            const value = e.target.value;
-            setSelectedDate(value);
-            await loadData(value);
-          }}
+        {/* Datum / meta */}
+        <div className="flex flex-col items-start md:items-end gap-1">
+          {report?.report_date && (
+            <div
+              className="
+                inline-flex items-center gap-2 
+                px-3 py-1 rounded-full 
+                bg-[var(--bg-soft)] 
+                border border-[var(--border)]
+                text-xs font-medium
+              "
+            >
+              <CalendarRange size={14} className="text-[var(--text-light)]" />
+              <span>Rapportdatum: {report.report_date}</span>
+            </div>
+          )}
+          {loading && (
+            <span className="text-xs text-[var(--text-light)] flex items-center gap-1">
+              <Loader2 size={12} className="animate-spin" />
+              Rapport wordt geladen…
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* TYPE TABS + FILTER BAR */}
+      <CardWrapper>
+        <div className="space-y-4">
+          {/* Tabs */}
+          <ReportTabs selected={reportType} onChange={setReportType} />
+
+          {/* Filter / acties */}
+          <div
+            className="
+              flex flex-wrap items-center gap-3
+              bg-[var(--bg-soft)]
+              border border-[var(--border)]
+              rounded-2xl
+              px-4 py-3
+            "
+          >
+            {/* Date select */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-[var(--text-light)] flex items-center gap-1">
+                <CalendarRange size={14} />
+                Selecteer datum:
+              </span>
+              <select
+                id="reportDateSelect"
+                className="
+                  text-xs md:text-sm
+                  px-3 py-2
+                  rounded-xl
+                  border border-[var(--border)]
+                  bg-[var(--bg)]
+                  text-[var(--text-dark)]
+                  focus:outline-none
+                  focus:ring-1 focus:ring-[var(--primary)]
+                "
+                value={selectedDate}
+                onChange={async (e) => {
+                  const value = e.target.value;
+                  setSelectedDate(value);
+                  await loadData(value);
+                }}
+              >
+                <option value="latest">Laatste</option>
+                {dates.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleDownload}
+                className={`
+                  inline-flex items-center gap-2
+                  px-3 md:px-4 py-2
+                  rounded-xl text-xs md:text-sm font-medium
+                  shadow-sm
+                  ${
+                    pdfLoading
+                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                      : 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]'
+                  }
+                `}
+                disabled={pdfLoading}
+              >
+                {pdfLoading ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Downloaden...
+                  </>
+                ) : (
+                  <>
+                    <Download size={14} />
+                    Download PDF
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleGenerate}
+                className="
+                  inline-flex items-center gap-2
+                  px-3 md:px-4 py-2
+                  rounded-xl text-xs md:text-sm font-medium
+                  border border-[var(--border)]
+                  bg-[var(--bg)]
+                  text-[var(--text-dark)]
+                  hover:bg-[var(--primary-light)]
+                  transition
+                "
+              >
+                <RefreshCw size={14} />
+                Genereer rapport
+              </button>
+            </div>
+          </div>
+        </div>
+      </CardWrapper>
+
+      {/* STATUS / FOUTEN */}
+      {error && (
+        <div
+          className="
+            flex items-start gap-2
+            bg-yellow-50 border border-yellow-200
+            text-yellow-800 text-sm
+            px-4 py-3 rounded-xl
+          "
         >
-          <option value="latest">Laatste</option>
-          {dates.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
+          <AlertTriangle size={16} className="mt-[2px]" />
+          <p>{error}</p>
+        </div>
+      )}
 
-        <button
-          onClick={handleDownload}
-          className={`px-4 py-2 rounded transition ${
-            pdfLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
-          } text-white`}
-          disabled={pdfLoading}
-        >
-          {pdfLoading ? '📄 Downloaden...' : '📥 Download PDF'}
-        </button>
+      {/* LOADING INDICATOR (extra, boven content) */}
+      {loading && !error && (
+        <div className="text-sm text-[var(--text-light)] flex items-center gap-2">
+          <Loader2 size={16} className="animate-spin" />
+          <span>Rapport wordt geladen…</span>
+        </div>
+      )}
 
-        <button
-          onClick={handleGenerate}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-        >
-          🔄 Genereer rapport
-        </button>
-      </div>
-
-      {loading && <p className="text-gray-500">📡 Rapport laden...</p>}
-      {error && <p className="text-red-600">❌ {error}</p>}
-
+      {/* GEEN ECHTE DATA → DUMMY RAPPORT */}
       {noRealData && (
         <div className="space-y-6">
-          <div className="p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-sm">
-            ⚠️ Er is nog geen {fallbackLabel.toLowerCase()}rapport beschikbaar.
-            Hieronder zie je een voorbeeldrapport met dummy-data.
+          <div
+            className="
+              flex items-start gap-2
+              bg-yellow-50 border border-yellow-200
+              text-yellow-800 text-sm
+              px-4 py-3 rounded-xl
+            "
+          >
+            <AlertTriangle size={16} className="mt-[2px]" />
+            <p>
+              Er is nog geen {fallbackLabel.toLowerCase()}rapport beschikbaar.
+              Hieronder zie je een voorbeeldrapport met dummy-data.
+            </p>
           </div>
+
           <DummyReport />
         </div>
       )}
 
+      {/* ECHT RAPPORT */}
       {!loading && report && Object.keys(report).length > 0 && (
         <ReportContainer>
-          <ReportCard title="🧠 Samenvatting BTC" content={report?.btc_summary} full color="blue" />
+          <ReportCard
+            title="🧠 Samenvatting BTC"
+            content={report?.btc_summary}
+            full
+            color="blue"
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ReportCard title="📉 Macro Samenvatting" content={report?.macro_summary} color="gray" />
-            <ReportCard title="📋 Setup Checklist" content={report?.setup_checklist} pre color="green" />
-            <ReportCard title="🎯 Dagelijkse Prioriteiten" content={report?.priorities} pre color="yellow" />
-            <ReportCard title="🔍 Wyckoff Analyse" content={report?.wyckoff_analysis} pre color="blue" />
-            <ReportCard title="📈 Aanbevelingen" content={report?.recommendations} pre color="red" />
-            <ReportCard title="✅ Conclusie" content={report?.conclusion} color="green" />
-            <ReportCard title="🔮 Vooruitblik" content={report?.outlook} pre color="gray" />
+            <ReportCard
+              title="📉 Macro Samenvatting"
+              content={report?.macro_summary}
+              color="gray"
+            />
+            <ReportCard
+              title="📋 Setup Checklist"
+              content={report?.setup_checklist}
+              pre
+              color="green"
+            />
+            <ReportCard
+              title="🎯 Dagelijkse Prioriteiten"
+              content={report?.priorities}
+              pre
+              color="yellow"
+            />
+            <ReportCard
+              title="🔍 Wyckoff Analyse"
+              content={report?.wyckoff_analysis}
+              pre
+              color="blue"
+            />
+            <ReportCard
+              title="📈 Aanbevelingen"
+              content={report?.recommendations}
+              pre
+              color="red"
+            />
+            <ReportCard
+              title="✅ Conclusie"
+              content={report?.conclusion}
+              color="green"
+            />
+            <ReportCard
+              title="🔮 Vooruitblik"
+              content={report?.outlook}
+              pre
+              color="gray"
+            />
           </div>
         </ReportContainer>
       )}
@@ -248,6 +443,9 @@ export default function ReportPage() {
   );
 }
 
+/* ---------------------------------------------------
+   💡 Dummy Report – zelfde 2.5 style
+--------------------------------------------------- */
 function DummyReport() {
   return (
     <ReportContainer>
@@ -283,7 +481,9 @@ function DummyReport() {
         />
         <ReportCard
           title="📈 Aanbevelingen"
-          content={`• Accumulatie bij dips\n• Entry ladder tussen ${formatCurrency(64000)}–${formatCurrency(66000)}\n• Alert op breakout ${formatCurrency(70500)}`}
+          content={`• Accumulatie bij dips\n• Entry ladder tussen ${formatCurrency(
+            64000
+          )}–${formatCurrency(66000)}\n• Alert op breakout ${formatCurrency(70500)}`}
           pre
           color="red"
         />

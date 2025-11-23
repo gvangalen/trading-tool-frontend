@@ -1,38 +1,58 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import SetupForm from '@/components/setup/SetupForm';
+import { useEffect } from "react";
+import SetupForm from "@/components/setup/SetupForm";
+import { X, XCircle, Save } from "lucide-react";
 
 export default function SetupEditModal({ open, onClose, setup, reload }) {
-  // ESC sluit modal
+  // Sluit met ESC
   useEffect(() => {
-    const esc = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
+    const esc = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
 
   if (!open || !setup) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-
+    <div
+      className="
+        fixed inset-0 z-50
+        bg-black/40 backdrop-blur-sm
+        flex items-center justify-center
+        p-4
+      "
+    >
       <div
         className="
-          bg-white dark:bg-gray-900 rounded-xl shadow-xl 
+          bg-[var(--card-bg)]
+          border border-[var(--card-border)]
+          rounded-3xl shadow-2xl
           w-full max-w-xl
           max-h-[85vh] overflow-y-auto
-          relative p-6
+          relative p-6 animate-fade-slide
         "
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-xl text-gray-500 hover:text-gray-700"
+          className="
+            absolute top-4 right-4 
+            text-[var(--text-light)]
+            hover:text-[var(--text-dark)]
+            transition
+          "
         >
-          ✖
+          <X size={22} />
         </button>
 
-        {/* EDIT FORM */}
+        {/* Header */}
+        <h2 className="text-xl font-semibold text-[var(--text-dark)] mb-4 flex items-center gap-2">
+          <Save size={18} className="text-[var(--primary)]" />
+          Setup bewerken
+        </h2>
+
+        {/* FORM */}
         <SetupForm
           mode="edit"
           initialData={setup}
@@ -42,33 +62,48 @@ export default function SetupEditModal({ open, onClose, setup, reload }) {
           }}
         />
 
-        {/* --- FOOTER BUTTONS --- */}
-        <div className="flex justify-between mt-6 pt-4 border-t border-gray-300 dark:border-gray-700">
+        {/* Footer */}
+        <div
+          className="
+            flex justify-between items-center gap-4
+            mt-8 pt-5
+            border-t border-[var(--border)]
+          "
+        >
+          {/* Cancel */}
           <button
             onClick={onClose}
             className="
-              px-4 py-2 rounded-md 
-              bg-gray-200 hover:bg-gray-300 
-              dark:bg-gray-700 dark:hover:bg-gray-600
-              text-gray-700 dark:text-gray-200
-              font-medium
+              flex items-center gap-2
+              px-4 py-2 rounded-xl
+              bg-[var(--bg-soft)]
+              border border-[var(--border)]
+              text-[var(--text-dark)]
+              hover:bg-white hover:shadow
+              transition
             "
           >
-            ❌ Annuleren
+            <XCircle size={16} />
+            Annuleren
           </button>
 
+          {/* Save */}
           <button
-            onClick={() => {
-              // Triggert de submit-button in SetupForm
-              document.querySelector('#setup-edit-submit')?.click();
-            }}
+            onClick={() =>
+              document.querySelector("#setup-edit-submit")?.click()
+            }
             className="
-              px-4 py-2 rounded-md 
-              bg-blue-600 hover:bg-blue-700 
+              flex items-center gap-2
+              px-5 py-2 rounded-xl
+              bg-[var(--primary)]
+              hover:bg-[var(--primary-dark)]
               text-white font-semibold
+              shadow-sm hover:shadow-md
+              transition
             "
           >
-            💾 Update uitvoeren
+            <Save size={16} />
+            Update opslaan
           </button>
         </div>
       </div>

@@ -11,9 +11,9 @@ import TopSetupsMini from "@/components/setup/TopSetupsMini";
 import CardWrapper from "@/components/ui/CardWrapper";
 
 // ⭐ Nieuwe 2.5 Tabellensets
-import MarketTableDesign from "@/components/tables/MarketTableDesign";
-import MacroTableDesign from "@/components/tables/MacroTableDesign";
-import TechnicalTableDesign from "@/components/tables/TechnicalTableDesign";
+import MarketTableDesign from "@/components/ui/MarketTableDesign";
+import MacroTableDesign from "@/components/ui/MacroTableDesign";
+import TechnicalTableDesign from "@/components/ui/TechnicalTableDesign";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";

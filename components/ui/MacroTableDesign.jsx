@@ -6,6 +6,32 @@ import CardWrapper from './CardWrapper';
 // Luxe lucide icons – zelfde stijl als sidebar
 import { Globe, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
+/* -----------------------------------------------------
+   SAFE HELPERS → voorkomt elke .toFixed crash
+----------------------------------------------------- */
+const safeValue = (v) => {
+  if (v === null || v === undefined) return "–";
+  if (typeof v === "number") return v;
+  if (typeof v === "string") return v;
+  return "–";
+};
+
+const safeScore = (s) => {
+  // score kan number zijn → return direct
+  if (typeof s === "number") return s;
+
+  // score kan object zijn → backend gebruikt deze structuur:
+  // { value: 65, trend: "...", interpretation: "...", advies: "..." }
+  if (typeof s === "object" && s !== null) {
+    if (typeof s.value === "number") return s.value;
+  }
+
+  return "–";
+};
+
+const safeText = (v) => (v ? v : "–");
+
+
 export default function MacroTableDesign({ data }) {
   return (
     <CardWrapper
@@ -18,6 +44,7 @@ export default function MacroTableDesign({ data }) {
     >
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-sm">
+
           {/* ---------------- TABLE HEADER ---------------- */}
           <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
             <tr className="border-b border-[var(--border)]">
@@ -38,19 +65,33 @@ export default function MacroTableDesign({ data }) {
           {/* ---------------- TABLE BODY ---------------- */}
           <tbody>
             {data.map((row) => {
+              const trend = row.trend || row.score?.trend || "Neutral";
+
               const TrendIcon =
-                row.trend === "Up"
+                trend === "Up"
                   ? TrendingUp
-                  : row.trend === "Down"
+                  : trend === "Down"
                   ? TrendingDown
                   : Minus;
 
               const trendColor =
-                row.trend === "Up"
+                trend === "Up"
                   ? "text-green-600"
-                  : row.trend === "Down"
+                  : trend === "Down"
                   ? "text-red-500"
                   : "text-gray-500";
+
+              const scoreValue = safeScore(row.score);
+
+              // dynamische kleur voor score
+              const scoreColor =
+                typeof scoreValue === "number"
+                  ? scoreValue >= 75
+                    ? "var(--green)"
+                    : scoreValue >= 50
+                    ? "#FBBF24"
+                    : "var(--red)"
+                  : "var(--text-light)";
 
               return (
                 <tr
@@ -65,7 +106,7 @@ export default function MacroTableDesign({ data }) {
                   <td className="px-4 py-3 font-medium text-[var(--text-dark)]">
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-[var(--text-light)]" />
-                      {row.name}
+                      {safeText(row.name)}
                     </div>
                   </td>
 
@@ -73,36 +114,29 @@ export default function MacroTableDesign({ data }) {
                   <td className="px-4 py-3 font-medium">
                     <div className={`flex items-center gap-2 ${trendColor}`}>
                       <TrendIcon className="w-4 h-4" />
-                      {row.trend}
+                      {safeText(trend)}
                     </div>
                   </td>
 
                   {/* Value */}
-                  <td className="px-4 py-3">{row.value}</td>
+                  <td className="px-4 py-3">{safeValue(row.value)}</td>
 
-                  {/* Score — kleur per range */}
+                  {/* Score */}
                   <td
                     className="px-4 py-3 font-semibold"
-                    style={{
-                      color:
-                        row.score >= 75
-                          ? "var(--green)"
-                          : row.score >= 50
-                          ? "#FBBF24"
-                          : "var(--red)",
-                    }}
+                    style={{ color: scoreColor }}
                   >
-                    {row.score}
+                    {scoreValue}
                   </td>
 
                   {/* Advies */}
                   <td className="px-4 py-3 text-[var(--text-dark)]">
-                    {row.advice}
+                    {safeText(row.advice || row.score?.advies)}
                   </td>
 
                   {/* Uitleg */}
                   <td className="px-4 py-3 text-[var(--text-light)]">
-                    {row.interpretation}
+                    {safeText(row.interpretation || row.score?.interpretation)}
                   </td>
                 </tr>
               );

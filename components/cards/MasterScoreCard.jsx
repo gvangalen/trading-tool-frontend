@@ -14,73 +14,71 @@ export default function MasterScoreCard() {
     return "text-yellow-500 dark:text-yellow-300";
   };
 
-  // 🧠 Bepaal waarde
   const scoreValue = master?.score ? master.score.toFixed(1) : "–";
 
   return (
-    <CardWrapper>
-      <div className="p-5 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm">
+    <CardWrapper title="AI Master Score">
 
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300">
-            <Brain className="w-4 h-4" />
-          </div>
-
-          <h2 className="text-sm font-semibold text-[var(--text-dark)]">
-            AI Master Score
-          </h2>
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-3 mt-1">
+        <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50 shadow-sm">
+          <Brain className="w-5 h-5 text-purple-600 dark:text-purple-300" />
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <p className="text-center text-gray-500 dark:text-gray-400 italic">
-            ⏳ Laden…
-          </p>
-        )}
-
-        {/* Error */}
-        {!loading && (error || !master) && (
-          <p className="text-center text-red-500 dark:text-red-400 font-medium">
-            ❌ Fout bij laden van AI Master Score
-          </p>
-        )}
-
-        {/* Success view */}
-        {!loading && master && (
-          <>
-            {/* Score */}
-            <p
-              className={`text-4xl font-bold tracking-tight ${getScoreColor(
-                master.score
-              )}`}
-            >
-              {scoreValue}
-            </p>
-
-            {/* Details */}
-            <div className="mt-4 space-y-1.5 text-sm text-[var(--text-light)]">
-              <p>
-                <strong className="text-[var(--text-dark)]">Trend:</strong>{" "}
-                {master.trend || "–"}
-              </p>
-              <p>
-                <strong className="text-[var(--text-dark)]">Bias:</strong>{" "}
-                {master.bias || "–"}
-              </p>
-              <p>
-                <strong className="text-[var(--text-dark)]">Risico:</strong>{" "}
-                {master.risk || "–"}
-              </p>
-              <p>
-                <strong className="text-[var(--text-dark)]">Outlook:</strong>{" "}
-                <span className="italic">{master.outlook || "–"}</span>
-              </p>
-            </div>
-          </>
-        )}
-
+        <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
+          Markt Overzicht
+        </h2>
       </div>
+
+      {/* LOADING */}
+      {loading && (
+        <p className="text-center text-[var(--text-light)] italic py-3">
+          ⏳ Laden…
+        </p>
+      )}
+
+      {/* ERROR */}
+      {!loading && (error || !master) && (
+        <p className="text-center text-red-500 dark:text-red-400 font-medium py-3">
+          ❌ Fout bij laden van AI Master Score
+        </p>
+      )}
+
+      {/* CONTENT */}
+      {!loading && master && (
+        <div className="space-y-4">
+
+          {/* SCORE VALUE */}
+          <p
+            className={`text-4xl font-bold tracking-tight ${getScoreColor(
+              master.score
+            )}`}
+          >
+            {scoreValue}
+          </p>
+
+          {/* DETAILS */}
+          <div className="space-y-1.5 text-sm text-[var(--text-light)]">
+            <p>
+              <strong className="text-[var(--text-dark)]">Trend:</strong>{" "}
+              {master.trend || "–"}
+            </p>
+            <p>
+              <strong className="text-[var(--text-dark)]">Bias:</strong>{" "}
+              {master.bias || "–"}
+            </p>
+            <p>
+              <strong className="text-[var(--text-dark)]">Risico:</strong>{" "}
+              {master.risk || "–"}
+            </p>
+            <p>
+              <strong className="text-[var(--text-dark)]">Outlook:</strong>{" "}
+              <span className="italic">{master.outlook || "–"}</span>
+            </p>
+          </div>
+
+        </div>
+      )}
     </CardWrapper>
   );
 }

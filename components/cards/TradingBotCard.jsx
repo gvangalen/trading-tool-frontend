@@ -34,7 +34,7 @@ export default function TradingBotCard() {
     <CardWrapper>
       <div
         className="
-          h-[260px]        /* ⭐ vaste hoogte */
+          h-[260px]          
           p-5 rounded-xl
           border border-[var(--card-border)]
           bg-[var(--card-bg)]
@@ -44,7 +44,7 @@ export default function TradingBotCard() {
       >
         {/* HEADER */}
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900 shadow-sm">
+          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/40 shadow-sm">
             <Bot className="w-5 h-5 text-purple-600 dark:text-purple-300" />
           </div>
 
@@ -55,7 +55,7 @@ export default function TradingBotCard() {
 
         {/* LOADING */}
         {loading && (
-          <div className="flex justify-center py-4 flex-1">
+          <div className="flex justify-center py-6 flex-1">
             <AILoader variant="dots" size="md" text="Strategy laden…" />
           </div>
         )}
@@ -74,8 +74,9 @@ export default function TradingBotCard() {
 
         {/* STRATEGIE-INFORMATIE */}
         {!loading && strategy && (
-          <div className="flex-1 flex flex-col justify-between">
-            
+          <div className="flex flex-col justify-between flex-1">
+
+            {/* BASIC FIELDS */}
             <div className="space-y-[2px] text-sm text-[var(--text-dark)]">
               <p><strong>Setup:</strong> {strategy.setup_name}</p>
               <p><strong>Type:</strong> {strategy.strategy_type}</p>
@@ -83,7 +84,9 @@ export default function TradingBotCard() {
               <p><strong>Timeframe:</strong> {strategy.timeframe}</p>
 
               {strategy.entry && <p><strong>Entry:</strong> {strategy.entry}</p>}
-              {strategy.targets && <p><strong>Targets:</strong> {strategy.targets.join(', ')}</p>}
+              {strategy.targets && (
+                <p><strong>Targets:</strong> {strategy.targets.join(', ')}</p>
+              )}
               {strategy.stop_loss && <p><strong>SL:</strong> {strategy.stop_loss}</p>}
             </div>
 
@@ -100,7 +103,10 @@ export default function TradingBotCard() {
                     ${expanded ? 'h-auto' : 'line-clamp-2'}
                   `}
                 >
-                  🤖 {explanation}
+                  <div className="flex items-start gap-1">
+                    <Bot className="w-3 h-3 mt-[2px]" />
+                    <span>{explanation}</span>
+                  </div>
                 </div>
 
                 {/* TOGGLE BUTTON */}
@@ -123,6 +129,7 @@ export default function TradingBotCard() {
                 </button>
               </div>
             )}
+
           </div>
         )}
       </div>

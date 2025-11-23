@@ -25,45 +25,61 @@ export default function ActiveSetupCard() {
     }
   }
 
-  const trend = setup?.trend || 'neutral';
-  const trendClass =
-    trend.toLowerCase() === 'bullish'
-      ? 'border-green-500 bg-green-50 dark:bg-green-900'
-      : trend.toLowerCase() === 'bearish'
-      ? 'border-red-500 bg-red-50 dark:bg-red-900'
-      : 'border-gray-300 bg-gray-50 dark:bg-gray-800';
+  // 🎨 Trendkleur
+  const trend = setup?.trend?.toLowerCase() || 'neutral';
+
+  const trendClasses = {
+    bullish: "bg-green-100/60 dark:bg-green-900/40 border-green-300/60 dark:border-green-800",
+    bearish: "bg-red-100/60 dark:bg-red-900/40 border-red-300/60 dark:border-red-800",
+    neutral: "bg-gray-100/60 dark:bg-gray-900/40 border-gray-300/60 dark:border-gray-800",
+  };
+
+  const boxClass = trendClasses[trend] || trendClasses.neutral;
 
   return (
-    <CardWrapper>
-      <div className={`rounded-xl p-4 border ${trendClass}`}>
+    <CardWrapper title="Actieve Setup">
 
-        {/* Titel */}
-        <div className="flex items-center gap-2 mb-2 font-semibold text-[var(--text-dark)]">
-          <TrendingUp className="w-4 h-4" />
-          <span className="text-sm">Actieve Setup</span>
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`p-2 rounded-lg shadow-sm ${boxClass}`}>
+          <TrendingUp className="w-5 h-5 text-[var(--text-dark)] dark:text-[var(--text-light)]" />
         </div>
 
-        {/* Loading */}
-        {loading ? (
-          <p className="text-sm text-gray-500 italic">⏳ Laden…</p>
-        ) : !setup ? (
-          <p className="text-sm text-gray-500 italic">Geen actieve setup gevonden.</p>
-        ) : (
-          <div className="text-sm text-[var(--text-dark)] space-y-1">
-
-            <p><strong>Naam:</strong> {setup.name}</p>
-            <p><strong>Trend:</strong> {setup.trend || '-'}</p>
-            <p><strong>Timeframe:</strong> {setup.timeframe}</p>
-            <p><strong>Type:</strong> {setup.strategy_type}</p>
-            <p><strong>Asset:</strong> {setup.symbol}</p>
-
-            <p className="text-xs mt-2 italic text-[var(--text-light)]">
-              Klik voor details op de setups-pagina.
-            </p>
-
-          </div>
-        )}
+        <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
+          Huidige Setup Status
+        </h2>
       </div>
+
+      {/* LOADING */}
+      {loading && (
+        <p className="text-sm text-[var(--text-light)] italic py-2">
+          ⏳ Laden…
+        </p>
+      )}
+
+      {/* EMPTY */}
+      {!loading && !setup && (
+        <p className="text-sm italic text-[var(--text-light)] py-2">
+          Geen actieve setup gevonden.
+        </p>
+      )}
+
+      {/* DATA WEERGAVE */}
+      {!loading && setup && (
+        <div className="space-y-1.5 text-sm text-[var(--text-dark)]">
+
+          <p><strong>Naam:</strong> {setup.name || "–"}</p>
+          <p><strong>Trend:</strong> {setup.trend || "–"}</p>
+          <p><strong>Timeframe:</strong> {setup.timeframe || "–"}</p>
+          <p><strong>Type:</strong> {setup.strategy_type || "–"}</p>
+          <p><strong>Asset:</strong> {setup.symbol || "–"}</p>
+
+          <p className="text-xs italic mt-3 text-[var(--text-light)]">
+            Bekijk details op de setups-pagina.
+          </p>
+        </div>
+      )}
+
     </CardWrapper>
   );
 }

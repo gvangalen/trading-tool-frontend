@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import CardWrapper from "@/components/ui/CardWrapper";
@@ -19,27 +19,11 @@ export default function MasterScoreCard() {
   const outlook = master?.outlook || "";
 
   return (
-    <CardWrapper>
-      <div
-        className="
-          p-5 rounded-xl
-          border border-[var(--card-border)]
-          bg-[var(--card-bg)]
-          shadow-sm
-          flex flex-col gap-4
-          min-h-[200px]
-        "
-      >
-        {/* HEADER */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50 shadow-sm">
-            <Brain className="w-5 h-5 text-purple-600 dark:text-purple-300" />
-          </div>
-
-          <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
-            AI Master Score
-          </h2>
-        </div>
+    <CardWrapper
+      title="AI Master Score"
+      icon={<Brain className="w-4 h-4 text-purple-600" />}
+    >
+      <div className="flex flex-col gap-4 min-h-[200px]">
 
         {/* LOADING */}
         {loading && (
@@ -59,7 +43,7 @@ export default function MasterScoreCard() {
         {!loading && master && (
           <div className="flex flex-col gap-3">
 
-            {/* SCORE VALUE */}
+            {/* SCORE */}
             <p
               className={`text-4xl font-bold tracking-tight ${getScoreColor(
                 master.score
@@ -75,13 +59,13 @@ export default function MasterScoreCard() {
               <p><strong>Risico:</strong> {master.risk || "–"}</p>
             </div>
 
-            {/* OUTLOOK (COLLAPSIBLE) */}
+            {/* OUTLOOK */}
             {outlook && (
               <div className="mt-1">
                 <div
                   className={`
                     text-xs italic p-2 rounded-lg
-                    bg-purple-100/50 dark:bg-purple-900/30
+                    bg-purple-100/40 dark:bg-purple-900/20
                     text-purple-700 dark:text-purple-200
                     border border-purple-200/40 dark:border-purple-800
                     transition-all duration-300
@@ -102,13 +86,9 @@ export default function MasterScoreCard() {
                   "
                 >
                   {expanded ? (
-                    <>
-                      Toon minder <ChevronUp className="w-3 h-3" />
-                    </>
+                    <>Toon minder <ChevronUp className="w-3 h-3" /></>
                   ) : (
-                    <>
-                      Toon meer <ChevronDown className="w-3 h-3" />
-                    </>
+                    <>Toon meer <ChevronDown className="w-3 h-3" /></>
                   )}
                 </button>
               </div>

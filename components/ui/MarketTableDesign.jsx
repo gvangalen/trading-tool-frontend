@@ -7,6 +7,23 @@ import clsx from 'clsx';
 // Luxe lucide-react icons
 import { LineChart, TrendingUp, TrendingDown, Circle } from "lucide-react";
 
+/* -----------------------------------------------------
+   SAFE HELPERS - voorkomt .toFixed / NaN crashes
+----------------------------------------------------- */
+const safeNum = (v, digits = null) => {
+  if (v === null || v === undefined) return "–";
+  if (typeof v !== "number") return "–";
+  if (digits !== null) return v.toFixed(digits);
+  return v;
+};
+
+const safeText = (v) => (v ? v : "–");
+
+const formatUsd = (v) => {
+  if (typeof v !== "number") return "–";
+  return "$" + v.toLocaleString();
+};
+
 export default function MarketTableDesign({ data }) {
   return (
     <CardWrapper
@@ -17,6 +34,7 @@ export default function MarketTableDesign({ data }) {
         </div>
       }
     >
+
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-sm">
 
@@ -40,12 +58,37 @@ export default function MarketTableDesign({ data }) {
           {/* ---------------- ROWS ---------------- */}
           <tbody>
             {data.map((row) => {
+              const price = safeNum(row.price);
+              const change24 = safeNum(row.change24h, 2);
+              const volume = safeNum(row.volume24h);
+              const rsi = safeNum(row.rsi);
+
               const ChangeIcon =
-                row.change24h > 0
+                typeof row.change24h === "number" && row.change24h > 0
                   ? TrendingUp
-                  : row.change24h < 0
+                  : typeof row.change24h === "number" && row.change24h < 0
                   ? TrendingDown
                   : Circle;
+
+              const changeColor =
+                typeof row.change24h === "number" && row.change24h > 0
+                  ? "text-green-600"
+                  : typeof row.change24h === "number" && row.change24h < 0
+                  ? "text-red-500"
+                  : "text-gray-500";
+
+              const rsiColor =
+                typeof row.rsi === "number"
+                  ? row.rsi < 30
+                    ? "text-green-600"
+                    : row.rsi > 70
+                    ? "text-red-500"
+                    : "text-yellow-500"
+                  : "text-gray-500";
+
+              const maColor = row.above200ma
+                ? "text-green-600"
+                : "text-red-600";
 
               return (
                 <tr
@@ -59,59 +102,45 @@ export default function MarketTableDesign({ data }) {
                   {/* Asset */}
                   <td className="px-4 py-3 font-medium text-[var(--text-dark)]">
                     <div className="flex items-center gap-2">
-                      {/* Placeholder voor icons → kan later BTC/ETH icoontjes worden */}
                       <Circle className="w-4 h-4 text-[var(--text-light)]" />
-                      {row.asset}
+                      {safeText(row.asset)}
                     </div>
                   </td>
 
                   {/* Prijs */}
                   <td className="px-4 py-3">
-                    ${Number(row.price).toLocaleString()}
+                    {formatUsd(row.price)}
                   </td>
 
-                  {/* 24h Change */}
+                  {/* 24u Change */}
                   <td
                     className={clsx(
                       "px-4 py-3 font-semibold flex items-center gap-2",
-                      row.change24h > 0
-                        ? "text-green-600"
-                        : row.change24h < 0
-                        ? "text-red-500"
-                        : "text-gray-500"
+                      changeColor
                     )}
                   >
                     <ChangeIcon className="w-4 h-4" />
-                    {row.change24h.toFixed(2)}%
+                    {change24 === "–" ? "–" : `${change24}%`}
                   </td>
 
                   {/* Volume */}
                   <td className="px-4 py-3">
-                    {Number(row.volume24h).toLocaleString()}
+                    {volume === "–" ? "–" : Number(row.volume24h).toLocaleString()}
                   </td>
 
                   {/* RSI */}
                   <td className="px-4 py-3">
-                    <span
-                      className={clsx(
-                        "font-semibold",
-                        row.rsi < 30
-                          ? "text-green-600"
-                          : row.rsi > 70
-                          ? "text-red-500"
-                          : "text-yellow-500"
-                      )}
-                    >
-                      {row.rsi}
+                    <span className={clsx("font-semibold", rsiColor)}>
+                      {rsi}
                     </span>
                   </td>
 
-                  {/* 200MA */}
+                  {/* 200 MA */}
                   <td className="px-4 py-3">
                     <span
                       className={clsx(
                         "font-semibold flex items-center gap-1",
-                        row.above200ma ? "text-green-600" : "text-red-600"
+                        maColor
                       )}
                     >
                       <Circle className="w-3 h-3" />
@@ -125,6 +154,7 @@ export default function MarketTableDesign({ data }) {
           </tbody>
         </table>
       </div>
+
     </CardWrapper>
   );
 }

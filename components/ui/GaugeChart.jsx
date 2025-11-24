@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useRef, useEffect } from 'react';
 import {
@@ -6,79 +6,82 @@ import {
   ArcElement,
   Tooltip,
   Legend,
-  DoughnutController,
+  DoughnutController
 } from 'chart.js';
 
-// ✅ Vereiste registratie
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
-export default function GaugeChart({ value = 0, label = 'Score' }) {
+export default function GaugeChart({ value = 0, label = "Score" }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // Clamp value between 0–100
   const percentage = Math.max(0, Math.min(100, value));
 
-  // ✅ Automatische kleur op basis van waarde
+  // Fintech colors
   const scoreColor =
     percentage >= 70
-      ? '#22c55e' // groen
+      ? "#10B981" // green-500
       : percentage >= 40
-      ? '#facc15' // geel
-      : '#ef4444'; // rood
+      ? "#FACC15" // yellow-400
+      : "#EF4444"; // red-500
 
-  const colorClass =
+  const labelColor =
     percentage >= 70
-      ? 'text-green-600'
+      ? "text-green-600 dark:text-green-300"
       : percentage >= 40
-      ? 'text-yellow-500'
-      : 'text-red-500';
+      ? "text-yellow-500 dark:text-yellow-300"
+      : "text-red-500 dark:text-red-300";
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    if (chartRef.current) chartRef.current.destroy();
 
     chartRef.current = new Chart(canvasRef.current, {
-      type: 'doughnut',
+      type: "doughnut",
       data: {
         datasets: [
           {
             data: [percentage, 100 - percentage],
-            backgroundColor: [scoreColor, '#e5e7eb'],
+            backgroundColor: [
+              scoreColor,
+              "#1F2937" // gray-800 (fintech dark neutral)
+            ],
             borderWidth: 0,
-            cutout: '80%',
+            cutout: "78%",
             circumference: 180,
             rotation: 270,
+            hoverOffset: 0,
           },
         ],
       },
       options: {
         responsive: true,
         animation: {
-          duration: 800,
-          easing: 'easeOutCubic',
+          duration: 900,
+          easing: "easeOutQuart",
         },
         plugins: {
-          tooltip: { enabled: false },
           legend: { display: false },
+          tooltip: { enabled: false },
         },
       },
     });
 
-    return () => {
-      chartRef.current?.destroy();
-    };
-  }, [percentage, scoreColor]);
+    return () => chartRef.current?.destroy();
+  }, [percentage]);
 
   return (
-    <div className="relative w-full h-32 flex flex-col items-center justify-center">
-      <canvas ref={canvasRef} className="max-w-[180px]" />
-      <div className="absolute top-[42%] flex flex-col items-center">
-        <span className={`text-sm font-medium ${colorClass}`}>{label}</span>
-        <span className="text-3xl font-bold text-black dark:text-white">
+    <div className="relative w-full h-36 flex flex-col items-center justify-center">
+      <canvas ref={canvasRef} className="max-w-[200px]" />
+
+      {/* Center text */}
+      <div className="absolute top-[45%] translate-y-[-50%] text-center">
+        <span className={`text-xs font-medium ${labelColor}`}>
+          {label}
+        </span>
+
+        <span className="block text-4xl font-bold text-[var(--text-dark)] dark:text-white leading-tight">
           {value}
         </span>
       </div>

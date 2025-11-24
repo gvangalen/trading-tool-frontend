@@ -1,39 +1,61 @@
 /* ===========================================
-   GLOBAL THEME – Fintech 4.1 (Premium UI)
-   ✓ Sidebar & Topbar exact dezelfde kleur
-   ✓ Eén lichtgrijze achtergrond (#F5F6FA)
-   ✓ Luxe fintech shadows en consistentie
+   GLOBAL THEME – Fintech PRO 5.0
+   ✓ Sidebar & Topbar met diepte (gradient)
+   ✓ Premium dark surfaces (TradingView style)
+   ✓ Consistente light mode
+   ✓ Luxe fintech shadows
 =========================================== */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE */
+/* ===========================================
+   LIGHT MODE
+=========================================== */
 :root {
-  /* Accentkleur */
+  /* Accenten */
   --primary: #3B82F6;
   --primary-light: #DBEAFE;
   --primary-hover: #BFDBFE;
   --primary-dark: #1E40AF;
 
-  /* Page Background — overal gelijk */
+  /* Background */
   --bg: #F5F6FA;
   --bg-soft: #F5F6FA;
 
-  /* SIDEBAR & TOPBAR — exact dezelfde kleuren */
-  --sidebar-bg: #111827;       /* slate-900 */
-  --sidebar-hover: #1F2937;    /* slate-800 */
-  --sidebar-active: #374151;   /* slate-700 */
-  --sidebar-border: #1F2937;   /* slate-800 */
-  --sidebar-text: #F3F4F6;         /* slate-100 */
-  --sidebar-text-muted: #9CA3AF;   /* gray-400 */
+  /* ================================
+     PREMIUM DARK SURFACES (DE DIEPTE)
+     ================================ */
+  --surface-1: #111827;   /* base */
+  --surface-2: #0E1217;   /* dieper */
+  --surface-3: #1A1F27;   /* contrast */
 
-  /* TOPBAR = identiek voor 100% match */
-  --topbar-bg: #111827;
-  --topbar-border: #1F2937;
+  /* Subtiele gradient voor structuur */
+  --surface-gradient: linear-gradient(
+    to bottom,
+    #111827 0%,
+    #0E1016 100%
+  );
 
-  /* Content Text */
+  /* Glow + shadows voor real depth */
+  --surface-glow: inset 0 1px 0 rgba(255,255,255,0.04);
+  --surface-shadow: 0 4px 12px rgba(0,0,0,0.35);
+
+  /* Sidebar & Topbar — PRO */
+  --sidebar-bg: var(--surface-gradient);
+  --sidebar-hover: var(--surface-3);
+  --sidebar-active: rgba(255,255,255,0.05);
+  --sidebar-border: rgba(255,255,255,0.06);
+
+  --sidebar-text: #F3F4F6;
+  --sidebar-text-muted: #9CA3AF;
+
+  /* Topbar identiek aan Sidebar */
+  --topbar-bg: var(--surface-gradient);
+  --topbar-border: rgba(255,255,255,0.06);
+
+  /* Content */
   --text-dark: #111827;
   --text-light: #6B7280;
 
@@ -43,18 +65,20 @@
   --card-radius: 14px;
   --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
-  /* Status Colors (scoring etc.) */
+  /* Status Colors */
   --green: #10B981;
   --yellow: #FACC15;
   --red: #EF4444;
 
-  /* Shadows */
+  /* Extra Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
   --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
 }
 
-/* DARK MODE (later, maar wel voorbereid) */
+/* ===========================================
+   DARK MODE (future-ready)
+=========================================== */
 .dark {
   --bg: #0D1117;
   --bg-soft: #0D1117;
@@ -62,13 +86,13 @@
   --card-bg: #161B22;
   --card-border: #30363D;
 
-  --sidebar-bg: #0D1117;
+  --sidebar-bg: linear-gradient(to bottom, #0D1117 0%, #070A0D 100%);
   --sidebar-hover: #1A1F25;
-  --sidebar-active: #22272E;
-  --sidebar-border: #1A1F25;
+  --sidebar-active: rgba(255,255,255,0.10);
+  --sidebar-border: rgba(255,255,255,0.04);
 
-  --topbar-bg: #0D1117;
-  --topbar-border: #1A1F25;
+  --topbar-bg: linear-gradient(to bottom, #0D1117 0%, #070A0D 100%);
+  --topbar-border: rgba(255,255,255,0.04);
 
   --sidebar-text: #E6EDF3;
   --sidebar-text-muted: #9BA1A6;
@@ -77,7 +101,9 @@
   --text-light: #9BA1A6;
 }
 
-/* UNIVERSAL CARD */
+/* ===========================================
+   UNIVERSAL CARD STYLE
+=========================================== */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -85,7 +111,9 @@
   box-shadow: var(--card-shadow);
 }
 
-/* Animations */
+/* ===========================================
+   Animations
+=========================================== */
 @keyframes fade-slide {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }

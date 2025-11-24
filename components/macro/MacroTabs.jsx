@@ -1,125 +1,73 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useMacroData } from '@/hooks/useMacroData';
-import CardWrapper from '@/components/ui/CardWrapper';
-import MacroDayTable from './MacroDayTable';
-import MacroWeekTable from './MacroWeekTable';
-import MacroMonthTable from './MacroMonthTable';
-import MacroQuarterTable from './MacroQuarterTable';
+import { useState } from "react";
+import { useMacroData } from "@/hooks/useMacroData";
 
-const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
+// Nieuwe Universele Table
+import DayTable from "@/components/ui/DayTable";
+
+// UI
+import CardWrapper from "@/components/ui/CardWrapper";
+
+const TABS = ["Dag", "Week", "Maand", "Kwartaal"];
 
 export default function MacroTabs() {
-  const [activeTab, setActiveTab] = useState('Dag');
+  const [activeTab, setActiveTab] = useState("Dag");
 
   const {
     macroData,
-    avgScore,
-    advies,
     removeMacroIndicator,
     getExplanation,
     loading,
     error,
   } = useMacroData(activeTab);
 
-  // 🔁 Render juiste tabel per tab
-  const renderTableBody = () => {
-    if (loading) {
-      return (
-        <tr>
-          <td colSpan={7} className="p-4 text-center text-gray-500">
-            ⏳ Laden...
-          </td>
-        </tr>
-      );
-    }
-
-    if (error) {
-      return (
-        <tr>
-          <td colSpan={7} className="p-4 text-center text-red-500">
-            ❌ {error}
-          </td>
-        </tr>
-      );
-    }
-
-    switch (activeTab) {
-      case 'Dag':
-        return (
-          <MacroDayTable
-            data={macroData}
-            onRemove={removeMacroIndicator}
-            getExplanation={getExplanation}
-          />
-        );
-      case 'Week':
-        return (
-          <MacroWeekTable
-            data={macroData}
-            onRemove={removeMacroIndicator}
-          />
-        );
-      case 'Maand':
-        return (
-          <MacroMonthTable
-            data={macroData}
-            onRemove={removeMacroIndicator}
-          />
-        );
-      case 'Kwartaal':
-        return (
-          <MacroQuarterTable
-            data={macroData}
-            onRemove={removeMacroIndicator}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <>
-      {/* 🔹 Tabs */}
+      {/* ---------------------------------------------------- */}
+      {/* TABS */}
+      {/* ---------------------------------------------------- */}
       <div className="flex space-x-4 mb-4">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-semibold border ${
-              activeTab === tab
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
-            }`}
+            className={`
+              px-4 py-2 rounded font-semibold border transition-all
+              ${
+                activeTab === tab
+                  ? "bg-blue-600 text-white border-blue-600 shadow"
+                  : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
+              }
+            `}
           >
             {tab}
           </button>
         ))}
       </div>
 
-
-      {/* 🔹 Macro Tabel */}
+      {/* ---------------------------------------------------- */}
+      {/* CONTENT WRAPPER */}
+      {/* ---------------------------------------------------- */}
       <CardWrapper>
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto text-sm">
-            {/* ❌ Geen vaste header bij Week, Maand of Kwartaal */}
-            {activeTab === 'Dag' && (
-              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-                <tr>
-                  <th className="p-2">📊 Indicator</th>
-                  <th className="p-2 text-center">Waarde</th>
-                  <th className="p-2 text-center">Score</th>
-                  <th className="p-2 text-center">Advies</th>
-                  <th className="p-2">Uitleg</th>
-                  <th className="p-2 text-center">🗑️</th>
-                </tr>
-              </thead>
-            )}
-            <tbody>{renderTableBody()}</tbody>
-          </table>
-        </div>
+        {loading && (
+          <p className="text-center py-6 text-[var(--text-light)]">⏳ Laden…</p>
+        )}
+
+        {error && (
+          <p className="text-center py-6 text-red-500 font-medium">
+            ❌ {error}
+          </p>
+        )}
+
+        {!loading && !error && (
+          <DayTable
+            title={`Macro Analyse – ${activeTab}`}
+            icon={null}
+            data={macroData}
+            onRemove={removeMacroIndicator}
+          />
+        )}
       </CardWrapper>
     </>
   );

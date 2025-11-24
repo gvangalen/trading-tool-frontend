@@ -38,12 +38,16 @@ export default function NavBar() {
         flex flex-col
         p-6
         z-50
-        shadow-[var(--shadow-sm)]
+
+        /* depth */
+        shadow-[var(--surface-shadow)]
+        before:absolute before:inset-0 before:bg-[var(--surface-glow)]
+        before:pointer-events-none
       "
     >
-      {/* LOGO */}
-      <div className="flex items-center gap-3 mb-10 px-1">
-        <div className="p-2 rounded-xl bg-white shadow-sm">
+      {/* Logo */}
+      <div className="relative flex items-center gap-3 mb-12 px-1">
+        <div className="p-2 rounded-xl bg-white/95 shadow-md">
           <Image src="/logo.png" alt="logo" width={34} height={34} />
         </div>
 
@@ -57,7 +61,7 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* LINKS */}
+      {/* Links */}
       <nav className="flex flex-col gap-1 flex-1">
         {links.map((item) => (
           <SidebarItem
@@ -71,7 +75,7 @@ export default function NavBar() {
         ))}
       </nav>
 
-      {/* FOOTER BUTTONS */}
+      {/* Footer */}
       <div
         className="
           mt-auto 
@@ -92,36 +96,39 @@ export default function NavBar() {
   );
 }
 
-/* -------------------- SIDEBAR ITEM -------------------- */
-
+/* ------------------------------
+   SIDEBAR ITEM
+--------------------------------*/
 function SidebarItem({ href, icon, active, children }) {
   return (
     <Link
       href={href}
       className="
         relative group 
-        flex items-center px-3 py-2 
+        flex items-center px-4 py-2.5 
         rounded-xl gap-3 font-medium text-sm
         cursor-pointer select-none
+        transition-all
       "
     >
-      {/* ACTIVE BACKGROUND */}
+      {/* Active pill with glow */}
       {active && (
         <motion.div
           layoutId="active-pill"
           className="
-            absolute inset-0 
-            rounded-xl
+            absolute inset-0 rounded-xl
             bg-[var(--sidebar-active)]
+            shadow-[inset_0_0_8px_rgba(255,255,255,0.08)]
+            backdrop-blur-sm
           "
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
         />
       )}
 
-      {/* ICON */}
+      {/* Icon */}
       <span
         className={`
-          relative z-10 transition
+          relative z-10 transition-all
           ${
             active
               ? "text-[var(--sidebar-text)]"
@@ -132,13 +139,13 @@ function SidebarItem({ href, icon, active, children }) {
         {icon}
       </span>
 
-      {/* LABEL */}
+      {/* Label */}
       <span
         className={`
-          relative z-10 transition
+          relative z-10 transition-all
           ${
             active
-              ? "text-[var(--sidebar-text)]"
+              ? "text-[var(--sidebar-text)] font-semibold"
               : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
           }
         `}
@@ -149,17 +156,18 @@ function SidebarItem({ href, icon, active, children }) {
   );
 }
 
-/* -------------------- FOOTER BUTTON -------------------- */
-
+/* ------------------------------
+   FOOTER BUTTON
+--------------------------------*/
 function SidebarFooterButton({ icon, children }) {
   return (
     <button
       className="
-        flex items-center gap-2 px-4 py-2 rounded-xl
+        flex items-center gap-3 px-4 py-2 rounded-xl
         text-[var(--sidebar-text-muted)]
-        transition-all
         hover:text-[var(--sidebar-text)]
         hover:bg-[var(--sidebar-hover)]
+        transition-all
       "
     >
       {icon}

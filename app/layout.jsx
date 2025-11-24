@@ -13,27 +13,19 @@ export default function RootLayout({ children }) {
     <html lang="nl">
       <body className="bg-[var(--bg)] text-[var(--text-dark)]">
 
-        {/* Notifications */}
         <Toaster position="top-right" />
 
-        {/* SIDEBAR (fixed) */}
         <NavBar />
 
-        {/* CONTENT (sidebar pushes content 16rem naar rechts) */}
         <div className="ml-64">
 
-          {/* TOPBAR (fixed bovenaan) */}
-          <TopBar />
+          {/* FIXED TOPBAR - strak tegen sidebar */}
+          <div className="fixed top-0 left-64 right-0 z-50 bg-[var(--bg)] border-b border-white/10 h-16 flex items-center">
+            <TopBar />
+          </div>
 
-          {/* PAGE CONTENT → scrollt beneden topbar */}
-          <main
-            className="
-              px-8
-              pt-[88px]    /* ruimte voor topbar (64px height + 24px extra) */
-              pb-14
-              min-h-screen
-            "
-          >
+          {/* CONTENT */}
+          <main className="px-8 pt-[88px] pb-14 min-h-screen">
             {children}
           </main>
 

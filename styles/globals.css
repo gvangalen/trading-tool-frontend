@@ -2,7 +2,7 @@
    GLOBAL THEME – Fintech 4.1 (Premium UI)
    ✓ Sidebar & Topbar exact dezelfde kleur
    ✓ Eén lichtgrijze achtergrond (#F5F6FA)
-   ✓ Luxe fintech shadows
+   ✓ Luxe fintech shadows en consistentie
 =========================================== */
 
 @tailwind base;
@@ -17,23 +17,21 @@
   --primary-hover: #BFDBFE;
   --primary-dark: #1E40AF;
 
-  /* Page Background — overal dezelfde */
+  /* Page Background — overal gelijk */
   --bg: #F5F6FA;
   --bg-soft: #F5F6FA;
 
-  /* SIDEBAR & TOPBAR (PRO donkergrijs) */
+  /* SIDEBAR & TOPBAR — exact dezelfde kleuren */
   --sidebar-bg: #111827;       /* slate-900 */
   --sidebar-hover: #1F2937;    /* slate-800 */
   --sidebar-active: #374151;   /* slate-700 */
   --sidebar-border: #1F2937;   /* slate-800 */
-
-  /* TOPBAR = EXACT GELIJK AAN SIDEBAR */
-  --topbar-bg: #111827;
-  --topbar-border: #1F2937;
-
-  /* Text in sidebar/topbar */
   --sidebar-text: #F3F4F6;         /* slate-100 */
   --sidebar-text-muted: #9CA3AF;   /* gray-400 */
+
+  /* TOPBAR = identiek voor 100% match */
+  --topbar-bg: #111827;
+  --topbar-border: #1F2937;
 
   /* Content Text */
   --text-dark: #111827;
@@ -45,7 +43,7 @@
   --card-radius: 14px;
   --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
-  /* Status Colors */
+  /* Status Colors (scoring etc.) */
   --green: #10B981;
   --yellow: #FACC15;
   --red: #EF4444;
@@ -56,7 +54,7 @@
   --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
 }
 
-/* DARK MODE (later) */
+/* DARK MODE (later, maar wel voorbereid) */
 .dark {
   --bg: #0D1117;
   --bg-soft: #0D1117;

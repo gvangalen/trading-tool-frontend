@@ -1,5 +1,6 @@
 /* ================================
-   GLOBAL THEME (Fintech 2.0)
+   GLOBAL THEME – Fintech 3.0
+   Donkergrijze sidebar + clean UI
 ================================ */
 
 @tailwind base;
@@ -8,15 +9,21 @@
 
 /* BRAND THEME VARIABLES */
 :root {
-  /* Primary Brand (Blue) */
-  --primary: #3B82F6;             /* Premium blauw */
-  --primary-light: #E9F2FF;       /* Sidebar + soft backgrounds */
-  --primary-hover: #DCE9FF;       /* Hover state sidebar */
-  --primary-dark: #1E40AF;        /* Actieve item kleur */
+  /* Primary Accent (AI + UI acties) */
+  --primary: #3B82F6;             /* blue-500 */
+  --primary-light: #DBEAFE;       /* blue-100 */
+  --primary-hover: #BFDBFE;       /* blue-200 */
+  --primary-dark: #1E40AF;        /* blue-900 */
 
-  /* Backgrounds */
-  --bg: #FFFFFF;                  /* Hoofd-achtergrond */
-  --bg-soft: #F7FAFF;             /* Heel zachte grijs/blauw */
+  /* BACKGROUNDS */
+  --bg: #F5F6FA;                  /* clean fintech background */
+  --bg-soft: #EEF1F7;             /* nog iets zachter */
+
+  /* SIDEBAR (DONKERGRIJS) */
+  --sidebar-bg: #1E1E22;          /* bijna zwart, professioneel */
+  --sidebar-hover: #2A2A2F;
+  --sidebar-active: #3F3F46;      /* slate-700 */
+  --sidebar-border: #2C2C31;
 
   /* UI Cards */
   --card-bg: #FFFFFF;
@@ -24,11 +31,8 @@
   --card-radius: 14px;
   --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
-  /* Borders */
-  --border: #E5E7EB;
-
   /* Text */
-  --text-dark: #1F2937;
+  --text-dark: #111827;
   --text-light: #6B7280;
 
   /* Status colors */
@@ -37,15 +41,13 @@
   --red: #EF4444;
   --red-light: #FEE2E2;
 
-  /* Radius + Shadows */
-  --radius: 12px;
-  --radius-sm: 8px;
+  /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
 }
 
-/* DARK MODE (future optional) */
+/* DARK MODE (optioneel later) */
 .dark {
   --primary: #1F6FEB;
   --primary-light: #1A2634;
@@ -58,17 +60,22 @@
   --card-bg: #161B22;
   --card-border: #30363D;
 
+  --sidebar-bg: #0D1117;
+  --sidebar-hover: #1A1F25;
+  --sidebar-active: #22272E;
+  --sidebar-border: #2C3137;
+
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
 
   --border: #30363D;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.30);
-  --shadow-lg: 0 4px 20px rgba(0,0,0,0.35);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.40);
 }
 
-/* CARDS – UNIVERSAL */
+/* UNIVERSAL CARD STYLE */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);

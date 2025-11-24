@@ -13,7 +13,7 @@ import {
   BarChart3,
   FileText,
   Settings,
-  Sun
+  Sun,
 } from "lucide-react";
 
 export default function NavBar() {
@@ -33,17 +33,14 @@ export default function NavBar() {
     <aside
       className="
         fixed left-0 top-0 h-screen w-64
-        bg-[var(--primary-light)]/70
-        backdrop-blur-xl
-        border-r border-[var(--border)]
-        rounded-r-3xl
-        shadow-xl
+        bg-[var(--sidebar-bg)]
+        border-r border-[var(--sidebar-border)]
         flex flex-col
         p-6
         z-50
+        shadow-xl
       "
     >
-
       {/* LOGO */}
       <div className="flex items-center gap-3 mb-10 px-1">
         <div className="p-2 rounded-xl bg-white shadow-sm">
@@ -51,12 +48,10 @@ export default function NavBar() {
         </div>
 
         <div>
-          <h1 className="text-lg font-semibold text-[var(--text-dark)] leading-none">
+          <h1 className="text-lg font-semibold text-white leading-none">
             TradeLayer
           </h1>
-          <p className="text-xs text-[var(--text-light)] mt-1">
-            AI Trading Suite
-          </p>
+          <p className="text-xs text-gray-400 mt-1">AI Trading Suite</p>
         </div>
       </div>
 
@@ -75,14 +70,13 @@ export default function NavBar() {
       </nav>
 
       {/* FOOTER BUTTONS */}
-      <div className="mt-auto border-t border-[var(--border)] pt-5 flex flex-col gap-3">
-
+      <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5 flex flex-col gap-3">
         <button
           className="
             flex items-center gap-2 px-4 py-2 rounded-xl
-            text-[var(--text-light)]
-            hover:text-[var(--text-dark)]
-            hover:bg-[var(--primary-hover)]
+            text-gray-400
+            hover:text-white
+            hover:bg-[var(--sidebar-hover)]
             transition-all
           "
         >
@@ -93,18 +87,16 @@ export default function NavBar() {
         <button
           className="
             flex items-center gap-2 px-4 py-2 rounded-xl
-            text-[var(--text-light)]
-            hover:text-[var(--text-dark)]
-            hover:bg-[var(--primary-hover)]
+            text-gray-400
+            hover:text-white
+            hover:bg-[var(--sidebar-hover)]
             transition-all
           "
         >
           <Sun size={18} />
           Thema
         </button>
-
       </div>
-
     </aside>
   );
 }
@@ -115,13 +107,20 @@ function SidebarItem({ href, icon, active, children }) {
   return (
     <Link
       href={href}
-      className="relative group flex items-center px-3 py-2 rounded-xl gap-3 font-medium"
+      className="
+        relative group flex items-center px-3 py-2 rounded-xl gap-3 
+        font-medium text-sm
+      "
     >
-      {/* ACTIVE BACKGROUND */}
+      {/* Active pill */}
       {active && (
         <motion.div
           layoutId="active-pill"
-          className="absolute inset-0 bg-[var(--primary)] rounded-xl shadow-md"
+          className="
+            absolute inset-0 
+            bg-[var(--sidebar-active)]
+            rounded-xl
+          "
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
         />
       )}
@@ -130,7 +129,7 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10 transition
-          ${active ? "text-white" : "text-[var(--text-dark)] group-hover:scale-110"}
+          ${active ? "text-white" : "text-gray-300 group-hover:text-white"}
         `}
       >
         {icon}
@@ -140,11 +139,7 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10 transition-all
-          ${
-            active
-              ? "text-white"
-              : "text-[var(--text-dark)] group-hover:translate-x-1"
-          }
+          ${active ? "text-white" : "text-gray-300 group-hover:text-white"}
         `}
       >
         {children}

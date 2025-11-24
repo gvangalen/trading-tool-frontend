@@ -32,24 +32,13 @@ export default function NavBar() {
   return (
     <aside
       className="
+        sidebar-surface
         fixed left-0 top-0 h-screen w-64
-        bg-[var(--sidebar-bg)]
-        border-r border-[var(--sidebar-border)]
         flex flex-col
         p-6
         z-50
-        
-        shadow-[var(--surface-shadow)]
-        relative
       "
     >
-      {/* Subtiele surface glow — geeft 3D diepte */}
-      <div className="
-        absolute inset-0 
-        pointer-events-none 
-        [background:var(--surface-glow)]
-      " />
-
       {/* Logo */}
       <div className="relative flex items-center gap-3 mb-12 px-1">
         <div className="p-2 rounded-xl bg-white/95 shadow-md">
@@ -113,7 +102,7 @@ function SidebarItem({ href, icon, active, children }) {
         transition-all
       "
     >
-      {/* Active pill */}
+      {/* Active state glow */}
       {active && (
         <motion.div
           layoutId="active-pill"

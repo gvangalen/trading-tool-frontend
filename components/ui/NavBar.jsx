@@ -38,13 +38,18 @@ export default function NavBar() {
         flex flex-col
         p-6
         z-50
-
-        /* depth */
+        
         shadow-[var(--surface-shadow)]
-        before:absolute before:inset-0 before:bg-[var(--surface-glow)]
-        before:pointer-events-none
+        relative
       "
     >
+      {/* Subtiele surface glow — geeft 3D diepte */}
+      <div className="
+        absolute inset-0 
+        pointer-events-none 
+        [background:var(--surface-glow)]
+      " />
+
       {/* Logo */}
       <div className="relative flex items-center gap-3 mb-12 px-1">
         <div className="p-2 rounded-xl bg-white/95 shadow-md">
@@ -61,7 +66,7 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Links */}
+      {/* Nav links */}
       <nav className="flex flex-col gap-1 flex-1">
         {links.map((item) => (
           <SidebarItem
@@ -96,9 +101,6 @@ export default function NavBar() {
   );
 }
 
-/* ------------------------------
-   SIDEBAR ITEM
---------------------------------*/
 function SidebarItem({ href, icon, active, children }) {
   return (
     <Link
@@ -111,7 +113,7 @@ function SidebarItem({ href, icon, active, children }) {
         transition-all
       "
     >
-      {/* Active pill with glow */}
+      {/* Active pill */}
       {active && (
         <motion.div
           layoutId="active-pill"
@@ -121,7 +123,7 @@ function SidebarItem({ href, icon, active, children }) {
             shadow-[inset_0_0_8px_rgba(255,255,255,0.08)]
             backdrop-blur-sm
           "
-          transition={{ type: "spring", stiffness: 260, damping: 22 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         />
       )}
 
@@ -129,11 +131,9 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10 transition-all
-          ${
-            active
-              ? "text-[var(--sidebar-text)]"
-              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
-          }
+          ${active
+            ? "text-[var(--sidebar-text)]"
+            : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"}
         `}
       >
         {icon}
@@ -143,11 +143,9 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10 transition-all
-          ${
-            active
-              ? "text-[var(--sidebar-text)] font-semibold"
-              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
-          }
+          ${active
+            ? "text-[var(--sidebar-text)] font-semibold"
+            : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"}
         `}
       >
         {children}
@@ -156,9 +154,6 @@ function SidebarItem({ href, icon, active, children }) {
   );
 }
 
-/* ------------------------------
-   FOOTER BUTTON
---------------------------------*/
 function SidebarFooterButton({ icon, children }) {
   return (
     <button

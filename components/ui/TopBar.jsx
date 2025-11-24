@@ -25,27 +25,23 @@ export default function TopBar() {
     <header
       className="
         fixed top-0 left-64 z-40
-        h-16
-        w-[calc(100%-16rem)]
-
+        h-16 w-[calc(100%-16rem)]
         flex items-center justify-between
         px-8
 
-        bg-[var(--topbar-bg)]
-        border-b border-[var(--topbar-border)]
-        shadow-[var(--topbar-shadow)]
+        topbar-surface
         relative
       "
     >
-      {/* Depth glow */}
+      {/* Surface glow overlay */}
       <div className="absolute inset-0 pointer-events-none [background:var(--surface-glow)]" />
 
       {/* Page title */}
-      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight">
+      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight text-[var(--sidebar-text)]">
         {title}
       </h1>
 
-      {/* Right side controls */}
+      {/* Right controls */}
       <div className="relative z-10 flex items-center gap-6">
 
         {/* Search */}
@@ -61,8 +57,7 @@ export default function TopBar() {
             hover:bg-[var(--sidebar-active)]
             transition-all duration-200
 
-            focus-within:ring-2
-            focus-within:ring-[var(--primary)]
+            focus-within:ring-2 focus-within:ring-[var(--primary)]
             shadow-[inset_0_0_6px_rgba(255,255,255,0.04)]
           "
         >

@@ -30,24 +30,23 @@ export default function TopBar() {
         px-8
         w-[calc(100%-16rem)] ml-64
 
-        /* TOPBAR (volledig via theme) */
-        bg-[var(--sidebar-bg)]/95        /* zelfde donkergrijs als sidebar */
+        /* THEME-CONTROLLED */
+        bg-[var(--sidebar-bg)]/95
         backdrop-blur-md
         border-b border-[var(--sidebar-border)]
         shadow-[var(--shadow-sm)]
-
         rounded-bl-3xl
       "
     >
-      {/* TITEL */}
-      <h1 className="text-[1.35rem] font-semibold text-white tracking-tight">
+      {/* Titel */}
+      <h1 className="text-[1.35rem] font-semibold text-[var(--sidebar-text)] tracking-tight">
         {title}
       </h1>
 
-      {/* RECHTER ZIJDE */}
+      {/* Right side */}
       <div className="flex items-center gap-6">
 
-        {/* SEARCH */}
+        {/* Searchbar */}
         <div
           className="
             hidden md:flex items-center gap-3
@@ -55,27 +54,27 @@ export default function TopBar() {
             rounded-xl
             border border-[var(--sidebar-border)]
             bg-[var(--sidebar-hover)]
-            text-white
+            text-[var(--sidebar-text)]
             transition-all duration-200
 
             hover:bg-[var(--sidebar-active)]
             focus-within:ring-2 focus-within:ring-[var(--primary)]
           "
         >
-          <Search className="w-5 h-5 text-gray-400" />
+          <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />
 
           <input
             type="text"
             placeholder="Zoeken…"
             className="
               bg-transparent outline-none w-48
-              text-gray-200
-              placeholder-gray-500
+              text-[var(--sidebar-text)]
+              placeholder-[var(--sidebar-text-muted)]
             "
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-       </div>
+        </div>
 
         <AvatarMenu />
       </div>

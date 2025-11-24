@@ -11,42 +11,30 @@ import {
 
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
-export default function GaugeChart({
-  value = 0,
-  label = "Score",
-  showNeedle = true,
-}) {
+export default function GaugeChart({ value = 0, label = "" }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  const s = Math.max(0, Math.min(100, value));
+  const score = Math.max(0, Math.min(100, value));
 
-  /* ============================================
-     TRADINGVIEW COLORS
-  ============================================ */
-  const colors = {
+  const COLORS = {
     red: "#EF4444",
     orange: "#F59E0B",
     green: "#10B981",
-    neutral: "#D1D5DB", // gray-300, lichter dan #E5
+    gray: "#E5E7EB",
   };
 
   const getColor = () => {
-    if (s < 33) return colors.red;       // Strong Sell → Sell
-    if (s < 66) return colors.orange;    // Neutral → Buy
-    return colors.green;                 // Strong Buy
+    if (score < 30) return COLORS.red;
+    if (score < 70) return COLORS.orange;
+    return COLORS.green;
   };
 
-  const color = getColor();
-
-  /* ============================================
-     NEEDLE — same math as TradingView
-  ============================================ */
-  const angle = (s / 100) * 180 - 90;
+  // Correct needle angle (TradingView)
+  const angle = (score / 100) * 180 + 90;
 
   useEffect(() => {
     if (!canvasRef.current) return;
-
     if (chartRef.current) chartRef.current.destroy();
 
     chartRef.current = new Chart(canvasRef.current, {
@@ -54,22 +42,22 @@ export default function GaugeChart({
       data: {
         datasets: [
           {
-            data: [s, 100 - s],
+            data: [score, 100 - score],
+            backgroundColor: [getColor(), COLORS.gray],
             borderWidth: 0,
-            circumference: 180,
-            rotation: 180,
-            cutout: "65%",  // dikkere boog
-            backgroundColor: [
-              color,
-              colors.neutral,
-            ],
+
+            // CORRECT TRADINGVIEW ROTATION
+            rotation: 270,       // start at top
+            circumference: 180,  // top half only
+
+            cutout: "72%",
           },
         ],
       },
       options: {
         responsive: true,
         animation: {
-          duration: 800,
+          duration: 900,
           easing: "easeOutQuart",
         },
         plugins: {
@@ -80,47 +68,33 @@ export default function GaugeChart({
     });
 
     return () => chartRef.current?.destroy();
-  }, [s]);
+  }, [score]);
 
   return (
-    <div className="w-full flex flex-col items-center relative">
+    <div className="relative flex flex-col items-center pt-2">
+      {/* GAUGE */}
+      <div className="relative flex justify-center w-full">
+        <canvas ref={canvasRef} className="max-w-[180px]" />
 
-      {/* Label */}
-      <div className="text-xs font-medium text-[var(--text-light)] mb-1">
+        {/* NEEDLE */}
+        <div
+          className="absolute top-[42%] h-16 w-0"
+          style={{
+            transform: `rotate(${angle}deg)`,
+            transformOrigin: "bottom center",
+          }}
+        >
+          <div className="w-[2px] h-full bg-black dark:bg-white rounded-full" />
+        </div>
+      </div>
+
+      {/* SCORE BELOW */}
+      <div className="mt-3 text-3xl font-extrabold text-[var(--text-dark)]">
+        {score}
+      </div>
+
+      <div className="text-sm font-medium text-[var(--text-light)] mt-1 tracking-tight">
         {label}
-      </div>
-
-      {/* Gauge */}
-      <div className="relative w-full flex justify-center">
-        <canvas
-          ref={canvasRef}
-          className="max-w-[170px] sm:max-w-[200px]"
-        />
-
-        {/* Needle */}
-        {showNeedle && (
-          <div
-            className="absolute bottom-[32%] w-0 h-0"
-            style={{
-              transform: `rotate(${angle}deg)`,
-              transformOrigin: "bottom center",
-            }}
-          >
-            <div
-              className="
-                h-12 w-[2px] 
-                bg-[var(--text-dark)]
-                dark:bg-white
-                rounded-full
-              "
-            />
-          </div>
-        )}
-      </div>
-
-      {/* SCORE */}
-      <div className="mt-2 text-3xl font-bold text-[var(--text-dark)] leading-none">
-        {value}
       </div>
     </div>
   );

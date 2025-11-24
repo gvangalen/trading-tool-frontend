@@ -48,10 +48,12 @@ export default function NavBar() {
         </div>
 
         <div>
-          <h1 className="text-lg font-semibold text-white leading-none">
+          <h1 className="text-lg font-semibold text-[var(--sidebar-text)] leading-none">
             TradeLayer
           </h1>
-          <p className="text-xs text-gray-400 mt-1">AI Trading Suite</p>
+          <p className="text-xs text-[var(--sidebar-text-muted)] mt-1">
+            AI Trading Suite
+          </p>
         </div>
       </div>
 
@@ -70,34 +72,21 @@ export default function NavBar() {
       </nav>
 
       {/* FOOTER BUTTONS */}
-      <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5 flex flex-col gap-3">
-
-        <button
-          className="
-            flex items-center gap-2 px-4 py-2 rounded-xl
-            text-gray-400
-            transition-all
-            hover:text-white
-            hover:bg-[var(--sidebar-hover)]
-          "
-        >
-          <Settings size={18} />
+      <div
+        className="
+          mt-auto 
+          border-t border-[var(--sidebar-border)] 
+          pt-5 
+          flex flex-col gap-3
+        "
+      >
+        <SidebarFooterButton icon={<Settings size={18} />}>
           Instellingen
-        </button>
+        </SidebarFooterButton>
 
-        <button
-          className="
-            flex items-center gap-2 px-4 py-2 rounded-xl
-            text-gray-400
-            transition-all
-            hover:text-white
-            hover:bg-[var(--sidebar-hover)]
-          "
-        >
-          <Sun size={18} />
+        <SidebarFooterButton icon={<Sun size={18} />}>
           Thema
-        </button>
-
+        </SidebarFooterButton>
       </div>
     </aside>
   );
@@ -110,8 +99,9 @@ function SidebarItem({ href, icon, active, children }) {
     <Link
       href={href}
       className="
-        relative group flex items-center px-3 py-2 rounded-xl gap-3 
-        font-medium text-sm transition-all
+        relative group 
+        flex items-center px-3 py-2 
+        rounded-xl gap-3 font-medium text-sm
       "
     >
       {/* ACTIEVE ACHTERGROND */}
@@ -131,7 +121,11 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10 transition
-          ${active ? "text-white" : "text-gray-300 group-hover:text-white"}
+          ${
+            active
+              ? "text-[var(--sidebar-text)]"
+              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
+          }
         `}
       >
         {icon}
@@ -141,11 +135,34 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10 transition-all
-          ${active ? "text-white" : "text-gray-300 group-hover:text-white"}
+          ${
+            active
+              ? "text-[var(--sidebar-text)]"
+              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
+          }
         `}
       >
         {children}
       </span>
     </Link>
+  );
+}
+
+/* -------------------- FOOTER BUTTON -------------------- */
+
+function SidebarFooterButton({ icon, children }) {
+  return (
+    <button
+      className="
+        flex items-center gap-2 px-4 py-2 rounded-xl
+        text-[var(--sidebar-text-muted)]
+        transition-all
+        hover:text-[var(--sidebar-text)]
+        hover:bg-[var(--sidebar-hover)]
+      "
+    >
+      {icon}
+      {children}
+    </button>
   );
 }

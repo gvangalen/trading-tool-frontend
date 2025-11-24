@@ -1,7 +1,10 @@
-/* ================================
-   GLOBAL THEME – Fintech 3.2
-   Sidebar Gray-500 (option A)
-================================ */
+/* ===========================================
+   GLOBAL THEME – Fintech 4.0 (Premium UI)
+   ✓ Donkergrijze sidebar (slate-900)
+   ✓ Donkere topbar
+   ✓ Eén lichtgrijze achtergrond
+   ✓ Luxe fintech contrast
+=========================================== */
 
 @tailwind base;
 @tailwind components;
@@ -9,25 +12,25 @@
 
 /* LIGHT MODE */
 :root {
-  /* Brand Blue (accentkleur) */
+  /* Accentkleur */
   --primary: #3B82F6;
   --primary-light: #DBEAFE;
   --primary-hover: #BFDBFE;
   --primary-dark: #1E40AF;
 
-  /* Background (super clean fintech) */
-  --bg: #F5F6FA;      /* hoofdbackground */
-  --bg-soft: #F5F6FA; /* exact gelijk: voorkomt dubbele tinten */
+  /* Page Background (super clean) */
+  --bg: #F5F6FA;
+  --bg-soft: #F5F6FA; /* exact gelijk → geen dubbele vlakken */
 
-  /* Sidebar (Tailwind Gray palette) */
-  --sidebar-bg: #6B7280;        /* gray-500 */
-  --sidebar-hover: #4B5563;     /* gray-600 */
-  --sidebar-active: #374151;    /* gray-700 */
-  --sidebar-border: #4B5563;    /* match hover */
+  /* SIDEBAR (Premium donkergrijs) */
+  --sidebar-bg: #111827;     /* slate-900 */
+  --sidebar-hover: #1F2937;  /* slate-800 */
+  --sidebar-active: #374151; /* slate-700 */
+  --sidebar-border: #1F2937; /* slate-800 */
 
-  /* ✨ Sidebar tekstkleuren (ontbraken nog!) */
-  --sidebar-text: #F9FAFB;         /* bijna wit (gray-50) */
-  --sidebar-text-muted: #D1D5DB;   /* gray-300 */
+  /* TOPBAR (zelfde stijl voor harmonie) */
+  --topbar-bg: #111827;
+  --topbar-border: #1F2937;
 
   /* Cards */
   --card-bg: #FFFFFF;
@@ -36,14 +39,13 @@
   --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
   /* Text */
-  --text-dark: #111827; /* slate-900 */
-  --text-light: #6B7280; /* gray-500 */
+  --text-dark: #111827;
+  --text-light: #6B7280;
 
   /* Status Colors */
   --green: #10B981;
-  --green-light: #D1FAE5;
+  --yellow: #FACC15;
   --red: #EF4444;
-  --red-light: #FEE2E2;
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
@@ -51,36 +53,27 @@
   --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
 }
 
-/* DARK MODE */
+/* DARK MODE (voor later) */
 .dark {
-  --primary: #1F6FEB;
-  --primary-light: #1A2634;
-  --primary-hover: #223041;
-  --primary-dark: #1158C7;
-
   --bg: #0D1117;
-  --bg-soft: #161B22;
+  --bg-soft: #0D1117;
 
   --card-bg: #161B22;
   --card-border: #30363D;
 
-  --sidebar-bg: #111827;        /* gray-900 */
-  --sidebar-hover: #1F2937;     /* gray-800 */
-  --sidebar-active: #374151;    /* gray-700 */
-  --sidebar-border: #1F2937;
+  --sidebar-bg: #0D1117;
+  --sidebar-hover: #1A1F25;
+  --sidebar-active: #22272E;
+  --sidebar-border: #1A1F25;
 
-  --sidebar-text: #E6EDF3;        /* lichte tekst */
-  --sidebar-text-muted: #9BA1A6;  /* gedempte tekst */
+  --topbar-bg: #0D1117;
+  --topbar-border: #1A1F25;
 
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
-
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.35);
-  --shadow-lg: 0 4px 20px rgba(0,0,0,0.40);
 }
 
-/* UNIVERSAL CARD STYLE */
+/* UNIVERSAL CARD */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -88,7 +81,7 @@
   box-shadow: var(--card-shadow);
 }
 
-/* ANIMATIONS */
+/* Animations */
 @keyframes fade-slide {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }

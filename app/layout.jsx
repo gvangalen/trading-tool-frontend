@@ -1,4 +1,4 @@
-import "../styles/globals.css";          
+import "../styles/globals.css";
 import NavBar from "@/components/ui/NavBar";
 import TopBar from "@/components/ui/TopBar";
 import { Toaster } from "react-hot-toast";
@@ -12,20 +12,33 @@ export default function RootLayout({ children }) {
   return (
     <html lang="nl">
       <body className="bg-[var(--bg)] text-[var(--text-dark)]">
-        {/* Toasts */}
+
+        {/* Notifications */}
         <Toaster position="top-right" />
 
-        {/* Sidebar (fixed) */}
+        {/* FIXED SIDEBAR */}
         <NavBar />
 
-        {/* Page content (shifted right by sidebar) */}
-        <div className="ml-64">
+        {/* CONTENT AREA */}
+        <div className="ml-64 relative">
+
+          {/* FIXED TOPBAR */}
           <TopBar />
 
-          <main className="px-6 pt-20 pb-10">
+          {/* SCROLLBARE PAGINA-CONTENT */}
+          <main
+            className="
+              px-8
+              pt-[88px]     /* ruimte voor topbar (64px height + extra padding) */
+              pb-10
+              min-h-screen
+            "
+          >
             {children}
           </main>
+
         </div>
+
       </body>
     </html>
   );

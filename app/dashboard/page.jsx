@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-// Lucide icons
 import {
   BarChart3,
   Coins,
@@ -45,7 +44,7 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
-  /* ============= SCROLL BUTTON LOGIC ============= */
+  /* Scroll button logic */
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -56,33 +55,31 @@ export default function DashboardPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <div
-      className="
-        w-full min-h-screen
-        bg-[var(--bg)]
-        text-[var(--text-dark)]
-        px-6 md:px-12
-        pt-24 pb-20
-      "
-    >
-      {/* ================= HEADER ================= */}
-      <header className="mb-12">
-        <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
-          <BarChart3 className="w-7 h-7 text-[var(--text-dark)]" />
+    <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
+
+      {/* ---------------------------------------------------- */}
+      {/* PAGE TITLE */}
+      {/* ---------------------------------------------------- */}
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart3 className="w-7 h-7 text-[var(--primary)]" />
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--text-dark)]">
           Trading Dashboard
         </h1>
-      </header>
-
-      {/* ================= HIGHLIGHTS ================= */}
-      <div className="mb-14">
-        <DashboardHighlights />
       </div>
 
-      {/* ================= MAIN CONTENT LAYOUT ================= */}
+      {/* ---------------------------------------------------- */}
+      {/* HIGHLIGHTS */}
+      {/* ---------------------------------------------------- */}
+      <DashboardHighlights />
+
+      {/* ---------------------------------------------------- */}
+      {/* MAIN CONTENT ROW */}
+      {/* ---------------------------------------------------- */}
       <div className="flex flex-col xl:flex-row gap-12">
 
-        {/* MAIN COLUMN */}
+        {/* ================= MAIN COLUMN ================= */}
         <main className="flex-1 space-y-12">
+
           <DashboardGauges />
 
           {/* MARKET */}
@@ -160,7 +157,7 @@ export default function DashboardPage() {
             <TradingAdvice />
           </CardWrapper>
 
-          {/* TOP SETUPS */}
+          {/* SETUPS */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -173,7 +170,7 @@ export default function DashboardPage() {
           </CardWrapper>
         </main>
 
-        {/* RIGHT SIDEBAR */}
+        {/* ================= RIGHT SIDEBAR ================= */}
         <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />
@@ -181,7 +178,9 @@ export default function DashboardPage() {
         </aside>
       </div>
 
-      {/* ================= SCROLL BUTTON ================= */}
+      {/* ---------------------------------------------------- */}
+      {/* SCROLL TO TOP BUTTON */}
+      {/* ---------------------------------------------------- */}
       {showScroll && (
         <button
           onClick={scrollToTop}
@@ -190,7 +189,7 @@ export default function DashboardPage() {
             bg-[var(--primary)] text-white
             p-3 rounded-full shadow-lg
             hover:bg-[var(--primary-dark)]
-            transition
+            transition-all
             focus:ring-2 focus:ring-[var(--primary)]
           "
         >

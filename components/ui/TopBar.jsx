@@ -9,7 +9,7 @@ export default function TopBar() {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
 
-  const pageTitles = {
+  const titles = {
     "/": "Dashboard — Scores",
     "/market": "Market Data",
     "/macro": "Macro Analyse",
@@ -17,41 +17,33 @@ export default function TopBar() {
     "/setup": "Setups",
     "/strategy": "Strategieën",
     "/report": "Rapporten",
-    "/profile": "Profiel",
   };
 
-  const title = pageTitles[pathname] || "TradeLayer";
+  const title = titles[pathname] || "TradeLayer";
 
   return (
     <header
       className="
-        topbar-surface
-        fixed top-0 right-0
-        h-16 z-40 flex items-center justify-between
+        fixed top-0 left-64 z-40
+        h-16 w-[calc(100%-16rem)]
+        flex items-center justify-between
         px-8
-        w-[calc(100%-16rem)] ml-64
+
+        bg-[var(--topbar-bg)]
         border-b border-[var(--topbar-border)]
+        shadow-[var(--topbar-shadow)]
         relative
       "
     >
-      {/* Glow-layer geeft extra depth */}
-      <div
-        className="
-          absolute inset-0 
-          pointer-events-none
-          [background:var(--surface-glow)]
-        "
-      />
+      {/* Glow */}
+      <div className="absolute inset-0 pointer-events-none [background:var(--surface-glow)]" />
 
-      {/* Titel */}
-      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight text-[var(--sidebar-text)]">
+      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight">
         {title}
       </h1>
 
-      {/* Rechterzijde */}
       <div className="relative z-10 flex items-center gap-6">
 
-        {/* Search bar */}
         <div
           className="
             hidden md:flex items-center gap-3
@@ -59,19 +51,18 @@ export default function TopBar() {
             bg-[var(--sidebar-hover)]
             border border-[var(--sidebar-border)]
             text-[var(--sidebar-text)]
-            transition-all duration-200
             hover:bg-[var(--sidebar-active)]
             focus-within:ring-2 focus-within:ring-[var(--primary)]
             shadow-[inset_0_0_6px_rgba(255,255,255,0.04)]
+            transition-all
           "
         >
           <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />
 
           <input
-            type="text"
-            placeholder="Zoeken…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            placeholder="Zoeken…"
             className="
               bg-transparent outline-none w-48
               text-[var(--sidebar-text)]
@@ -80,7 +71,6 @@ export default function TopBar() {
           />
         </div>
 
-        {/* Avatar menu */}
         <AvatarMenu />
       </div>
     </header>

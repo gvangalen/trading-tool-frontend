@@ -25,22 +25,16 @@ export default function TopBar() {
   return (
     <header
       className="
+        topbar-surface
         fixed top-0 right-0
         h-16 z-40 flex items-center justify-between
         px-8
         w-[calc(100%-16rem)] ml-64
-
-        /* MATCH SIDEBAR */
-        bg-[var(--topbar-bg)]
-        text-[var(--sidebar-text)]
         border-b border-[var(--topbar-border)]
-
-        /* DEPTH + SUBTLE GLOW */
-        shadow-[var(--surface-shadow)]
         relative
       "
     >
-      {/* Glow-layer voor 3D depth (zelfde als sidebar) */}
+      {/* Glow-layer geeft extra depth */}
       <div
         className="
           absolute inset-0 
@@ -49,25 +43,23 @@ export default function TopBar() {
         "
       />
 
-      {/* Title */}
-      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight">
+      {/* Titel */}
+      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight text-[var(--sidebar-text)]">
         {title}
       </h1>
 
-      {/* Right-side content */}
+      {/* Rechterzijde */}
       <div className="relative z-10 flex items-center gap-6">
 
-        {/* Search */}
+        {/* Search bar */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2 rounded-xl
-
             bg-[var(--sidebar-hover)]
             border border-[var(--sidebar-border)]
             text-[var(--sidebar-text)]
             transition-all duration-200
-
             hover:bg-[var(--sidebar-active)]
             focus-within:ring-2 focus-within:ring-[var(--primary)]
             shadow-[inset_0_0_6px_rgba(255,255,255,0.04)]
@@ -88,7 +80,7 @@ export default function TopBar() {
           />
         </div>
 
-        {/* Avatar */}
+        {/* Avatar menu */}
         <AvatarMenu />
       </div>
     </header>

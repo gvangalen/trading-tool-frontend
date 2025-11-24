@@ -24,11 +24,8 @@ export default function TopBar() {
   return (
     <header
       className="
-        topbar-surface
-        fixed top-0 left-64 z-40
-        h-16 w-[calc(100%-16rem)]
-
         flex items-center justify-between
+        h-16
         px-8
       "
     >

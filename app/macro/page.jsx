@@ -9,7 +9,6 @@ import MacroTabs from "@/components/macro/MacroTabs";
 import MacroIndicatorScoreView from "@/components/macro/MacroIndicatorScoreView";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import DayTable from "@/components/ui/DayTable";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 import { Globe, Brain, Activity } from "lucide-react";
@@ -17,17 +16,15 @@ import { Globe, Brain, Activity } from "lucide-react";
 export default function MacroPage() {
   const [activeTab, setActiveTab] = useState("Dag");
 
-  // Nieuwe hookstructuur
   const {
-    macroData,        // array van indicatoren (dag/week/maand/kwartaal)
-    handleRemove,     // verwijdert indicator
+    macroData,
+    handleRemove,
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
 
   const { macro, loading: loadingScore } = useScoresData();
 
-  // Scorekleur bepalen
   const getScoreColor = (score) => {
     const s = typeof score === "number" ? score : Number(score);
     if (isNaN(s)) return "text-gray-500";
@@ -46,9 +43,7 @@ export default function MacroPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ========================================================= */}
       {/* PAGE TITLE */}
-      {/* ========================================================= */}
       <div className="flex items-center gap-3">
         <Globe size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -56,14 +51,10 @@ export default function MacroPage() {
         </h1>
       </div>
 
-      {/* ========================================================= */}
-      {/* AI AGENT SAMENVATTING */}
-      {/* ========================================================= */}
+      {/* AI SAMENVATTING */}
       <AgentInsightPanel category="macro" />
 
-      {/* ========================================================= */}
       {/* MACRO SCORE SUMMARY */}
-      {/* ========================================================= */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -107,14 +98,10 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
-      {/* ========================================================= */}
-      {/* SCORE RULES (score ranges per indicator) */}
-      {/* ========================================================= */}
+      {/* INDICATOR SCORE RULES */}
       <MacroIndicatorScoreView />
 
-      {/* ========================================================= */}
-      {/* TABS (Dag / Week / Maand / Kwartaal) */}
-      {/* ========================================================= */}
+      {/* TABS + TABEL */}
       <MacroTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -124,15 +111,7 @@ export default function MacroPage() {
         handleRemove={handleRemove}
       />
 
-      {/* ========================================================= */}
-      {/* ACTUAL TABLE (universele DayTable) */}
-      {/* ========================================================= */}
-      <DayTable
-        title={`Macro Analyse — ${activeTab}`}
-        icon={<Globe className="w-5 h-5" />}
-        data={macroData || []}
-        onRemove={handleRemove}
-      />
+      {/* ⛔ Geen extra DayTable hieronder! */}
 
     </div>
   );

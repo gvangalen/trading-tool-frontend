@@ -55,7 +55,7 @@ export default function DashboardGauges() {
 }
 
 /* =====================================================
-   SINGLE GAUGE CARD – TradingView PRO look
+   SINGLE GAUGE CARD — TradingView PRO Look
 ===================================================== */
 
 function GaugeCard({
@@ -82,30 +82,28 @@ function GaugeCard({
   return (
     <CardWrapper>
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div
-            className="
-              h-7 w-7 rounded-full
-              border border-[var(--card-border)]
-              flex items-center justify-center
-              text-[var(--text-light)]
-              text-xs
-            "
-          >
-            {icon}
-          </div>
-          <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
-            {title}
-          </h2>
+      <div className="flex items-center gap-2 mb-3">
+        <div
+          className="
+            h-7 w-7 rounded-full
+            border border-[var(--card-border)]
+            flex items-center justify-center
+            text-[var(--text-light)]
+            text-xs
+          "
+        >
+          {icon}
         </div>
+        <h2 className="text-sm font-semibold text-[var(--text-dark)] tracking-tight">
+          {title}
+        </h2>
       </div>
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
         <GaugeChart value={displayScore} label="" />
 
-        {/* Score + label onder de meter (TradingView-style) */}
+        {/* Score onder meter */}
         <div className="mt-2 text-center">
           <div className="text-3xl font-semibold text-[var(--text-dark)] leading-none">
             {isNaN(displayScore) ? "–" : displayScore}
@@ -118,40 +116,37 @@ function GaugeCard({
         </div>
       </div>
 
-      {/* CONTRIBUTORS */}
+      {/* CONTRIBUTORS IN NETTE REGELS */}
       {topContributors.length > 0 && (
         <div className="mt-3">
           <p className="text-[11px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-1">
             Top bijdragen
           </p>
-          <div className="flex flex-wrap gap-1.5">
+
+          <div className="space-y-1">
             {topContributors.map((c, i) => (
-              <span
+              <div
                 key={i}
                 className="
-                  px-2 py-[3px]
-                  rounded-full
-                  border border-[var(--card-border)]
-                  bg-white
-                  text-[11px]
-                  text-[var(--text-light)]
+                  text-xs text-[var(--text-dark)]
+                  pl-1 border-l-2 border-[var(--primary)]
                 "
               >
                 {c}
-              </span>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* EXTRA MINI SETUPS (alleen bij Setup gauge) */}
+      {/* MINI-SETUPS (bij Setup gauge) */}
       {showTopSetups && (
-        <div className="mt-3">
+        <div className="mt-4">
           <TopSetupsMini />
         </div>
       )}
 
-      {/* EXPLANATION – subtiele TradingView-stijl (geen blok eromheen) */}
+      {/* Explanation */}
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-light)] italic">
         {displayExplanation}
       </p>
@@ -160,7 +155,7 @@ function GaugeCard({
 }
 
 /* =====================================================
-   HELPER: score → label + kleur
+   SCORE → LABEL + KLEUR
 ===================================================== */
 
 function getScoreLabel(score) {

@@ -30,16 +30,16 @@ export default function TopBar() {
         px-8
         w-[calc(100%-16rem)] ml-64
 
-        /* THEME-CONTROLLED */
-        bg-[var(--sidebar-bg)]/95
-        backdrop-blur-md
+        /* THEME — exact zelfde kleuren als sidebar */
+        bg-[var(--sidebar-bg)]
+        text-[var(--sidebar-text)]
         border-b border-[var(--sidebar-border)]
+        backdrop-blur-sm
         shadow-[var(--shadow-sm)]
-        rounded-bl-3xl
       "
     >
       {/* Titel */}
-      <h1 className="text-[1.35rem] font-semibold text-[var(--sidebar-text)] tracking-tight">
+      <h1 className="text-[1.35rem] font-semibold tracking-tight">
         {title}
       </h1>
 
@@ -50,10 +50,9 @@ export default function TopBar() {
         <div
           className="
             hidden md:flex items-center gap-3
-            px-4 py-2
-            rounded-xl
-            border border-[var(--sidebar-border)]
+            px-4 py-2 rounded-xl
             bg-[var(--sidebar-hover)]
+            border border-[var(--sidebar-border)]
             text-[var(--sidebar-text)]
             transition-all duration-200
 
@@ -76,6 +75,7 @@ export default function TopBar() {
           />
         </div>
 
+        {/* Avatar Menu */}
         <AvatarMenu />
       </div>
     </header>

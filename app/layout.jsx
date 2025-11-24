@@ -16,21 +16,21 @@ export default function RootLayout({ children }) {
         {/* Notifications */}
         <Toaster position="top-right" />
 
-        {/* FIXED SIDEBAR */}
+        {/* SIDEBAR (fixed) */}
         <NavBar />
 
-        {/* CONTENT AREA */}
-        <div className="ml-64 relative">
+        {/* CONTENT (sidebar pushes content 16rem naar rechts) */}
+        <div className="ml-64">
 
-          {/* FIXED TOPBAR */}
+          {/* TOPBAR (fixed bovenaan) */}
           <TopBar />
 
-          {/* SCROLLBARE PAGINA-CONTENT */}
+          {/* PAGE CONTENT → scrollt beneden topbar */}
           <main
             className="
               px-8
-              pt-[88px]     /* ruimte voor topbar (64px height + extra padding) */
-              pb-10
+              pt-[88px]    /* ruimte voor topbar (64px height + 24px extra) */
+              pb-14
               min-h-screen
             "
           >

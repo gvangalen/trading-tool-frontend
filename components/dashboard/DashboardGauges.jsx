@@ -68,6 +68,7 @@ function GaugeCard({
 }) {
   const numericScore =
     typeof score === "number" ? score : Number(score ?? 0) || 0;
+
   const displayScore = Math.round(numericScore);
 
   const { label, toneClass } = getScoreLabel(displayScore);
@@ -101,7 +102,8 @@ function GaugeCard({
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        <GaugeChart value={displayScore} label="" />
+        {/* ⬇️ Belangrijk: label is verwijderd uit GaugeChart */}
+        <GaugeChart value={displayScore} />
 
         {/* Score onder meter */}
         <div className="mt-2 text-center">

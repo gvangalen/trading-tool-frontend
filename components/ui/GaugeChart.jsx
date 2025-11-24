@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect } from "react";
 import {
   Chart,
   ArcElement,
   Tooltip,
   Legend,
-  DoughnutController
-} from 'chart.js';
+  DoughnutController,
+} from "chart.js";
 
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
@@ -17,20 +17,23 @@ export default function GaugeChart({ value = 0, label = "Score" }) {
 
   const percentage = Math.max(0, Math.min(100, value));
 
-  // Fintech colors
+  /* 🎨 PREMIUM FINTECH COLORS */
   const scoreColor =
     percentage >= 70
-      ? "#10B981" // green-500
+      ? "#22C55E" // green-500
       : percentage >= 40
-      ? "#FACC15" // yellow-400
+      ? "#F59E0B" // amber-500
       : "#EF4444"; // red-500
 
   const labelColor =
     percentage >= 70
       ? "text-green-600 dark:text-green-300"
       : percentage >= 40
-      ? "text-yellow-500 dark:text-yellow-300"
+      ? "text-amber-500 dark:text-amber-300"
       : "text-red-500 dark:text-red-300";
+
+  /* 🎨 Background neutral (light gray, no black!) */
+  const backgroundArc = "#E5E7EB"; // gray-200
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -43,12 +46,9 @@ export default function GaugeChart({ value = 0, label = "Score" }) {
         datasets: [
           {
             data: [percentage, 100 - percentage],
-            backgroundColor: [
-              scoreColor,
-              "#1F2937" // gray-800 (fintech dark neutral)
-            ],
+            backgroundColor: [scoreColor, backgroundArc],
             borderWidth: 0,
-            cutout: "78%",
+            cutout: "82%",              // Premium thin ring
             circumference: 180,
             rotation: 270,
             hoverOffset: 0,
@@ -58,7 +58,7 @@ export default function GaugeChart({ value = 0, label = "Score" }) {
       options: {
         responsive: true,
         animation: {
-          duration: 900,
+          duration: 800,
           easing: "easeOutQuart",
         },
         plugins: {
@@ -75,13 +75,13 @@ export default function GaugeChart({ value = 0, label = "Score" }) {
     <div className="relative w-full h-36 flex flex-col items-center justify-center">
       <canvas ref={canvasRef} className="max-w-[200px]" />
 
-      {/* Center text */}
-      <div className="absolute top-[45%] translate-y-[-50%] text-center">
-        <span className={`text-xs font-medium ${labelColor}`}>
+      {/* CENTER LABEL */}
+      <div className="absolute top-[52%] translate-y-[-50%] flex flex-col items-center">
+        <span className={`text-xs font-medium tracking-wide ${labelColor}`}>
           {label}
         </span>
 
-        <span className="block text-4xl font-bold text-[var(--text-dark)] dark:text-white leading-tight">
+        <span className="text-4xl font-bold text-[var(--text-dark)] dark:text-white leading-tight">
           {value}
         </span>
       </div>

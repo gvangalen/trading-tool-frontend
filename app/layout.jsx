@@ -1,14 +1,9 @@
-import 'rc-slider/assets/index.css';
 import '../styles/globals.css';
-import { Toaster } from 'react-hot-toast';
+import 'rc-slider/assets/index.css';
 
 import NavBar from '@/components/ui/NavBar';
 import TopBar from '@/components/ui/TopBar';
-
-export const metadata = {
-  title: 'Trading Dashboard',
-  description: 'Realtime trading insights en strategieën',
-};
+import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({ children }) {
   return (
@@ -17,20 +12,15 @@ export default function RootLayout({ children }) {
 
         <Toaster position="top-right" />
 
-        {/* FIXED SIDEBAR */}
         <NavBar />
 
-        {/* MAIN CONTENT AREA */}
-        <div className="ml-64">
-
-          {/* FIXED TOPBAR */}
+        {/* PAGE SHELL */}
+        <div className="ml-64"> 
           <TopBar />
 
-          {/* PAGE CONTENT (onder de topbar) */}
-          <main className="pt-20 px-8 pb-10">
+          <main className="pt-20 px-6 pb-6">
             {children}
           </main>
-
         </div>
 
       </body>

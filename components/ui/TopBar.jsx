@@ -30,21 +30,27 @@ export default function TopBar() {
         px-8
         w-[calc(100%-16rem)] ml-64
 
-        /* THEME — exact zelfde kleuren als sidebar */
+        /* THEME COLORS — MATCH NAVBAR */
         bg-[var(--sidebar-bg)]
         text-[var(--sidebar-text)]
         border-b border-[var(--sidebar-border)]
-        backdrop-blur-sm
-        shadow-[var(--shadow-sm)]
+
+        /* DEPTH + GLOW */
+        shadow-[var(--surface-shadow)]
+        before:absolute before:inset-0 before:bg-[var(--surface-glow)]
+        before:pointer-events-none
+
+        /* Modern effect */
+        backdrop-blur-md
       "
     >
       {/* Titel */}
-      <h1 className="text-[1.35rem] font-semibold tracking-tight">
+      <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight">
         {title}
       </h1>
 
       {/* Right side */}
-      <div className="flex items-center gap-6">
+      <div className="relative z-10 flex items-center gap-6">
 
         {/* Searchbar */}
         <div
@@ -58,6 +64,7 @@ export default function TopBar() {
 
             hover:bg-[var(--sidebar-active)]
             focus-within:ring-2 focus-within:ring-[var(--primary)]
+            shadow-[inset_0_0_6px_rgba(255,255,255,0.04)]
           "
         >
           <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />

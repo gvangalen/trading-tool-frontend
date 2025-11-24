@@ -1,6 +1,6 @@
 /* ================================
-   GLOBAL THEME – Fintech 3.1
-   Sidebar: Tailwind Gray-500 (#6b7280)
+   GLOBAL THEME – Fintech 3.2
+   Sidebar Gray-500 (option A)
 ================================ */
 
 @tailwind base;
@@ -17,13 +17,17 @@
 
   /* Background (super clean fintech) */
   --bg: #F5F6FA;      /* hoofdbackground */
-  --bg-soft: #F5F6FA; /* ⚡ exact gelijk — voorkomt dubbele vlakken */
+  --bg-soft: #F5F6FA; /* exact gelijk: voorkomt dubbele tinten */
 
   /* Sidebar (Tailwind Gray palette) */
   --sidebar-bg: #6B7280;        /* gray-500 */
   --sidebar-hover: #4B5563;     /* gray-600 */
   --sidebar-active: #374151;    /* gray-700 */
   --sidebar-border: #4B5563;    /* match hover */
+
+  /* ✨ Sidebar tekstkleuren (ontbraken nog!) */
+  --sidebar-text: #F9FAFB;         /* bijna wit (gray-50) */
+  --sidebar-text-muted: #D1D5DB;   /* gray-300 */
 
   /* Cards */
   --card-bg: #FFFFFF;
@@ -47,7 +51,7 @@
   --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
 }
 
-/* DARK MODE (optioneel later, maar compleet & correct) */
+/* DARK MODE */
 .dark {
   --primary: #1F6FEB;
   --primary-light: #1A2634;
@@ -60,10 +64,13 @@
   --card-bg: #161B22;
   --card-border: #30363D;
 
-  --sidebar-bg: #111827;       /* gray-900 */
-  --sidebar-hover: #1F2937;    /* gray-800 */
-  --sidebar-active: #374151;   /* gray-700 */
+  --sidebar-bg: #111827;        /* gray-900 */
+  --sidebar-hover: #1F2937;     /* gray-800 */
+  --sidebar-active: #374151;    /* gray-700 */
   --sidebar-border: #1F2937;
+
+  --sidebar-text: #E6EDF3;        /* lichte tekst */
+  --sidebar-text-muted: #9BA1A6;  /* gedempte tekst */
 
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;

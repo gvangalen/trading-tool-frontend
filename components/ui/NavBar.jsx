@@ -38,7 +38,7 @@ export default function NavBar() {
         flex flex-col
         p-6
         z-50
-        shadow-xl
+        shadow-[var(--shadow-sm)]
       "
     >
       {/* LOGO */}
@@ -75,7 +75,7 @@ export default function NavBar() {
       <div
         className="
           mt-auto 
-          border-t border-[var(--sidebar-border)] 
+          border-t border-[var(--sidebar-border)]
           pt-5 
           flex flex-col gap-3
         "
@@ -102,9 +102,10 @@ function SidebarItem({ href, icon, active, children }) {
         relative group 
         flex items-center px-3 py-2 
         rounded-xl gap-3 font-medium text-sm
+        cursor-pointer select-none
       "
     >
-      {/* ACTIEVE ACHTERGROND */}
+      {/* ACTIVE BACKGROUND */}
       {active && (
         <motion.div
           layoutId="active-pill"
@@ -134,7 +135,7 @@ function SidebarItem({ href, icon, active, children }) {
       {/* LABEL */}
       <span
         className={`
-          relative z-10 transition-all
+          relative z-10 transition
           ${
             active
               ? "text-[var(--sidebar-text)]"

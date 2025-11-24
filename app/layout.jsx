@@ -13,8 +13,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body className="bg-gray-50 text-gray-900">
-
+      
+      <body className="bg-[var(--bg)] text-[var(--text-dark)]">
+        
         <Toaster position="top-right" />
 
         <div className="flex">

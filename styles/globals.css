@@ -1,10 +1,9 @@
 /* ===========================================
-   GLOBAL THEME – Fintech PRO 5.1
-   ✓ Sidebar met diepe donkere gradient
-   ✓ Topbar lichtere gradient (los van sidebar)
-   ✓ Premium dark surfaces (TradingView style)
+   GLOBAL THEME – Fintech PRO 5.2
+   ✓ Sidebar diepe gradient
+   ✓ Topbar lichtere gradient
    ✓ Luxe fintech shadows
-   ✓ Consistente light mode
+   ✓ 100% componentloos — alles via CSS variables
 =========================================== */
 
 @tailwind base;
@@ -25,16 +24,12 @@
   --bg: #F5F6FA;
   --bg-soft: #F5F6FA;
 
-  /* ================================
-     PREMIUM DARK SURFACES (DEPTH)
-     ================================ */
-  --surface-1: #0f172a;   /* sidebar base */
-  --surface-2: #0a0f16;   /* donkerder */
-  --surface-3: #1a1f27;   /* hover contrast */
+  /* Dark Surface Essentials */
+  --surface-1: #0f172a;
+  --surface-2: #0a0f16;
+  --surface-3: #1a1f27;
 
-  /* ================================
-     SIDEBAR — DIEP DONKER (echte depth)
-     ================================ */
+  /* Sidebar Gradient */
   --sidebar-bg: linear-gradient(
     to bottom,
     #0f172a 0%,
@@ -43,34 +38,31 @@
   --sidebar-hover: rgba(255, 255, 255, 0.06);
   --sidebar-active: rgba(255, 255, 255, 0.10);
   --sidebar-border: rgba(255, 255, 255, 0.04);
-
   --sidebar-text: #F3F4F6;
   --sidebar-text-muted: #9CA3AF;
 
-  /* ================================
-     TOPBAR — LICHTER (los van sidebar)
-     ================================ */
+  /* Topbar Lighter Gradient */
   --topbar-bg: linear-gradient(
     to bottom,
     #1b2433 0%,
     #141b26 100%
   );
   --topbar-border: rgba(255, 255, 255, 0.05);
-  --topbar-shadow: 
+  --topbar-shadow:
       0 2px 4px rgba(0, 0, 0, 0.25),
       inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 
-  /* Content */
+  /* Text */
   --text-dark: #111827;
   --text-light: #6B7280;
 
   /* Cards */
-  --card-bg: #FFFFFF;
-  --card-border: #E5E7EB;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
   --card-radius: 14px;
   --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
-  /* Status Colors */
+  /* Score Colors */
   --green: #10B981;
   --yellow: #FACC15;
   --red: #EF4444;
@@ -82,7 +74,7 @@
 }
 
 /* ===========================================
-   DARK MODE (future-ready)
+   DARK MODE
 =========================================== */
 .dark {
   --bg: #0D1117;
@@ -107,13 +99,51 @@
 }
 
 /* ===========================================
-   UNIVERSAL CARD STYLE
+   CARD STYLE
 =========================================== */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
+}
+
+/* ===========================================
+   SIDEBAR SURFACE  (HOOFDOPLOSSING)
+=========================================== */
+.sidebar-surface {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow:
+      0 0 0 1px rgba(0,0,0,0.35),
+      var(--shadow-lg);
+  position: relative;
+}
+
+.sidebar-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* ===========================================
+   TOPBAR SURFACE  (HOOFDOPLOSSING)
+=========================================== */
+.topbar-surface {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+  box-shadow: var(--topbar-shadow);
+  position: relative;
+}
+
+.topbar-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 /* ===========================================

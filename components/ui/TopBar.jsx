@@ -30,35 +30,35 @@ export default function TopBar() {
         px-8
         w-[calc(100%-16rem)] ml-64
 
-        /* NEW FINTECH DARK TOPBAR */
-        bg-[#1A1B1F]/95
+        /* TOPBAR (volledig via theme) */
+        bg-[var(--sidebar-bg)]/95        /* zelfde donkergrijs als sidebar */
         backdrop-blur-md
-        border-b border-[#2C2C31]
-        shadow-[0_1px_4px_rgba(0,0,0,0.35)]
+        border-b border-[var(--sidebar-border)]
+        shadow-[var(--shadow-sm)]
 
         rounded-bl-3xl
       "
     >
-      {/* Titel */}
+      {/* TITEL */}
       <h1 className="text-[1.35rem] font-semibold text-white tracking-tight">
         {title}
       </h1>
 
-      {/* Right side */}
+      {/* RECHTER ZIJDE */}
       <div className="flex items-center gap-6">
 
-        {/* Searchbar */}
+        {/* SEARCH */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2
             rounded-xl
-            border border-[#3A3A3F]
-            bg-[#2A2A2F]
+            border border-[var(--sidebar-border)]
+            bg-[var(--sidebar-hover)]
             text-white
             transition-all duration-200
 
-            hover:bg-[#333337]
+            hover:bg-[var(--sidebar-active)]
             focus-within:ring-2 focus-within:ring-[var(--primary)]
           "
         >
@@ -75,7 +75,7 @@ export default function TopBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-        </div>
+       </div>
 
         <AvatarMenu />
       </div>

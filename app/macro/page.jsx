@@ -7,25 +7,27 @@ import { useScoresData } from "@/hooks/useScoresData";
 
 import MacroTabs from "@/components/macro/MacroTabs";
 import MacroIndicatorScoreView from "@/components/macro/MacroIndicatorScoreView";
-import CardWrapper from "@/components/ui/CardWrapper";
 
-// Lucide icons
+import CardWrapper from "@/components/ui/CardWrapper";
+import DayTable from "@/components/ui/DayTable";
+import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
+
 import { Globe, Brain, Activity } from "lucide-react";
 
 export default function MacroPage() {
   const [activeTab, setActiveTab] = useState("Dag");
-  const [editIndicator, setEditIndicator] = useState(null);
 
+  // Nieuwe hookstructuur
   const {
-    macroData,
-    handleRemove,
+    macroData,        // array van indicatoren (dag/week/maand/kwartaal)
+    handleRemove,     // verwijdert indicator
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
 
   const { macro, loading: loadingScore } = useScoresData();
 
-  // Score kleur
+  // Scorekleur bepalen
   const getScoreColor = (score) => {
     const s = typeof score === "number" ? score : Number(score);
     if (isNaN(s)) return "text-gray-500";
@@ -44,9 +46,9 @@ export default function MacroPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ---------------------------------------------------------- */}
+      {/* ========================================================= */}
       {/* PAGE TITLE */}
-      {/* ---------------------------------------------------------- */}
+      {/* ========================================================= */}
       <div className="flex items-center gap-3">
         <Globe size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -54,9 +56,14 @@ export default function MacroPage() {
         </h1>
       </div>
 
-      {/* ---------------------------------------------------------- */}
+      {/* ========================================================= */}
+      {/* AI AGENT SAMENVATTING */}
+      {/* ========================================================= */}
+      <AgentInsightPanel category="macro" />
+
+      {/* ========================================================= */}
       {/* MACRO SCORE SUMMARY */}
-      {/* ---------------------------------------------------------- */}
+      {/* ========================================================= */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -100,14 +107,14 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
-      {/* ---------------------------------------------------------- */}
-      {/* SCORE RULES / INDICATOR SCORE VIEW */}
-      {/* ---------------------------------------------------------- */}
+      {/* ========================================================= */}
+      {/* SCORE RULES (score ranges per indicator) */}
+      {/* ========================================================= */}
       <MacroIndicatorScoreView />
 
-      {/* ---------------------------------------------------------- */}
-      {/* TABS → Dag / Week / Maand / Kwartaal */}
-      {/* ---------------------------------------------------------- */}
+      {/* ========================================================= */}
+      {/* TABS (Dag / Week / Maand / Kwartaal) */}
+      {/* ========================================================= */}
       <MacroTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -117,28 +124,15 @@ export default function MacroPage() {
         handleRemove={handleRemove}
       />
 
-      {/* ---------------------------------------------------------- */}
-      {/* EDIT POPUP */}
-      {/* ---------------------------------------------------------- */}
-      {editIndicator && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-full max-w-md space-y-4">
-            <h3 className="text-lg font-semibold">
-              ✏️ Bewerk {editIndicator.name}
-            </h3>
-
-            <button
-              onClick={() => setEditIndicator(null)}
-              className="
-                px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 
-                dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200
-              "
-            >
-              Sluiten
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ========================================================= */}
+      {/* ACTUAL TABLE (universele DayTable) */}
+      {/* ========================================================= */}
+      <DayTable
+        title={`Macro Analyse — ${activeTab}`}
+        icon={<Globe className="w-5 h-5" />}
+        data={macroData || []}
+        onRemove={handleRemove}
+      />
 
     </div>
   );

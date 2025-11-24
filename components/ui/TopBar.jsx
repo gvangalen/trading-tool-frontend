@@ -25,7 +25,9 @@ export default function TopBar() {
     <header
       className="
         fixed top-0 left-64 z-40
-        h-16 w-[calc(100%-16rem)]
+        h-16
+        w-[calc(100%-16rem)]
+
         flex items-center justify-between
         px-8
 
@@ -35,26 +37,33 @@ export default function TopBar() {
         relative
       "
     >
-      {/* Glow */}
+      {/* Depth glow */}
       <div className="absolute inset-0 pointer-events-none [background:var(--surface-glow)]" />
 
+      {/* Page title */}
       <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight">
         {title}
       </h1>
 
+      {/* Right side controls */}
       <div className="relative z-10 flex items-center gap-6">
 
+        {/* Search */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2 rounded-xl
+
             bg-[var(--sidebar-hover)]
             border border-[var(--sidebar-border)]
             text-[var(--sidebar-text)]
+
             hover:bg-[var(--sidebar-active)]
-            focus-within:ring-2 focus-within:ring-[var(--primary)]
+            transition-all duration-200
+
+            focus-within:ring-2
+            focus-within:ring-[var(--primary)]
             shadow-[inset_0_0_6px_rgba(255,255,255,0.04)]
-            transition-all
           "
         >
           <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />
@@ -64,13 +73,15 @@ export default function TopBar() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Zoeken…"
             className="
-              bg-transparent outline-none w-48
+              bg-transparent outline-none
+              w-48
               text-[var(--sidebar-text)]
               placeholder-[var(--sidebar-text-muted)]
             "
           />
         </div>
 
+        {/* Avatar */}
         <AvatarMenu />
       </div>
     </header>

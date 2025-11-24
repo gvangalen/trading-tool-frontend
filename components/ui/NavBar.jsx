@@ -71,13 +71,14 @@ export default function NavBar() {
 
       {/* FOOTER BUTTONS */}
       <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5 flex flex-col gap-3">
+
         <button
           className="
             flex items-center gap-2 px-4 py-2 rounded-xl
             text-gray-400
+            transition-all
             hover:text-white
             hover:bg-[var(--sidebar-hover)]
-            transition-all
           "
         >
           <Settings size={18} />
@@ -88,14 +89,15 @@ export default function NavBar() {
           className="
             flex items-center gap-2 px-4 py-2 rounded-xl
             text-gray-400
+            transition-all
             hover:text-white
             hover:bg-[var(--sidebar-hover)]
-            transition-all
           "
         >
           <Sun size={18} />
           Thema
         </button>
+
       </div>
     </aside>
   );
@@ -109,17 +111,17 @@ function SidebarItem({ href, icon, active, children }) {
       href={href}
       className="
         relative group flex items-center px-3 py-2 rounded-xl gap-3 
-        font-medium text-sm
+        font-medium text-sm transition-all
       "
     >
-      {/* Active pill */}
+      {/* ACTIEVE ACHTERGROND */}
       {active && (
         <motion.div
           layoutId="active-pill"
           className="
             absolute inset-0 
-            bg-[var(--sidebar-active)]
             rounded-xl
+            bg-[var(--sidebar-active)]
           "
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
         />

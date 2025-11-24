@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 
 // Lucide icons
-import { BarChart3, Coins, TrendingUp, Globe2, Rocket, Trophy, ChevronsUp } from "lucide-react";
+import {
+  BarChart3,
+  Coins,
+  TrendingUp,
+  Globe2,
+  Rocket,
+  Trophy,
+  ChevronsUp,
+} from "lucide-react";
 
 import DashboardGauges from "@/components/dashboard/DashboardGauges";
 import TradingAdvice from "@/components/dashboard/TradingAdvice";
@@ -22,7 +30,8 @@ import { useMarketData } from "@/hooks/useMarketData";
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  const { technicalData, handleRemove, loading: technicalLoading } = useTechnicalData();
+  const { technicalData, handleRemove, loading: technicalLoading } =
+    useTechnicalData();
 
   const {
     macroData,
@@ -31,61 +40,67 @@ export default function DashboardPage() {
     handleEdit,
     handleRemove: handleMacroRemove,
     calculateMacroScore,
-    getExplanation
+    getExplanation,
   } = useMacroData();
 
   const { sevenDayData, btcLive } = useMarketData();
 
+  // Scroll button
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const scrollToTop = () =>
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <div
       className="
-        max-w-screen-xl mx-auto
-        pt-12 pb-10 px-4        /* ⭐ minder ruimte bovenaan */
-        bg-[var(--bg-soft)]     /* ⭐ zelfde achtergrondkleur als Market/Macro */
-        text-[var(--text-dark)]
+        w-full
         min-h-screen
-        space-y-10
+        bg-[var(--bg)]
+        px-6 md:px-10
+        pt-24 pb-16
+        text-[var(--text-dark)]
       "
     >
       {/* ================= HEADER ================ */}
-      <header className="pt-2 pb-4">
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-[var(--text-dark)]" />
+      <header className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
+          <BarChart3 className="w-7 h-7 text-[var(--text-dark)]" />
           Trading Dashboard
         </h1>
-        {/* tagline VERWIJDERD */}
       </header>
 
-      {/* ================= HIGHLIGHTS – full-width ================= */}
-      <DashboardHighlights />
+      {/* ================= HIGHLIGHTS (full-width) ================ */}
+      <div className="mb-10">
+        <DashboardHighlights />
+      </div>
 
-      {/* ================= MAIN CONTENT + SIDEBAR ================= */}
-      <div className="flex flex-col xl:flex-row gap-8">
+      {/* ================= MAIN CONTENT ================ */}
+      <div className="flex flex-col xl:flex-row gap-10">
         {/* MAIN COLUMN */}
         <div className="flex-1 space-y-10">
-
           <DashboardGauges />
 
-          {/* MARKET DATA */}
+          {/* MARKET */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Coins className="w-4 h-4" /> Market Data
+                <Coins className="w-4 h-4" />
+                Market Data
               </div>
             }
           >
-            <MarketSummaryForDashboard sevenDayData={sevenDayData} btcLive={btcLive} />
+            <MarketSummaryForDashboard
+              sevenDayData={sevenDayData}
+              btcLive={btcLive}
+            />
           </CardWrapper>
 
-          {/* TECH ANALYSIS */}
+          {/* TECHNICAL */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -94,7 +109,9 @@ export default function DashboardPage() {
             }
           >
             {technicalLoading ? (
-              <p className="text-[var(--text-light)] text-sm">⏳ Technische data laden...</p>
+              <p className="text-[var(--text-light)] text-sm">
+                ⏳ Technische data laden...
+              </p>
             ) : (
               <TechnicalDayTableForDashboard
                 data={technicalData}
@@ -104,7 +121,7 @@ export default function DashboardPage() {
             )}
           </CardWrapper>
 
-          {/* MACRO INDICATOREN */}
+          {/* MACRO */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -113,7 +130,9 @@ export default function DashboardPage() {
             }
           >
             {macroLoading ? (
-              <p className="text-[var(--text-light)] text-sm">⏳ Macrodata laden...</p>
+              <p className="text-[var(--text-light)] text-sm">
+                ⏳ Macrodata laden...
+              </p>
             ) : macroError ? (
               <p className="text-[var(--red)] text-sm">{macroError}</p>
             ) : (
@@ -127,7 +146,7 @@ export default function DashboardPage() {
             )}
           </CardWrapper>
 
-          {/* AI TRADINGADVIES */}
+          {/* TRADING ADVIES */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -138,7 +157,7 @@ export default function DashboardPage() {
             <TradingAdvice />
           </CardWrapper>
 
-          {/* TOP 3 SETUPS */}
+          {/* TOP SETUPS */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -150,27 +169,26 @@ export default function DashboardPage() {
           </CardWrapper>
         </div>
 
-        {/* SIDEBAR */}
-        <div className="w-full xl:w-[320px]">
-          <div className="sticky top-24">
+        {/* RIGHT SIDEBAR */}
+        <aside className="w-full xl:w-[320px]">
+          <div className="sticky top-28">
             <RightSidebarCard />
           </div>
-        </div>
+        </aside>
       </div>
 
-      {/* ================= SCROLL BUTTON ================= */}
+      {/* ================= SCROLL BUTTON ================ */}
       {showScroll && (
         <button
           onClick={scrollToTop}
           className="
             fixed bottom-6 right-6
             bg-[var(--primary)] text-white
-            p-3 rounded-full shadow-md
+            p-3 rounded-full shadow-lg
             hover:bg-[var(--primary-dark)]
-            focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2
             transition
+            focus:ring-2 focus:ring-[var(--primary)]
           "
-          aria-label="Scroll naar boven"
         >
           <ChevronsUp className="w-5 h-5" />
         </button>

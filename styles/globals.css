@@ -7,22 +7,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* LIGHT MODE */
 :root {
-  /* Brand Blue (ongewijzigd) */
+  /* Brand Blue (accentkleur) */
   --primary: #3B82F6;
   --primary-light: #DBEAFE;
   --primary-hover: #BFDBFE;
   --primary-dark: #1E40AF;
 
-  /* Backgrounds */
-  --bg: #F5F6FA;
-  --bg-soft: #EEF1F7;
+  /* Background (super clean fintech) */
+  --bg: #F5F6FA;      /* hoofdbackground */
+  --bg-soft: #F5F6FA; /* ⚡ exact gelijk — voorkomt dubbele vlakken */
 
-  /* SIDEBAR – OPTIE A (Tailwind Gray scale) */
+  /* Sidebar (Tailwind Gray palette) */
   --sidebar-bg: #6B7280;        /* gray-500 */
   --sidebar-hover: #4B5563;     /* gray-600 */
   --sidebar-active: #374151;    /* gray-700 */
-  --sidebar-border: #4B5563;    /* same as hover */
+  --sidebar-border: #4B5563;    /* match hover */
 
   /* Cards */
   --card-bg: #FFFFFF;
@@ -31,8 +32,8 @@
   --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
 
   /* Text */
-  --text-dark: #111827;
-  --text-light: #6B7280;
+  --text-dark: #111827; /* slate-900 */
+  --text-light: #6B7280; /* gray-500 */
 
   /* Status Colors */
   --green: #10B981;
@@ -46,8 +47,7 @@
   --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
 }
 
-/* Dark Mode blijft hetzelfde voor later */
-
+/* DARK MODE (optioneel later, maar compleet & correct) */
 .dark {
   --primary: #1F6FEB;
   --primary-light: #1A2634;
@@ -60,9 +60,9 @@
   --card-bg: #161B22;
   --card-border: #30363D;
 
-  --sidebar-bg: #111827;
-  --sidebar-hover: #1F2937;
-  --sidebar-active: #374151;
+  --sidebar-bg: #111827;       /* gray-900 */
+  --sidebar-hover: #1F2937;    /* gray-800 */
+  --sidebar-active: #374151;   /* gray-700 */
   --sidebar-border: #1F2937;
 
   --text-dark: #E6EDF3;
@@ -73,7 +73,7 @@
   --shadow-lg: 0 4px 20px rgba(0,0,0,0.40);
 }
 
-/* Universal Card */
+/* UNIVERSAL CARD STYLE */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -81,7 +81,7 @@
   box-shadow: var(--card-shadow);
 }
 
-/* Animations */
+/* ANIMATIONS */
 @keyframes fade-slide {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }

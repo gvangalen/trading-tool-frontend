@@ -1,27 +1,51 @@
 import { useEffect, useState } from "react";
+import { fetchAgentInsight, fetchAgentReflections } from "@/lib/api/agents";
 
-export function useAgentInsight(category) {
-  const [data, setData] = useState(null);
+/**
+ * useAgentData(category)
+ *
+ * Haalt op:
+ *  - agent insights (samenvatting)
+ *  - agent reflections (subfactoren)
+ *
+ * category kan zijn: "macro", "market", "technical", "setup"
+ */
+export function useAgentData(category) {
+  const [insight, setInsight] = useState(null);
+  const [reflections, setReflections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!category) return;
 
-    async function fetchInsight() {
+    async function load() {
+      setLoading(true);
+
+      console.log(`🧠 [useAgentData] Ophalen AI-data voor categorie: ${category}`);
+
       try {
-        const res = await fetch(`/api/agents/insights?category=${category}`);
-        const json = await res.json();
-        setData(json.insight || null);
-      } catch (e) {
-        console.error("Insight error:", e);
-        setData(null);
+        const [ins, refl] = await Promise.all([
+          fetchAgentInsight(category),
+          fetchAgentReflections(category),
+        ]);
+
+        setInsight(ins || null);
+        setReflections(refl || []);
+      } catch (err) {
+        console.error("❌ [useAgentData] Fout bij ophalen agent-data:", err);
+        setInsight(null);
+        setReflections([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchInsight();
+    load();
   }, [category]);
 
-  return { data, loading };
+  return {
+    insight,      // hoofd AI-samenvatting
+    reflections,  // subfactoren
+    loading
+  };
 }

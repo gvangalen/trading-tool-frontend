@@ -11,29 +11,31 @@ import {
 
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
-export default function GaugeChart({ value = 0, label = "Score" }) {
+export default function GaugeChart({
+  value = 0,
+  label = "Score",
+  showNeedle = true,
+}) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  const percentage = Math.max(0, Math.min(100, value));
+  // Clamp 0–100
+  const s = Math.max(0, Math.min(100, value));
 
-  /* 🎨 PREMIUM FINTECH COLORS */
-  const scoreColor =
-    percentage >= 70
-      ? "#22C55E" // green-500
-      : percentage >= 40
-      ? "#F59E0B" // amber-500
-      : "#EF4444"; // red-500
+  // TradingView gradient colors
+  const red = "#EF4444";
+  const yellow = "#F59E0B";
+  const green = "#10B981";
+  const gray = "#E5E7EB";
 
-  const labelColor =
-    percentage >= 70
-      ? "text-green-600 dark:text-green-300"
-      : percentage >= 40
-      ? "text-amber-500 dark:text-amber-300"
-      : "text-red-500 dark:text-red-300";
+  const getColor = () => {
+    if (s <= 33) return red;
+    if (s <= 66) return yellow;
+    return green;
+  };
 
-  /* 🎨 Background neutral (light gray, no black!) */
-  const backgroundArc = "#E5E7EB"; // gray-200
+  // Needle angle
+  const angle = (s / 100) * 180 - 90;
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -45,20 +47,24 @@ export default function GaugeChart({ value = 0, label = "Score" }) {
       data: {
         datasets: [
           {
-            data: [percentage, 100 - percentage],
-            backgroundColor: [scoreColor, backgroundArc],
+            label: "Gauge",
+            data: [s, 100 - s],
             borderWidth: 0,
-            cutout: "82%",              // Premium thin ring
             circumference: 180,
-            rotation: 270,
-            hoverOffset: 0,
+            rotation: 180,
+            cutout: "70%",
+            backgroundColor: [
+              getColor(),
+              gray,
+            ],
+            borderCapStyle: "round",
           },
         ],
       },
       options: {
         responsive: true,
         animation: {
-          duration: 800,
+          duration: 900,
           easing: "easeOutQuart",
         },
         plugins: {
@@ -69,21 +75,40 @@ export default function GaugeChart({ value = 0, label = "Score" }) {
     });
 
     return () => chartRef.current?.destroy();
-  }, [percentage]);
+  }, [s]);
 
   return (
-    <div className="relative w-full h-36 flex flex-col items-center justify-center">
-      <canvas ref={canvasRef} className="max-w-[200px]" />
+    <div className="w-full flex flex-col items-center relative py-2">
+      
+      {/* Label ABOVE gauge */}
+      <div className="text-sm font-medium text-[var(--text-light)] mb-1">
+        {label}
+      </div>
 
-      {/* CENTER LABEL */}
-      <div className="absolute top-[52%] translate-y-[-50%] flex flex-col items-center">
-        <span className={`text-xs font-medium tracking-wide ${labelColor}`}>
-          {label}
-        </span>
+      {/* Gauge */}
+      <div className="relative w-full flex justify-center">
+        <canvas ref={canvasRef} className="max-w-[200px]" />
 
-        <span className="text-4xl font-bold text-[var(--text-dark)] dark:text-white leading-tight">
-          {value}
-        </span>
+        {/* Needle */}
+        {showNeedle && (
+          <div
+            className="absolute bottom-[28%] w-0 h-0"
+            style={{
+              transform: `rotate(${angle}deg)`,
+              transformOrigin: "bottom center",
+            }}
+          >
+            <div
+              className="h-12 w-[2px] bg-black dark:bg-white rounded-full"
+              style={{ marginLeft: "-1px" }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Score BELOW gauge */}
+      <div className="mt-2 text-3xl font-bold text-[var(--text-dark)]">
+        {value}
       </div>
     </div>
   );

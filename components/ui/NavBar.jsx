@@ -32,15 +32,12 @@ export default function NavBar() {
   return (
     <aside
       className="
-        fixed top-0 left-0
+        fixed top-0 left-0 z-50
         h-screen w-64
-        z-50
 
-        bg-[var(--sidebar-bg)]
-        border-r border-[var(--sidebar-border)]
-        shadow-[var(--surface-shadow)]
-
+        sidebar-surface
         overflow-y-auto
+
         px-6 py-6
         relative
       "
@@ -86,8 +83,13 @@ export default function NavBar() {
 
       {/* Footer */}
       <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5 flex flex-col gap-3">
-        <SidebarFooterButton icon={<Settings size={18} />}>Instellingen</SidebarFooterButton>
-        <SidebarFooterButton icon={<Sun size={18} />}>Thema</SidebarFooterButton>
+        <SidebarFooterButton icon={<Settings size={18} />}>
+          Instellingen
+        </SidebarFooterButton>
+
+        <SidebarFooterButton icon={<Sun size={18} />}>
+          Thema
+        </SidebarFooterButton>
       </div>
     </aside>
   );
@@ -106,7 +108,7 @@ function SidebarItem({ href, icon, active, children }) {
         transition-all
       "
     >
-      {/* Active pill */}
+      {/* Active background pill */}
       {active && (
         <motion.div
           layoutId="sidebar-pill"

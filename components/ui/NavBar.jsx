@@ -4,16 +4,10 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+
 import {
-  Gauge,
-  DollarSign,
-  Globe,
-  LineChart,
-  Layers,
-  BarChart3,
-  FileText,
-  Settings,
-  Sun,
+  Gauge, DollarSign, Globe, LineChart,
+  Layers, BarChart3, FileText, Settings, Sun
 } from "lucide-react";
 
 export default function NavBar() {
@@ -32,64 +26,42 @@ export default function NavBar() {
   return (
     <aside
       className="
-        fixed top-0 left-0 z-50
-        h-screen w-64
-
-        sidebar-surface
+        fixed top-0 left-0 h-screen w-64 z-50
+        bg-[var(--sidebar-bg)]
+        border-r border-[var(--sidebar-border)]
         overflow-y-auto
-
         px-6 py-6
-        relative
       "
     >
-      {/* Glow overlay */}
-      <div
-        className="
-          absolute inset-0
-          pointer-events-none
-          [background:var(--surface-glow)]
-        "
-      />
-
       {/* Logo */}
-      <div className="relative flex items-center gap-3 mb-12 px-1">
-        <div className="p-2 rounded-xl bg-white/95 shadow-md">
+      <div className="flex items-center gap-3 mb-12">
+        <div className="p-2 bg-white/95 rounded-xl shadow-md">
           <Image src="/logo.png" alt="logo" width={34} height={34} />
         </div>
-
         <div>
-          <h1 className="text-lg font-semibold text-[var(--sidebar-text)] leading-none">
-            TradeLayer
-          </h1>
-          <p className="text-xs text-[var(--sidebar-text-muted)] mt-1">
-            AI Trading Suite
-          </p>
+          <h1 className="text-lg font-semibold text-[var(--sidebar-text)]">TradeLayer</h1>
+          <p className="text-xs text-[var(--sidebar-text-muted)]">AI Trading Suite</p>
         </div>
       </div>
 
-      {/* Navigatie */}
+      {/* Nav links */}
       <nav className="flex flex-col gap-1 flex-1">
-        {links.map((item) => (
+        {links.map((link) => (
           <SidebarItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            active={pathname === item.href}
+            key={link.href}
+            href={link.href}
+            icon={link.icon}
+            active={pathname === link.href}
           >
-            {item.label}
+            {link.label}
           </SidebarItem>
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5 flex flex-col gap-3">
-        <SidebarFooterButton icon={<Settings size={18} />}>
-          Instellingen
-        </SidebarFooterButton>
-
-        <SidebarFooterButton icon={<Sun size={18} />}>
-          Thema
-        </SidebarFooterButton>
+      <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5">
+        <SidebarFooterButton icon={<Settings size={18} />}>Instellingen</SidebarFooterButton>
+        <SidebarFooterButton icon={<Sun size={18} />}>Thema</SidebarFooterButton>
       </div>
     </aside>
   );
@@ -100,53 +72,30 @@ function SidebarItem({ href, icon, active, children }) {
     <Link
       href={href}
       className="
-        relative group
-        flex items-center gap-3
-        px-4 py-2.5
-        rounded-xl text-sm
-        cursor-pointer select-none
-        transition-all
+        relative group flex items-center px-4 py-2.5
+        rounded-xl gap-3 text-sm transition-all
       "
     >
-      {/* Active background pill */}
       {active && (
         <motion.div
           layoutId="sidebar-pill"
-          className="
-            absolute inset-0 rounded-xl
-            bg-[var(--sidebar-active)]
-            shadow-[inset_0_0_8px_rgba(255,255,255,0.08)]
-            backdrop-blur-sm
-          "
-          transition={{ type: "spring", stiffness: 260, damping: 22 }}
+          className="absolute inset-0 rounded-xl bg-[var(--sidebar-active)]"
         />
       )}
 
-      {/* Icon */}
-      <span
-        className={`
-          relative z-10 transition-all
-          ${
-            active
-              ? "text-[var(--sidebar-text)]"
-              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
-          }
-        `}
-      >
+      <span className={`relative z-10 ${
+        active
+          ? "text-[var(--sidebar-text)]"
+          : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
+      }`}>
         {icon}
       </span>
 
-      {/* Label */}
-      <span
-        className={`
-          relative z-10 transition-all
-          ${
-            active
-              ? "text-[var(--sidebar-text)] font-semibold"
-              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
-          }
-        `}
-      >
+      <span className={`relative z-10 ${
+        active
+          ? "text-[var(--sidebar-text)] font-semibold"
+          : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
+      }`}>
         {children}
       </span>
     </Link>

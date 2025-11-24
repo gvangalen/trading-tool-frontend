@@ -30,33 +30,39 @@ export default function TopBar() {
         px-8
         w-[calc(100%-16rem)] ml-64
 
-        /* THEME COLORS — MATCH NAVBAR */
-        bg-[var(--sidebar-bg)]
+        /* MATCH SIDEBAR */
+        bg-[var(--topbar-bg)]
         text-[var(--sidebar-text)]
-        border-b border-[var(--sidebar-border)]
+        border-b border-[var(--topbar-border)]
 
-        /* DEPTH + GLOW */
+        /* DEPTH + SUBTLE GLOW */
         shadow-[var(--surface-shadow)]
-        before:absolute before:inset-0 before:bg-[var(--surface-glow)]
-        before:pointer-events-none
-
-        /* Modern effect */
-        backdrop-blur-md
+        relative
       "
     >
-      {/* Titel */}
+      {/* Glow-layer voor 3D depth (zelfde als sidebar) */}
+      <div
+        className="
+          absolute inset-0 
+          pointer-events-none
+          [background:var(--surface-glow)]
+        "
+      />
+
+      {/* Title */}
       <h1 className="relative z-10 text-[1.35rem] font-semibold tracking-tight">
         {title}
       </h1>
 
-      {/* Right side */}
+      {/* Right-side content */}
       <div className="relative z-10 flex items-center gap-6">
 
-        {/* Searchbar */}
+        {/* Search */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2 rounded-xl
+
             bg-[var(--sidebar-hover)]
             border border-[var(--sidebar-border)]
             text-[var(--sidebar-text)]
@@ -72,17 +78,17 @@ export default function TopBar() {
           <input
             type="text"
             placeholder="Zoeken…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             className="
               bg-transparent outline-none w-48
               text-[var(--sidebar-text)]
               placeholder-[var(--sidebar-text-muted)]
             "
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
-        {/* Avatar Menu */}
+        {/* Avatar */}
         <AvatarMenu />
       </div>
     </header>

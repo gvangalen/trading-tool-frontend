@@ -62,11 +62,11 @@ export default function DashboardPage() {
         bg-[var(--bg)]
         text-[var(--text-dark)]
         px-6 md:px-12
-        pt-24 pb-16
+        pt-24 pb-20
       "
     >
       {/* ================= HEADER ================= */}
-      <header className="mb-10">
+      <header className="mb-12">
         <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
           <BarChart3 className="w-7 h-7 text-[var(--text-dark)]" />
           Trading Dashboard
@@ -74,7 +74,7 @@ export default function DashboardPage() {
       </header>
 
       {/* ================= HIGHLIGHTS ================= */}
-      <div className="mb-12">
+      <div className="mb-14">
         <DashboardHighlights />
       </div>
 

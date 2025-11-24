@@ -1,9 +1,10 @@
 /* ===========================================
-   GLOBAL THEME – Fintech PRO 5.0
-   ✓ Sidebar & Topbar met diepte (gradient)
+   GLOBAL THEME – Fintech PRO 5.1
+   ✓ Sidebar met diepe donkere gradient
+   ✓ Topbar lichtere gradient (los van sidebar)
    ✓ Premium dark surfaces (TradingView style)
-   ✓ Consistente light mode
    ✓ Luxe fintech shadows
+   ✓ Consistente light mode
 =========================================== */
 
 @tailwind base;
@@ -25,35 +26,39 @@
   --bg-soft: #F5F6FA;
 
   /* ================================
-     PREMIUM DARK SURFACES (DE DIEPTE)
+     PREMIUM DARK SURFACES (DEPTH)
      ================================ */
-  --surface-1: #111827;   /* base */
-  --surface-2: #0E1217;   /* dieper */
-  --surface-3: #1A1F27;   /* contrast */
+  --surface-1: #0f172a;   /* sidebar base */
+  --surface-2: #0a0f16;   /* donkerder */
+  --surface-3: #1a1f27;   /* hover contrast */
 
-  /* Subtiele gradient voor structuur */
-  --surface-gradient: linear-gradient(
+  /* ================================
+     SIDEBAR — DIEP DONKER (echte depth)
+     ================================ */
+  --sidebar-bg: linear-gradient(
     to bottom,
-    #111827 0%,
-    #0E1016 100%
+    #0f172a 0%,
+    #0a0f16 100%
   );
-
-  /* Glow + shadows voor real depth */
-  --surface-glow: inset 0 1px 0 rgba(255,255,255,0.04);
-  --surface-shadow: 0 4px 12px rgba(0,0,0,0.35);
-
-  /* Sidebar & Topbar — PRO */
-  --sidebar-bg: var(--surface-gradient);
-  --sidebar-hover: var(--surface-3);
-  --sidebar-active: rgba(255,255,255,0.05);
-  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active: rgba(255, 255, 255, 0.10);
+  --sidebar-border: rgba(255, 255, 255, 0.04);
 
   --sidebar-text: #F3F4F6;
   --sidebar-text-muted: #9CA3AF;
 
-  /* Topbar identiek aan Sidebar */
-  --topbar-bg: var(--surface-gradient);
-  --topbar-border: rgba(255,255,255,0.06);
+  /* ================================
+     TOPBAR — LICHTER (los van sidebar)
+     ================================ */
+  --topbar-bg: linear-gradient(
+    to bottom,
+    #1b2433 0%,
+    #141b26 100%
+  );
+  --topbar-border: rgba(255, 255, 255, 0.05);
+  --topbar-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.25),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 
   /* Content */
   --text-dark: #111827;
@@ -70,7 +75,7 @@
   --yellow: #FACC15;
   --red: #EF4444;
 
-  /* Extra Shadows */
+  /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
   --shadow-lg: 0 4px 18px rgba(0,0,0,0.08);
@@ -87,11 +92,11 @@
   --card-border: #30363D;
 
   --sidebar-bg: linear-gradient(to bottom, #0D1117 0%, #070A0D 100%);
-  --sidebar-hover: #1A1F25;
-  --sidebar-active: rgba(255,255,255,0.10);
-  --sidebar-border: rgba(255,255,255,0.04);
+  --sidebar-hover: rgba(255,255,255,0.08);
+  --sidebar-active: rgba(255,255,255,0.12);
+  --sidebar-border: rgba(255,255,255,0.03);
 
-  --topbar-bg: linear-gradient(to bottom, #0D1117 0%, #070A0D 100%);
+  --topbar-bg: linear-gradient(to bottom, #161f2a 0%, #0d141b 100%);
   --topbar-border: rgba(255,255,255,0.04);
 
   --sidebar-text: #E6EDF3;

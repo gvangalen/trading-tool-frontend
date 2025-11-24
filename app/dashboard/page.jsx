@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
-  // Scroll button
+  /* ============= SCROLL BUTTON LOGIC ============= */
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -58,31 +58,31 @@ export default function DashboardPage() {
   return (
     <div
       className="
-        w-full
-        min-h-screen
+        w-full min-h-screen
         bg-[var(--bg)]
-        px-6 md:px-10
-        pt-24 pb-16
         text-[var(--text-dark)]
+        px-6 md:px-12
+        pt-24 pb-16
       "
     >
-      {/* ================= HEADER ================ */}
-      <header className="mb-8">
+      {/* ================= HEADER ================= */}
+      <header className="mb-10">
         <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
           <BarChart3 className="w-7 h-7 text-[var(--text-dark)]" />
           Trading Dashboard
         </h1>
       </header>
 
-      {/* ================= HIGHLIGHTS (full-width) ================ */}
-      <div className="mb-10">
+      {/* ================= HIGHLIGHTS ================= */}
+      <div className="mb-12">
         <DashboardHighlights />
       </div>
 
-      {/* ================= MAIN CONTENT ================ */}
-      <div className="flex flex-col xl:flex-row gap-10">
+      {/* ================= MAIN CONTENT LAYOUT ================= */}
+      <div className="flex flex-col xl:flex-row gap-12">
+
         {/* MAIN COLUMN */}
-        <div className="flex-1 space-y-10">
+        <main className="flex-1 space-y-12">
           <DashboardGauges />
 
           {/* MARKET */}
@@ -104,7 +104,8 @@ export default function DashboardPage() {
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" /> Technische Analyse
+                <TrendingUp className="w-4 h-4" />
+                Technische Analyse
               </div>
             }
           >
@@ -125,7 +126,8 @@ export default function DashboardPage() {
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Globe2 className="w-4 h-4" /> Macro Indicatoren
+                <Globe2 className="w-4 h-4" />
+                Macro Indicatoren
               </div>
             }
           >
@@ -150,7 +152,8 @@ export default function DashboardPage() {
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Rocket className="w-4 h-4" /> AI Tradingadvies
+                <Rocket className="w-4 h-4" />
+                AI Tradingadvies
               </div>
             }
           >
@@ -161,23 +164,24 @@ export default function DashboardPage() {
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> Top 3 Setups
+                <Trophy className="w-4 h-4" />
+                Top 3 Setups
               </div>
             }
           >
             <TopSetupsMini />
           </CardWrapper>
-        </div>
+        </main>
 
         {/* RIGHT SIDEBAR */}
-        <aside className="w-full xl:w-[320px]">
+        <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />
           </div>
         </aside>
       </div>
 
-      {/* ================= SCROLL BUTTON ================ */}
+      {/* ================= SCROLL BUTTON ================= */}
       {showScroll && (
         <button
           onClick={scrollToTop}

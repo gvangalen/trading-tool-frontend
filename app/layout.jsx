@@ -19,21 +19,20 @@ export default function RootLayout({ children }) {
         {/* SIDEBAR – fixed */}
         <NavBar />
 
-        {/* MAIN WRAPPER (naast sidebar) */}
+        {/* MAIN WRAPPER */}
         <div className="ml-64">
 
-          {/* TOPBAR – volledig via .topbar-surface gestyled */}
-          <div className="fixed top-0 left-64 right-0 z-50 h-16 topbar-surface">
+          {/* FIXED TOPBAR */}
+          <div className="fixed top-0 left-64 right-0 h-16 topbar-surface z-40">
             <TopBar />
           </div>
 
-          {/* PAGE CONTENT – begint direct onder topbar */}
-          <main className="px-8 pt-16 pb-14 min-h-screen">
+          {/* PAGE CONTENT – begint exact onder topbar */}
+          <main className="pt-16 px-8 pb-14 min-h-screen">
             {children}
           </main>
 
         </div>
-
       </body>
     </html>
   );

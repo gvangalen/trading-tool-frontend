@@ -1,6 +1,6 @@
 /* ===========================================
    GLOBAL THEME – Fintech PRO 7.1
-   Sidebar + Topbar Slate-100
+   Light UI – Sidebar & Topbar Slate-100
 =========================================== */
 
 @tailwind base;
@@ -8,32 +8,32 @@
 @tailwind utilities;
 
 /* ===========================================
-   LIGHT MODE VARIABLES (DEFAULT)
+   LIGHT MODE VARIABLES
 =========================================== */
 :root {
   /* Brand */
   --primary: #3B82F6;
 
-  /* Background */
-  --bg: #F5F6FA;      /* body background */
-  --bg-soft: #F5F6FA;
+  /* Background (WIT) */
+  --bg: #ffffff;
+  --bg-soft: #ffffff;
 
   /* Text */
-  --text-dark: #1e293b;     /* slate-800 */
-  --text-light: #475569;    /* slate-600 */
+  --text-dark: #334155;     /* slate-700 */
+  --text-light: #64748b;    /* slate-500 */
 
-  /* Sidebar + Topbar (Slate-100) */
-  --sidebar-bg: #f1f5f9;      /* slate-100 */
+  /* Sidebar & Topbar (Slate-100) */
+  --sidebar-bg: #f1f5f9;       /* slate-100 */
   --sidebar-border: rgba(0,0,0,0.06);
-  --sidebar-text: #1e293b;          /* slate-800 */
-  --sidebar-text-muted: #64748b;    /* slate-500 */
+  --sidebar-text: #334155;           /* slate-700 */
+  --sidebar-text-muted: #64748b;     /* slate-500 */
   --sidebar-hover: rgba(0,0,0,0.04);
-  --sidebar-active: rgba(0,0,0,0.08);
+  --sidebar-active: rgba(0,0,0,0.10);
 
-  --topbar-bg: #f1f5f9;       /* exact dezelfde tint */
-  --topbar-text: #1e293b;
+  --topbar-bg: #f1f5f9;       /* zelfde tint */
+  --topbar-text: #334155;     /* slate-700 */
   --topbar-border: rgba(0,0,0,0.06);
-  --topbar-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  --topbar-shadow: 0 1px 2px rgba(0,0,0,0.05);
 
   /* Cards */
   --card-bg: #ffffff;
@@ -41,10 +41,9 @@
   --card-radius: 14px;
 
   /* Card shadows */
-  --card-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  --card-shadow: 0 3px 8px rgba(0,0,0,0.04);
   --card-shadow-hover: 0 6px 18px rgba(0,0,0,0.08);
 
-  /* Card icon background */
   --card-icon-bg: rgba(59,130,246,0.08);
 }
 
@@ -61,19 +60,18 @@
   --card-bg: #161B22;
   --card-border: #30363D;
 
-  /* Sidebar */
-  --sidebar-bg: #1e293b;   /* slate-800 */
+  /* Sidebar in dark */
+  --sidebar-bg: #1e293b;     /* slate-800 */
   --sidebar-text: #E6EDF3;
   --sidebar-text-muted: #94a3b8;
   --sidebar-border: rgba(255,255,255,0.05);
-  --sidebar-hover: rgba(255,255,255,0.04);
-  --sidebar-active: rgba(255,255,255,0.10);
+  --sidebar-hover: rgba(255,255,255,0.06);
+  --sidebar-active: rgba(255,255,255,0.12);
 
-  /* Topbar */
+  /* Topbar in dark */
   --topbar-bg: #1e293b;
   --topbar-text: #E6EDF3;
   --topbar-border: rgba(255,255,255,0.05);
-  --topbar-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
 /* ===========================================

@@ -1,6 +1,6 @@
 /* ===========================================
-   GLOBAL THEME – Grip Theme PRO 2.0
-   Light-blue sidebar/topbar + soft white background
+   GLOBAL THEME – Grip Theme PRO 2.1
+   Sidebar & Topbar = WIT + zacht blauw achtergrond
 =========================================== */
 
 @tailwind base;
@@ -11,7 +11,7 @@
    LIGHT MODE VARIABLES
 =========================================== */
 :root {
-  /* Brand / Primary color (buttons, highlights) */
+  /* Brand */
   --primary: #1A47FF;
 
   /* Background (bijna wit, strak) */
@@ -19,23 +19,26 @@
   --bg-soft: #FAFBFF;
 
   /* Text */
-  --text-dark: #0f172a;   /* slate-900 */
-  --text-light: #475569;  /* slate-600 */
+  --text-dark: #0f172a;
+  --text-light: #475569;
 
-  /* SIDEBAR & TOPBAR (modern light blue) */
-  --sidebar-bg: #DBEAFE;           /* light blue-100 */
-  --sidebar-border: rgba(0,0,0,0.06);
+  /* ===================================== */
+  /*  🔵 SIDEBAR & TOPBAR → WIT            */
+  /* ===================================== */
+
+  --sidebar-bg: #ffffff;
+  --sidebar-border: rgba(0,0,0,0.08);
   --sidebar-text: #0f172a;
-  --sidebar-text-muted: #475569;
-  --sidebar-hover: rgba(255,255,255,0.4);
-  --sidebar-active: rgba(255,255,255,0.65);
+  --sidebar-text-muted: #64748b;     /* slate-500 */
+  --sidebar-hover: rgba(0,0,0,0.04);
+  --sidebar-active: rgba(0,0,0,0.08);
 
-  --topbar-bg: #DBEAFE;
+  --topbar-bg: #ffffff;
   --topbar-text: #0f172a;
-  --topbar-border: rgba(0,0,0,0.06);
+  --topbar-border: rgba(0,0,0,0.08);
   --topbar-shadow:
-      0 2px 6px rgba(0,0,0,0.08),
-      inset 0 -1px 0 rgba(255,255,255,0.5);
+      0 2px 6px rgba(0,0,0,0.06),
+      inset 0 -1px 0 rgba(255,255,255,0.6);
 
   /* Cards */
   --card-bg: #ffffff;
@@ -85,14 +88,14 @@
 }
 
 /* ===========================================
-   SIDEBAR SURFACE (3D / soft depth)
+   SIDEBAR SURFACE
 =========================================== */
 .sidebar-surface {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.5),
-    0 10px 30px rgba(0,0,0,0.06);
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 10px 25px rgba(0,0,0,0.05);
 }
 
 /* ===========================================

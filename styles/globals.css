@@ -116,6 +116,33 @@
 }
 
 /* ===========================================
+   DEPTH UPGRADE – Sidebar + Topbar
+   Modern 3D Panels (Apple/Linear style)
+=========================================== */
+
+/* Sidebar Panel */
+.sidebar-surface {
+  background: linear-gradient(to bottom, #f1f5f9 0%, #e9edf3 100%);
+  border-right: 1px solid rgba(0,0,0,0.06);
+
+  /* 3D depth */
+  box-shadow:
+    1px 0 3px rgba(0,0,0,0.07),     /* outer soft shadow */
+    0 1px 0 rgba(255,255,255,0.6) inset; /* top highlight */
+}
+
+/* Topbar Panel */
+.topbar-surface {
+  background: linear-gradient(to bottom, #f1f5f9 0%, #e9edf3 100%);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+
+  /* 3D depth */
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.08),      /* elevation */
+    0 1px 0 rgba(255,255,255,0.6) inset; /* highlight */
+}
+
+/* ===========================================
    Animations
 =========================================== */
 @keyframes fade-slide {

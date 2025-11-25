@@ -34,49 +34,53 @@ export default function NavBar() {
     <aside
       className="
         sidebar-surface
-        fixed top-0 left-0 z-50
+        fixed top-0 left-0 z-30
         h-screen w-64
-
-        overflow-y-auto
-        px-6 py-6
+        flex flex-col
       "
     >
-      {/* Logo */}
-      <div className="relative flex items-center gap-3 mb-12 px-1">
-        <div className="p-2 rounded-xl bg-white/95 shadow-md">
-          <Image src="/logo.png" alt="logo" width={34} height={34} />
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 pt-6">
+
+        {/* Logo */}
+        <div className="relative flex items-center gap-3 mb-12 px-1">
+          <div className="p-2 rounded-xl bg-white/95 shadow-md">
+            <Image src="/logo.png" alt="logo" width={34} height={34} />
+          </div>
+
+          <div>
+            <h1 className="text-lg font-semibold text-[var(--sidebar-text)] leading-none">
+              TradeLayer
+            </h1>
+            <p className="text-xs text-[var(--sidebar-text-muted)] mt-1">
+              AI Trading Suite
+            </p>
+          </div>
         </div>
 
-        <div>
-          <h1 className="text-lg font-semibold text-[var(--sidebar-text)] leading-none">
-            TradeLayer
-          </h1>
-          <p className="text-xs text-[var(--sidebar-text-muted)] mt-1">
-            AI Trading Suite
-          </p>
-        </div>
+        {/* Links */}
+        <nav className="flex flex-col gap-1">
+          {links.map((item) => (
+            <SidebarItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              active={pathname === item.href}
+            >
+              {item.label}
+            </SidebarItem>
+          ))}
+        </nav>
       </div>
 
-      {/* Links */}
-      <nav className="flex flex-col gap-1 flex-1">
-        {links.map((item) => (
-          <SidebarItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            active={pathname === item.href}
-          >
-            {item.label}
-          </SidebarItem>
-        ))}
-      </nav>
-
       {/* Footer */}
-      <div className="mt-auto border-t border-[var(--sidebar-border)] pt-5 flex flex-col gap-3">
+      <div className="border-t border-[var(--sidebar-border)] px-6 py-5 flex flex-col gap-3">
         <SidebarFooterButton icon={<Settings size={18} />}>
           Instellingen
         </SidebarFooterButton>
-        <SidebarFooterButton icon={<Sun size={18} />}>Thema</SidebarFooterButton>
+        <SidebarFooterButton icon={<Sun size={18} />}>
+          Thema
+        </SidebarFooterButton>
       </div>
     </aside>
   );

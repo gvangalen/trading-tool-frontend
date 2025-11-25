@@ -116,14 +116,13 @@
 }
 
 /* ===========================================
-   TOPBAR SURFACE  — FINAL FIXED VERSION
+   TOPBAR SURFACE  (FIX: geen position: relative!)
 =========================================== */
 .topbar-surface {
   background: var(--topbar-bg);
   border-bottom: 1px solid var(--topbar-border);
   box-shadow: var(--topbar-shadow);
-  position: relative;
-  z-index: 40;            /* <-- BELANGRIJK: surface onder content */
+  /* GEEN position hier, zodat Tailwind 'fixed' wint */
 }
 
 .topbar-surface::before {
@@ -131,7 +130,6 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 0;            /* <-- overlay ligt onder header-content */
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 

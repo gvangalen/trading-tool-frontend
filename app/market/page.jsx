@@ -1,34 +1,34 @@
 "use client";
 
+import { LineChart, TrendingUp, TrendingDown, Gauge, Info, Activity } from "lucide-react";
+
+// Hooks
 import { useMarketData } from "@/hooks/useMarketData";
 import { useScoresData } from "@/hooks/useScoresData";
 
+// Shared Components
+import CardWrapper from "@/components/ui/CardWrapper";
+import DayTable from "@/components/common/DayTable";
+import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
+
+// Market Components
 import MarketLiveCard from "@/components/market/MarketLiveCard";
 import MarketSevenDayTable from "@/components/market/MarketSevenDayTable";
 import MarketForwardReturnTabs from "@/components/market/MarketForwardReturnTabs";
 import MarketIndicatorScoreView from "@/components/market/MarketIndicatorScoreView";
-import MarketDayTable from "@/components/market/MarketDayTable";
-
-import CardWrapper from "@/components/ui/CardWrapper";
-
-// Nieuwe icons
-import { LineChart, TrendingUp, TrendingDown, Gauge, Info } from "lucide-react";
 
 export default function MarketPage() {
   const {
     btcLive,
     sevenDayData,
     forwardReturns,
-
     marketDayData,
     availableIndicators,
     selectedIndicator,
     scoreRules,
     selectIndicator,
-
     addMarket,
     removeMarket,
-
     loading,
     error,
   } = useMarketData();
@@ -37,12 +37,13 @@ export default function MarketPage() {
 
   // 🎨 Score kleur
   const scoreColor = (score) => {
+    if (!score && score !== 0) return "text-gray-600";
     if (score >= 75) return "text-green-600";
     if (score <= 25) return "text-red-600";
     return "text-yellow-600";
   };
 
-  // 📊 Advies (zonder emoji)
+  // 📈 Advies
   const adviesText =
     market?.score >= 75
       ? "Bullish"
@@ -71,11 +72,15 @@ export default function MarketPage() {
       )}
 
       {/* ------------------------------------------------------ */}
+      {/* 🤖 AI Agent Analyse */}
+      {/* ------------------------------------------------------ */}
+      <AgentInsightPanel category="market" />
+
+      {/* ------------------------------------------------------ */}
       {/* 📊 Markt Score */}
       {/* ------------------------------------------------------ */}
       <CardWrapper>
         <div className="space-y-4">
-          {/* Titel */}
           <div className="flex items-center gap-2">
             <Gauge className="text-blue-600" size={20} />
             <h2 className="text-lg font-semibold text-[var(--text-dark)]">
@@ -83,12 +88,10 @@ export default function MarketPage() {
             </h2>
           </div>
 
-          {/* Score */}
           <div className={`text-2xl font-bold ${scoreColor(market?.score)}`}>
             {loading ? "…" : market?.score?.toFixed(1) ?? "–"}
           </div>
 
-          {/* Advies */}
           <div className="flex items-center gap-2 text-lg">
             {adviesText === "Bullish" && (
               <TrendingUp className="text-green-600" size={20} />
@@ -118,7 +121,7 @@ export default function MarketPage() {
       />
 
       {/* ------------------------------------------------------ */}
-      {/* ⚙️ Indicator Score View + Add Indicator */}
+      {/* ⚙️ Indicator Score View (Add Indicator) */}
       {/* ------------------------------------------------------ */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators}
@@ -129,29 +132,14 @@ export default function MarketPage() {
       />
 
       {/* ------------------------------------------------------ */}
-      {/* 🧮 Dagelijkse Market Analyse */}
+      {/* 📅 Dagelijkse Market Analyse — DayTable PRO */}
       {/* ------------------------------------------------------ */}
-      <CardWrapper title="Dagelijkse Market Analyse">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-[var(--bg-soft)] text-[var(--text-dark)] border-b border-[var(--border)]">
-              <th className="p-2">Indicator</th>
-              <th className="p-2 text-center">Waarde</th>
-              <th className="p-2 text-center">Score</th>
-              <th className="p-2 text-center">Advies</th>
-              <th className="p-2">Uitleg</th>
-              <th className="p-2 text-center">Actie</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <MarketDayTable
-              data={marketDayData}
-              onRemove={removeMarket}
-            />
-          </tbody>
-        </table>
-      </CardWrapper>
+      <DayTable
+        title="Dagelijkse Market Analyse"
+        icon={<Activity className="w-5 h-5" />}
+        data={marketDayData}
+        onRemove={removeMarket}
+      />
 
       {/* ------------------------------------------------------ */}
       {/* 📆 7-Daagse Marktgeschiedenis */}

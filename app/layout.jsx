@@ -16,23 +16,86 @@ export default function RootLayout({ children }) {
         {/* Notifications */}
         <Toaster position="top-right" />
 
-        {/* SIDEBAR – fixed */}
-        <NavBar />
+        {/* ============================= */}
+        {/* 🧭 SIDEBAR */}
+        {/* ============================= */}
+        {/* Desktop sidebar */}
+        <div className="hidden md:block">
+          <NavBar />
+        </div>
 
-        {/* MAIN WRAPPER */}
-        <div className="ml-64">
+        {/* Mobile sidebar (slide-over) */}
+        <div
+          id="mobileSidebar"
+          className="
+            fixed top-0 left-0 z-50 h-full w-64
+            sidebar-surface 
+            transform -translate-x-full 
+            transition-transform duration-300
+            md:hidden
+          "
+        >
+          <NavBar />
+        </div>
 
-          {/* FIXED TOPBAR */}
-          <div className="fixed top-0 left-64 right-0 h-16 topbar-surface z-40">
+        {/* ============================= */}
+        {/* PAGE WRAPPER */}
+        {/* ============================= */}
+        <div className="md:ml-64">
+
+          {/* ============================= */}
+          {/* 🎛 FIXED TOPBAR */}
+          {/* ============================= */}
+          <div
+            className="
+              fixed top-0 
+              left-0 md:left-64 right-0 
+              h-16
+              topbar-surface 
+              z-40
+            "
+          >
             <TopBar />
           </div>
 
-          {/* PAGE CONTENT – begint exact onder topbar */}
-          <main className="pt-16 px-8 pb-14 min-h-screen">
+          {/* ============================= */}
+          {/* 📄 PAGE CONTENT */}
+          {/* ============================= */}
+          <main
+            className="
+              pt-16       /* ruimte onder topbar */
+              px-4 md:px-8 
+              pb-14 
+              min-h-screen
+            "
+          >
             {children}
           </main>
 
         </div>
+
+        {/* ============================= */}
+        {/* MOBILE MENU TOGGLER JS PLUGIN */}
+        {/* ============================= */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            document.addEventListener("click", (e) => {
+              const toggle = e.target.closest("[data-mobile-menu]");
+              const panel = document.getElementById("mobileSidebar");
+
+              if (toggle) {
+                panel.classList.toggle("-translate-x-full");
+                return;
+              }
+
+              // klik buiten sluit menu
+              if (!panel.contains(e.target) && !toggle) {
+                panel.classList.add("-translate-x-full");
+              }
+            });
+          `,
+        }} />
+
       </body>
     </html>
   );

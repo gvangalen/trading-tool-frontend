@@ -8,7 +8,7 @@ import { useScoresData } from "@/hooks/useScoresData";
 
 // Shared Components
 import CardWrapper from "@/components/ui/CardWrapper";
-import DayTable from "@/components/common/DayTable";
+import DayTable from "@/components/ui/DayTable";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 // Market Components

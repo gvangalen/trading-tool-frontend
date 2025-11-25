@@ -26,24 +26,47 @@ export default function TopBar() {
       className="
         h-full w-full
         flex items-center justify-between
-        px-8
+        px-4 md:px-8
         relative z-50
       "
     >
-      {/* LEFT SIDE: PAGINA TITEL */}
-      <h1 className="text-[1.35rem] font-semibold tracking-tight">
-        {title}
-      </h1>
+      {/* ============= LEFT SIDE ============= */}
+      <div className="flex items-center gap-4">
 
-      {/* RIGHT SIDE: SEARCH + AVATAR */}
+        {/* MOBIEL: MENU BUTTON */}
+        <button
+          data-mobile-menu
+          className="
+            md:hidden
+            p-2 rounded-lg
+            hover:bg-black/5
+            transition
+          "
+        >
+          <svg
+            width="24"
+            height="24"
+            stroke="currentColor"
+            className="text-[var(--topbar-text)]"
+          >
+            <path d="M3 6h18M3 12h18M3 18h18" strokeWidth="2" />
+          </svg>
+        </button>
+
+        {/* PAGINA TITEL */}
+        <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight text-[var(--topbar-text)]">
+          {title}
+        </h1>
+      </div>
+
+      {/* ============= RIGHT SIDE ============= */}
       <div className="flex items-center gap-6">
-        
-        {/* SEARCH BAR */}
+
+        {/* SEARCH BAR (desktop only) */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2 rounded-xl
-
             bg-[var(--sidebar-hover)]
             border border-[var(--sidebar-border)]
             text-[var(--sidebar-text)]
@@ -53,7 +76,6 @@ export default function TopBar() {
           "
         >
           <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />
-
           <input
             className="
               bg-transparent outline-none

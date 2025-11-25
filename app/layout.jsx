@@ -16,21 +16,23 @@ export default function RootLayout({ children }) {
         {/* Notifications */}
         <Toaster position="top-right" />
 
-        {/* ============================= */}
-        {/* 🧭 SIDEBAR */}
-        {/* ============================= */}
-        {/* Desktop sidebar */}
+        {/* ====================================== */}
+        {/* 🧭 DESKTOP SIDEBAR */}
+        {/* ====================================== */}
         <div className="hidden md:block">
           <NavBar />
         </div>
 
-        {/* Mobile sidebar (slide-over) */}
+        {/* ====================================== */}
+        {/* 📱 MOBILE SIDEBAR (Slide-in) */}
+        {/* ====================================== */}
         <div
           id="mobileSidebar"
           className="
-            fixed top-0 left-0 z-50 h-full w-64
-            sidebar-surface 
-            transform -translate-x-full 
+            fixed top-0 left-0 z-50
+            h-full w-64
+            sidebar-surface
+            transform -translate-x-full
             transition-transform duration-300
             md:hidden
           "
@@ -38,34 +40,34 @@ export default function RootLayout({ children }) {
           <NavBar />
         </div>
 
-        {/* ============================= */}
-        {/* PAGE WRAPPER */}
-        {/* ============================= */}
+        {/* ====================================== */}
+        {/* PAGE WRAPPER (Shifted on desktop) */}
+        {/* ====================================== */}
         <div className="md:ml-64">
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* 🎛 FIXED TOPBAR */}
-          {/* ============================= */}
+          {/* ====================================== */}
           <div
             className="
-              fixed top-0 
-              left-0 md:left-64 right-0 
+              fixed top-0
+              left-0 md:left-64 right-0
               h-16
-              topbar-surface 
+              topbar-surface
               z-40
             "
           >
             <TopBar />
           </div>
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* 📄 PAGE CONTENT */}
-          {/* ============================= */}
+          {/* ====================================== */}
           <main
             className="
-              pt-16       /* ruimte onder topbar */
-              px-4 md:px-8 
-              pb-14 
+              pt-16   /* ruimte onder topbar */
+              px-4 md:px-8
+              pb-14
               min-h-screen
             "
           >
@@ -74,27 +76,29 @@ export default function RootLayout({ children }) {
 
         </div>
 
-        {/* ============================= */}
-        {/* MOBILE MENU TOGGLER JS PLUGIN */}
-        {/* ============================= */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            document.addEventListener("click", (e) => {
-              const toggle = e.target.closest("[data-mobile-menu]");
-              const panel = document.getElementById("mobileSidebar");
+        {/* ====================================== */}
+        {/* 📱 MOBILE SIDEBAR LOGIC */}
+        {/* ====================================== */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              document.addEventListener("click", (e) => {
+                const toggle = e.target.closest("[data-mobile-menu]");
+                const panel = document.getElementById("mobileSidebar");
 
-              if (toggle) {
-                panel.classList.toggle("-translate-x-full");
-                return;
-              }
+                if (toggle) {
+                  panel.classList.toggle("-translate-x-full");
+                  return;
+                }
 
-              // klik buiten sluit menu
-              if (!panel.contains(e.target) && !toggle) {
-                panel.classList.add("-translate-x-full");
-              }
-            });
-          `,
-        }} />
+                // Klik buiten panel sluit sidebar
+                if (!panel.contains(e.target) && !toggle) {
+                  panel.classList.add("-translate-x-full");
+                }
+              });
+            `,
+          }}
+        />
 
       </body>
     </html>

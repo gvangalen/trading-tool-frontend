@@ -27,6 +27,7 @@ export default function TopBar() {
         h-full w-full
         flex items-center justify-between
         px-8
+        relative z-50
       "
     >
       {/* LEFT SIDE: PAGINA TITEL */}
@@ -36,7 +37,7 @@ export default function TopBar() {
 
       {/* RIGHT SIDE: SEARCH + AVATAR */}
       <div className="flex items-center gap-6">
-
+        
         {/* SEARCH BAR */}
         <div
           className="

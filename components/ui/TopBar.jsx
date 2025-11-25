@@ -24,17 +24,20 @@ export default function TopBar() {
   return (
     <header
       className="
+        h-full w-full
         flex items-center justify-between
-        h-16
         px-8
       "
     >
+      {/* LEFT SIDE: PAGINA TITEL */}
       <h1 className="text-[1.35rem] font-semibold tracking-tight">
         {title}
       </h1>
 
+      {/* RIGHT SIDE: SEARCH + AVATAR */}
       <div className="flex items-center gap-6">
 
+        {/* SEARCH BAR */}
         <div
           className="
             hidden md:flex items-center gap-3
@@ -45,13 +48,15 @@ export default function TopBar() {
             text-[var(--sidebar-text)]
             hover:bg-[var(--sidebar-active)]
             transition-all
+            shadow-sm
           "
         >
           <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />
 
           <input
             className="
-              bg-transparent outline-none w-48
+              bg-transparent outline-none
+              w-48
               text-[var(--sidebar-text)]
               placeholder-[var(--sidebar-text-muted)]
             "
@@ -61,6 +66,7 @@ export default function TopBar() {
           />
         </div>
 
+        {/* AVATAR */}
         <AvatarMenu />
       </div>
     </header>

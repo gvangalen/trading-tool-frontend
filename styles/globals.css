@@ -1,6 +1,6 @@
 /* ===========================================
-   GLOBAL THEME – Fintech PRO 7.0
-   Slate Theme + 3D shadows (zonder layout bug)
+   GLOBAL THEME – Grip Theme PRO 1.0
+   Donkerblauw sidebar/topbar + pastel blauw background
 =========================================== */
 
 @tailwind base;
@@ -11,45 +11,45 @@
    LIGHT MODE VARIABLES
 =========================================== */
 :root {
-  /* Brand */
-  --primary: #3B82F6;
+  /* Brand / Primary color (knoppen, highlights) */
+  --primary: #1A47FF;
 
-  /* Background */
-  --bg: #F5F6FA;
-  --bg-soft: #F8FAFC;
+  /* Background (inspiratie: Grip lichtblauw) */
+  --bg: #E0F2FE;        /* pastel sky-blue */
+  --bg-soft: #E8F6FF;
 
   /* Text */
-  --text-dark: #1e293b;     /* slate-800 */
-  --text-light: #64748b;    /* slate-500 */
+  --text-dark: #0f172a;     /* slate-900 */
+  --text-light: #475569;    /* slate-600 */
 
-  /* Sidebar & Topbar (Slate-100) */
-  --sidebar-bg: #e2e8f0;     /* slate-200 */
-  --sidebar-border: rgba(0,0,0,0.06);
-  --sidebar-text: #1e293b;
-  --sidebar-text-muted: #64748b;
-  --sidebar-hover: rgba(0,0,0,0.04);
-  --sidebar-active: rgba(0,0,0,0.08);
+  /* SIDEBAR & TOPBAR (Grip donkerblauw) */
+  --sidebar-bg: #1E3A8A;        /* blue-900 */
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-text: #E2E8F0;      /* slate-200 */
+  --sidebar-text-muted: #94A3B8; /* slate-400 */
+  --sidebar-hover: rgba(255,255,255,0.06);
+  --sidebar-active: rgba(255,255,255,0.12);
 
-  --topbar-bg: #e2e8f0;      /* exact zelfde kleur */
-  --topbar-text: #1e293b;
-  --topbar-border: rgba(0,0,0,0.06);
+  --topbar-bg: #1E3A8A;         /* exact dezelfde kleur */
+  --topbar-text: #F1F5F9;       /* almost white */
+  --topbar-border: rgba(255,255,255,0.10);
   --topbar-shadow:
-      0 1px 3px rgba(0,0,0,0.08),
-      inset 0 -1px 0 rgba(255,255,255,0.4);
+      0 2px 6px rgba(0,0,0,0.25),
+      inset 0 -1px 0 rgba(255,255,255,0.06);
 
   /* Cards */
   --card-bg: #ffffff;
-  --card-border: #e5e7eb;
+  --card-border: #e2e8f0;
   --card-radius: 14px;
 
-  --card-shadow: 0 3px 8px rgba(0,0,0,0.03);
-  --card-shadow-hover: 0 6px 20px rgba(0,0,0,0.08);
+  --card-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  --card-shadow-hover: 0 8px 20px rgba(0,0,0,0.08);
 
-  --card-icon-bg: rgba(59,130,246,0.08);
+  --card-icon-bg: rgba(26,71,255,0.12); /* subtle Grip blue */
 }
 
 /* ===========================================
-   DARK MODE
+   DARK MODE VARIANT
 =========================================== */
 .dark {
   --bg: #0D1117;
@@ -58,12 +58,12 @@
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
 
-  --sidebar-bg: #1e293b;
+  --sidebar-bg: #0f172a;  /* denim slate */
   --sidebar-text: #E6EDF3;
   --sidebar-text-muted: #94a3b8;
   --sidebar-border: rgba(255,255,255,0.05);
 
-  --topbar-bg: #1e293b;
+  --topbar-bg: #0f172a;
   --topbar-text: #E6EDF3;
   --topbar-border: rgba(255,255,255,0.05);
 }
@@ -85,18 +85,18 @@
 }
 
 /* ===========================================
-   SIDEBAR SURFACE (GEEN position!)
+   SIDEBAR SURFACE
 =========================================== */
 .sidebar-surface {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.4),
-    0 8px 16px rgba(0,0,0,0.05);
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 10px 25px rgba(0,0,0,0.25);
 }
 
 /* ===========================================
-   TOPBAR SURFACE  (GEEN position!)
+   TOPBAR SURFACE
 =========================================== */
 .topbar-surface {
   background: var(--topbar-bg);

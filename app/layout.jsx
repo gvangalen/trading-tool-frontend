@@ -11,30 +11,40 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body className="bg-[var(--bg)] text-[var(--text-dark)]">
+      <body className="bg-[var(--bg)] text-[var(--text-dark)] relative">
 
         {/* Notifications */}
         <Toaster position="top-right" />
 
         {/* ====================================== */}
-        {/* 🧭 DESKTOP SIDEBAR */}
+        {/* 🧭 DESKTOP SIDEBAR (met afgeronde rechterkant) */}
         {/* ====================================== */}
         <div className="hidden md:block">
-          <NavBar />
+          <div
+            className="
+              fixed top-0 left-0 h-screen w-64 
+              sidebar-surface 
+              rounded-r-3xl shadow-xl
+              overflow-hidden
+            "
+          >
+            <NavBar />
+          </div>
         </div>
 
         {/* ====================================== */}
-        {/* 📱 MOBILE SIDEBAR (Slide-in) */}
+        {/* 📱 MOBILE SIDEBAR (slide-in + afgeronde hoeken) */}
         {/* ====================================== */}
         <div
           id="mobileSidebar"
           className="
             fixed top-0 left-0 z-50
             h-full w-64
-            sidebar-surface
+            sidebar-surface 
+            rounded-r-3xl 
             transform -translate-x-full
             transition-transform duration-300
-            md:hidden
+            md:hidden shadow-2xl
           "
         >
           <NavBar />
@@ -46,15 +56,17 @@ export default function RootLayout({ children }) {
         <div className="md:ml-64">
 
           {/* ====================================== */}
-          {/* 🎛 FIXED TOPBAR */}
+          {/* 🎛 FIXED TOPBAR (met afgeronde hoek links-onder) */}
           {/* ====================================== */}
           <div
             className="
               fixed top-0
               left-0 md:left-64 right-0
               h-16
-              topbar-surface
+              topbar-surface 
               z-40
+              rounded-bl-3xl
+              shadow-lg
             "
           >
             <TopBar />
@@ -65,7 +77,7 @@ export default function RootLayout({ children }) {
           {/* ====================================== */}
           <main
             className="
-              pt-16   /* ruimte onder topbar */
+              pt-16   /* Ruimte onder topbar */
               px-4 md:px-8
               pb-14
               min-h-screen
@@ -91,7 +103,6 @@ export default function RootLayout({ children }) {
                   return;
                 }
 
-                // Klik buiten panel sluit sidebar
                 if (!panel.contains(e.target) && !toggle) {
                   panel.classList.add("-translate-x-full");
                 }

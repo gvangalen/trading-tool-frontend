@@ -1,6 +1,6 @@
 /* ===========================================
-   GLOBAL THEME – Fintech PRO 7.1
-   Light UI – Sidebar & Topbar Slate-100
+   GLOBAL THEME – Fintech PRO 8.0
+   Premium 3D UI — Sidebar + Topbar Slate-100
 =========================================== */
 
 @tailwind base;
@@ -14,37 +14,39 @@
   /* Brand */
   --primary: #3B82F6;
 
-  /* Background (WIT) */
-  --bg: #ffffff;
+  /* Background */
+  --bg: #f6f7fb; /* iets lichter dan eerder */
   --bg-soft: #ffffff;
 
   /* Text */
-  --text-dark: #334155;     /* slate-700 */
+  --text-dark: #1e293b;     /* slate-800 */
   --text-light: #64748b;    /* slate-500 */
 
-  /* Sidebar & Topbar (Slate-100) */
-  --sidebar-bg: #f1f5f9;       /* slate-100 */
-  --sidebar-border: rgba(0,0,0,0.06);
-  --sidebar-text: #334155;           /* slate-700 */
-  --sidebar-text-muted: #64748b;     /* slate-500 */
-  --sidebar-hover: rgba(0,0,0,0.04);
-  --sidebar-active: rgba(0,0,0,0.10);
+  /* Sidebar + Topbar: slate-100 met 3D-layering */
+  --panel-bg: #f1f5f9; /* slate-100 */
+  --panel-gradient: linear-gradient(to bottom, #f8fafc 0%, #eef2f7 100%);
 
-  --topbar-bg: #f1f5f9;       /* zelfde tint */
-  --topbar-text: #334155;     /* slate-700 */
-  --topbar-border: rgba(0,0,0,0.06);
-  --topbar-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  --panel-border: rgba(0,0,0,0.06);
+  --panel-shadow:
+      0 1px 3px rgba(0,0,0,0.06),
+      0 6px 16px rgba(0,0,0,0.08);
+
+  --panel-inset-highlight:
+      inset 0 1px 0 rgba(255,255,255,0.8);
+
+  /* Sidebar text */
+  --sidebar-text: #1e293b;
+  --sidebar-text-muted: #64748b;
+  --sidebar-hover: rgba(0,0,0,0.05);
+  --sidebar-active: rgba(0,0,0,0.10);
 
   /* Cards */
   --card-bg: #ffffff;
   --card-border: #e5e7eb;
   --card-radius: 14px;
-
-  /* Card shadows */
-  --card-shadow: 0 3px 8px rgba(0,0,0,0.04);
-  --card-shadow-hover: 0 6px 18px rgba(0,0,0,0.08);
-
-  --card-icon-bg: rgba(59,130,246,0.08);
+  --card-shadow:
+    0 2px 4px rgba(0,0,0,0.05),
+    0 8px 20px rgba(0,0,0,0.06);
 }
 
 /* ===========================================
@@ -57,25 +59,54 @@
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
 
-  --card-bg: #161B22;
-  --card-border: #30363D;
+  --panel-bg: #1e293b;
+  --panel-gradient: linear-gradient(to bottom, #1f2937 0%, #111827 100%);
+  --panel-border: rgba(255,255,255,0.06);
+  --panel-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  --panel-inset-highlight: inset 0 1px 0 rgba(255,255,255,0.05);
 
-  /* Sidebar in dark */
-  --sidebar-bg: #1e293b;     /* slate-800 */
   --sidebar-text: #E6EDF3;
   --sidebar-text-muted: #94a3b8;
-  --sidebar-border: rgba(255,255,255,0.05);
-  --sidebar-hover: rgba(255,255,255,0.06);
-  --sidebar-active: rgba(255,255,255,0.12);
-
-  /* Topbar in dark */
-  --topbar-bg: #1e293b;
-  --topbar-text: #E6EDF3;
-  --topbar-border: rgba(255,255,255,0.05);
 }
 
 /* ===========================================
-   CARD SURFACE
+   SIDEBAR
+=========================================== */
+.sidebar-surface {
+  background: var(--panel-gradient);
+  border-right: 1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  position: relative;
+}
+
+.sidebar-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: var(--panel-inset-highlight);
+}
+
+/* ===========================================
+   TOPBAR
+=========================================== */
+.topbar-surface {
+  background: var(--panel-gradient);
+  border-bottom: 1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  position: relative;
+}
+
+.topbar-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: var(--panel-inset-highlight);
+}
+
+/* ===========================================
+   Cards
 =========================================== */
 .card-surface {
   background: var(--card-bg);
@@ -90,56 +121,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-}
-
-.card-surface:hover {
-  box-shadow: var(--card-shadow-hover);
-  transform: translateY(-2px);
-}
-
-/* ===========================================
-   SIDEBAR SURFACE
-=========================================== */
-.sidebar-surface {
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--sidebar-border);
-}
-
-/* ===========================================
-   TOPBAR SURFACE
-=========================================== */
-.topbar-surface {
-  background: var(--topbar-bg);
-  border-bottom: 1px solid var(--topbar-border);
-  box-shadow: var(--topbar-shadow);
-}
-
-/* ===========================================
-   DEPTH UPGRADE – Sidebar + Topbar
-   Modern 3D Panels (Apple/Linear style)
-=========================================== */
-
-/* Sidebar Panel */
-.sidebar-surface {
-  background: linear-gradient(to bottom, #f1f5f9 0%, #e9edf3 100%);
-  border-right: 1px solid rgba(0,0,0,0.06);
-
-  /* 3D depth */
-  box-shadow:
-    1px 0 3px rgba(0,0,0,0.07),     /* outer soft shadow */
-    0 1px 0 rgba(255,255,255,0.6) inset; /* top highlight */
-}
-
-/* Topbar Panel */
-.topbar-surface {
-  background: linear-gradient(to bottom, #f1f5f9 0%, #e9edf3 100%);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-
-  /* 3D depth */
-  box-shadow:
-    0 2px 4px rgba(0,0,0,0.08),      /* elevation */
-    0 1px 0 rgba(255,255,255,0.6) inset; /* highlight */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
 }
 
 /* ===========================================

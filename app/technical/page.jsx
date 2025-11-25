@@ -10,7 +10,7 @@ import { useScoresData } from "@/hooks/useScoresData";
 import TechnicalTabs from "@/components/technical/TechnicalTabs";
 import TechnicalIndicatorScoreView from "@/components/technical/IndicatorScoreView";
 import CardWrapper from "@/components/ui/CardWrapper";
-import DayTable from "@/components/common/DayTable";
+import DayTable from "@/components/ui/DayTable";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 // Icons

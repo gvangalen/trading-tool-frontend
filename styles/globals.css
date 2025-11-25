@@ -1,6 +1,6 @@
 /* ===========================================
-   GLOBAL THEME – Grip Theme PRO 1.0
-   Donkerblauw sidebar/topbar + pastel blauw background
+   GLOBAL THEME – Grip Theme PRO 2.0
+   Light-blue sidebar/topbar + soft white background
 =========================================== */
 
 @tailwind base;
@@ -12,40 +12,40 @@
 =========================================== */
 :root {
   /* Brand / Primary color (knoppen, highlights) */
-  --primary: #1A47FF;
+  --primary: #1A47FF;     /* Grip-style blauw */
 
-  /* Background (inspiratie: Grip lichtblauw) */
-  --bg: #E0F2FE;        /* pastel sky-blue */
-  --bg-soft: #E8F6FF;
+  /* Background (bijna wit) */
+  --bg: #F7F9FC;
+  --bg-soft: #FAFBFF;
 
   /* Text */
   --text-dark: #0f172a;     /* slate-900 */
   --text-light: #475569;    /* slate-600 */
 
-  /* SIDEBAR & TOPBAR (Grip donkerblauw) */
-  --sidebar-bg: #1E3A8A;        /* blue-900 */
-  --sidebar-border: rgba(255,255,255,0.08);
-  --sidebar-text: #E2E8F0;      /* slate-200 */
-  --sidebar-text-muted: #94A3B8; /* slate-400 */
-  --sidebar-hover: rgba(255,255,255,0.06);
-  --sidebar-active: rgba(255,255,255,0.12);
+  /* SIDEBAR & TOPBAR (zacht blauw – modern, clean) */
+  --sidebar-bg: #DBEAFE;        /* light blue-100 */
+  --sidebar-border: rgba(0,0,0,0.06);
+  --sidebar-text: #0f172a;
+  --sidebar-text-muted: #475569;
+  --sidebar-hover: rgba(255,255,255,0.4);
+  --sidebar-active: rgba(255,255,255,0.65);
 
-  --topbar-bg: #1E3A8A;         /* exact dezelfde kleur */
-  --topbar-text: #F1F5F9;       /* almost white */
-  --topbar-border: rgba(255,255,255,0.10);
+  --topbar-bg: #DBEAFE;
+  --topbar-text: #0f172a;      
+  --topbar-border: rgba(0,0,0,0.06);
   --topbar-shadow:
-      0 2px 6px rgba(0,0,0,0.25),
-      inset 0 -1px 0 rgba(255,255,255,0.06);
+      0 2px 6px rgba(0,0,0,0.08),
+      inset 0 -1px 0 rgba(255,255,255,0.5);
 
   /* Cards */
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
   --card-radius: 14px;
 
-  --card-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  --card-shadow: 0 4px 10px rgba(0,0,0,0.04);
   --card-shadow-hover: 0 8px 20px rgba(0,0,0,0.08);
 
-  --card-icon-bg: rgba(26,71,255,0.12); /* subtle Grip blue */
+  --card-icon-bg: rgba(26,71,255,0.10);
 }
 
 /* ===========================================
@@ -58,12 +58,12 @@
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
 
-  --sidebar-bg: #0f172a;  /* denim slate */
+  --sidebar-bg: #1e293b;
   --sidebar-text: #E6EDF3;
   --sidebar-text-muted: #94a3b8;
   --sidebar-border: rgba(255,255,255,0.05);
 
-  --topbar-bg: #0f172a;
+  --topbar-bg: #1e293b;
   --topbar-text: #E6EDF3;
   --topbar-border: rgba(255,255,255,0.05);
 }
@@ -91,8 +91,8 @@
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.05),
-    0 10px 25px rgba(0,0,0,0.25);
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    0 10px 25px rgba(0,0,0,0.06);
 }
 
 /* ===========================================

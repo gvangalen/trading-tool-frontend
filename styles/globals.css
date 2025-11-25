@@ -11,19 +11,19 @@
    LIGHT MODE VARIABLES
 =========================================== */
 :root {
-  /* Brand / Primary color (knoppen, highlights) */
-  --primary: #1A47FF;     /* Grip-style blauw */
+  /* Brand / Primary color (buttons, highlights) */
+  --primary: #1A47FF;
 
-  /* Background (bijna wit) */
+  /* Background (bijna wit, strak) */
   --bg: #F7F9FC;
   --bg-soft: #FAFBFF;
 
   /* Text */
-  --text-dark: #0f172a;     /* slate-900 */
-  --text-light: #475569;    /* slate-600 */
+  --text-dark: #0f172a;   /* slate-900 */
+  --text-light: #475569;  /* slate-600 */
 
-  /* SIDEBAR & TOPBAR (zacht blauw – modern, clean) */
-  --sidebar-bg: #DBEAFE;        /* light blue-100 */
+  /* SIDEBAR & TOPBAR (modern light blue) */
+  --sidebar-bg: #DBEAFE;           /* light blue-100 */
   --sidebar-border: rgba(0,0,0,0.06);
   --sidebar-text: #0f172a;
   --sidebar-text-muted: #475569;
@@ -31,7 +31,7 @@
   --sidebar-active: rgba(255,255,255,0.65);
 
   --topbar-bg: #DBEAFE;
-  --topbar-text: #0f172a;      
+  --topbar-text: #0f172a;
   --topbar-border: rgba(0,0,0,0.06);
   --topbar-shadow:
       0 2px 6px rgba(0,0,0,0.08),
@@ -85,14 +85,14 @@
 }
 
 /* ===========================================
-   SIDEBAR SURFACE
+   SIDEBAR SURFACE (3D / soft depth)
 =========================================== */
 .sidebar-surface {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.5),
-    0 10px 25px rgba(0,0,0,0.06);
+    0 10px 30px rgba(0,0,0,0.06);
 }
 
 /* ===========================================

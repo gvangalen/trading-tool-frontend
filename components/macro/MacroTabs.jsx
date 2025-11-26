@@ -1,28 +1,64 @@
 "use client";
 
-import React from "react";
+import DayTable from "@/components/ui/DayTable";
 
-const TABS = ["Dag", "Week", "Maand", "Kwartaal"];
+export default function MacroTabs({
+  activeTab,
+  setActiveTab,
+  macroData,
+  loading,
+  error,
+  handleRemove,
+}) {
+  const tabs = ["Dag", "Week", "Maand", "Kwartaal"];
 
-export default function MacroTabs({ activeTab, setActiveTab }) {
   return (
-    <div className="flex space-x-4 mb-6">
-      {TABS.map((tab) => (
-        <button
-          key={tab}
-          onClick={() => setActiveTab(tab)}
-          className={`
-            px-4 py-2 rounded font-semibold border transition-all
-            ${
-              activeTab === tab
-                ? "bg-blue-600 text-white border-blue-600 shadow"
-                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
-            }
-          `}
-        >
-          {tab}
-        </button>
-      ))}
+    <div className="space-y-6">
+
+      {/* ------------------------- */}
+      {/* TAB BUTTONS */}
+      {/* ------------------------- */}
+      <div className="flex gap-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`
+              px-5 py-2 rounded-xl text-sm font-medium
+              border transition-all
+              ${
+                activeTab === tab
+                  ? "bg-[var(--primary)] text-white border-[var(--primary)]"
+                  : "bg-white text-[var(--text-dark)] border-[var(--card-border)] hover:bg-[var(--sidebar-hover)]"
+              }
+            `}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* ------------------------- */}
+      {/* CONTENT / TABLE */}
+      {/* ------------------------- */}
+      <div>
+        {loading && (
+          <p className="text-sm text-[var(--text-light)]">Bezig met laden…</p>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-500">Fout: {error}</p>
+        )}
+
+        {!loading && !error && (
+          <DayTable
+            title={`Macro Analyse – ${activeTab}`}
+            icon={null}
+            data={macroData}
+            onRemove={handleRemove}
+          />
+        )}
+      </div>
     </div>
   );
 }

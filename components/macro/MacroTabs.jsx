@@ -1,5 +1,6 @@
 "use client";
 
+import { Globe } from "lucide-react";
 import DayTable from "@/components/ui/DayTable";
 
 export default function MacroTabs({
@@ -15,50 +16,35 @@ export default function MacroTabs({
   return (
     <div className="space-y-6">
 
-      {/* ------------------------- */}
-      {/* TAB BUTTONS */}
-      {/* ------------------------- */}
+      {/* TABS */}
       <div className="flex gap-3">
-        {tabs.map((tab) => (
+        {tabs.map((t) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={t}
+            onClick={() => setActiveTab(t)}
             className={`
-              px-5 py-2 rounded-xl text-sm font-medium
-              border transition-all
+              px-5 py-2 rounded-lg border transition-all
               ${
-                activeTab === tab
+                activeTab === t
                   ? "bg-[var(--primary)] text-white border-[var(--primary)]"
-                  : "bg-white text-[var(--text-dark)] border-[var(--card-border)] hover:bg-[var(--sidebar-hover)]"
+                  : "bg-white text-[var(--text-dark)] border-[var(--sidebar-border)] hover:bg-[var(--bg-soft)]"
               }
             `}
           >
-            {tab}
+            {t}
           </button>
         ))}
       </div>
 
-      {/* ------------------------- */}
-      {/* CONTENT / TABLE */}
-      {/* ------------------------- */}
-      <div>
-        {loading && (
-          <p className="text-sm text-[var(--text-light)]">Bezig met laden…</p>
-        )}
-
-        {error && (
-          <p className="text-sm text-red-500">Fout: {error}</p>
-        )}
-
-        {!loading && !error && (
-          <DayTable
-            title={`Macro Analyse – ${activeTab}`}
-            icon={null}
-            data={macroData}
-            onRemove={handleRemove}
-          />
-        )}
-      </div>
+      {/* TABEL */}
+      <DayTable
+        title={`Macro Analyse – ${activeTab}`}
+        icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
+        data={macroData}
+        loading={loading}
+        error={error}
+        onRemove={handleRemove}   // ⬅️ Delete-knoppen werken nu
+      />
     </div>
   );
 }

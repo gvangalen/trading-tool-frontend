@@ -22,10 +22,10 @@ export default function GaugeChart({ value = 0 }) {
   // Kleur op basis van score
   const scoreColor =
     percentage >= 70
-      ? '#22c55e' // groen
+      ? '#22c55e'
       : percentage >= 40
-      ? '#facc15' // geel
-      : '#ef4444'; // rood
+      ? '#facc15'
+      : '#ef4444';
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -53,7 +53,7 @@ export default function GaugeChart({ value = 0 }) {
       options: {
         responsive: true,
         animation: {
-          duration: 800,
+          duration: 700,
           easing: 'easeOutCubic',
         },
         plugins: {
@@ -63,14 +63,30 @@ export default function GaugeChart({ value = 0 }) {
       },
     });
 
-    return () => {
-      chartRef.current?.destroy();
-    };
+    return () => chartRef.current?.destroy();
   }, [percentage, scoreColor]);
 
   return (
-    <div className="relative w-full h-32 flex items-center justify-center">
+    <div className="relative w-full h-36 flex items-center justify-center">
+
+      {/* Chart Canvas */}
       <canvas ref={canvasRef} className="max-w-[180px]" />
+
+      {/* Score onder meter */}
+      <div
+        className="
+          absolute
+          bottom-4
+          text-[28px]
+          font-semibold
+          text-[var(--text-dark)]
+          pointer-events-none
+        "
+        style={{ marginBottom: '-6px' }} // trekt score dichter tegen de meter
+      >
+        {percentage}
+      </div>
+
     </div>
   );
 }

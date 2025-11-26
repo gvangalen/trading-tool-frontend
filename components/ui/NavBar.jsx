@@ -45,10 +45,16 @@ export default function NavBar() {
       {/* ======================= */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
 
-        {/* LOGO + TEXT */}
+        {/* LOGO BLOCK */}
         <div className="flex items-center gap-3 mb-10">
           <div className="p-2 rounded-xl bg-white shadow-sm">
-            <Image src="/logo.png" alt="logo" width={34} height={34} />
+            <Image
+              src="/logo-icon.png"
+              alt="TradeLayer logo"
+              width={42}
+              height={42}
+              className="rounded-md"
+            />
           </div>
 
           <div>
@@ -61,9 +67,7 @@ export default function NavBar() {
           </div>
         </div>
 
-        {/* ======================= */}
-        {/* NAVIGATION LINKS       */}
-        {/* ======================= */}
+        {/* NAVIGATION LINKS */}
         <nav className="flex flex-col gap-1">
           {links.map((item) => (
             <SidebarItem
@@ -78,9 +82,7 @@ export default function NavBar() {
         </nav>
       </div>
 
-      {/* ======================= */}
-      {/* FOOTER SETTINGS        */}
-      {/* ======================= */}
+      {/* FOOTER SETTINGS */}
       <div className="border-t border-[var(--sidebar-border)] px-6 py-5 flex flex-col gap-3">
         <SidebarFooterButton icon={<Settings size={18} />}>
           Instellingen
@@ -112,7 +114,7 @@ function SidebarItem({ href, icon, active, children }) {
           className="
             absolute inset-0 rounded-xl
             bg-[var(--sidebar-active)]
-            shadow-[inset_0_0_8px_rgba(255,255,255,0.12)]
+            shadow-[inset_0_0_8px_rgba(0,0,0,0.12)]
             backdrop-blur-sm
           "
         />

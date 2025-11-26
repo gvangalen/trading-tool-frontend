@@ -1,13 +1,45 @@
 "use client";
 
-import { groupByWeek } from "@/utils/grouping";
 import { Trash } from "lucide-react";
+import dayjs from "dayjs";
 
-/**
- * 📅 WeekTable
- * Algemene wekelijkse tabel (dag → week grouping)
- * Werkt voor Macro, Technical én Market
- */
+/* ===========================================================
+   🧠 INLINE GROEPING LOGICA (GEEN extra file)
+   - Groepeert alle rows per weeknummer + jaar
+   - Maakt labels zoals: "Week 43 – 2025"
+=========================================================== */
+function groupByWeek(data = []) {
+  if (!Array.isArray(data)) return [];
+
+  const buckets = {};
+
+  for (const item of data) {
+    const ts = item.timestamp || item.date || item.created_at;
+    if (!ts) continue;
+
+    const d = dayjs(ts);
+    const week = d.week?.() ?? d.isoWeek?.() ?? d.weekNumber?.() ?? 0;
+    const year = d.year();
+
+    const key = `${year}-W${week}`;
+
+    if (!buckets[key]) {
+      buckets[key] = {
+        label: `📅 Week ${week} – ${year}`,
+        items: [],
+      };
+    }
+    buckets[key].items.push(item);
+  }
+
+  return Object.values(buckets).sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
+}
+
+/* ===========================================================
+   📅 WEEK TABLE COMPONENT
+=========================================================== */
 export default function WeekTable({
   title,
   icon,
@@ -16,7 +48,6 @@ export default function WeekTable({
   error,
   onRemove,
 }) {
-  // 🧠 Groepeer alle rows automatisch per week
   const grouped = groupByWeek(data);
 
   if (loading) {
@@ -28,11 +59,7 @@ export default function WeekTable({
   }
 
   if (error) {
-    return (
-      <div className="p-4 text-red-500 font-medium">
-        Fout: {error}
-      </div>
-    );
+    return <div className="p-4 text-red-500">Fout: {error}</div>;
   }
 
   if (!grouped || grouped.length === 0) {
@@ -45,7 +72,6 @@ export default function WeekTable({
 
   return (
     <div className="space-y-4">
-
       {/* Titel */}
       <div className="flex items-center gap-2">
         {icon}
@@ -67,23 +93,23 @@ export default function WeekTable({
           </thead>
 
           <tbody>
-            {grouped.map((week, wIndex) => (
+            {grouped.map((week, wkIndex) => (
               <>
                 {/* WEEK HEADER */}
                 <tr
-                  key={`w-${wIndex}`}
+                  key={`w-${wkIndex}`}
                   className="bg-gray-100 border-t border-gray-300"
                 >
                   <td colSpan={6} className="p-3 font-semibold">
-                    📅 {week.label}
+                    {week.label}
                   </td>
                 </tr>
 
-                {/* Week rows */}
-                {week.items?.map((item, index) => (
+                {/* ROWS */}
+                {week.items.map((item, i) => (
                   <tr
-                    key={`${item.name}-${index}`}
-                    className="border-t border-gray-200 hover:bg-gray-50"
+                    key={`${week.label}-${item.name}-${i}`}
+                    className="border-t border-gray-200 hover:bg-gray-50 transition"
                   >
                     <td className="p-3 font-medium">{item.name}</td>
                     <td className="p-3 text-center">{item.value ?? "–"}</td>

@@ -49,6 +49,13 @@
   --card-shadow-hover: 0 8px 20px rgba(0,0,0,0.08);
 
   --card-icon-bg: rgba(26,71,255,0.10);
+
+  /* ===================================== */
+  /* 👤 Avatar Styling (extra contrast)     */
+  /* ===================================== */
+  --avatar-bg: rgba(26,71,255,0.12);
+  --avatar-border: rgba(26,71,255,0.25);
+  --avatar-text: #0f172a;
 }
 
 /* ===========================================
@@ -69,6 +76,11 @@
   --topbar-bg: #1e293b;
   --topbar-text: #E6EDF3;
   --topbar-border: rgba(255,255,255,0.05);
+
+  /* Avatar dark mode */
+  --avatar-bg: rgba(255,255,255,0.08);
+  --avatar-border: rgba(255,255,255,0.18);
+  --avatar-text: #E6EDF3;
 }
 
 /* ===========================================

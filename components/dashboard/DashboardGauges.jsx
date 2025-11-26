@@ -55,7 +55,7 @@ export default function DashboardGauges() {
 }
 
 /* =====================================================
-   SINGLE GAUGE CARD — TradingView PRO Look
+   SINGLE GAUGE CARD — Clean PRO Look
 ===================================================== */
 
 function GaugeCard({
@@ -70,8 +70,6 @@ function GaugeCard({
     typeof score === "number" ? score : Number(score ?? 0) || 0;
 
   const displayScore = Math.round(numericScore);
-
-  const { label, toneClass } = getScoreLabel(displayScore);
 
   const autoExplanation =
     topContributors.length > 0
@@ -102,23 +100,11 @@ function GaugeCard({
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        {/* ⬇️ Belangrijk: label is verwijderd uit GaugeChart */}
+        {/* Score wordt nu getoond IN de GaugeChart */}
         <GaugeChart value={displayScore} />
-
-        {/* Score onder meter */}
-        <div className="mt-2 text-center">
-          <div className="text-3xl font-semibold text-[var(--text-dark)] leading-none">
-            {isNaN(displayScore) ? "–" : displayScore}
-          </div>
-          <div
-            className={`mt-1 text-xs font-medium uppercase tracking-wide ${toneClass}`}
-          >
-            {label}
-          </div>
-        </div>
       </div>
 
-      {/* CONTRIBUTORS IN NETTE REGELS */}
+      {/* CONTRIBUTORS */}
       {topContributors.length > 0 && (
         <div className="mt-3">
           <p className="text-[11px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-1">
@@ -141,7 +127,7 @@ function GaugeCard({
         </div>
       )}
 
-      {/* MINI-SETUPS (bij Setup gauge) */}
+      {/* MINI-SETUPS (SETUP gauge) */}
       {showTopSetups && (
         <div className="mt-4">
           <TopSetupsMini />
@@ -154,31 +140,4 @@ function GaugeCard({
       </p>
     </CardWrapper>
   );
-}
-
-/* =====================================================
-   SCORE → LABEL + KLEUR
-===================================================== */
-
-function getScoreLabel(score) {
-  if (isNaN(score)) {
-    return {
-      label: "Onbekend",
-      toneClass: "text-[var(--text-light)]",
-    };
-  }
-
-  if (score >= 80) {
-    return { label: "Strong Buy", toneClass: "text-green-600" };
-  }
-  if (score >= 60) {
-    return { label: "Buy", toneClass: "text-green-500" };
-  }
-  if (score >= 40) {
-    return { label: "Neutral", toneClass: "text-yellow-500" };
-  }
-  if (score >= 20) {
-    return { label: "Sell", toneClass: "text-red-500" };
-  }
-  return { label: "Strong Sell", toneClass: "text-red-600" };
 }

@@ -31,18 +31,14 @@ export default function TopBar() {
         text-[var(--topbar-text)]
       "
     >
-      {/* ========================= */}
-      {/* LEFT SIDE — TITLE + MENU */}
-      {/* ========================= */}
+      {/* LEFT SIDE */}
       <div className="flex items-center gap-4">
-
-        {/* MOBIEL: MENU BUTTON */}
+        {/* MOBILE: MENU BUTTON */}
         <button
           data-mobile-menu
           className="
-            md:hidden
-            p-2 rounded-lg
-            hover:bg-black/10
+            md:hidden p-2 rounded-lg
+            hover:bg-black/5
             transition
           "
         >
@@ -56,39 +52,35 @@ export default function TopBar() {
           </svg>
         </button>
 
-        {/* PAGINA TITEL */}
+        {/* PAGE TITLE */}
         <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight">
           {title}
         </h1>
       </div>
 
-      {/* ========================= */}
-      {/* RIGHT SIDE — SEARCH + USER */}
-      {/* ========================= */}
+      {/* RIGHT SIDE */}
       <div className="flex items-center gap-6">
-
-        {/* DESKTOP: SEARCH */}
+        
+        {/* DESKTOP SEARCH */}
         <div
           className="
             hidden md:flex items-center gap-3
             px-4 py-2 rounded-xl
-
-            bg-[var(--sidebar-hover)]
-            border border-[var(--sidebar-border)]
-            text-[var(--sidebar-text)]
-            hover:bg-[var(--sidebar-active)]
-            transition-all
+            bg-[var(--bg-soft)]
+            border border-[rgba(0,0,0,0.08)]
+            hover:border-[rgba(0,0,0,0.15)]
+            transition
             shadow-sm
           "
         >
-          <Search className="w-5 h-5 text-[var(--sidebar-text-muted)]" />
+          <Search className="w-5 h-5 text-[var(--text-light)]" />
 
           <input
             className="
               bg-transparent outline-none
               w-48
-              text-[var(--sidebar-text)]
-              placeholder-[var(--sidebar-text-muted)]
+              text-[var(--text-dark)]
+              placeholder-[var(--text-light)]
             "
             placeholder="Zoeken…"
             value={query}
@@ -96,8 +88,17 @@ export default function TopBar() {
           />
         </div>
 
-        {/* USER MENU */}
-        <AvatarMenu />
+        {/* AVATAR (nu donkerder border) */}
+        <div
+          className="
+            rounded-full
+            border border-[rgba(0,0,0,0.15)]
+            shadow-sm
+            p-[2px]
+          "
+        >
+          <AvatarMenu />
+        </div>
       </div>
     </header>
   );

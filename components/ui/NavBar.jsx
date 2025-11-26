@@ -51,8 +51,8 @@ export default function NavBar() {
             <Image
               src="/logo-icon.png"
               alt="TradeLayer logo"
-              width={42}
-              height={42}
+              width={56}
+              height={56}
               className="rounded-md"
             />
           </div>

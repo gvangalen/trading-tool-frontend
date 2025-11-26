@@ -1,104 +1,116 @@
 "use client";
 
-import dayjs from "dayjs";
-import weekOfYear from "dayjs/plugin/weekOfYear";
-dayjs.extend(weekOfYear);
-
-import DayTableRow from "./DayTableRow";
+import { groupByWeek } from "@/utils/grouping";
+import { Trash } from "lucide-react";
 
 /**
  * 📅 WeekTable
- * Zelfstandige versie van de nieuwe DayTable,
- * maar gegroepeerd per week (Week 43 – 2025)
+ * Algemene wekelijkse tabel (dag → week grouping)
+ * Werkt voor Macro, Technical én Market
  */
+export default function WeekTable({
+  title,
+  icon,
+  data = [],
+  loading,
+  error,
+  onRemove,
+}) {
+  // 🧠 Groepeer alle rows automatisch per week
+  const grouped = groupByWeek(data);
 
-export default function WeekTable({ data = [], onRemove }) {
-  // ---------------------------------------
-  // 1) GROEPEREN PER WEEK (direct in dit bestand)
-  // ---------------------------------------
-  const groups = groupByWeek(data);
-
-  if (!groups || groups.length === 0) {
+  if (loading) {
     return (
-      <div className="text-center text-gray-500 italic py-4">
-        Geen weekdata beschikbaar.
+      <div className="p-4 text-sm text-gray-500 italic">
+        Data laden…
       </div>
     );
   }
 
-  // ---------------------------------------
-  // 2) WEERGAVE — zelfde stijl als DayTable
-  // ---------------------------------------
-  return (
-    <div className="space-y-8 w-full">
-      {groups.map((group, gIdx) => (
-        <div
-          key={gIdx}
-          className="
-            bg-white
-            border border-[var(--card-border)]
-            rounded-xl
-            shadow-sm
-            overflow-hidden
-          "
-        >
-          {/* WEEK HEADER */}
-          <div
-            className="
-              px-4 py-3
-              bg-gray-50
-              border-b border-[var(--card-border)]
-              font-semibold
-              text-[var(--text-dark)]
-            "
-          >
-            📅 {group.label}
-          </div>
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 font-medium">
+        Fout: {error}
+      </div>
+    );
+  }
 
-          {/* TABEL */}
-          <table className="w-full text-sm">
-            <tbody>
-              {group.items.map((item, idx) => (
-                <DayTableRow
-                  key={`${gIdx}-${idx}`}
-                  item={item}
-                  onRemove={onRemove}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+  if (!grouped || grouped.length === 0) {
+    return (
+      <div className="p-4 text-gray-500 italic">
+        ⚠️ Geen weekdata beschikbaar.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+
+      {/* Titel */}
+      <div className="flex items-center gap-2">
+        {icon}
+        <h2 className="text-lg font-bold text-[var(--text-dark)]">{title}</h2>
+      </div>
+
+      {/* Tabel */}
+      <div className="overflow-x-auto rounded-lg border border-[var(--card-border)] bg-white shadow-sm">
+        <table className="min-w-[900px] w-full text-sm text-gray-800">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left">Indicator</th>
+              <th className="p-3 text-center">Waarde</th>
+              <th className="p-3 text-center">Score</th>
+              <th className="p-3 text-center">Advies</th>
+              <th className="p-3 text-center">Uitleg</th>
+              <th className="p-3 text-center">–</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {grouped.map((week, wIndex) => (
+              <>
+                {/* WEEK HEADER */}
+                <tr
+                  key={`w-${wIndex}`}
+                  className="bg-gray-100 border-t border-gray-300"
+                >
+                  <td colSpan={6} className="p-3 font-semibold">
+                    📅 {week.label}
+                  </td>
+                </tr>
+
+                {/* Week rows */}
+                {week.items?.map((item, index) => (
+                  <tr
+                    key={`${item.name}-${index}`}
+                    className="border-t border-gray-200 hover:bg-gray-50"
+                  >
+                    <td className="p-3 font-medium">{item.name}</td>
+                    <td className="p-3 text-center">{item.value ?? "–"}</td>
+                    <td className="p-3 text-center font-semibold">
+                      {item.score ?? "–"}
+                    </td>
+                    <td className="p-3 text-center italic text-gray-600">
+                      {item.action ?? "–"}
+                    </td>
+                    <td className="p-3 text-center italic text-gray-500">
+                      {item.interpretation ?? "–"}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => onRemove?.(item.name)}
+                        className="p-1 rounded bg-red-500 text-white hover:bg-red-600 transition"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
-}
-
-/* ============================================================
-   🧠 FUNCTIE: Week-groepering (IN FILE, geen utils-file nodig)
-=============================================================== */
-function groupByWeek(items) {
-  if (!Array.isArray(items)) return [];
-
-  const groups = {};
-
-  items.forEach((item) => {
-    const ts = item.timestamp || item.date;
-    if (!ts) return;
-
-    const d = dayjs(ts);
-    const year = d.year();
-    const week = d.week();
-    const key = `${year}-W${week}`;
-
-    if (!groups[key]) {
-      groups[key] = {
-        label: `Week ${week} – ${year}`,
-        items: [],
-      };
-    }
-
-    groups[key].items.push(item);
-  });
-
-  return Object.values(groups);
 }

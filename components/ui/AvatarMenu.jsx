@@ -32,11 +32,11 @@ export default function AvatarMenu() {
         onClick={() => setShowDropdown(!showDropdown)}
         className="
           w-9 h-9 rounded-full
-          bg-[var(--sidebar-active)]
+          bg-[var(--primary)]
           text-white
           flex items-center justify-center
           font-semibold
-          hover:ring-2 hover:ring-[var(--primary)]
+          hover:opacity-90
           transition-all
           shadow-sm
         "

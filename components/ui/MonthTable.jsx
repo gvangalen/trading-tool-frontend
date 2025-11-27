@@ -90,13 +90,16 @@ function MonthRow({ item, onRemove }) {
 
   const displayName = name || indicator || "–";
 
-  const getScoreColor = (s) => {
-    const n = typeof s === "number" ? s : Number(s);
-    if (isNaN(n)) return "text-[var(--text-light)]";
-    if (n >= 75) return "text-green-600";
-    if (n >= 50) return "text-yellow-500";
-    return "text-red-500";
-  };
+  const getScoreColor = (score) => {
+  const n = typeof score === "number" ? score : Number(score);
+  if (isNaN(n)) return "text-[var(--text-light)]";
+
+  if (n >= 80) return "score-strong-buy";   // 🌟 var(--score-strong-buy)
+  if (n >= 60) return "score-buy";          // 🌟 var(--score-buy)
+  if (n >= 40) return "score-neutral";      // 🌟 var(--score-neutral)
+  if (n >= 20) return "score-sell";         // 🌟 var(--score-sell)
+  return "score-strong-sell";               // 🌟 var(--score-strong-sell)
+};
 
   const displayScore =
     score !== null && !isNaN(Number(score)) ? Math.round(Number(score)) : "–";

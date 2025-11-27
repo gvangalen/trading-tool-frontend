@@ -1,5 +1,5 @@
 /* ===========================================
-   GLOBAL THEME – Grip Theme PRO 2.1
+   GLOBAL THEME – Grip Theme PRO 2.2
    Sidebar & Topbar = WIT + zacht blauw achtergrond
 =========================================== */
 
@@ -14,7 +14,7 @@
   /* Brand */
   --primary: #1A47FF;
 
-  /* Background (bijna wit, strak) */
+  /* Background (bijna wit) */
   --bg: #F7F9FC;
   --bg-soft: #FAFBFF;
 
@@ -25,37 +25,47 @@
   /* ===================================== */
   /*  🔵 SIDEBAR & TOPBAR → WIT            */
   /* ===================================== */
-
   --sidebar-bg: #ffffff;
-  --sidebar-border: rgba(0,0,0,0.08);
+  --sidebar-border: rgba(0, 0, 0, 0.08);
   --sidebar-text: #0f172a;
-  --sidebar-text-muted: #64748b;     /* slate-500 */
-  --sidebar-hover: rgba(0,0,0,0.04);
-  --sidebar-active: rgba(0,0,0,0.08);
+  --sidebar-text-muted: #64748b;
+  --sidebar-hover: rgba(0, 0, 0, 0.04);
+  --sidebar-active: rgba(0, 0, 0, 0.08);
 
   --topbar-bg: #ffffff;
   --topbar-text: #0f172a;
-  --topbar-border: rgba(0,0,0,0.08);
+  --topbar-border: rgba(0, 0, 0, 0.08);
   --topbar-shadow:
-      0 2px 6px rgba(0,0,0,0.06),
-      inset 0 -1px 0 rgba(255,255,255,0.6);
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.6);
 
+  /* ===================================== */
   /* Cards */
+  /* ===================================== */
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
   --card-radius: 14px;
 
-  --card-shadow: 0 4px 10px rgba(0,0,0,0.04);
-  --card-shadow-hover: 0 8px 20px rgba(0,0,0,0.08);
+  --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  --card-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.08);
 
-  --card-icon-bg: rgba(26,71,255,0.10);
+  --card-icon-bg: rgba(26, 71, 255, 0.10);
 
   /* ===================================== */
   /* 👤 Avatar Styling (extra contrast)     */
   /* ===================================== */
-  --avatar-bg: rgba(26,71,255,0.12);
-  --avatar-border: rgba(26,71,255,0.25);
+  --avatar-bg: rgba(26, 71, 255, 0.15);
+  --avatar-border: rgba(26, 71, 255, 0.25);
   --avatar-text: #0f172a;
+
+  /* ===================================== */
+  /* 🎨 Score Colors — Uniform in dashboard */
+  /* ===================================== */
+  --score-strong-buy: #16a34a;   /* green-600 */
+  --score-buy:        #22c55e;   /* green-500 */
+  --score-neutral:    #eab308;   /* yellow-500 */
+  --score-sell:       #ef4444;   /* red-500 */
+  --score-strong-sell:#dc2626;   /* red-600 */
 }
 
 /* ===========================================
@@ -71,16 +81,23 @@
   --sidebar-bg: #1e293b;
   --sidebar-text: #E6EDF3;
   --sidebar-text-muted: #94a3b8;
-  --sidebar-border: rgba(255,255,255,0.05);
+  --sidebar-border: rgba(255, 255, 255, 0.05);
 
   --topbar-bg: #1e293b;
   --topbar-text: #E6EDF3;
-  --topbar-border: rgba(255,255,255,0.05);
+  --topbar-border: rgba(255, 255, 255, 0.05);
 
   /* Avatar dark mode */
-  --avatar-bg: rgba(255,255,255,0.08);
-  --avatar-border: rgba(255,255,255,0.18);
+  --avatar-bg: rgba(255, 255, 255, 0.08);
+  --avatar-border: rgba(255, 255, 255, 0.18);
   --avatar-text: #E6EDF3;
+
+  /* Score kleuren in dark mode */
+  --score-strong-buy: #4ade80;
+  --score-buy:        #86efac;
+  --score-neutral:    #facc15;
+  --score-sell:       #f87171;
+  --score-strong-sell:#ef4444;
 }
 
 /* ===========================================
@@ -106,8 +123,8 @@
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.4),
-    0 10px 25px rgba(0,0,0,0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 /* ===========================================
@@ -118,6 +135,16 @@
   border-bottom: 1px solid var(--topbar-border);
   box-shadow: var(--topbar-shadow);
 }
+
+/* ===========================================
+   SCORE COLOR CLASSES
+   (kan je overal gebruiken)
+=========================================== */
+.score-strong-buy  { color: var(--score-strong-buy); }
+.score-buy         { color: var(--score-buy); }
+.score-neutral     { color: var(--score-neutral); }
+.score-sell        { color: var(--score-sell); }
+.score-strong-sell { color: var(--score-strong-sell); }
 
 /* ===========================================
    Animations

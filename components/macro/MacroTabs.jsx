@@ -17,14 +17,25 @@ export default function MacroTabs({
 }) {
   const tabs = ["Dag", "Week", "Maand", "Kwartaal"];
 
-  const renderTable = () => {
-    if (loading) {
-      return <p className="text-gray-500 italic">Laden…</p>;
-    }
+  /**
+   * 🧩 Normaliseer grouped endpoints:
+   * backend:  { label: "...", data: [...] }
+   * frontend: { label: "...", items: [...] }
+   */
+  const normalizeGrouped = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map((g) => ({
+      label: g.label,
+      items: g.data || g.items || [],
+    }));
+  };
 
-    if (error) {
+  const renderTable = () => {
+    if (loading)
+      return <p className="text-gray-500 italic">Laden…</p>;
+
+    if (error)
       return <p className="text-red-500">{error}</p>;
-    }
 
     switch (activeTab) {
       case "Dag":
@@ -38,13 +49,28 @@ export default function MacroTabs({
         );
 
       case "Week":
-        return <WeekTable data={macroData} onRemove={handleRemove} />;
+        return (
+          <WeekTable
+            data={normalizeGrouped(macroData)}
+            onRemove={handleRemove}
+          />
+        );
 
       case "Maand":
-        return <MonthTable data={macroData} onRemove={handleRemove} />;
+        return (
+          <MonthTable
+            data={normalizeGrouped(macroData)}
+            onRemove={handleRemove}
+          />
+        );
 
       case "Kwartaal":
-        return <QuarterTable data={macroData} onRemove={handleRemove} />;
+        return (
+          <QuarterTable
+            data={normalizeGrouped(macroData)}
+            onRemove={handleRemove}
+          />
+        );
 
       default:
         return null;
@@ -53,7 +79,6 @@ export default function MacroTabs({
 
   return (
     <div className="space-y-6">
-
       {/* TABS */}
       <div className="flex gap-3">
         {tabs.map((t) => (

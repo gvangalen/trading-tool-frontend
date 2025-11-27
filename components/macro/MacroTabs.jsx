@@ -2,7 +2,6 @@
 
 import { Globe } from "lucide-react";
 
-// Uniforme tabellen
 import DayTable from "@/components/ui/DayTable";
 import WeekTable from "@/components/ui/WeekTable";
 import MonthTable from "@/components/ui/MonthTable";
@@ -18,12 +17,44 @@ export default function MacroTabs({
 }) {
   const tabs = ["Dag", "Week", "Maand", "Kwartaal"];
 
+  const renderTable = () => {
+    if (loading) {
+      return <p className="text-gray-500 italic">Laden…</p>;
+    }
+
+    if (error) {
+      return <p className="text-red-500">{error}</p>;
+    }
+
+    switch (activeTab) {
+      case "Dag":
+        return (
+          <DayTable
+            title="Dagelijkse Macro Analyse"
+            icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
+            data={macroData}
+            onRemove={handleRemove}
+          />
+        );
+
+      case "Week":
+        return <WeekTable data={macroData} onRemove={handleRemove} />;
+
+      case "Maand":
+        return <MonthTable data={macroData} onRemove={handleRemove} />;
+
+      case "Kwartaal":
+        return <QuarterTable data={macroData} onRemove={handleRemove} />;
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
 
-      {/* =========================== */}
-      {/* TABS    */}
-      {/* =========================== */}
+      {/* TABS */}
       <div className="flex gap-3">
         {tabs.map((t) => (
           <button
@@ -43,52 +74,8 @@ export default function MacroTabs({
         ))}
       </div>
 
-      {/* =========================== */}
-      {/*  TABEL PER TAB TYPE         */}
-      {/* =========================== */}
-      {activeTab === "Dag" && (
-        <DayTable
-          title="Dagelijkse Macro Analyse"
-          icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
-          data={macroData}
-          loading={loading}
-          error={error}
-          onRemove={handleRemove}
-        />
-      )}
-
-      {activeTab === "Week" && (
-        <WeekTable
-          title="Wekelijkse Macro Analyse"
-          icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
-          data={macroData}
-          loading={loading}
-          error={error}
-          onRemove={handleRemove}
-        />
-      )}
-
-      {activeTab === "Maand" && (
-        <MonthTable
-          title="Maandelijkse Macro Analyse"
-          icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
-          data={macroData}
-          loading={loading}
-          error={error}
-          onRemove={handleRemove}
-        />
-      )}
-
-      {activeTab === "Kwartaal" && (
-        <QuarterTable
-          title="Kwartaal Macro Analyse"
-          icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
-          data={macroData}
-          loading={loading}
-          error={error}
-          onRemove={handleRemove}
-        />
-      )}
+      {/* TABEL */}
+      {renderTable()}
     </div>
   );
 }

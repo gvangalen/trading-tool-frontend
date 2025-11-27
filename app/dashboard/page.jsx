@@ -44,7 +44,7 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
-  /* Scroll button logic */
+  // Scroll-button logic
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -68,7 +68,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ---------------------------------------------------- */}
-      {/* HIGHLIGHTS */}
+      {/* HIGHLIGHTS (Top stats blocks) */}
       {/* ---------------------------------------------------- */}
       <DashboardHighlights />
 
@@ -80,6 +80,7 @@ export default function DashboardPage() {
         {/* ================= MAIN COLUMN ================= */}
         <main className="flex-1 space-y-12">
 
+          {/* GAUGES */}
           <DashboardGauges />
 
           {/* MARKET */}
@@ -119,21 +120,23 @@ export default function DashboardPage() {
             )}
           </CardWrapper>
 
-          {/* MACRO */}
-          <CardWrapper
-            title={
-              <div className="flex items-center gap-2">
-                <Globe2 className="w-4 h-4" />
+          {/* ---------------------------------------------------- */}
+          {/* MACRO (GEEN CARDWRAPPER MEER!) */}
+          {/* ---------------------------------------------------- */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Globe2 className="w-4 h-4 text-[var(--primary)]" />
+              <h2 className="text-lg font-semibold text-[var(--text-dark)]">
                 Macro Indicatoren
-              </div>
-            }
-          >
+              </h2>
+            </div>
+
             {macroLoading ? (
               <p className="text-[var(--text-light)] text-sm">
                 ⏳ Macrodata laden...
               </p>
             ) : macroError ? (
-              <p className="text-[var(--red)] text-sm">{macroError}</p>
+              <p className="text-red-500 text-sm">{macroError}</p>
             ) : (
               <MacroSummaryTableForDashboard
                 data={macroData}
@@ -143,7 +146,7 @@ export default function DashboardPage() {
                 onRemove={handleMacroRemove}
               />
             )}
-          </CardWrapper>
+          </section>
 
           {/* TRADING ADVIES */}
           <CardWrapper
@@ -157,7 +160,7 @@ export default function DashboardPage() {
             <TradingAdvice />
           </CardWrapper>
 
-          {/* SETUPS */}
+          {/* TOP SETUPS */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">

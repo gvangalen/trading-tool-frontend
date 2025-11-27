@@ -26,12 +26,15 @@ export default function MacroPage() {
   const { macro, loading: loadingScore } = useScoresData();
 
   const getScoreColor = (score) => {
-    const s = typeof score === "number" ? score : Number(score);
-    if (isNaN(s)) return "text-gray-500";
-    if (s >= 70) return "text-green-600";
-    if (s <= 40) return "text-red-500";
-    return "text-yellow-600";
-  };
+  const n = typeof score === "number" ? score : Number(score);
+  if (isNaN(n)) return "text-[var(--text-light)]";
+
+  if (n >= 80) return "score-strong-buy";   // 🌟 var(--score-strong-buy)
+  if (n >= 60) return "score-buy";          // 🌟 var(--score-buy)
+  if (n >= 40) return "score-neutral";      // 🌟 var(--score-neutral)
+  if (n >= 20) return "score-sell";         // 🌟 var(--score-sell)
+  return "score-strong-sell";               // 🌟 var(--score-strong-sell)
+};
 
   const adviesText =
     (macro?.score ?? 0) >= 75

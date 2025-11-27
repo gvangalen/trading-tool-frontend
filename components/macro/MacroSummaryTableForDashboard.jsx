@@ -1,69 +1,119 @@
 'use client';
 
-import { useEffect } from 'react';
-import SkeletonTable from '@/components/ui/SkeletonTable';
+import { Info, AlertCircle } from "lucide-react";
+import CardWrapper from "@/components/ui/CardWrapper";
+import SkeletonTable from "@/components/ui/SkeletonTable";
 
-export default function MacroSummaryTableForDashboard({ data = [], loading = false, error = '' }) {
-  useEffect(() => {
-    console.log('🌍 [MacroSummaryTableForDashboard] ontvangen data:', data);
-  }, [data]);
+/* --------------------------------------------
+   Scorekleur (globale PRO 2.2 kleuren)
+-------------------------------------------- */
+const getScoreClass = (score) => {
+  const n = typeof score === "number" ? score : Number(score);
+  if (isNaN(n)) return "text-[var(--text-light)]";
 
-  // 🎨 Scorekleur bepalen
-  const getScoreColor = (score) => {
-    const s = typeof score === 'number' ? score : parseFloat(score);
-    if (isNaN(s)) return 'text-gray-600';
-    if (s >= 70) return 'text-green-600';
-    if (s <= 40) return 'text-red-600';
-    return 'text-yellow-600';
-  };
+  if (n >= 80) return "score-strong-buy";     // groen donker
+  if (n >= 60) return "score-buy";            // groen licht
+  if (n >= 40) return "score-neutral";        // geel
+  if (n >= 20) return "score-sell";           // rood licht
+  return "score-strong-sell";                 // rood donker
+};
 
-  if (loading) return <SkeletonTable rows={5} columns={6} />;
-  if (error) return <div className="text-sm text-red-500">{error}</div>;
+/* ============================================
+   📊 Dashboard Macro Summary Table (READ-ONLY)
+   Zelfde layout als DayTable – PRO UI
+============================================ */
+export default function MacroSummaryTableForDashboard({
+  data = [],
+  loading = false,
+  error = "",
+}) {
+
+  if (loading) return <SkeletonTable rows={5} columns={5} />;
+
+  if (error) {
+    return (
+      <CardWrapper>
+        <p className="text-red-500">{error}</p>
+      </CardWrapper>
+    );
+  }
+
   if (!Array.isArray(data) || data.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500">
-        ⚠️ Geen macrodata beschikbaar.
-      </div>
+      <CardWrapper>
+        <div className="p-4 text-center text-[var(--text-light)] flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>Geen macrodata beschikbaar.</span>
+        </div>
+      </CardWrapper>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full table-auto text-sm border">
-        <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-          <tr>
-            <th className="p-2">🌍 Indicator</th>
-            <th className="p-2 text-center">Waarde</th>
-            <th className="p-2 text-center">Score</th>
-            <th className="p-2 text-center">Advies</th>
-            <th className="p-2">Uitleg</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => {
-            // ✅ Consistente veldnamen zoals in hook en backend
-            const {
-              name = item.name ?? '–',
-              value = item.value ?? '–',
-              score = item.score ?? null,
-              action = item.action ?? '–',
-              interpretation = item.interpretation ?? '–',
-            } = item;
+    <CardWrapper title={
+      <div className="flex items-center gap-2">
+        <span className="text-[var(--primary)]">🌍</span>
+        <span>Macro Samenvatting</span>
+      </div>
+    }>
+      <div className="overflow-x-auto mt-2">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
+            <tr className="border-b border-[var(--card-border)]">
+              <th className="px-4 py-3 text-left font-semibold">Indicator</th>
+              <th className="px-4 py-3 text-center font-semibold">Waarde</th>
+              <th className="px-4 py-3 text-center font-semibold">Score</th>
+              <th className="px-4 py-3 text-center font-semibold">Advies</th>
+              <th className="px-4 py-3 text-left font-semibold">Uitleg</th>
+            </tr>
+          </thead>
 
-            return (
-              <tr key={`${name}-${index}`} className="border-t dark:border-gray-700">
-                <td className="p-2 font-medium">{name}</td>
-                <td className="p-2 text-center">{value}</td>
-                <td className={`p-2 text-center font-bold ${getScoreColor(score)}`}>
-                  {score !== null ? score : '–'}
-                </td>
-                <td className="p-2 text-center">{action}</td>
-                <td className="p-2">{interpretation}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+          <tbody>
+            {data.map((item, i) => {
+              const name = item.name || item.indicator || "–";
+              const value = item.value ?? "–";
+              const score = item.score ?? null;
+              const advice = item.action ?? "–";
+              const explanation = item.interpretation ?? "–";
+
+              return (
+                <tr
+                  key={`${name}-${i}`}
+                  className="border-b border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition-colors"
+                >
+                  {/* Indicator */}
+                  <td className="px-4 py-3 font-medium text-[var(--text-dark)] whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <Info className="w-4 h-4 text-[var(--text-light)]" />
+                      {name}
+                    </div>
+                  </td>
+
+                  {/* Value */}
+                  <td className="px-4 py-3 text-center text-[var(--text-dark)]">
+                    {value}
+                  </td>
+
+                  {/* Score */}
+                  <td className={`px-4 py-3 text-center font-semibold ${getScoreClass(score)}`}>
+                    {score ?? "–"}
+                  </td>
+
+                  {/* Advice */}
+                  <td className="px-4 py-3 text-center text-[var(--text-dark)]">
+                    {advice}
+                  </td>
+
+                  {/* Explanation */}
+                  <td className="px-4 py-3 text-[var(--text-light)] leading-relaxed">
+                    {explanation}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </CardWrapper>
   );
 }

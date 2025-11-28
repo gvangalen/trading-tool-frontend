@@ -1,38 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState } from "react";
+import {
+  CalendarRange,
+  TrendingUp,
+  PieChart,
+  BarChart3
+} from "lucide-react";
 
-const tabs = ['Week', 'Maand', 'Kwartaal', 'Jaar'];
+/* ===========================================================
+   🎨 PRO-KLEUREN
+   Zachtere pastel heatmap (TradingView style)
+=========================================================== */
+const heatmapColor = (value) => {
+  if (value === null || value === undefined) return "bg-[var(--bg-soft)] text-[var(--text-light)]";
+
+  if (value > 12) return "bg-green-200 text-green-900";       // sterke win
+  if (value > 5) return "bg-green-100 text-green-800";        // lichte win
+  if (value < -12) return "bg-red-300 text-red-900";          // sterke verlies
+  if (value < -5) return "bg-red-200 text-red-900";           // lichte verlies
+
+  return "bg-[var(--bg-soft)] text-[var(--text-dark)]";       // neutraal
+};
+
+const tabs = ["Week", "Maand", "Kwartaal", "Jaar"];
 
 const labelsByTab = {
   Week: Array.from({ length: 53 }, (_, i) => `W${i + 1}`),
-  Maand: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
-  Kwartaal: ['Q1', 'Q2', 'Q3', 'Q4'],
-  Jaar: ['Year'],
-};
-
-const getCellStyle = (value) => {
-  if (value === null || value === undefined)
-    return 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500';
-  return value >= 0
-    ? 'bg-green-200 text-green-800 dark:bg-green-700 dark:text-white'
-    : 'bg-red-200 text-red-800 dark:bg-red-700 dark:text-white';
+  Maand: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+  Kwartaal: ["Q1", "Q2", "Q3", "Q4"],
+  Jaar: ["Year"],
 };
 
 const formatPercentage = (value) => {
-  if (value === null || value === undefined || isNaN(value)) return '–';
+  if (value === null || value === undefined || isNaN(value)) return "–";
   return `${value.toFixed(1)}%`;
 };
 
+/* ===========================================================
+   🌟 HOOFD COMPONENT
+=========================================================== */
 export default function MarketForwardReturnTabs({ data = {} }) {
-  const [active, setActive] = useState('Maand');
+  const [active, setActive] = useState("Maand");
   const [selectedYears, setSelectedYears] = useState(() =>
-    (data['maand'] || []).map((row) => row.year)
+    (data["maand"] || []).map((row) => row.year)
   );
 
   const activeKey = active.toLowerCase();
   const activeData = data[activeKey] || [];
-  const activeLabels = labelsByTab[active] || [];
+  const labels = labelsByTab[active] || [];
 
   const toggleYear = (year) => {
     setSelectedYears((prev) =>
@@ -42,98 +58,116 @@ export default function MarketForwardReturnTabs({ data = {} }) {
 
   const calculateYearAvg = (values) => {
     const valid = values.filter((v) => v !== null && v !== undefined);
-    const sum = valid.reduce((a, b) => a + b, 0);
-    return valid.length ? sum / valid.length : null;
+    if (!valid.length) return null;
+    return valid.reduce((a, b) => a + b, 0) / valid.length;
   };
 
   const calculateColumnAverages = () => {
-    const colCount = activeLabels.length;
-    const totals = new Array(colCount).fill(0);
-    const counts = new Array(colCount).fill(0);
-
-    activeData.forEach((row) => {
-      row.values.forEach((val, idx) => {
-        if (val !== null && val !== undefined) {
-          totals[idx] += val;
-          counts[idx] += 1;
-        }
-      });
+    return labels.map((_, colIdx) => {
+      const vals = activeData.map((row) => row.values[colIdx]);
+      const valid = vals.filter((v) => v !== null && v !== undefined);
+      if (!valid.length) return null;
+      return valid.reduce((a, b) => a + b, 0) / valid.length;
     });
-
-    return totals.map((total, i) => (counts[i] ? total / counts[i] : null));
   };
 
-  const columnAverages = calculateColumnAverages();
-  const selectedData = activeData.filter((row) => selectedYears.includes(row.year));
+  const colAverages = calculateColumnAverages();
 
-  const forwardStats = activeLabels.map((_, colIdx) => {
-    const values = selectedData.map((row) => row.values[colIdx]);
-    const valid = values.filter((v) => v !== null && v !== undefined);
+  const selectedData = activeData.filter((row) =>
+    selectedYears.includes(row.year)
+  );
+
+  const forwardStats = labels.map((_, idx) => {
+    const vals = selectedData.map((row) => row.values[idx]);
+    const valid = vals.filter((v) => v !== null && v !== undefined);
     const wins = valid.filter((v) => v > 0).length;
     const losses = valid.filter((v) => v <= 0).length;
-    const total = valid.length;
-    const returnRate = total ? (wins / total) * 100 : null;
-
-    return { total, wins, losses, returnRate };
+    return {
+      total: valid.length,
+      wins,
+      losses,
+      rate: valid.length ? (wins / valid.length) * 100 : null,
+    };
   });
 
-  const displayData =
-    activeData.length > 0
-      ? activeData.sort((a, b) => b.year - a.year)
-      : [{ year: '–', values: Array(activeLabels.length).fill(null) }];
+  const displayData = activeData.length
+    ? [...activeData].sort((a, b) => b.year - a.year)
+    : [{ year: "–", values: Array(labels.length).fill(null) }];
 
   return (
-    <div className="p-4 border rounded bg-white dark:bg-gray-900 shadow overflow-x-auto">
-      {/* Tabs */}
-      <div className="flex gap-2 mb-4">
+    <div className="p-6 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] shadow-sm space-y-6">
+
+      {/* ======================================================
+         ⭐ TABS (PRO-STIJL)
+      ====================================================== */}
+      <div className="flex gap-2 mb-1">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActive(tab)}
-            className={`px-4 py-1 rounded font-semibold border transition-all duration-150
-              ${active === tab
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}
-            `}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all border 
+              ${
+                active === tab
+                  ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow"
+                  : "bg-[var(--bg-soft)] text-[var(--text-dark)] border-[var(--card-border)] hover:bg-[var(--bg-hover)]"
+              }`}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className={`w-full text-sm border mb-6 ${active === 'Week' ? 'text-[11px]' : ''}`}>
-          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-            <tr>
-              <th className="p-2 text-left">✅</th>
-              <th className="p-2 text-left">Jaar</th>
-              {activeLabels.map((label) => (
-                <th key={label} className="p-2 text-xs text-center">{label}</th>
+      {/* ======================================================
+         📊 HOOFDTABEL (HEATMAP MATRIX)
+      ====================================================== */}
+      <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-white">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] uppercase text-xs">
+            <tr className="border-b border-[var(--card-border)]">
+              <th className="p-3 text-left w-10">
+                <CalendarRange className="w-4 h-4 text-[var(--text-light)]" />
+              </th>
+              <th className="p-3 text-left">Jaar</th>
+              {labels.map((label) => (
+                <th key={label} className="p-2 text-center">{label}</th>
               ))}
-              <th className="p-2 text-center font-semibold">Gem.</th>
+              <th className="p-2 text-center">Gem.</th>
             </tr>
           </thead>
+
           <tbody>
             {displayData.map((row, idx) => {
               const avg = calculateYearAvg(row.values);
+
               return (
-                <tr key={idx} className="border-t">
-                  <td className="p-2 text-center">
+                <tr key={idx} className="border-b border-[var(--card-border)]">
+                  {/* Checkbox */}
+                  <td className="p-3 text-center">
                     <input
                       type="checkbox"
-                      className="form-checkbox"
                       checked={selectedYears.includes(row.year)}
                       onChange={() => toggleYear(row.year)}
-                      disabled={row.year === '–'}
+                      disabled={row.year === "–"}
+                      className="w-4 h-4"
                     />
                   </td>
-                  <td className="p-2 font-semibold">{row.year}</td>
+
+                  {/* Year */}
+                  <td className="p-3 font-semibold">{row.year}</td>
+
+                  {/* Heatmap Values */}
                   {row.values.map((val, i) => (
-                    <td key={i} className={`p-2 text-center font-medium ${getCellStyle(val)}`}>
+                    <td
+                      key={i}
+                      className={`p-2 text-center font-medium rounded-sm ${heatmapColor(
+                        val
+                      )}`}
+                    >
                       {formatPercentage(val)}
                     </td>
                   ))}
+
+                  {/* Average */}
                   <td className="p-2 text-center font-semibold">
                     {formatPercentage(avg)}
                   </td>
@@ -141,56 +175,84 @@ export default function MarketForwardReturnTabs({ data = {} }) {
               );
             })}
 
-            {/* Onderste rij met kolomgemiddelden */}
-            <tr className="border-t bg-gray-50 dark:bg-gray-800">
+            {/* Column averages row */}
+            <tr className="bg-[var(--bg-soft)] font-bold border-t border-[var(--card-border)]">
               <td className="p-2 text-center">–</td>
-              <td className="p-2 font-semibold">Gemiddelde</td>
-              {columnAverages.map((val, i) => (
-                <td key={i} className={`p-2 text-center font-semibold ${getCellStyle(val)}`}>
+              <td className="p-2">Gemiddelde</td>
+              {colAverages.map((val, i) => (
+                <td
+                  key={i}
+                  className={`p-2 text-center font-semibold rounded-sm ${heatmapColor(
+                    val
+                  )}`}
+                >
                   {formatPercentage(val)}
                 </td>
               ))}
-              <td className="p-2 text-center font-semibold">–</td>
+              <td className="p-2 text-center">–</td>
             </tr>
           </tbody>
         </table>
+      </div>
 
-        {/* Forward Return Stats Table */}
-        <div className="border-t pt-4">
-          <h3 className="text-sm font-bold mb-2">Forward Return Results (alleen geselecteerde jaren)</h3>
-          <table className={`w-full text-sm border ${active === 'Week' ? 'text-[11px]' : ''}`}>
-            <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-              <tr>
+      {/* ======================================================
+         📈 FORWARD RETURN RESULTS (PRO-STIJL)
+      ====================================================== */}
+      <div className="border-t pt-4 space-y-3">
+
+        <div className="flex items-center gap-2 text-[var(--text-dark)] font-bold text-sm">
+          <BarChart3 className="w-4 h-4 text-[var(--primary)]" />
+          Forward Return Results (geselecteerde jaren)
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-white">
+          <table className="w-full text-sm">
+            <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] uppercase text-xs">
+              <tr className="border-b border-[var(--card-border)]">
                 <th className="p-2 text-left">Stat</th>
-                {activeLabels.map((label) => (
-                  <th key={label} className="p-2 text-xs text-center">{label}</th>
+                {labels.map((l) => (
+                  <th key={l} className="p-2 text-center">{l}</th>
                 ))}
               </tr>
             </thead>
+
             <tbody>
-              <tr>
-                <td className="p-2 font-semibold">Totals</td>
+              {/* Totals */}
+              <tr className="border-b border-[var(--card-border)]">
+                <td className="p-2 font-semibold">Aantal</td>
                 {forwardStats.map((s, i) => (
-                  <td key={i} className="p-2 text-center">{s.total}</td>
+                  <td key={i} className="p-2 text-center">
+                    {s.total}
+                  </td>
                 ))}
               </tr>
-              <tr>
+
+              {/* Wins */}
+              <tr className="border-b border-[var(--card-border)]">
                 <td className="p-2 font-semibold">Wins</td>
                 {forwardStats.map((s, i) => (
-                  <td key={i} className="p-2 text-center text-green-700 dark:text-green-400">{s.wins}</td>
+                  <td key={i} className="p-2 text-center text-green-700 font-semibold">
+                    {s.wins}
+                  </td>
                 ))}
               </tr>
-              <tr>
+
+              {/* Losses */}
+              <tr className="border-b border-[var(--card-border)]">
                 <td className="p-2 font-semibold">Losses</td>
                 {forwardStats.map((s, i) => (
-                  <td key={i} className="p-2 text-center text-red-700 dark:text-red-400">{s.losses}</td>
+                  <td key={i} className="p-2 text-center text-red-700 font-semibold">
+                    {s.losses}
+                  </td>
                 ))}
               </tr>
+
+              {/* Returns */}
               <tr>
-                <td className="p-2 font-semibold">Returns</td>
+                <td className="p-2 font-semibold">Winrate</td>
                 {forwardStats.map((s, i) => (
                   <td key={i} className="p-2 text-center font-semibold">
-                    {s.returnRate !== null ? `${s.returnRate.toFixed(1)}%` : '–'}
+                    {s.rate !== null ? `${s.rate.toFixed(1)}%` : "–"}
                   </td>
                 ))}
               </tr>
@@ -198,6 +260,7 @@ export default function MarketForwardReturnTabs({ data = {} }) {
           </table>
         </div>
       </div>
+
     </div>
   );
 }

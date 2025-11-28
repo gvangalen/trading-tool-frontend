@@ -25,9 +25,9 @@ export default function TechnicalPage() {
 
   const { technical, loading: loadingScore } = useScoresData();
 
-  /* =====================================================
-     SCORE → kleurklasse (zelfde logica als macro)
-  ===================================================== */
+  /* ============================
+     SCORE COLOR
+  ============================ */
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
     if (isNaN(n)) return "text-[var(--text-light)]";
@@ -49,9 +49,7 @@ export default function TechnicalPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ================================================
-          PAGE TITLE
-      ================================================= */}
+      {/* PAGE TITLE */}
       <div className="flex items-center gap-3">
         <TrendingUp size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -59,14 +57,10 @@ export default function TechnicalPage() {
         </h1>
       </div>
 
-      {/* ================================================
-          AI SAMENVATTING
-      ================================================= */}
+      {/* AI SAMENVATTING */}
       <AgentInsightPanel category="technical" />
 
-      {/* ================================================
-          TOTALE TECHNISCHE SCORE (zoals Macro)
-      ================================================= */}
+      {/* TOTAL TECHNICAL SCORE */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -76,6 +70,7 @@ export default function TechnicalPage() {
             </h2>
           </div>
 
+          {/* Score */}
           <div className="text-xl font-bold flex items-center gap-3">
             {loadingScore ? (
               <span className="text-[var(--text-light)]">⏳</span>
@@ -86,6 +81,7 @@ export default function TechnicalPage() {
             )}
           </div>
 
+          {/* Advies */}
           <div className="flex items-center gap-3 text-lg">
             <Activity className="text-purple-500" size={20} />
             <span className="font-semibold">
@@ -110,14 +106,10 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* ================================================
-          SCORE REGELS COMPONENT (Zoeken + Scoreregels)
-      ================================================= */}
+      {/* SCOREREGELS (zoekfunctie + rules) */}
       <TechnicalIndicatorScoreView />
 
-      {/* ================================================
-          TABS + TABEL (DayTable)
-      ================================================= */}
+      {/* TABS + TABEL */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -126,7 +118,6 @@ export default function TechnicalPage() {
         error={error}
         handleRemove={handleRemove}
       />
-
     </div>
   );
 }

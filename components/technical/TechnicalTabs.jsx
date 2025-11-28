@@ -1,55 +1,59 @@
-'use client';
+"use client";
 
-import CardWrapper from '@/components/ui/CardWrapper';
+import CardWrapper from "@/components/ui/CardWrapper";
 
-import TechnicalDayTable from './TechnicalDayTable';
-import TechnicalWeekTable from './TechnicalWeekTable';
-import TechnicalMonthTable from './TechnicalMonthTable';
-import TechnicalQuarterTable from './TechnicalQuarterTable';
+import TechnicalDayTable from "./TechnicalDayTable";
+import TechnicalWeekTable from "./TechnicalWeekTable";
+import TechnicalMonthTable from "./TechnicalMonthTable";
+import TechnicalQuarterTable from "./TechnicalQuarterTable";
 
-const TABS = ['Dag', 'Week', 'Maand', 'Kwartaal'];
+const TABS = ["Dag", "Week", "Maand", "Kwartaal"];
 
 export default function TechnicalTabs({
   activeTab,
   setActiveTab,
-  technicalData,
+  technicalData = [],
   handleRemove,
   loading,
   error,
 }) {
-  const renderTableBody = () => {
+  const renderContent = () => {
     if (loading) {
       return (
-        <tr>
-          <td colSpan="100%" className="p-4 text-center text-gray-500">
-            ⏳ Laden...
-          </td>
-        </tr>
+        <div className="p-4 text-center text-[var(--text-light)]">
+          ⏳ Laden...
+        </div>
       );
     }
 
     if (error) {
       return (
-        <tr>
-          <td colSpan="100%" className="p-4 text-center text-red-500">
-            ❌ {error}
-          </td>
-        </tr>
+        <div className="p-4 text-center text-red-500 font-medium">
+          ❌ {error}
+        </div>
       );
     }
 
     switch (activeTab) {
-      case 'Dag':
-        return <TechnicalDayTable data={technicalData} onRemove={handleRemove} />;
+      case "Dag":
+        return (
+          <TechnicalDayTable data={technicalData} onRemove={handleRemove} />
+        );
 
-      case 'Week':
-        return <TechnicalWeekTable data={technicalData} onRemove={handleRemove} />;
+      case "Week":
+        return (
+          <TechnicalWeekTable data={technicalData} onRemove={handleRemove} />
+        );
 
-      case 'Maand':
-        return <TechnicalMonthTable data={technicalData} onRemove={handleRemove} />;
+      case "Maand":
+        return (
+          <TechnicalMonthTable data={technicalData} onRemove={handleRemove} />
+        );
 
-      case 'Kwartaal':
-        return <TechnicalQuarterTable data={technicalData} onRemove={handleRemove} />;
+      case "Kwartaal":
+        return (
+          <TechnicalQuarterTable data={technicalData} onRemove={handleRemove} />
+        );
 
       default:
         return null;
@@ -57,47 +61,37 @@ export default function TechnicalTabs({
   };
 
   return (
-    <>
-      {/* 🔹 Tabs */}
-      <div className="flex space-x-4 mb-4">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-semibold border transition ${
-              activeTab === tab
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+    <div className="space-y-6">
+      {/* TABS — PRO Style */}
+      <div className="flex space-x-3 mb-2">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab;
+
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`
+                px-4 py-2 rounded-lg font-semibold border transition-all
+                ${
+                  isActive
+                    ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm"
+                    : "bg-[var(--bg-soft)] border-[var(--card-border)] text-[var(--text-dark)] hover:bg-[var(--bg-soft-hover)]"
+                }
+              `}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
-      {/* 🔹 Tabel */}
+      {/* TABLE — PRO Style Wrapper */}
       <CardWrapper>
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto text-sm">
-
-            {/* Header alleen bij Dag */}
-            {activeTab === 'Dag' && (
-              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-                <tr>
-                  <th className="p-2">📊 Indicator</th>
-                  <th className="p-2 text-center">Waarde</th>
-                  <th className="p-2 text-center">Score</th>
-                  <th className="p-2 text-center">Advies</th>
-                  <th className="p-2">Uitleg</th>
-                  <th className="p-2 text-center">🗑️</th>
-                </tr>
-              </thead>
-            )}
-
-            <tbody>{renderTableBody()}</tbody>
-          </table>
+        <div className="w-full">
+          {renderContent()}
         </div>
       </CardWrapper>
-    </>
+    </div>
   );
 }

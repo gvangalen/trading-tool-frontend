@@ -28,8 +28,12 @@ import { useMarketData } from "@/hooks/useMarketData";
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  const { technicalData, handleRemove, loading: technicalLoading } =
-    useTechnicalData();
+  const {
+    technicalData,
+    handleRemove,
+    loading: technicalLoading,
+    error: technicalError,
+  } = useTechnicalData();
 
   const {
     macroData,
@@ -72,7 +76,7 @@ export default function DashboardPage() {
           {/* GAUGES */}
           <DashboardGauges />
 
-          {/* MARKET */}
+          {/* MARKET (in card) */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -87,42 +91,28 @@ export default function DashboardPage() {
             />
           </CardWrapper>
 
-          {/* TECHNICAL */}
-          <CardWrapper
-            title={
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Technische Analyse
-              </div>
-            }
-          >
-            {technicalLoading ? (
-              <p className="text-[var(--text-light)] text-sm">
-                ⏳ Technische data laden...
-              </p>
-            ) : (
-              <TechnicalDayTableForDashboard
-                data={technicalData}
-                loading={technicalLoading}
-                onRemove={handleRemove}
-              />
-            )}
-          </CardWrapper>
-
-          {/* MACRO – rechtstreeks de kaart van MacroSummaryTable */}
-          {macroLoading ? (
+          {/* TECHNICAL — GEEN CARD WRAPPER */}
+          {technicalLoading ? (
             <p className="text-[var(--text-light)] text-sm">
-              ⏳ Macrodata laden...
+              ⏳ Technische data laden...
             </p>
           ) : (
-            <MacroSummaryTableForDashboard
-              data={macroData}
-              loading={macroLoading}
-              error={macroError}
+            <TechnicalDayTableForDashboard
+              data={technicalData}
+              loading={technicalLoading}
+              error={technicalError}
+              onRemove={handleRemove}
             />
           )}
 
-          {/* TRADING ADVIES */}
+          {/* MACRO — GEEN CARD WRAPPER */}
+          <MacroSummaryTableForDashboard
+            data={macroData}
+            loading={macroLoading}
+            error={macroError}
+          />
+
+          {/* TRADING ADVIES (in card) */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -134,7 +124,7 @@ export default function DashboardPage() {
             <TradingAdvice />
           </CardWrapper>
 
-          {/* TOP SETUPS */}
+          {/* TOP SETUPS (in card) */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">

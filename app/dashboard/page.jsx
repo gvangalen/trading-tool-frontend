@@ -6,7 +6,6 @@ import {
   BarChart3,
   Coins,
   TrendingUp,
-  Globe2,
   Rocket,
   Trophy,
   ChevronsUp,
@@ -36,10 +35,6 @@ export default function DashboardPage() {
     macroData,
     loading: macroLoading,
     error: macroError,
-    handleEdit,
-    handleRemove: handleMacroRemove,
-    calculateMacroScore,
-    getExplanation,
   } = useMacroData();
 
   const { sevenDayData, btcLive } = useMarketData();
@@ -57,9 +52,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
 
-      {/* ---------------------------------------------------- */}
       {/* PAGE TITLE */}
-      {/* ---------------------------------------------------- */}
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-7 h-7 text-[var(--primary)]" />
         <h1 className="text-3xl font-bold tracking-tight text-[var(--text-dark)]">
@@ -67,17 +60,13 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      {/* ---------------------------------------------------- */}
-      {/* HIGHLIGHTS (Top stats blocks) */}
-      {/* ---------------------------------------------------- */}
+      {/* HIGHLIGHTS */}
       <DashboardHighlights />
 
-      {/* ---------------------------------------------------- */}
       {/* MAIN CONTENT ROW */}
-      {/* ---------------------------------------------------- */}
       <div className="flex flex-col xl:flex-row gap-12">
 
-        {/* ================= MAIN COLUMN ================= */}
+        {/* ========== MAIN COLUMN ========== */}
         <main className="flex-1 space-y-12">
 
           {/* GAUGES */}
@@ -120,33 +109,18 @@ export default function DashboardPage() {
             )}
           </CardWrapper>
 
-          {/* ---------------------------------------------------- */}
-          {/* MACRO (GEEN CARDWRAPPER MEER!) */}
-          {/* ---------------------------------------------------- */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Globe2 className="w-4 h-4 text-[var(--primary)]" />
-              <h2 className="text-lg font-semibold text-[var(--text-dark)]">
-                Macro Indicatoren
-              </h2>
-            </div>
-
-            {macroLoading ? (
-              <p className="text-[var(--text-light)] text-sm">
-                ⏳ Macrodata laden...
-              </p>
-            ) : macroError ? (
-              <p className="text-red-500 text-sm">{macroError}</p>
-            ) : (
-              <MacroSummaryTableForDashboard
-                data={macroData}
-                calculateScore={calculateMacroScore}
-                getExplanation={getExplanation}
-                onEdit={handleEdit}
-                onRemove={handleMacroRemove}
-              />
-            )}
-          </section>
+          {/* MACRO – rechtstreeks de kaart van MacroSummaryTable */}
+          {macroLoading ? (
+            <p className="text-[var(--text-light)] text-sm">
+              ⏳ Macrodata laden...
+            </p>
+          ) : (
+            <MacroSummaryTableForDashboard
+              data={macroData}
+              loading={macroLoading}
+              error={macroError}
+            />
+          )}
 
           {/* TRADING ADVIES */}
           <CardWrapper
@@ -173,7 +147,7 @@ export default function DashboardPage() {
           </CardWrapper>
         </main>
 
-        {/* ================= RIGHT SIDEBAR ================= */}
+        {/* ========== RIGHT SIDEBAR ========== */}
         <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />
@@ -181,9 +155,7 @@ export default function DashboardPage() {
         </aside>
       </div>
 
-      {/* ---------------------------------------------------- */}
       {/* SCROLL TO TOP BUTTON */}
-      {/* ---------------------------------------------------- */}
       {showScroll && (
         <button
           onClick={scrollToTop}

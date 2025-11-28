@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import CardWrapper from '@/components/ui/CardWrapper';
-import { formatChange, formatNumber } from '@/components/market/utils';
-import { useMemo } from 'react';
+import CardWrapper from "@/components/ui/CardWrapper";
+import { CalendarDays } from "lucide-react";
+import { formatChange, formatNumber } from "@/components/market/utils";
+import { useMemo } from "react";
 
 export default function MarketSevenDayTable({ history }) {
   const MAX_ROWS = 7;
@@ -15,15 +16,15 @@ export default function MarketSevenDayTable({ history }) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
 
-      const isoDate = date.toISOString().slice(0, 10); // YYYY-MM-DD
-      const formattedDate = date.toLocaleDateString('nl-NL', {
-        day: '2-digit',
-        month: 'short',
+      const isoDate = date.toISOString().slice(0, 10);
+      const formattedDate = date.toLocaleDateString("nl-NL", {
+        day: "2-digit",
+        month: "short",
       });
 
-      const record = history?.find((d) => {
-        return new Date(d.date).toISOString().slice(0, 10) === isoDate;
-      });
+      const record = history?.find(
+        (d) => new Date(d.date).toISOString().slice(0, 10) === isoDate
+      );
 
       result.push({
         date: formattedDate,
@@ -35,50 +36,82 @@ export default function MarketSevenDayTable({ history }) {
         volume: record?.volume ?? null,
       });
     }
-
     return result;
   }, [history]);
 
-  return (
-    <CardWrapper>
-      <h2 className="text-lg font-semibold mb-2">📅 Laatste 7 dagen (Prijs & Volume)</h2>
+  /* ------------------------------
+     Scorekleur volgens PRO 2.2
+  ------------------------------ */
+  const getChangeColor = (n) => {
+    if (n === null || isNaN(n)) return "text-[var(--text-light)]";
+    if (n > 0) return "text-green-600";
+    if (n < 0) return "text-red-600";
+    return "text-[var(--text-light)]";
+  };
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-gray-100 dark:bg-gray-800">
-            <tr>
-              <th className="p-2 text-left">Datum</th>
-              <th className="p-2 text-right">Open</th>
-              <th className="p-2 text-right">Hoog</th>
-              <th className="p-2 text-right">Laag</th>
-              <th className="p-2 text-right">Sluit</th>
-              <th className="p-2 text-right">% Dag</th>
-              <th className="p-2 text-right">Volume</th>
+  return (
+    <CardWrapper
+      title={
+        <div className="flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-[var(--primary)]" />
+          <span>Laatst 7 dagen (Prijs & Volume)</span>
+        </div>
+      }
+    >
+      <div className="overflow-x-auto mt-2">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
+            <tr className="border-b border-[var(--card-border)]">
+              <th className="px-4 py-3 text-left font-semibold">Datum</th>
+              <th className="px-4 py-3 text-right font-semibold">Open</th>
+              <th className="px-4 py-3 text-right font-semibold">Hoog</th>
+              <th className="px-4 py-3 text-right font-semibold">Laag</th>
+              <th className="px-4 py-3 text-right font-semibold">Sluit</th>
+              <th className="px-4 py-3 text-right font-semibold">% Dag</th>
+              <th className="px-4 py-3 text-right font-semibold">Volume</th>
             </tr>
           </thead>
+
           <tbody>
             {rows.map((day, idx) => (
-              <tr key={idx} className="border-t">
-                <td className="p-2">{day.date}</td>
-                <td className="p-2 text-right">
-                  {typeof day.open === 'number' ? formatNumber(day.open) : '…'}
+              <tr
+                key={idx}
+                className="border-b border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition-colors"
+              >
+                <td className="px-4 py-3 text-[var(--text-dark)] whitespace-nowrap">
+                  {day.date}
                 </td>
-                <td className="p-2 text-right">
-                  {typeof day.high === 'number' ? formatNumber(day.high) : '…'}
+
+                <td className="px-4 py-3 text-right text-[var(--text-dark)]">
+                  {typeof day.open === "number" ? formatNumber(day.open) : "…"}
                 </td>
-                <td className="p-2 text-right">
-                  {typeof day.low === 'number' ? formatNumber(day.low) : '…'}
+
+                <td className="px-4 py-3 text-right text-[var(--text-dark)]">
+                  {typeof day.high === "number" ? formatNumber(day.high) : "…"}
                 </td>
-                <td className="p-2 text-right">
-                  {typeof day.close === 'number' ? formatNumber(day.close) : '…'}
+
+                <td className="px-4 py-3 text-right text-[var(--text-dark)]">
+                  {typeof day.low === "number" ? formatNumber(day.low) : "…"}
                 </td>
-                <td className="p-2 text-right">
-                  {typeof day.change === 'number' ? formatChange(day.change) : '…'}
+
+                <td className="px-4 py-3 text-right text-[var(--text-dark)]">
+                  {typeof day.close === "number" ? formatNumber(day.close) : "…"}
                 </td>
-                <td className="p-2 text-right">
-                  {typeof day.volume === 'number'
+
+                <td
+                  className={`px-4 py-3 text-right font-semibold ${getChangeColor(
+                    day.change
+                  )}`}
+                >
+                  {typeof day.change === "number"
+                    ? formatChange(day.change)
+                    : "…"}
+                </td>
+
+                <td className="px-4 py-3 text-right text-[var(--text-light)]">
+                  {typeof day.volume === "number"
                     ? `$${(day.volume / 1e9).toFixed(1)}B`
-                    : '…'}
+                    : "…"}
                 </td>
               </tr>
             ))}

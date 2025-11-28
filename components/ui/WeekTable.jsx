@@ -1,11 +1,11 @@
 "use client";
 
+import { Info, Trash2 } from "lucide-react";
 import dayjs from "dayjs";
 
 /**
- * 📅 WeekTable
- * Zelfde look & feel als DayTable, maar gegroepeerd per week.
- * Toont altijd een tabel; bij geen data een nette lege rij.
+ * 📅 WeekTable — PRO Style 2.2
+ * Zelfde styling als DayTable, maar gegroepeerd per week.
  */
 export default function WeekTable({ data = [], onRemove }) {
   const groups = groupByWeek(data);
@@ -13,7 +13,10 @@ export default function WeekTable({ data = [], onRemove }) {
   const renderHeader = () => (
     <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
       <tr className="border-b border-[var(--card-border)]">
-        <th className="px-4 py-3 text-left font-semibold">Indicator</th>
+        <th className="px-4 py-3 text-left font-semibold flex items-center gap-2">
+          <Info className="w-4 h-4" />
+          Indicator
+        </th>
         <th className="px-4 py-3 text-center font-semibold">Waarde</th>
         <th className="px-4 py-3 text-center font-semibold">Score</th>
         <th className="px-4 py-3 text-center font-semibold">Advies</th>
@@ -25,29 +28,13 @@ export default function WeekTable({ data = [], onRemove }) {
     </thead>
   );
 
-  // 🧱 Geen groepen → toch een lege tabel tonen
+  // ❌ Geen weekgroepen → lege PRO-card tonen
   if (!groups || groups.length === 0) {
     const colSpan = onRemove ? 6 : 5;
 
     return (
-      <div
-        className="
-          bg-white
-          border border-[var(--card-border)]
-          rounded-xl
-          shadow-sm
-          overflow-hidden
-        "
-      >
-        <div
-          className="
-            px-4 py-3
-            bg-gray-50
-            border-b border-[var(--card-border)]
-            font-semibold
-            text-[var(--text-dark)]
-          "
-        >
+      <div className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3 bg-gray-50 border-b border-[var(--card-border)] font-semibold text-[var(--text-dark)]">
           📆 Weekdata
         </div>
 
@@ -68,38 +55,26 @@ export default function WeekTable({ data = [], onRemove }) {
     );
   }
 
-  // ✅ Wel groepen → per week een blok met tabel
+  // ✅ Wel weekgroepen → meerdere PRO-cards onder elkaar
   return (
     <div className="space-y-8 w-full">
-      {groups.map((group, gIdx) => (
+      {groups.map((group, idx) => (
         <div
-          key={gIdx}
-          className="
-            bg-white
-            border border-[var(--card-border)]
-            rounded-xl
-            shadow-sm
-            overflow-hidden
-          "
+          key={idx}
+          className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden"
         >
-          <div
-            className="
-              px-4 py-3
-              bg-gray-50
-              border-b border-[var(--card-border)]
-              font-semibold
-              text-[var(--text-dark)]
-            "
-          >
+          {/* Week label */}
+          <div className="px-4 py-3 bg-gray-50 border-b border-[var(--card-border)] font-semibold text-[var(--text-dark)]">
             📆 {group.label}
           </div>
 
+          {/* Tabel */}
           <table className="w-full text-sm">
             {renderHeader()}
             <tbody>
-              {group.items.map((item, idx) => (
+              {group.items.map((item, rowIdx) => (
                 <WeekRow
-                  key={`${gIdx}-${idx}`}
+                  key={`${idx}-${rowIdx}`}
                   item={item}
                   onRemove={onRemove}
                 />
@@ -113,11 +88,11 @@ export default function WeekTable({ data = [], onRemove }) {
 }
 
 /* =====================================================
-   ROW COMPONENT (vergelijkbaar met DayTable-row)
+   ROW COMPONENT (zelfde stijl als DayTable-row)
 ===================================================== */
 function WeekRow({ item, onRemove }) {
   const {
-    name = "–",
+    name,
     indicator,
     value = "–",
     score = null,
@@ -128,44 +103,58 @@ function WeekRow({ item, onRemove }) {
   const displayName = name || indicator || "–";
 
   const getScoreColor = (score) => {
-  const n = typeof score === "number" ? score : Number(score);
-  if (isNaN(n)) return "text-[var(--text-light)]";
+    const n = typeof score === "number" ? score : Number(score);
+    if (isNaN(n)) return "text-[var(--text-light)]";
 
-  if (n >= 80) return "score-strong-buy";   // 🌟 var(--score-strong-buy)
-  if (n >= 60) return "score-buy";          // 🌟 var(--score-buy)
-  if (n >= 40) return "score-neutral";      // 🌟 var(--score-neutral)
-  if (n >= 20) return "score-sell";         // 🌟 var(--score-sell)
-  return "score-strong-sell";               // 🌟 var(--score-strong-sell)
-};
+    if (n >= 80) return "score-strong-buy";
+    if (n >= 60) return "score-buy";
+    if (n >= 40) return "score-neutral";
+    if (n >= 20) return "score-sell";
+    return "score-strong-sell";
+  };
 
   const displayScore =
-    score !== null && !isNaN(Number(score)) ? Math.round(Number(score)) : "–";
+    score !== null && !isNaN(Number(score))
+      ? Math.round(Number(score))
+      : "–";
 
   return (
     <tr className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition">
-      <td className="p-3 font-medium text-[var(--text-dark)] whitespace-nowrap">
-        {displayName}
+      <td className="px-4 py-3 font-medium text-[var(--text-dark)] whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-[var(--text-light)]" />
+          {displayName}
+        </div>
       </td>
-      <td className="p-3 text-center text-[var(--text-dark)]">{value}</td>
+
+      <td className="px-4 py-3 text-center text-[var(--text-dark)]">
+        {value}
+      </td>
+
       <td
-        className={`p-3 text-center font-semibold ${getScoreColor(score)}`}
+        className={`px-4 py-3 text-center font-semibold ${getScoreColor(
+          score
+        )}`}
       >
         {displayScore}
       </td>
-      <td className="p-3 text-center italic text-[var(--text-light)]">
+
+      <td className="px-4 py-3 text-center italic text-[var(--text-light)]">
         {action || "–"}
       </td>
-      <td className="p-3 text-center italic text-[var(--text-light)]">
+
+      <td className="px-4 py-3 text-[var(--text-light)]">
         {interpretation || "–"}
       </td>
+
       {onRemove && (
-        <td className="p-3 text-center">
+        <td className="px-4 py-3 text-center">
           <button
             onClick={() => onRemove?.(displayName)}
-            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            className="inline-flex items-center justify-center p-1.5 rounded-md bg-red-500 text-white hover:bg-red-600 transition"
             title={`Verwijder ${displayName}`}
           >
-            ❌
+            <Trash2 className="w-4 h-4" />
           </button>
         </td>
       )}
@@ -174,7 +163,7 @@ function WeekRow({ item, onRemove }) {
 }
 
 /* =====================================================
-   WEEK GROUPING (in dit bestand)
+   WEEK GROUPING (PRO versie)
 ===================================================== */
 function groupByWeek(items) {
   if (!Array.isArray(items)) return [];
@@ -187,13 +176,16 @@ function groupByWeek(items) {
 
     const d = dayjs(ts);
     const year = d.year();
-    const week = d.week?.() || d.isoWeek?.() || d.dayOfYear(); // fallback
 
-    const key = `${year}-W${week}`;
+    // Probereon: ISO weeknummer
+    const isoWeek =
+      d.isoWeek?.() || d.week?.() || d.weekday?.() || d.dayOfYear();
+
+    const key = `${year}-W${isoWeek}`;
 
     if (!groups[key]) {
       groups[key] = {
-        label: `Week ${week} – ${year}`,
+        label: `Week ${isoWeek} – ${year}`,
         items: [],
       };
     }

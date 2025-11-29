@@ -4,12 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Info,
   Pencil,
-  MinusCircle,
   Target,
   Tag,
   Star,
   StarOff,
-  TrendingUp,
 } from "lucide-react";
 
 export default function StrategyFormManual({
@@ -18,7 +16,7 @@ export default function StrategyFormManual({
   strategies = [],
   initialData = null,
   mode = "create",
-  hideSubmit = false, // modal gebruikt eigen knop
+  hideSubmit = false,
 }) {
   /* ===========================================================
      FORM STATE
@@ -78,7 +76,6 @@ export default function StrategyFormManual({
         symbol: selected?.symbol || "",
         timeframe: selected?.timeframe || "",
       }));
-
       return;
     }
 
@@ -92,7 +89,7 @@ export default function StrategyFormManual({
   };
 
   /* ===========================================================
-     SUBMIT HANDLER
+     SUBMIT
   =========================================================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -166,7 +163,7 @@ export default function StrategyFormManual({
     saving || !form.setup_id || !form.entry || !form.target || !form.stop_loss;
 
   /* ===========================================================
-     UI — Fintech PRO 6.0
+     UI — Fintech PRO 6.0 + btn-primary
   =========================================================== */
   return (
     <form
@@ -196,7 +193,9 @@ export default function StrategyFormManual({
 
       {/* Setup-select */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Koppel aan Setup</label>
+        <label className="block text-sm font-semibold mb-1">
+          Koppel aan Setup
+        </label>
         <select
           name="setup_id"
           value={form.setup_id}
@@ -249,7 +248,9 @@ export default function StrategyFormManual({
 
       {/* Entry */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Entry prijs (€)</label>
+        <label className="block text-sm font-semibold mb-1">
+          Entry prijs (€)
+        </label>
         <input
           name="entry"
           type="number"
@@ -265,7 +266,9 @@ export default function StrategyFormManual({
 
       {/* Target */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Target prijs (€)</label>
+        <label className="block text-sm font-semibold mb-1">
+          Target prijs (€)
+        </label>
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-gray-400" />
           <input
@@ -284,7 +287,9 @@ export default function StrategyFormManual({
 
       {/* Stop-loss */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Stop-loss (€)</label>
+        <label className="block text-sm font-semibold mb-1">
+          Stop-loss (€)
+        </label>
         <input
           name="stop_loss"
           type="number"
@@ -300,7 +305,9 @@ export default function StrategyFormManual({
 
       {/* Uitleg */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Uitleg / notities</label>
+        <label className="block text-sm font-semibold mb-1">
+          Uitleg / notities
+        </label>
         <textarea
           name="explanation"
           rows={3}
@@ -346,13 +353,13 @@ export default function StrategyFormManual({
             <Star className="w-4 h-4" /> Favoriet
           </span>
         ) : (
-          <span className="flex items-center gap-1">
-            <StarOff className="w-4 h-4 text-gray-500" /> Geen favoriet
+          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+            <StarOff className="w-4 h-4" /> Geen favoriet
           </span>
         )}
       </label>
 
-      {/* Errors */}
+      {/* Error */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {/* Submit */}
@@ -360,18 +367,15 @@ export default function StrategyFormManual({
         <button
           type="submit"
           disabled={disabled}
-          className="
-            w-full mt-4
-            bg-purple-600 hover:bg-purple-700
-            disabled:bg-purple-300 disabled:cursor-not-allowed
-            text-white font-semibold
-            p-3 rounded-xl shadow-md
-          "
+          className={`btn-primary w-full mt-4 ${
+            disabled ? "opacity-60 cursor-not-allowed" : ""
+          }`}
         >
           {saving ? "⏳ Opslaan..." : "Strategie opslaan"}
         </button>
       )}
 
+      {/* Modal submit */}
       {hideSubmit && (
         <button id="strategy-edit-submit" type="submit" className="hidden">
           Submit

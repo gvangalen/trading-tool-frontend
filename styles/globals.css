@@ -227,6 +227,110 @@
 }
 
 /* ===========================================
+   BUTTONS — SECONDARY (licht, subtiel)
+=========================================== */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-md);
+
+  background: var(--surface-2);
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+
+  font-weight: 500;
+  transition: background var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-3);
+  transform: translateY(-1px);
+}
+
+/* ===========================================
+   BUTTONS — OUTLINE
+=========================================== */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-md);
+
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+
+  font-weight: 600;
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.btn-outline:hover {
+  background: var(--primary-soft);
+  transform: translateY(-1px);
+}
+
+/* ===========================================
+   BUTTONS — GHOST (minimal)
+=========================================== */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+
+  background: transparent;
+  color: var(--text-dark);
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.btn-ghost:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.dark .btn-ghost:hover {
+  background: rgba(255,255,255,0.10);
+}
+
+/* ===========================================
+   BUTTONS — DANGER
+=========================================== */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  padding: 0.7rem 1.6rem;
+  border-radius: var(--radius-md);
+
+  background-color: #dc2626;
+  color: #fff;
+
+  font-weight: 600;
+  transition: background var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* ===========================================
    INPUTS / TEXTAREAS / SELECTS
 =========================================== */
 .input,

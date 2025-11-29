@@ -1,216 +1,129 @@
 "use client";
 
-import React from "react";
-import CardWrapper from "./CardWrapper";
+import { Info, Trash2 } from "lucide-react";
 
-// Lucide icons – consistent PRO style
-import {
-  AlertCircle,
-  Trash2,
-  Info,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-} from "lucide-react";
+/**
+ * 📅 DayTable — PRO 2.3
+ * - uniforme stijl
+ * - delete-knop alleen zichtbaar als onRemove is meegegeven
+ */
+export default function DayTable({
+  title = null,
+  icon = null,
+  data = [],
+  onRemove = null, // ❗ bepaalt of delete-knop zichtbaar is
+}) {
+  const hasRemove = typeof onRemove === "function";
 
-/* -------------------------------------------------------
-   SAFE HELPERS → voorkomen crashes op undefined / objects
-------------------------------------------------------- */
-const safeValue = (v) => {
-  if (v === null || v === undefined) return "–";
-  if (typeof v === "number")
-    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (typeof v === "string") return v;
-  return "–";
-};
+  /* ------------ Header ------------- */
+  const renderHeader = () => (
+    <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
+      <tr className="border-b border-[var(--card-border)]">
+        <th className="px-4 py-3 text-left font-semibold flex items-center gap-2">
+          <Info className="w-4 h-4" /> Indicator
+        </th>
+        <th className="px-4 py-3 text-center font-semibold">Waarde</th>
+        <th className="px-4 py-3 text-center font-semibold">Score</th>
+        <th className="px-4 py-3 text-center font-semibold">Advies</th>
+        <th className="px-4 py-3 text-left font-semibold">Uitleg</th>
 
-const safeScore = (score) => {
-  if (typeof score === "number") return score;
-  if (typeof score === "object" && score !== null) {
-    if (typeof score.value === "number") return score.value;
+        {hasRemove && (
+          <th className="px-4 py-3 text-center font-semibold">Actie</th>
+        )}
+      </tr>
+    </thead>
+  );
+
+  /* ------------ Geen data fallback ------------- */
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <div className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
+        {title && (
+          <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-[var(--text-dark)] flex items-center gap-2">
+            {icon} {title}
+          </div>
+        )}
+
+        <div className="p-4 text-center text-[var(--text-light)] italic">
+          Geen data beschikbaar.
+        </div>
+      </div>
+    );
   }
-  return null;
-};
-
-const safeText = (v) =>
-  v && String(v).trim().length > 0 ? String(v) : "–";
-
-const scoreColorClass = (scoreValue) => {
-  if (typeof scoreValue !== "number")
-    return "text-[var(--text-light)]";
-
-  if (scoreValue >= 75) return "text-green-600";
-  if (scoreValue >= 50) return "text-yellow-500";
-  return "text-red-500";
-};
-
-export default function DayTable({ title, icon, data = [], onRemove }) {
-  const rows = Array.isArray(data) ? data : [];
 
   return (
-    <CardWrapper
-      title={
-        title ? (
-          <div className="flex items-center gap-2">
-            {icon && <span>{icon}</span>}
-            <span>{title}</span>
-          </div>
-        ) : null
-      }
-    >
-      <div className="overflow-x-auto mt-2">
-        <table className="w-full text-sm">
-          {/* -------------------- HEADER -------------------- */}
-          <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
-            <tr className="border-b border-[var(--card-border)]">
-              <th className="px-4 py-3 text-left font-semibold">
-                Indicator
-              </th>
-              <th className="px-4 py-3 text-center font-semibold">
-                Waarde
-              </th>
-              <th className="px-4 py-3 text-center font-semibold">
-                Score
-              </th>
-              <th className="px-4 py-3 text-center font-semibold">
-                Advies
-              </th>
-              <th className="px-4 py-3 text-left font-semibold">
-                Uitleg
-              </th>
-              {onRemove && (
-                <th className="px-4 py-3 text-center font-semibold">
-                  Actie
-                </th>
-              )}
-            </tr>
-          </thead>
+    <div className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
+      {title && (
+        <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-[var(--text-dark)] flex items-center gap-2">
+          {icon} {title}
+        </div>
+      )}
 
-          {/* -------------------- BODY -------------------- */}
-          <tbody>
-            {/* Geen data */}
-            {rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={onRemove ? 6 : 5}
-                  className="px-4 py-6 text-center text-[var(--text-light)]"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Geen indicatoren gevonden.</span>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              rows.map((row, idx) => {
-                const name =
-                  row.display_name ||
-                  row.name ||
-                  row.indicator ||
-                  "–";
+      <table className="w-full text-sm">
+        {renderHeader()}
+        <tbody>
+          {data.map((item, idx) => (
+            <DayRow key={idx} item={item} onRemove={onRemove} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-                const rawValue =
-                  row.value ??
-                  row.waarde ??
-                  row.current ??
-                  row.latest_value ??
-                  null;
+/* =====================================================
+   ROW COMPONENT
+===================================================== */
+function DayRow({ item, onRemove }) {
+  const { name, indicator, value = "–", score, action, interpretation } = item;
 
-                const scoreValue = safeScore(
-                  row.score ?? row.score_value
-                );
+  const displayName = name || indicator || "–";
 
-                const scoreClass = scoreColorClass(scoreValue);
+  const getScoreColor = (num) => {
+    const n = Number(num);
+    if (isNaN(n)) return "text-[var(--text-light)]";
 
-                const advice =
-                  row.advice ??
-                  row.advies ??
-                  row.action ??
-                  row.score?.advies ??
-                  null;
+    if (n >= 80) return "score-strong-buy";
+    if (n >= 60) return "score-buy";
+    if (n >= 40) return "score-neutral";
+    if (n >= 20) return "score-sell";
+    return "score-strong-sell";
+  };
 
-                const explanation =
-                  row.interpretation ??
-                  row.uitleg ??
-                  row.score?.interpretation ??
-                  "";
+  return (
+    <tr className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition">
+      <td className="px-4 py-3 font-medium text-[var(--text-dark)] whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-[var(--text-light)]" />
+          {displayName}
+        </div>
+      </td>
 
-                // trend icon (indien aanwezig)
-                const trend = row.trend ?? row.score?.trend ?? null;
-                let TrendIcon = Minus;
-                let trendClass = "text-gray-500";
+      <td className="px-4 py-3 text-center">{value}</td>
 
-                if (trend === "Up") {
-                  TrendIcon = TrendingUp;
-                  trendClass = "text-green-600";
-                } else if (trend === "Down") {
-                  TrendIcon = TrendingDown;
-                  trendClass = "text-red-600";
-                }
+      <td className={`px-4 py-3 text-center font-semibold ${getScoreColor(score)}`}>
+        {score ?? "–"}
+      </td>
 
-                return (
-                  <tr
-                    key={`${name}-${idx}`}
-                    className="border-b border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition-colors"
-                  >
-                    {/* Indicator */}
-                    <td className="px-4 py-3 font-medium text-[var(--text-dark)] whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Info className="w-4 h-4 text-[var(--text-light)]" />
-                        {safeText(name)}
-                      </div>
-                    </td>
+      <td className="px-4 py-3 text-center italic text-[var(--text-light)]">
+        {action || "–"}
+      </td>
 
-                    {/* Waarde */}
-                    <td className="px-4 py-3 text-center">
-                      {safeValue(rawValue)}
-                    </td>
+      <td className="px-4 py-3 text-[var(--text-light)]">
+        {interpretation || "–"}
+      </td>
 
-                    {/* Score */}
-                    <td
-                      className={`px-4 py-3 text-center font-semibold ${scoreClass}`}
-                    >
-                      {scoreValue !== null ? scoreValue : "–"}
-                    </td>
-
-                    {/* Advies */}
-                    <td className="px-4 py-3 text-center text-[var(--text-dark)]">
-                      {safeText(advice)}
-                    </td>
-
-                    {/* Uitleg */}
-                    <td className="px-4 py-3 text-[var(--text-light)] leading-relaxed">
-                      {safeText(explanation)}
-                    </td>
-
-                    {/* Verwijderen */}
-                    {onRemove && (
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            name && onRemove(name)
-                          }
-                          className="
-                            inline-flex items-center justify-center
-                            p-1.5 rounded-md
-                            bg-red-500 text-white
-                            hover:bg-red-600
-                            transition-colors
-                          "
-                          title={`Verwijder ${name}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-    </CardWrapper>
+      {/* Delete button */}
+      {onRemove && (
+        <td className="px-4 py-3 text-center">
+          <button
+            onClick={() => onRemove(displayName)}
+            className="p-1.5 rounded bg-red-500 text-white hover:bg-red-600 transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </td>
+      )}
+    </tr>
   );
 }

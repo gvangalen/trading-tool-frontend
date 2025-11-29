@@ -1,52 +1,61 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from "react";
+import {
+  Info,
+  Pencil,
+  MinusCircle,
+  Target,
+  Tag,
+  Star,
+  StarOff,
+  TrendingUp,
+} from "lucide-react";
 
 export default function StrategyFormManual({
   onSubmit,
   setups = [],
   strategies = [],
   initialData = null,
-  mode = 'create',       // "create" | "edit"
-  hideSubmit = false     // gebruikt in StrategyEditModal
+  mode = "create",
+  hideSubmit = false, // modal gebruikt eigen knop
 }) {
-  // ---------------------------
-  // 🌱 Form state
-  // ---------------------------
+  /* ===========================================================
+     FORM STATE
+  =========================================================== */
   const [form, setForm] = useState({
-    setup_id: initialData?.setup_id || '',
-    symbol: initialData?.symbol || '',
-    timeframe: initialData?.timeframe || '',
-    entry: initialData?.entry || '',
+    setup_id: initialData?.setup_id || "",
+    symbol: initialData?.symbol || "",
+    timeframe: initialData?.timeframe || "",
+    entry: initialData?.entry || "",
     target:
       Array.isArray(initialData?.targets) && initialData.targets.length > 0
         ? initialData.targets[0]
-        : '',
-    stop_loss: initialData?.stop_loss || '',
-    explanation: initialData?.explanation || '',
-    tags: initialData?.tags?.join(', ') || '',
+        : "",
+    stop_loss: initialData?.stop_loss || "",
+    explanation: initialData?.explanation || "",
+    tags: initialData?.tags?.join(", ") || "",
     favorite: initialData?.favorite || false,
   });
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // ---------------------------
-  // 🔍 Alleen setups van type "manual" zonder bestaande manual strategy
-  // ---------------------------
+  /* ===========================================================
+     FILTER: Alleen manual setups (en geen bestaande strategie)
+  =========================================================== */
   const filteredSetups = useMemo(() => {
     return setups.filter((s) => {
-      if (s.strategy_type?.toLowerCase() !== 'manual') return false;
+      if (s.strategy_type?.toLowerCase() !== "manual") return false;
 
       const already = strategies.some(
         (st) =>
           String(st.setup_id) === String(s.id) &&
-          String(st.strategy_type).toLowerCase() === 'manual'
+          String(st.strategy_type).toLowerCase() === "manual"
       );
 
-      // In EDIT mode mag de huidige setup wél blijven staan
-      if (mode === 'edit' && String(s.id) === String(initialData?.setup_id)) {
+      if (mode === "edit" && String(s.id) === String(initialData?.setup_id)) {
         return true;
       }
 
@@ -54,20 +63,20 @@ export default function StrategyFormManual({
     });
   }, [setups, strategies, mode, initialData]);
 
-  // ---------------------------
-  // 📝 Change handler
-  // ---------------------------
+  /* ===========================================================
+     CHANGE HANDLER
+  =========================================================== */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (name === 'setup_id') {
+    if (name === "setup_id") {
       const selected = filteredSetups.find((s) => String(s.id) === String(value));
 
       setForm((prev) => ({
         ...prev,
         setup_id: value,
-        symbol: selected?.symbol || '',
-        timeframe: selected?.timeframe || '',
+        symbol: selected?.symbol || "",
+        timeframe: selected?.timeframe || "",
       }));
 
       return;
@@ -75,38 +84,34 @@ export default function StrategyFormManual({
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
-    setError('');
+    setError("");
     setSuccess(false);
   };
 
-  // ---------------------------
-  // 💾 Submit handler
-  // ---------------------------
+  /* ===========================================================
+     SUBMIT HANDLER
+  =========================================================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setSuccess(false);
 
-    if (!form.setup_id) {
-      setError('⚠️ Kies een setup.');
-      return;
-    }
+    if (!form.setup_id) return setError("⚠️ Kies een setup.");
 
     const entry = parseFloat(form.entry);
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
 
     if ([entry, target, stop_loss].some((v) => Number.isNaN(v))) {
-      setError('⚠️ Entry, target en stop-loss moeten geldige getallen zijn.');
-      return;
+      return setError("⚠️ Entry, target en stop-loss moeten geldige getallen zijn.");
     }
 
     const tags =
       form.tags
-        ?.split(',')
+        ?.split(",")
         .map((t) => t.trim())
         .filter(Boolean) || [];
 
@@ -119,14 +124,14 @@ export default function StrategyFormManual({
       setup_name: setupObj?.name || initialData?.setup_name,
       symbol: form.symbol,
       timeframe: form.timeframe,
-      strategy_type: 'manual',
+      strategy_type: "manual",
       entry,
       targets: [target],
       stop_loss,
       explanation: form.explanation.trim(),
       tags,
       favorite: form.favorite,
-      origin: 'Handmatig',
+      origin: "Handmatig",
     };
 
     try {
@@ -134,66 +139,75 @@ export default function StrategyFormManual({
       await onSubmit(payload);
       setSuccess(true);
 
-      if (mode === 'create') {
+      if (mode === "create") {
         setForm({
-          setup_id: '',
-          symbol: '',
-          timeframe: '',
-          entry: '',
-          target: '',
-          stop_loss: '',
-          explanation: '',
-          tags: '',
+          setup_id: "",
+          symbol: "",
+          timeframe: "",
+          entry: "",
+          target: "",
+          stop_loss: "",
+          explanation: "",
+          tags: "",
           favorite: false,
         });
       }
 
       setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      console.error('❌ Error saving manual strategy:', err);
-      setError('❌ Opslaan mislukt.');
+      console.error("❌ Error saving manual strategy:", err);
+      setError("❌ Opslaan mislukt.");
     } finally {
       setSaving(false);
     }
   };
 
   const disabled =
-    saving ||
-    !form.setup_id ||
-    !form.entry ||
-    !form.target ||
-    !form.stop_loss;
+    saving || !form.setup_id || !form.entry || !form.target || !form.stop_loss;
 
-  // ---------------------------
-  // UI
-  // ---------------------------
+  /* ===========================================================
+     UI — Fintech PRO 6.0
+  =========================================================== */
   return (
     <form
       onSubmit={handleSubmit}
       className="
-        space-y-4 bg-white dark:bg-gray-800 
-        p-6 rounded-xl shadow-md 
-        max-w-xl mx-auto
+        w-full max-w-2xl mx-auto
+        p-6 sm:p-8 space-y-6
+        rounded-2xl shadow-xl border
+        bg-white dark:bg-[#0f0f0f]
+        border-gray-200 dark:border-gray-800
       "
     >
-      <h3 className="text-xl font-bold mb-2">
-        ✍️ {mode === 'edit' ? 'Handmatige strategie bewerken' : 'Nieuwe Handmatige Strategie'}
+      {/* Titel */}
+      <h3 className="text-xl font-bold flex items-center gap-2 text-[var(--text-dark)]">
+        <Pencil className="w-5 h-5 text-purple-600" />
+        {mode === "edit"
+          ? "Handmatige strategie bewerken"
+          : "Nieuwe Handmatige Strategie"}
       </h3>
 
+      {/* Success */}
       {success && (
-        <p className="text-green-600 text-sm">✅ Strategie opgeslagen!</p>
+        <div className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border border-green-300 dark:border-green-800 px-4 py-2 rounded-xl text-sm">
+          Strategie opgeslagen!
+        </div>
       )}
 
-      {/* SETUP SELECT */}
-      <label className="block text-sm font-medium">
-        Koppel aan Setup
+      {/* Setup-select */}
+      <div>
+        <label className="block text-sm font-semibold mb-1">Koppel aan Setup</label>
         <select
           name="setup_id"
           value={form.setup_id}
-          disabled={mode === 'edit'}   // tijdens edit NIET wijzigbaar
+          disabled={mode === "edit"}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded bg-white dark:bg-gray-900 disabled:opacity-50"
-          required
+          className="
+            w-full p-3 rounded-xl border
+            bg-gray-50 dark:bg-[#111]
+            border-gray-300 dark:border-gray-700
+            focus:ring-2 focus:ring-purple-500
+          "
         >
           <option value="">-- Kies een setup --</option>
           {filteredSetups.map((s) => (
@@ -202,122 +216,163 @@ export default function StrategyFormManual({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      {/* Symbol + timeframe */}
+      {/* Symbol + Timeframe */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium">Symbol</label>
+          <label className="block text-sm font-semibold mb-1">Symbol</label>
           <input
             value={form.symbol}
             readOnly
-            className="mt-1 w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
+            className="
+              w-full p-3 rounded-xl border
+              bg-gray-100 dark:bg-[#111]
+              border-gray-300 dark:border-gray-700
+            "
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Timeframe</label>
+          <label className="block text-sm font-semibold mb-1">Timeframe</label>
           <input
             value={form.timeframe}
             readOnly
-            className="mt-1 w-full border p-2 rounded bg-gray-100 dark:bg-gray-900"
+            className="
+              w-full p-3 rounded-xl border
+              bg-gray-100 dark:bg-[#111]
+              border-gray-300 dark:border-gray-700
+            "
           />
         </div>
       </div>
 
-      {/* ENTRY */}
-      <label className="block text-sm font-medium">
-        Entry prijs (€)
+      {/* Entry */}
+      <div>
+        <label className="block text-sm font-semibold mb-1">Entry prijs (€)</label>
         <input
           name="entry"
           type="number"
-          step="any"
           value={form.entry}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
+          className="
+            w-full p-3 rounded-xl border
+            bg-white dark:bg-[#111]
+            border-gray-300 dark:border-gray-700
+          "
         />
-      </label>
+      </div>
 
-      {/* TARGET */}
-      <label className="block text-sm font-medium">
-        Target prijs (€)
-        <input
-          name="target"
-          type="number"
-          step="any"
-          value={form.target}
-          onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
-        />
-      </label>
+      {/* Target */}
+      <div>
+        <label className="block text-sm font-semibold mb-1">Target prijs (€)</label>
+        <div className="flex items-center gap-2">
+          <Target className="w-4 h-4 text-gray-400" />
+          <input
+            name="target"
+            type="number"
+            value={form.target}
+            onChange={handleChange}
+            className="
+              w-full p-3 rounded-xl border
+              bg-white dark:bg-[#111]
+              border-gray-300 dark:border-gray-700
+            "
+          />
+        </div>
+      </div>
 
-      {/* STOP LOSS */}
-      <label className="block text-sm font-medium">
-        Stop-loss (€)
+      {/* Stop-loss */}
+      <div>
+        <label className="block text-sm font-semibold mb-1">Stop-loss (€)</label>
         <input
           name="stop_loss"
           type="number"
-          step="any"
           value={form.stop_loss}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
+          className="
+            w-full p-3 rounded-xl border
+            bg-white dark:bg-[#111]
+            border-gray-300 dark:border-gray-700
+          "
         />
-      </label>
+      </div>
 
-      {/* EXPLANATION */}
-      <label className="block text-sm font-medium">
-        Uitleg / notities
+      {/* Uitleg */}
+      <div>
+        <label className="block text-sm font-semibold mb-1">Uitleg / notities</label>
         <textarea
           name="explanation"
           rows={3}
           value={form.explanation}
           onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
+          className="
+            w-full p-3 rounded-xl border
+            bg-white dark:bg-[#111]
+            border-gray-300 dark:border-gray-700
+          "
         />
-      </label>
+      </div>
 
-      {/* TAGS */}
-      <label className="block text-sm font-medium">
-        Tags (komma gescheiden)
-        <input
-          name="tags"
-          type="text"
-          value={form.tags}
-          onChange={handleChange}
-          className="mt-1 w-full border p-2 rounded dark:bg-gray-900"
-        />
-      </label>
+      {/* Tags */}
+      <div>
+        <label className="block text-sm font-semibold mb-1">Tags</label>
+        <div className="flex items-center gap-2">
+          <Tag className="w-4 h-4 text-gray-400" />
+          <input
+            name="tags"
+            type="text"
+            value={form.tags}
+            onChange={handleChange}
+            className="
+              w-full p-3 rounded-xl border
+              bg-white dark:bg-[#111]
+              border-gray-300 dark:border-gray-700
+            "
+          />
+        </div>
+      </div>
 
-      {/* FAVORIET */}
-      <label className="flex items-center gap-2 text-sm">
+      {/* Favoriet */}
+      <label className="flex items-center gap-3 text-sm font-medium mt-2">
         <input
           type="checkbox"
           name="favorite"
           checked={form.favorite}
           onChange={handleChange}
         />
-        ⭐ Favoriet
+        {form.favorite ? (
+          <span className="flex items-center gap-1 text-yellow-600">
+            <Star className="w-4 h-4" /> Favoriet
+          </span>
+        ) : (
+          <span className="flex items-center gap-1">
+            <StarOff className="w-4 h-4 text-gray-500" /> Geen favoriet
+          </span>
+        )}
       </label>
 
-      {/* ERROR */}
+      {/* Errors */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {/* SUBMIT BUTTON */}
+      {/* Submit */}
       {!hideSubmit && (
         <button
           type="submit"
           disabled={disabled}
           className="
-            w-full bg-blue-600 text-white py-2 rounded 
-            hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed
+            w-full mt-4
+            bg-purple-600 hover:bg-purple-700
+            disabled:bg-purple-300 disabled:cursor-not-allowed
+            text-white font-semibold
+            p-3 rounded-xl shadow-md
           "
         >
-          {saving ? '⏳ Opslaan...' : '💾 Strategie opslaan'}
+          {saving ? "⏳ Opslaan..." : "Strategie opslaan"}
         </button>
       )}
 
-      {/* Verborgen knop voor StrategyEditModal */}
-      {hideSubmit && mode === 'edit' && (
+      {hideSubmit && (
         <button id="strategy-edit-submit" type="submit" className="hidden">
           Submit
         </button>

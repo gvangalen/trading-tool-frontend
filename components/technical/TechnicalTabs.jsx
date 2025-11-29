@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// ✅ Correcte paden naar jouw nieuwe tabellen
+// PRO tabellen
 import DayTable from "@/components/ui/DayTable";
 import WeekTable from "@/components/ui/WeekTable";
 import MonthTable from "@/components/ui/MonthTable";
@@ -37,13 +37,18 @@ export default function TechnicalTabs({
 
     switch (activeTab) {
       case "Dag":
+        // 👉 Alleen de Dag-table krijgt een delete-knop
         return <DayTable data={technicalData} onRemove={handleRemove} />;
+
       case "Week":
-        return <WeekTable data={technicalData} onRemove={handleRemove} />;
+        return <WeekTable data={technicalData} />;
+
       case "Maand":
-        return <MonthTable data={technicalData} onRemove={handleRemove} />;
+        return <MonthTable data={technicalData} />;
+
       case "Kwartaal":
-        return <QuarterTable data={technicalData} onRemove={handleRemove} />;
+        return <QuarterTable data={technicalData} />;
+
       default:
         return null;
     }
@@ -69,7 +74,7 @@ export default function TechnicalTabs({
         ))}
       </div>
 
-      {/* 🔹 Tabelcontainer */}
+      {/* 🔹 Tabel */}
       <CardWrapper>
         <div className="p-2">{renderTable()}</div>
       </CardWrapper>

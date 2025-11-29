@@ -13,6 +13,8 @@
 :root {
   /* Brand */
   --primary: #1A47FF;
+  --primary-strong: #1536CC;
+  --primary-soft: #e7ecff;
 
   /* Background (bijna wit) */
   --bg: #F7F9FC;
@@ -52,20 +54,20 @@
   --card-icon-bg: rgba(26, 71, 255, 0.10);
 
   /* ===================================== */
-  /* 👤 Avatar Styling (extra contrast)     */
+  /* 👤 Avatar Styling */
   /* ===================================== */
   --avatar-bg: rgba(26, 71, 255, 0.15);
   --avatar-border: rgba(26, 71, 255, 0.25);
   --avatar-text: #0f172a;
 
   /* ===================================== */
-  /* 🎨 Score Colors — Uniform in dashboard */
+  /* 🎨 Score Colors                       */
   /* ===================================== */
-  --score-strong-buy: #16a34a;   /* green-600 */
-  --score-buy:        #22c55e;   /* green-500 */
-  --score-neutral:    #eab308;   /* yellow-500 */
-  --score-sell:       #ef4444;   /* red-500 */
-  --score-strong-sell:#dc2626;   /* red-600 */
+  --score-strong-buy: #16a34a;
+  --score-buy:        #22c55e;
+  --score-neutral:    #eab308;
+  --score-sell:       #ef4444;
+  --score-strong-sell:#dc2626;
 }
 
 /* ===========================================
@@ -92,7 +94,7 @@
   --avatar-border: rgba(255, 255, 255, 0.18);
   --avatar-text: #E6EDF3;
 
-  /* Score kleuren in dark mode */
+  /* Score kleuren */
   --score-strong-buy: #4ade80;
   --score-buy:        #86efac;
   --score-neutral:    #facc15;
@@ -137,14 +139,51 @@
 }
 
 /* ===========================================
-   SCORE COLOR CLASSES
-   (kan je overal gebruiken)
+   SCORE CLASSES
 =========================================== */
 .score-strong-buy  { color: var(--score-strong-buy); }
 .score-buy         { color: var(--score-buy); }
 .score-neutral     { color: var(--score-neutral); }
 .score-sell        { color: var(--score-sell); }
 .score-strong-sell { color: var(--score-strong-sell); }
+
+/* ===========================================
+   BUTTONS — Globale uniforme primary button
+=========================================== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  padding: 0.7rem 1.6rem;
+  border-radius: 0.75rem;
+
+  font-weight: 600;
+  font-size: 0.95rem;
+
+  background-color: var(--primary);
+  color: #fff;
+
+  box-shadow: 0 10px 25px rgba(26, 71, 255, 0.25);
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(26, 71, 255, 0.35);
+}
+
+.btn-primary:disabled {
+  background-color: rgba(26, 71, 255, 0.45);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
 
 /* ===========================================
    Animations

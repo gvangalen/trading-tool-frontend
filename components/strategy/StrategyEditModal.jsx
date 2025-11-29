@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-// Formulieren
+// Forms
 import StrategyFormTrading from "@/components/strategy/StrategyFormTrading";
 import StrategyFormDCA from "@/components/strategy/StrategyFormDCA";
 import StrategyFormManual from "@/components/strategy/StrategyFormManual";
@@ -10,7 +10,7 @@ import StrategyFormManual from "@/components/strategy/StrategyFormManual";
 // API
 import { updateStrategy } from "@/lib/api/strategy";
 
-// Icons (Lucide)
+// Icons
 import { X, Save, Pencil } from "lucide-react";
 
 export default function StrategyEditModal({
@@ -19,7 +19,7 @@ export default function StrategyEditModal({
   strategy,
   reload,
 }) {
-  // Escape → sluit modal
+  // Escape sluit modal
   useEffect(() => {
     const esc = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", esc);
@@ -79,19 +79,19 @@ export default function StrategyEditModal({
   })();
 
   /* ===========================================================
-     UI – Fintech PRO Modal
+     UI — Fintech PRO 6.0 Modal
   =========================================================== */
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-      
+
       {/* Modal container */}
       <div
         className="
           w-full max-w-2xl max-h-[92vh]
           overflow-y-auto
           rounded-2xl 
-          bg-white dark:bg-[#0d0d0d]
-          border border-gray-200 dark:border-gray-800 
+          bg-[var(--card-bg)] dark:bg-[var(--card-bg)]
+          border border-[var(--card-border)]
           shadow-2xl
           relative px-6 sm:px-10 py-8
         "
@@ -122,14 +122,15 @@ export default function StrategyEditModal({
 
         {/* FOOTER BUTTONS */}
         <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-300 dark:border-gray-800">
-          
-          {/* Annuleren */}
+
+          {/* Cancel */}
           <button
             onClick={onClose}
             className="
               px-5 py-2.5 rounded-xl
-              bg-gray-200 hover:bg-gray-300
+              bg-gray-100 hover:bg-gray-200
               dark:bg-gray-800 dark:hover:bg-gray-700
+              border border-gray-300 dark:border-gray-700
               text-gray-800 dark:text-gray-100
               font-medium shadow-sm
               transition-all
@@ -138,14 +139,14 @@ export default function StrategyEditModal({
             Annuleren
           </button>
 
-          {/* Opslaan */}
+          {/* Save */}
           <button
             onClick={() =>
-              document.querySelector("#strategy-edit-submit")?.click()
+              document.querySelector('#strategy-edit-submit')?.click()
             }
             className="
               px-6 py-2.5 rounded-xl
-              bg-blue-600 hover:bg-blue-700 
+              bg-[var(--primary)] hover:brightness-90
               text-white font-semibold 
               shadow-md flex items-center gap-2
               transition-all

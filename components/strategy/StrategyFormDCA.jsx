@@ -19,7 +19,7 @@ export default function StrategyFormDCA({
   setups = [],
   initialData = null,
   mode = "create",
-  hideSubmit = false, // modal gebruikt eigen save knop
+  hideSubmit = false,
 }) {
   const { loadSetups } = useSetupData();
 
@@ -42,14 +42,14 @@ export default function StrategyFormDCA({
   }, []);
 
   /* ==========================================================
-     🔎 FILTER: alleen DCA setups
+     FILTER: alleen DCA setups
   ========================================================== */
   const availableSetups = setups.filter(
     (s) => s.strategy_type?.toLowerCase() === "dca"
   );
 
   /* ==========================================================
-     Change handler
+     CHANGE HANDLER
   ========================================================== */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -86,13 +86,13 @@ export default function StrategyFormDCA({
   };
 
   /* ==========================================================
-     Validatie
+     VALIDATIE
   ========================================================== */
   const isFormValid = () =>
     form.setup_id && Number(form.amount) > 0 && form.frequency;
 
   /* ==========================================================
-     Submit
+     SUBMIT
   ========================================================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -144,7 +144,7 @@ export default function StrategyFormDCA({
   const valid = isFormValid();
 
   /* ==========================================================
-     UI — FINTECH PRO 6.0
+     UI — Fintech PRO 6.0 + btn-primary
   ========================================================== */
   return (
     <form
@@ -164,7 +164,7 @@ export default function StrategyFormDCA({
         {mode === "edit" ? "DCA-strategie bewerken" : "Nieuwe DCA-strategie"}
       </h2>
 
-      {/* SETUP */}
+      {/* SETUP SELECT */}
       <div>
         <label className="block font-semibold text-sm mb-1 flex items-center gap-2">
           <Info className="w-4 h-4 text-gray-400" />
@@ -198,7 +198,7 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
-      {/* GRID: SYMBOL + TIMEFRAME */}
+      {/* SYMBOL + TIMEFRAME */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold mb-1 flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function StrategyFormDCA({
         </div>
       </div>
 
-      {/* Amount */}
+      {/* AMOUNT */}
       <div>
         <label className="block text-sm font-semibold mb-1 flex items-center gap-2">
           <Coins className="w-4 h-4 text-gray-400" />
@@ -253,7 +253,7 @@ export default function StrategyFormDCA({
         />
       </div>
 
-      {/* Frequency */}
+      {/* FREQUENCY */}
       <div>
         <label className="block text-sm font-semibold mb-1 flex items-center gap-2">
           <Calendar className="w-4 h-4 text-gray-400" />
@@ -275,7 +275,7 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
-      {/* Rules */}
+      {/* RULES */}
       <div>
         <label className="block text-sm font-semibold mb-1 flex items-center gap-2">
           <ClipboardList className="w-4 h-4 text-gray-400" />
@@ -295,7 +295,7 @@ export default function StrategyFormDCA({
         />
       </div>
 
-      {/* Tags */}
+      {/* TAGS */}
       <div>
         <label className="block text-sm font-semibold mb-1 flex items-center gap-2">
           <Tag className="w-4 h-4 text-gray-400" />
@@ -314,7 +314,7 @@ export default function StrategyFormDCA({
         />
       </div>
 
-      {/* Favorite */}
+      {/* FAVORIET */}
       <label className="flex items-center gap-3 text-sm font-medium mt-2">
         <input
           type="checkbox"
@@ -327,33 +327,29 @@ export default function StrategyFormDCA({
             <Star className="w-4 h-4" /> Favoriet
           </span>
         ) : (
-          <span className="flex items-center gap-1">
-            <StarOff className="w-4 h-4 text-gray-500" /> Geen favoriet
+          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+            <StarOff className="w-4 h-4" /> Geen favoriet
           </span>
         )}
       </label>
 
-      {/* Error */}
+      {/* ERROR */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {/* Submit — alleen in create */}
+      {/* SUBMIT KNOP */}
       {!hideSubmit && mode === "create" && (
         <button
           type="submit"
           disabled={!valid}
-          className="
-            w-full mt-4
-            bg-blue-600 hover:bg-blue-700
-            text-white font-semibold
-            p-3 rounded-xl shadow-md
-            disabled:bg-blue-300 disabled:cursor-not-allowed
-          "
+          className={`btn-primary w-full mt-4 ${
+            !valid ? "opacity-60 cursor-not-allowed" : ""
+          }`}
         >
-          💾 DCA-strategie opslaan
+          DCA-strategie opslaan
         </button>
       )}
 
-      {/* Verborgen submit voor modal */}
+      {/* Verborgen submit knop voor modal */}
       {hideSubmit && mode === "edit" && (
         <button id="strategy-edit-submit" type="submit" className="hidden">
           submit

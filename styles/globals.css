@@ -1,6 +1,6 @@
 /* ===========================================
-   GLOBAL THEME – Grip Theme PRO 2.2
-   Sidebar & Topbar = WIT + zacht blauw achtergrond
+   GLOBAL THEME – Grip Theme PRO 3.0
+   Sidebar & Topbar = WIT + zacht blauw
 =========================================== */
 
 @tailwind base;
@@ -13,20 +13,40 @@
 :root {
   /* Brand */
   --primary: #1A47FF;
+  --primary-light: #4B6BFF;
   --primary-strong: #1536CC;
   --primary-soft: #e7ecff;
 
-  /* Background (bijna wit) */
+  /* Background */
   --bg: #F7F9FC;
   --bg-soft: #FAFBFF;
 
   /* Text */
   --text-dark: #0f172a;
   --text-light: #475569;
+  --text-muted: #64748b;
 
-  /* ===================================== */
-  /*  🔵 SIDEBAR & TOPBAR → WIT            */
-  /* ===================================== */
+  /* Surfaces */
+  --surface-1: #ffffff;
+  --surface-2: #F1F5FB;
+  --surface-3: #E6EDF5;
+
+  /* Borders */
+  --border: rgba(0, 0, 0, 0.08);
+
+  /* Radius */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+  /* Sidebar */
   --sidebar-bg: #ffffff;
   --sidebar-border: rgba(0, 0, 0, 0.08);
   --sidebar-text: #0f172a;
@@ -34,6 +54,7 @@
   --sidebar-hover: rgba(0, 0, 0, 0.04);
   --sidebar-active: rgba(0, 0, 0, 0.08);
 
+  /* Topbar */
   --topbar-bg: #ffffff;
   --topbar-text: #0f172a;
   --topbar-border: rgba(0, 0, 0, 0.08);
@@ -41,9 +62,7 @@
     0 2px 6px rgba(0, 0, 0, 0.06),
     inset 0 -1px 0 rgba(255, 255, 255, 0.6);
 
-  /* ===================================== */
   /* Cards */
-  /* ===================================== */
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
   --card-radius: 14px;
@@ -53,25 +72,32 @@
 
   --card-icon-bg: rgba(26, 71, 255, 0.10);
 
-  /* ===================================== */
-  /* 👤 Avatar Styling */
-  /* ===================================== */
+  /* Avatar */
   --avatar-bg: rgba(26, 71, 255, 0.15);
   --avatar-border: rgba(26, 71, 255, 0.25);
   --avatar-text: #0f172a;
 
-  /* ===================================== */
-  /* 🎨 Score Colors                       */
-  /* ===================================== */
+  /* Scores */
   --score-strong-buy: #16a34a;
   --score-buy:        #22c55e;
   --score-neutral:    #eab308;
   --score-sell:       #ef4444;
   --score-strong-sell:#dc2626;
+
+  /* Icons */
+  --icon-primary: var(--primary);
+  --icon-muted: #94a3b8;
+  --icon-success: #16a34a;
+  --icon-warning: #eab308;
+  --icon-danger: #ef4444;
+
+  /* Transitions */
+  --transition-fast: 0.12s ease-out;
+  --transition-medium: 0.25s ease;
 }
 
 /* ===========================================
-   DARK MODE VARIANT
+   DARK MODE
 =========================================== */
 .dark {
   --bg: #0D1117;
@@ -79,6 +105,13 @@
 
   --text-dark: #E6EDF3;
   --text-light: #9BA1A6;
+  --text-muted: #6B737C;
+
+  --surface-1: #0f0f0f;
+  --surface-2: #161B22;
+  --surface-3: #1E2630;
+
+  --border: rgba(255, 255, 255, 0.06);
 
   --sidebar-bg: #1e293b;
   --sidebar-text: #E6EDF3;
@@ -89,17 +122,24 @@
   --topbar-text: #E6EDF3;
   --topbar-border: rgba(255, 255, 255, 0.05);
 
-  /* Avatar dark mode */
+  /* Avatar */
   --avatar-bg: rgba(255, 255, 255, 0.08);
   --avatar-border: rgba(255, 255, 255, 0.18);
   --avatar-text: #E6EDF3;
 
-  /* Score kleuren */
+  /* Scores */
   --score-strong-buy: #4ade80;
   --score-buy:        #86efac;
   --score-neutral:    #facc15;
   --score-sell:       #f87171;
   --score-strong-sell:#ef4444;
+
+  --icon-muted: #6B737C;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 10px rgba(0,0,0,0.5);
+  --shadow-lg: 0 6px 16px rgba(0,0,0,0.6);
 }
 
 /* ===========================================
@@ -110,7 +150,8 @@
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  transition: box-shadow var(--transition-fast),
+              transform var(--transition-fast);
 }
 
 .card-surface:hover {
@@ -119,7 +160,7 @@
 }
 
 /* ===========================================
-   SIDEBAR SURFACE
+   SIDEBAR
 =========================================== */
 .sidebar-surface {
   background: var(--sidebar-bg);
@@ -130,7 +171,7 @@
 }
 
 /* ===========================================
-   TOPBAR SURFACE
+   TOPBAR
 =========================================== */
 .topbar-surface {
   background: var(--topbar-bg);
@@ -148,7 +189,7 @@
 .score-strong-sell { color: var(--score-strong-sell); }
 
 /* ===========================================
-   BUTTONS — Globale uniforme primary button
+   BUTTONS — PRIMARY
 =========================================== */
 .btn-primary {
   display: inline-flex;
@@ -157,7 +198,7 @@
   gap: 0.5rem;
 
   padding: 0.7rem 1.6rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-md);
 
   font-weight: 600;
   font-size: 0.95rem;
@@ -167,9 +208,9 @@
 
   box-shadow: 0 10px 25px rgba(26, 71, 255, 0.25);
   transition:
-    background-color 150ms ease,
-    transform 150ms ease,
-    box-shadow 150ms ease;
+    background-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .btn-primary:hover {
@@ -186,7 +227,43 @@
 }
 
 /* ===========================================
-   Animations
+   INPUTS / TEXTAREAS / SELECTS
+=========================================== */
+.input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  transition: border var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,71,255,0.20);
+}
+
+/* ===========================================
+   ICON UTILITIES
+=========================================== */
+.icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.icon-muted { color: var(--icon-muted); }
+.icon-primary { color: var(--icon-primary); }
+.icon-success { color: var(--icon-success); }
+.icon-warning { color: var(--icon-warning); }
+.icon-danger { color: var(--icon-danger); }
+
+/* ===========================================
+   ANIMATIONS
 =========================================== */
 @keyframes fade-slide {
   from { opacity: 0; transform: translateY(-4px); }

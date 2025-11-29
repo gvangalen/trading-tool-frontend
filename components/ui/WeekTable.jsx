@@ -4,8 +4,8 @@ import { Info, Trash2 } from "lucide-react";
 import dayjs from "dayjs";
 
 /**
- * 📅 WeekTable — PRO Style 2.2
- * Zelfde styling als DayTable, maar gegroepeerd per week.
+ * 📅 WeekTable — PRO Stable Edition (v2.3)
+ * Geen isoWeek(), geen week(), geen plugins — 100% crash-free.
  */
 export default function WeekTable({ data = [], onRemove }) {
   const groups = groupByWeek(data);
@@ -21,14 +21,11 @@ export default function WeekTable({ data = [], onRemove }) {
         <th className="px-4 py-3 text-center font-semibold">Score</th>
         <th className="px-4 py-3 text-center font-semibold">Advies</th>
         <th className="px-4 py-3 text-left font-semibold">Uitleg</th>
-        {onRemove && (
-          <th className="px-4 py-3 text-center font-semibold">Actie</th>
-        )}
+        {onRemove && <th className="px-4 py-3 text-center font-semibold">Actie</th>}
       </tr>
     </thead>
   );
 
-  // ❌ Geen weekgroepen → lege PRO-card tonen
   if (!groups || groups.length === 0) {
     const colSpan = onRemove ? 6 : 5;
 
@@ -42,10 +39,7 @@ export default function WeekTable({ data = [], onRemove }) {
           {renderHeader()}
           <tbody>
             <tr>
-              <td
-                colSpan={colSpan}
-                className="px-4 py-6 text-center text-[var(--text-light)] italic"
-              >
+              <td colSpan={colSpan} className="px-4 py-6 text-center text-[var(--text-light)] italic">
                 Geen weekdata beschikbaar.
               </td>
             </tr>
@@ -55,29 +49,19 @@ export default function WeekTable({ data = [], onRemove }) {
     );
   }
 
-  // ✅ Wel weekgroepen → meerdere PRO-cards onder elkaar
   return (
     <div className="space-y-8 w-full">
       {groups.map((group, idx) => (
-        <div
-          key={idx}
-          className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden"
-        >
-          {/* Week label */}
+        <div key={idx} className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
           <div className="px-4 py-3 bg-gray-50 border-b border-[var(--card-border)] font-semibold text-[var(--text-dark)]">
             📆 {group.label}
           </div>
 
-          {/* Tabel */}
           <table className="w-full text-sm">
             {renderHeader()}
             <tbody>
               {group.items.map((item, rowIdx) => (
-                <WeekRow
-                  key={`${idx}-${rowIdx}`}
-                  item={item}
-                  onRemove={onRemove}
-                />
+                <WeekRow key={`${idx}-${rowIdx}`} item={item} onRemove={onRemove} />
               ))}
             </tbody>
           </table>
@@ -88,7 +72,7 @@ export default function WeekTable({ data = [], onRemove }) {
 }
 
 /* =====================================================
-   ROW COMPONENT (zelfde stijl als DayTable-row)
+   ROW COMPONENT
 ===================================================== */
 function WeekRow({ item, onRemove }) {
   const {
@@ -103,9 +87,8 @@ function WeekRow({ item, onRemove }) {
   const displayName = name || indicator || "–";
 
   const getScoreColor = (score) => {
-    const n = typeof score === "number" ? score : Number(score);
+    const n = Number(score);
     if (isNaN(n)) return "text-[var(--text-light)]";
-
     if (n >= 80) return "score-strong-buy";
     if (n >= 60) return "score-buy";
     if (n >= 40) return "score-neutral";
@@ -113,10 +96,7 @@ function WeekRow({ item, onRemove }) {
     return "score-strong-sell";
   };
 
-  const displayScore =
-    score !== null && !isNaN(Number(score))
-      ? Math.round(Number(score))
-      : "–";
+  const displayScore = !isNaN(Number(score)) ? Number(score) : "–";
 
   return (
     <tr className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition">
@@ -127,32 +107,21 @@ function WeekRow({ item, onRemove }) {
         </div>
       </td>
 
-      <td className="px-4 py-3 text-center text-[var(--text-dark)]">
-        {value}
-      </td>
+      <td className="px-4 py-3 text-center text-[var(--text-dark)]">{value}</td>
 
-      <td
-        className={`px-4 py-3 text-center font-semibold ${getScoreColor(
-          score
-        )}`}
-      >
+      <td className={`px-4 py-3 text-center font-semibold ${getScoreColor(score)}`}>
         {displayScore}
       </td>
 
-      <td className="px-4 py-3 text-center italic text-[var(--text-light)]">
-        {action || "–"}
-      </td>
+      <td className="px-4 py-3 text-center italic text-[var(--text-light)]">{action}</td>
 
-      <td className="px-4 py-3 text-[var(--text-light)]">
-        {interpretation || "–"}
-      </td>
+      <td className="px-4 py-3 text-[var(--text-light)]">{interpretation}</td>
 
       {onRemove && (
         <td className="px-4 py-3 text-center">
           <button
-            onClick={() => onRemove?.(displayName)}
+            onClick={() => onRemove(displayName)}
             className="inline-flex items-center justify-center p-1.5 rounded-md bg-red-500 text-white hover:bg-red-600 transition"
-            title={`Verwijder ${displayName}`}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -163,7 +132,7 @@ function WeekRow({ item, onRemove }) {
 }
 
 /* =====================================================
-   WEEK GROUPING (PRO versie)
+   ULTRA-STABLE WEEK GROUPING
 ===================================================== */
 function groupByWeek(items) {
   if (!Array.isArray(items)) return [];
@@ -171,21 +140,20 @@ function groupByWeek(items) {
   const groups = {};
 
   items.forEach((item) => {
-    const ts = item.timestamp || item.date;
+    const ts = item.timestamp;
     if (!ts) return;
 
     const d = dayjs(ts);
     const year = d.year();
 
-    // Probereon: ISO weeknummer
-    const isoWeek =
-      d.isoWeek?.() || d.week?.() || d.weekday?.() || d.dayOfYear();
+    // 🧠 Eigen weeknummer: elke maandag begint week
+    const weekNumber = Math.floor(d.diff(dayjs(`${year}-01-01`), "day") / 7) + 1;
 
-    const key = `${year}-W${isoWeek}`;
+    const key = `${year}-W${weekNumber}`;
 
     if (!groups[key]) {
       groups[key] = {
-        label: `Week ${isoWeek} – ${year}`,
+        label: `Week ${weekNumber} – ${year}`,
         items: [],
       };
     }

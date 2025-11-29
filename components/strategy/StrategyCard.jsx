@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import {
   updateStrategy,
   deleteStrategy,
@@ -11,6 +12,19 @@ import {
 
 import StrategyEditModal from '@/components/strategy/StrategyEditModal';
 import AILoader from '@/components/ui/AILoader';
+
+/* Lucide icons */
+import {
+  Pencil,
+  Trash2,
+  ArrowRightLeft,
+  Target,
+  ShieldAlert,
+  Bot,
+  Wand2,
+  Star,
+  StarOff,
+} from "lucide-react";
 
 export default function StrategyCard({ strategy, onUpdated }) {
   if (!strategy) return null;
@@ -62,7 +76,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
   };
 
   // -------------------------------------------------------------
-  // AI GENERATE — met soft-warning i.p.v. error
+  // AI GENERATE
   // -------------------------------------------------------------
   const handleGenerate = async () => {
     try {
@@ -79,27 +93,23 @@ export default function StrategyCard({ strategy, onUpdated }) {
       }
 
       const taskId = res.task_id;
-
       let attempts = 0;
-      const maxAttempts = 40; // 40 × 1.5s = 60s
+      const maxAttempts = 40;
       let status = null;
 
       while (attempts < maxAttempts) {
         await new Promise((r) => setTimeout(r, 1500));
         status = await fetchTaskStatus(taskId);
 
-        // Lege {} mag gewoon genegeerd worden
         if (!status || Object.keys(status).length === 0) {
           attempts++;
           continue;
         }
 
-        // Hard fail
         if (status.state === 'FAILURE') {
           throw new Error('Celery task mislukt');
         }
 
-        // Success
         if (status.state === 'SUCCESS' || status?.result?.success) {
           break;
         }
@@ -107,12 +117,10 @@ export default function StrategyCard({ strategy, onUpdated }) {
         attempts++;
       }
 
-      // ⛔ Timeout — maar niet stoppen, strategy wórdt vaak wel gemaakt!
       if (!status || status.state !== 'SUCCESS') {
         setSoftWarning('⚠️ AI duurde lang — data wordt opgehaald...');
       }
 
-      // Haal altijd laatste strategy op
       const final = await fetchStrategyBySetup(setup_id);
 
       if (!final?.strategy) {
@@ -146,7 +154,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       <div
         className={`
-          border rounded-xl p-5 bg-white dark:bg-gray-900 shadow-lg relative
+          border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
           transition-all duration-300
           ${justUpdated ? 'ring-2 ring-green-500 ring-offset-2' : ''}
         `}
@@ -160,83 +168,114 @@ export default function StrategyCard({ strategy, onUpdated }) {
         )}
 
         {/* HEADER */}
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-bold text-lg">{setup_name}</h3>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="font-bold text-xl text-[var(--text-dark)] dark:text-white">
+            {setup_name}
+          </h3>
 
-          <div className="flex gap-4 text-xl">
+          <div className="flex gap-4">
             <button
               disabled={loading}
               onClick={() => setEditing(true)}
-              className="text-blue-500 hover:text-blue-700"
+              className="text-blue-600 hover:text-blue-800"
             >
-              ✏️
+              <Pencil className="w-5 h-5" />
             </button>
+
             <button
               disabled={loading}
               onClick={handleDelete}
               className="text-red-500 hover:text-red-700"
             >
-              🗑️
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        {/* META INFO */}
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           <span className="uppercase font-medium">{strategy_type}</span> | {symbol} {timeframe}
         </p>
 
-        {/* ENTRY / TARGETS — Alleen voor trading/manual */}
+        {/* ENTRY / TARGETS / STOPLOSS */}
         {!isDCA && (
-          <div className="text-sm space-y-1 mb-3">
-            <p>🎯 Entry: {display(entry)}</p>
-            <p>🎯 Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</p>
-            <p>🛡️ Stop-loss: {display(stop_loss)}</p>
+          <div className="text-sm space-y-2 mb-4">
+
+            {/* Entry */}
+            <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+              <ArrowRightLeft className="w-4 h-4 text-blue-500" />
+              <span>Entry: {display(entry)}</span>
+            </div>
+
+            {/* Targets */}
+            <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+              <Target className="w-4 h-4 text-red-500" />
+              <span>Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</span>
+            </div>
+
+            {/* Stop-loss */}
+            <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+              <ShieldAlert className="w-4 h-4 text-purple-500" />
+              <span>Stop-loss: {display(stop_loss)}</span>
+            </div>
           </div>
         )}
 
-        {/* AI-UITLEG */}
+        {/* AI INSIGHT */}
         {ai_explanation && (
           <div className="
-            text-xs text-purple-600 dark:text-purple-300
-            italic bg-purple-50 dark:bg-purple-900/20
+            flex gap-3 p-4 rounded-xl
+            bg-purple-50 dark:bg-purple-900/20
             border border-purple-200 dark:border-purple-700
-            p-3 rounded-lg whitespace-pre-line leading-relaxed
-            mt-3
+            text-sm text-purple-700 dark:text-purple-300
+            leading-relaxed mt-4
           ">
-            🤖 <strong>AI Insight:</strong><br />
-            {ai_explanation}
+            <Bot className="w-5 h-5 flex-shrink-0 mt-[2px]" />
+            <div>
+              <strong className="font-semibold">AI Insight:</strong><br />
+              {ai_explanation}
+            </div>
           </div>
         )}
 
         {/* SOFT WARNING */}
         {softWarning && (
-          <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-2">
+          <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-3">
             {softWarning}
           </p>
         )}
 
         {/* ERROR */}
         {error && (
-          <p className="text-red-600 text-sm mt-2">{error}</p>
+          <p className="text-red-600 text-sm mt-3">{error}</p>
         )}
 
         {/* FOOTER */}
-        <div className="flex justify-between items-center mt-4">
+        <div className="flex justify-between items-center mt-6">
+
+          {/* Generate AI */}
           <button
             disabled={loading}
             onClick={handleGenerate}
             className="
-              text-sm text-purple-600 hover:text-purple-800 underline
-              disabled:opacity-50 flex items-center gap-2
+              flex items-center gap-2 text-sm
+              text-purple-600 hover:text-purple-800 underline
+              disabled:opacity-50
             "
           >
-            {loading && <AILoader variant="spinner" size="sm" />}
-            🔁 Genereer strategie (AI)
+            <Wand2 className="w-4 h-4" />
+            Genereer strategie (AI)
           </button>
 
-          <div className="text-yellow-500 text-xl">
-            {favorite ? '⭐' : '☆'}
+          {/* Favorite */}
+          <div className="text-yellow-500">
+            {favorite ? (
+              <Star className="w-5 h-5" />
+            ) : (
+              <StarOff className="w-5 h-5 text-gray-400" />
+            )}
           </div>
+
         </div>
 
       </div>

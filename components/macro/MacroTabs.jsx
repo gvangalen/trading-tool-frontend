@@ -1,11 +1,14 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import CardWrapper from "@/components/ui/CardWrapper";
 
+// PRO Tables
 import DayTable from "@/components/ui/DayTable";
 import WeekTable from "@/components/ui/WeekTable";
 import MonthTable from "@/components/ui/MonthTable";
 import QuarterTable from "@/components/ui/QuarterTable";
+
+const TABS = ["Dag", "Week", "Maand", "Kwartaal"];
 
 export default function MacroTabs({
   activeTab,
@@ -15,62 +18,40 @@ export default function MacroTabs({
   error,
   handleRemove,
 }) {
-  const tabs = ["Dag", "Week", "Maand", "Kwartaal"];
+  const renderTableBody = () => {
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan="100%" className="p-4 text-center text-gray-500">
+            ⏳ Laden...
+          </td>
+        </tr>
+      );
+    }
 
-  /**
-   * 🧩 Normaliseer grouped endpoints:
-   * backend:  { label: "...", data: [...] }
-   * frontend: { label: "...", items: [...] }
-   */
-  const normalizeGrouped = (arr) => {
-    if (!Array.isArray(arr)) return [];
-    return arr.map((g) => ({
-      label: g.label,
-      items: g.data || g.items || [],
-    }));
-  };
-
-  const renderTable = () => {
-    if (loading)
-      return <p className="text-gray-500 italic">Laden…</p>;
-
-    if (error)
-      return <p className="text-red-500">{error}</p>;
+    if (error) {
+      return (
+        <tr>
+          <td colSpan="100%" className="p-4 text-center text-red-500">
+            ❌ {error}
+          </td>
+        </tr>
+      );
+    }
 
     switch (activeTab) {
       case "Dag":
-        return (
-          <DayTable
-            title="Dagelijkse Macro Analyse"
-            icon={<Globe className="w-5 h-5 text-[var(--primary)]" />}
-            data={macroData}
-            onRemove={handleRemove}
-          />
-        );
+        // 👉 Alleen DAG krijgt delete-functie
+        return <DayTable data={macroData} onRemove={handleRemove} />;
 
       case "Week":
-        return (
-          <WeekTable
-            data={normalizeGrouped(macroData)}
-            onRemove={handleRemove}
-          />
-        );
+        return <WeekTable data={macroData} />;
 
       case "Maand":
-        return (
-          <MonthTable
-            data={normalizeGrouped(macroData)}
-            onRemove={handleRemove}
-          />
-        );
+        return <MonthTable data={macroData} />;
 
       case "Kwartaal":
-        return (
-          <QuarterTable
-            data={normalizeGrouped(macroData)}
-            onRemove={handleRemove}
-          />
-        );
+        return <QuarterTable data={macroData} />;
 
       default:
         return null;
@@ -78,29 +59,31 @@ export default function MacroTabs({
   };
 
   return (
-    <div className="space-y-6">
-      {/* TABS */}
-      <div className="flex gap-3">
-        {tabs.map((t) => (
+    <>
+      {/* 🔹 Tabs */}
+      <div className="flex space-x-4 mb-4">
+        {TABS.map((tab) => (
           <button
-            key={t}
-            onClick={() => setActiveTab(t)}
-            className={`
-              px-5 py-2 rounded-lg border transition-all
-              ${
-                activeTab === t
-                  ? "bg-[var(--primary)] text-white border-[var(--primary)]"
-                  : "bg-white text-[var(--text-dark)] border-[var(--sidebar-border)] hover:bg-[var(--bg-soft)]"
-              }
-            `}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded font-semibold border transition ${
+              activeTab === tab
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200"
+            }`}
           >
-            {t}
+            {tab}
           </button>
         ))}
       </div>
 
-      {/* TABEL */}
-      {renderTable()}
-    </div>
+      <CardWrapper>
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto text-sm">
+            <tbody>{renderTableBody()}</tbody>
+          </table>
+        </div>
+      </CardWrapper>
+    </>
   );
 }

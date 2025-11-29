@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dayjs from "dayjs";
 
 import {
   technicalDataDay,
@@ -15,6 +16,9 @@ import {
 
 import { getDailyScores } from "@/lib/api/scores";
 
+/* =====================================================================
+   USE TECHNICAL DATA — MET CORRECTE GROUPING VOOR NIEUWE TABELLEN
+===================================================================== */
 export function useTechnicalData(activeTab = "Dag") {
   const [technicalData, setTechnicalData] = useState([]);
   const [avgScore, setAvgScore] = useState("N/A");
@@ -26,14 +30,14 @@ export function useTechnicalData(activeTab = "Dag") {
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
-  /* ======================================================
-     LADEN VAN TECHNICAL DATA (FLAT LIST — GEEN GROUPING!)
-  ====================================================== */
   useEffect(() => {
     loadData();
     loadIndicatorNames();
   }, [activeTab]);
 
+  /* ======================================================
+     LADEN VAN TECHNICAL DATA + GROUPING
+  ====================================================== */
   async function loadData() {
     setLoading(true);
     setError("");
@@ -41,15 +45,15 @@ export function useTechnicalData(activeTab = "Dag") {
     try {
       let raw;
 
-      // juiste endpoint per tab
       if (activeTab === "Dag") raw = await technicalDataDay();
       else if (activeTab === "Week") raw = await technicalDataWeek();
       else if (activeTab === "Maand") raw = await technicalDataMonth();
       else if (activeTab === "Kwartaal") raw = await technicalDataQuarter();
 
-      if (!Array.isArray(raw)) throw new Error("Technische data is geen lijst");
+      if (!Array.isArray(raw))
+        throw new Error("Technische data is geen lijst");
 
-      // standaardiseren van velden
+      // Normaliseren van API
       const normalized = raw.map((item) => ({
         name: item.indicator ?? item.name ?? "–",
         value: item.waarde ?? item.value ?? "–",
@@ -59,10 +63,22 @@ export function useTechnicalData(activeTab = "Dag") {
         timestamp: item.timestamp ?? null,
       }));
 
-      // LET OP: geen grouping → grouping gebeurt in de tabelcomponenten
-      setTechnicalData(normalized);
+      /* ------------------------------------------------------
+         GROUPING PER TAB → exact wat de UI verwacht
+      ------------------------------------------------------ */
+      if (activeTab === "Dag") {
+        setTechnicalData(normalized); // flat list
+      } else if (activeTab === "Week") {
+        setTechnicalData(groupByWeek(normalized));
+      } else if (activeTab === "Maand") {
+        setTechnicalData(groupByMonth(normalized));
+      } else if (activeTab === "Kwartaal") {
+        setTechnicalData(groupByQuarter(normalized));
+      }
 
-      // ============= DAILY SCORE LOGICA =============
+      /* =====================================================
+         SCORE VAN BACKEND
+      ====================================================== */
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
@@ -92,57 +108,80 @@ export function useTechnicalData(activeTab = "Dag") {
   }
 
   /* ======================================================
-     INDICATOR-LIJST
+     GROUPING LOGICA
   ====================================================== */
-  async function loadIndicatorNames() {
-    try {
-      const list = await getIndicatorNames();
-      setIndicatorNames(list);
-    } catch (err) {
-      console.error("❌ Fout bij indicator-namen:", err);
-    }
+
+  function groupByWeek(data) {
+    const groups = {};
+
+    data.forEach((item) => {
+      if (!item.timestamp) return;
+
+      const d = dayjs(item.timestamp);
+      const week = d.week?.() || d.isoWeek?.() || d.weekday;
+      const year = d.year();
+      const key = `${year}-W${week}`;
+
+      if (!groups[key]) {
+        groups[key] = {
+          label: `Week ${week} – ${year}`,
+          items: [],
+        };
+      }
+      groups[key].items.push(item);
+    });
+
+    return Object.values(groups);
+  }
+
+  function groupByMonth(data) {
+    const groups = {};
+
+    data.forEach((item) => {
+      if (!item.timestamp) return;
+
+      const d = dayjs(item.timestamp);
+      const monthName = d.format("MMMM");
+      const year = d.year();
+      const key = `${year}-${d.month()}`;
+
+      if (!groups[key]) {
+        groups[key] = {
+          label: `${monthName} – ${year}`,
+          items: [],
+        };
+      }
+      groups[key].items.push(item);
+    });
+
+    return Object.values(groups);
+  }
+
+  function groupByQuarter(data) {
+    const groups = {};
+
+    data.forEach((item) => {
+      if (!item.timestamp) return;
+
+      const d = dayjs(item.timestamp);
+      const q = Math.floor(d.month() / 3) + 1;
+      const year = d.year();
+      const key = `${year}-Q${q}`;
+
+      if (!groups[key]) {
+        groups[key] = {
+          label: `Q${q} – ${year}`,
+          items: [],
+        };
+      }
+      groups[key].items.push(item);
+    });
+
+    return Object.values(groups);
   }
 
   /* ======================================================
-     SCORE RULES
-  ====================================================== */
-  async function loadScoreRules(indicatorName) {
-    try {
-      const rules = await getScoreRulesForIndicator(indicatorName);
-      setScoreRules(rules);
-    } catch (err) {
-      console.error("❌ Fout bij ophalen scoreregels:", err);
-    }
-  }
-
-  /* ======================================================
-     INDICATOR TOEVOEGEN
-  ====================================================== */
-  async function addTechnicalIndicator(indicatorName) {
-    try {
-      const result = await technicalDataAdd(indicatorName);
-      await loadData();
-      return result;
-    } catch (err) {
-      console.error("❌ addTechnicalIndicator mislukt:", err);
-      throw err;
-    }
-  }
-
-  /* ======================================================
-     INDICATOR VERWIJDEREN
-  ====================================================== */
-  async function removeTechnicalIndicator(indicatorName) {
-    try {
-      await deleteTechnicalIndicator(indicatorName);
-      await loadData();
-    } catch (err) {
-      console.error("❌ Verwijderen technical indicator mislukt:", err);
-    }
-  }
-
-  /* ======================================================
-     MANUELE SCORE-BEREKENING (fallback)
+     SCORE FALLBACK
   ====================================================== */
   function updateScore(data) {
     let total = 0;
@@ -164,17 +203,46 @@ export function useTechnicalData(activeTab = "Dag") {
     );
   }
 
+  /* ======================================================
+     DROPDOWN + SCORE REGELS
+  ====================================================== */
+  async function loadIndicatorNames() {
+    try {
+      const list = await getIndicatorNames();
+      setIndicatorNames(list);
+    } catch {}
+  }
+
+  async function loadScoreRules(indicatorName) {
+    try {
+      const rules = await getScoreRulesForIndicator(indicatorName);
+      setScoreRules(rules);
+    } catch {}
+  }
+
+  async function addTechnicalIndicator(indicatorName) {
+    const result = await technicalDataAdd(indicatorName);
+    await loadData();
+    return result;
+  }
+
+  async function removeTechnicalIndicator(indicatorName) {
+    await deleteTechnicalIndicator(indicatorName);
+    await loadData();
+  }
+
+  /* ======================================================
+     RETURN
+  ====================================================== */
   return {
     technicalData,
     avgScore,
     advies,
     loading,
     error,
-
     indicatorNames,
     scoreRules,
     loadScoreRules,
-
     addTechnicalIndicator,
     removeTechnicalIndicator,
   };

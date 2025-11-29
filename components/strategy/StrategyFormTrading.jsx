@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Info, Star, StarOff, Tag, Target, TrendingUp, MinusCircle } from "lucide-react";
+import {
+  Info,
+  Star,
+  StarOff,
+  Tag,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 
 export default function StrategyFormTrading({
   setups = [],
@@ -45,7 +52,7 @@ export default function StrategyFormTrading({
   );
 
   /* ===========================================================
-     INITIALDATA WIJZIGINGEN
+     INITIALDATA HANDLER
   =========================================================== */
   useEffect(() => {
     if (!initialData) return;
@@ -76,9 +83,10 @@ export default function StrategyFormTrading({
 
     setError("");
 
-    // Kies setup → overschrijf symbol + timeframe
     if (name === "setup_id") {
-      const selected = availableSetups.find((s) => String(s.id) === String(val));
+      const selected = availableSetups.find(
+        (s) => String(s.id) === String(val)
+      );
 
       setForm((prev) => ({
         ...prev,
@@ -115,9 +123,8 @@ export default function StrategyFormTrading({
       .map((t) => parseFloat(t.trim()))
       .filter((n) => !Number.isNaN(n));
 
-    if (Number.isNaN(entry) || Number.isNaN(stop_loss) || targets.length === 0) {
+    if (Number.isNaN(entry) || Number.isNaN(stop_loss) || targets.length === 0)
       return setError("❌ Gebruik geldige getallen.");
-    }
 
     const tags = form.tags
       .split(",")
@@ -170,7 +177,7 @@ export default function StrategyFormTrading({
     !form.stop_loss;
 
   /* ===========================================================
-     UI — Fintech PRO 6.0
+     UI – Fintech PRO 6.0 (met .btn-primary)
   =========================================================== */
   return (
     <form
@@ -187,7 +194,9 @@ export default function StrategyFormTrading({
       {/* Titel */}
       <h3 className="text-xl font-bold flex items-center gap-2 text-[var(--text-dark)]">
         <TrendingUp className="w-5 h-5 text-blue-600" />
-        {mode === "edit" ? "Tradingstrategie bewerken" : "Nieuwe Tradingstrategie"}
+        {mode === "edit"
+          ? "Tradingstrategie bewerken"
+          : "Nieuwe Tradingstrategie"}
       </h3>
 
       {/* Success */}
@@ -197,9 +206,12 @@ export default function StrategyFormTrading({
         </div>
       )}
 
-      {/* Setup */}
+      {/* Setup Select */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Koppel aan Setup</label>
+        <label className="block text-sm font-semibold mb-1">
+          Koppel aan Setup
+        </label>
+
         <select
           name="setup_id"
           value={form.setup_id}
@@ -252,7 +264,9 @@ export default function StrategyFormTrading({
 
       {/* Entry */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Entry prijs (€)</label>
+        <label className="block text-sm font-semibold mb-1">
+          Entry prijs (€)
+        </label>
         <input
           name="entry"
           type="number"
@@ -268,7 +282,9 @@ export default function StrategyFormTrading({
 
       {/* Targets */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Target prijzen</label>
+        <label className="block text-sm font-semibold mb-1">
+          Target prijzen
+        </label>
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-gray-400" />
           <input
@@ -288,7 +304,9 @@ export default function StrategyFormTrading({
 
       {/* Stop-loss */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Stop-loss (€)</label>
+        <label className="block text-sm font-semibold mb-1">
+          Stop-loss (€)
+        </label>
         <input
           name="stop_loss"
           type="number"
@@ -304,7 +322,9 @@ export default function StrategyFormTrading({
 
       {/* Uitleg */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Uitleg / notities</label>
+        <label className="block text-sm font-semibold mb-1">
+          Uitleg / notities
+        </label>
         <textarea
           name="explanation"
           rows={3}
@@ -351,8 +371,8 @@ export default function StrategyFormTrading({
             <Star className="w-4 h-4" /> Favoriet
           </span>
         ) : (
-          <span className="flex items-center gap-1">
-            <StarOff className="w-4 h-4 text-gray-500" /> Geen favoriet
+          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+            <StarOff className="w-4 h-4" /> Geen favoriet
           </span>
         )}
       </label>
@@ -362,19 +382,15 @@ export default function StrategyFormTrading({
         <button
           type="submit"
           disabled={disabled}
-          className="
-            w-full mt-4
-            bg-blue-600 hover:bg-blue-700 
-            disabled:bg-blue-300 disabled:cursor-not-allowed
-            text-white font-semibold
-            p-3 rounded-xl shadow-md
-          "
+          className={`btn-primary w-full mt-4 ${
+            disabled ? "opacity-60 cursor-not-allowed" : ""
+          }`}
         >
           {saving ? "⏳ Opslaan..." : "Strategie opslaan"}
         </button>
       )}
 
-      {/* Verborgen submit voor modal */}
+      {/* Verborgen modal-submit */}
       {hideSubmit && (
         <button id="strategy-edit-submit" type="submit" className="hidden">
           Submit

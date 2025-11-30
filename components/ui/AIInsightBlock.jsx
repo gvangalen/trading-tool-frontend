@@ -3,10 +3,38 @@
 import { useState } from "react";
 import { Bot, ChevronDown, ChevronUp } from "lucide-react";
 
-export default function AIInsightBlock({ text }) {
+export default function AIInsightBlock({ text, variant = "soft" }) {
   const [expanded, setExpanded] = useState(false);
-
   if (!text) return null;
+
+  /* ---------------------------------------------
+     VARIANT STYLES
+  --------------------------------------------- */
+  const styles = {
+    soft: {
+      wrapper: `
+        bg-[var(--surface-2)]
+        border border-[var(--border)]
+        text-[var(--text-light)]
+      `,
+      fade: `
+        from-[var(--surface-2)]
+      `,
+    },
+
+    accent: {
+      wrapper: `
+        bg-[var(--surface-3)]
+        border border-[var(--border)]
+        text-[var(--text-dark)]
+      `,
+      fade: `
+        from-[var(--surface-3)]
+      `,
+    },
+  };
+
+  const active = styles[variant] || styles.soft;
 
   return (
     <div className="w-full flex flex-col gap-1">
@@ -14,21 +42,16 @@ export default function AIInsightBlock({ text }) {
       {/* WRAPPER */}
       <div
         className={`
-          relative text-sm rounded-lg border
-          p-3
-          bg-purple-50/60 dark:bg-purple-950/30
-          border-purple-200/40 dark:border-purple-800/40
-          text-purple-800 dark:text-purple-200
-          transition-all duration-300
-          shadow-sm
+          relative text-xs rounded-lg p-3 transition-all duration-300 shadow-sm
+          ${active.wrapper}
         `}
       >
         {/* ICON + TEXT */}
         <div className="flex items-start gap-2">
-          <Bot className="w-4 h-4 mt-[2px] opacity-70" />
+          <Bot className="w-4 h-4 mt-[2px] opacity-60 text-[var(--primary)]" />
           <p
             className={`
-              leading-relaxed transition-all duration-300
+              leading-snug transition-all duration-300
               ${expanded ? "" : "max-h-12 overflow-hidden"}
             `}
           >
@@ -36,14 +59,14 @@ export default function AIInsightBlock({ text }) {
           </p>
         </div>
 
-        {/* FADE MASK WHEN CLAMPED */}
+        {/* FADE MASK (only when clamped) */}
         {!expanded && (
           <div
-            className="
+            className={`
               absolute bottom-0 left-0 right-0 h-6
-              bg-gradient-to-t from-purple-50/60 dark:from-purple-950/30
-              pointer-events-none
-            "
+              bg-gradient-to-t pointer-events-none
+              ${active.fade}
+            `}
           />
         )}
       </div>
@@ -53,7 +76,6 @@ export default function AIInsightBlock({ text }) {
         onClick={() => setExpanded(!expanded)}
         className="
           text-[var(--primary-dark)]
-          dark:text-purple-300
           hover:underline
           text-xs font-medium
           flex items-center gap-1

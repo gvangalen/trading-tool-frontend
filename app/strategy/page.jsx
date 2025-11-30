@@ -1,34 +1,45 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from "react";
 
-import { LineChart, Search, PlusCircle, ClipboardList } from 'lucide-react';
+import {
+  LineChart,
+  Search,
+  PlusCircle,
+  ClipboardList,
+} from "lucide-react";
 
-import StrategyList from '@/components/strategy/StrategyList';
-import StrategyTabs from '@/components/strategy/StrategyTabs';
+import StrategyList from "@/components/strategy/StrategyList";
+import StrategyTabs from "@/components/strategy/StrategyTabs";
 
-import { useSetupData } from '@/hooks/useSetupData';
-import { useStrategyData } from '@/hooks/useStrategyData';
-import { createStrategy } from '@/lib/api/strategy';
+import { useSetupData } from "@/hooks/useSetupData";
+import { useStrategyData } from "@/hooks/useStrategyData";
+import { createStrategy } from "@/lib/api/strategy";
 
-import InfoTooltip from '@/components/ui/InfoTooltip';
-import CardWrapper from '@/components/ui/CardWrapper';
+import CardWrapper from "@/components/ui/CardWrapper";
+
+// 🧠 Nieuw – AI Insight Panel
+import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 export default function StrategyPage() {
-  const [search, setSearch] = useState('');
-  const [toast, setToast] = useState('');
+  const [search, setSearch] = useState("");
+  const [toast, setToast] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
 
-  // Initial load
+  /* -------------------------------------------------- */
+  /* 🔄 Initial load */
+  /* -------------------------------------------------- */
   useEffect(() => {
     loadSetups();
     loadStrategies();
   }, []);
 
-  // 🔄 Force full refresh (tabs, filters, lists)
+  /* -------------------------------------------------- */
+  /* 🔃 Refresh mechanics */
+  /* -------------------------------------------------- */
   const refreshEverything = () => {
     loadStrategies();
     loadSetups();
@@ -38,10 +49,12 @@ export default function StrategyPage() {
 
   const handleSuccess = (msg) => {
     setToast(msg);
-    setTimeout(() => setToast(''), 4000);
+    setTimeout(() => setToast(""), 4000);
   };
 
-  // 📤 STRATEGIE OPSLAAN
+  /* -------------------------------------------------- */
+  /* 📤 Strategie opslaan */
+  /* -------------------------------------------------- */
   const handleStrategySubmit = async (strategy) => {
     try {
       const setup = setups.find(
@@ -49,7 +62,7 @@ export default function StrategyPage() {
       );
 
       if (!setup) {
-        setToast('❌ Geen geldige setup geselecteerd.');
+        setToast("❌ Geen geldige setup geselecteerd.");
         return;
       }
 
@@ -59,33 +72,36 @@ export default function StrategyPage() {
         setup_name: setup.name,
         symbol: setup.symbol,
         timeframe: setup.timeframe,
-        explanation: strategy.explanation || strategy.rules || '',
+
+        explanation: strategy.explanation || strategy.rules || "",
+
         entry: strategy.entry ?? null,
         targets: strategy.targets || [],
         stop_loss: strategy.stop_loss ?? null,
+
         favorite: strategy.favorite ?? false,
         tags: strategy.tags || [],
       };
 
       await createStrategy(payload);
-      handleSuccess('✅ Strategie succesvol opgeslagen!');
-
+      handleSuccess("✅ Strategie succesvol opgeslagen!");
       refreshEverything();
-
     } catch (err) {
-      console.error('❌ Strategie opslaan mislukt:', err);
-      setToast('❌ Strategie opslaan mislukt.');
+      console.error("❌ Strategie opslaan mislukt:", err);
+      setToast("❌ Strategie opslaan mislukt.");
     }
   };
 
-  // 🔍 FILTERS
+  /* -------------------------------------------------- */
+  /* 🔍 FILTERS */
+  /* -------------------------------------------------- */
   const setupsWithoutTrading = useMemo(() => {
     return setups.filter(
       (s) =>
         !strategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === 'trading'
+            String(strat.strategy_type).toLowerCase() === "trading"
         )
     );
   }, [setups, strategies, refreshKey]);
@@ -96,7 +112,7 @@ export default function StrategyPage() {
         !strategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === 'dca'
+            String(strat.strategy_type).toLowerCase() === "dca"
         )
     );
   }, [setups, strategies, refreshKey]);
@@ -107,11 +123,14 @@ export default function StrategyPage() {
         !strategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === 'manual'
+            String(strat.strategy_type).toLowerCase() === "manual"
         )
     );
   }, [setups, strategies, refreshKey]);
 
+  /* -------------------------------------------------- */
+  /* RENDER */
+  /* -------------------------------------------------- */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
@@ -126,9 +145,14 @@ export default function StrategyPage() {
       </div>
 
       <p className="text-[var(--text-light)] max-w-2xl">
-        Bouw, beheer en optimaliseer je tradingstrategieën. AI ondersteunt bij
-        validatie en automatische generaties.
+        Bouw, beheer en optimaliseer je tradingstrategieën.  
+        De AI helpt bij validatie, tips en automatische generaties.
       </p>
+
+      {/* -------------------------------------------------- */}
+      {/* 🧠 AI AGENT INSIGHTS – NIEUW */}
+      {/* -------------------------------------------------- */}
+      <AgentInsightPanel type="strategy" />
 
       {/* -------------------------------------------------- */}
       {/* 📋 Huidige strategieën */}
@@ -143,7 +167,7 @@ export default function StrategyPage() {
       >
         <div className="flex justify-between items-center mb-4">
 
-          {/* 🔎 Zoekbalk */}
+          {/* 🔎 Zoekveld */}
           <div
             className="
               flex items-center px-3 py-2
@@ -166,6 +190,9 @@ export default function StrategyPage() {
         <StrategyList searchTerm={search} key={refreshKey} />
       </CardWrapper>
 
+      {/* -------------------------------------------------- */}
+      {/* 🟢 Toast */}
+      {/* -------------------------------------------------- */}
       {toast && (
         <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
           {toast}
@@ -184,8 +211,8 @@ export default function StrategyPage() {
         }
       >
         <p className="text-sm text-[var(--text-light)] mb-4">
-          Kies welke setup je wilt gebruiken en genereer een strategie via AI,
-          of voer hem zelf handmatig in.
+          Selecteer een setup en laat AI een strategie genereren,
+          of voeg zelf handmatig een strategie toe.
         </p>
 
         <StrategyTabs
@@ -196,7 +223,6 @@ export default function StrategyPage() {
           setupsManual={setupsWithoutManual}
         />
       </CardWrapper>
-
     </div>
   );
 }

@@ -24,15 +24,15 @@ import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";
 import { useMarketData } from "@/hooks/useMarketData";
 
-// 🔥 Nieuwe Hybride PageLoader
+// 🔥 PageLoader overlay
 import PageLoader from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  // -------------------------------------------------------------------
+  // --------------------------------------------------------
   // 📡 DATA HOOKS
-  // -------------------------------------------------------------------
+  // --------------------------------------------------------
   const {
     technicalData,
     handleRemove,
@@ -48,19 +48,16 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
-  // -------------------------------------------------------------------
-  // 🔥 GLOBAL PAGE LOADING — Optie C
-  // Wacht tot ALLE dashboard-data aanwezig is
-  // -------------------------------------------------------------------
+  // --------------------------------------------------------
+  // 🔥 PAGE LOADING OVERLAY
+  // --------------------------------------------------------
   const pageLoading =
     technicalLoading ||
     macroLoading ||
-    !sevenDayData ||
-    !btcLive;
+    sevenDayData == null ||
+    btcLive == null;
 
-  // -------------------------------------------------------------------
-  // Scroll to top button logic
-  // -------------------------------------------------------------------
+  // Scroll-to-top button
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -70,18 +67,10 @@ export default function DashboardPage() {
   const scrollToTop = () =>
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // -------------------------------------------------------------------
-  // 🔥 Show Loader Before Everything Else
-  // -------------------------------------------------------------------
-  if (pageLoading) {
-    return <PageLoader text="Dashboard wordt geladen…" />;
-  }
-
-  // -------------------------------------------------------------------
-  // 🔥 DASHBOARD CONTENT
-  // -------------------------------------------------------------------
   return (
-    <div className="max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
+    <div className="relative max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
+      {/* 🔵 Loader overlay boven de hele pagina */}
+      {pageLoading && <PageLoader text="Dashboard wordt geladen…" />}
 
       {/* PAGE TITLE */}
       <div className="flex items-center gap-2 mb-4">
@@ -96,10 +85,8 @@ export default function DashboardPage() {
 
       {/* MAIN CONTENT ROW */}
       <div className="flex flex-col xl:flex-row gap-12">
-
         {/* MAIN COLUMN */}
         <main className="flex-1 space-y-12">
-
           {/* GAUGES */}
           <DashboardGauges />
 

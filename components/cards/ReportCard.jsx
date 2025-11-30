@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MessageSquareQuote, Sparkles } from "lucide-react";
+import { MessageSquare, Sparkles } from "lucide-react";
 import Link from "next/link";
 import CardWrapper from "@/components/ui/CardWrapper";
 
@@ -34,7 +34,7 @@ export default function ReportCard() {
   return (
     <CardWrapper
       title="Daily Rapport"
-      icon={<MessageSquareQuote className="w-4 h-4 text-[var(--primary)]" />}
+      icon={<MessageSquare className="w-4 h-4 text-[var(--primary)]" />}
     >
       <div className="flex flex-col min-h-[140px] justify-between">
 

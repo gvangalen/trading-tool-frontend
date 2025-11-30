@@ -7,9 +7,6 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import { fetchLastSetup } from "@/lib/api/setups";
 
-// Premium insight block
-import AIInsightBlock from "@/components/ui/AIInsightBlock";
-
 export default function ActiveSetupCard() {
   const [setup, setSetup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +18,6 @@ export default function ActiveSetupCard() {
         setSetup(data || null);
       } catch (err) {
         console.error("❌ ActiveSetupCard error:", err);
-        setSetup(null);
       } finally {
         setLoading(false);
       }
@@ -30,18 +26,16 @@ export default function ActiveSetupCard() {
   }, []);
 
   /* ===========================================================
-     🧠 Trend → juiste tekstvariant bepalen
+     🧠 Trend 1-regel preview
   =========================================================== */
-
-  const trend = setup?.trend?.toLowerCase() || "neutral";
-
   const TREND_TEXT = {
-    bullish: "Deze setup is bullish en momenteel actief.",
-    bearish: "Deze setup is bearish en vereist extra voorzichtigheid.",
-    neutral: "Deze setup is actief, maar de trend is neutraal.",
+    bullish: "Setup is bullish en actief.",
+    bearish: "Setup is bearish — voorzichtigheid nodig.",
+    neutral: "Setup is actief maar trend is neutraal.",
   };
 
-  const trendMessage = TREND_TEXT[trend] ?? TREND_TEXT.neutral;
+  const trend = setup?.trend?.toLowerCase() || "neutral";
+  const trendPreview = TREND_TEXT[trend] ?? TREND_TEXT.neutral;
 
   return (
     <CardWrapper
@@ -53,16 +47,16 @@ export default function ActiveSetupCard() {
         {/* LOADING */}
         {loading && <CardLoader text="Setup laden…" />}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && !setup && (
           <p className="italic text-[var(--text-light)]">
             Geen actieve setup gevonden.
           </p>
         )}
 
-        {/* DATA CONTENT */}
+        {/* CONTENT */}
         {!loading && setup && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 flex-1">
 
             {/* BASIS INFO */}
             <div className="space-y-[3px]">
@@ -73,8 +67,10 @@ export default function ActiveSetupCard() {
               <p><strong>Asset:</strong> {setup.symbol || "–"}</p>
             </div>
 
-            {/* TREND INSIGHT — premium stijl */}
-            <AIInsightBlock text={trendMessage} variant="trend" />
+            {/* 1 REGEL PREVIEW (geen blok) */}
+            <p className="text-xs italic text-[var(--text-light)] mt-auto line-clamp-1">
+              {trendPreview}
+            </p>
           </div>
         )}
 

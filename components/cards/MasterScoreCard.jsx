@@ -5,7 +5,7 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import { Brain } from "lucide-react";
 import { useScoresData } from "@/hooks/useScoresData";
 
-// Nieuwe premium insight block
+// Premium AI insight block
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function MasterScoreCard() {
@@ -48,7 +48,7 @@ export default function MasterScoreCard() {
         {!loading && master && (
           <div className="flex flex-col gap-4 flex-1">
 
-            {/* SCORE */}
+            {/* SCORE BIG NUMBER */}
             <p
               className={`text-4xl font-bold tracking-tight ${getScoreColor(
                 master.score
@@ -57,14 +57,14 @@ export default function MasterScoreCard() {
               {scoreValue}
             </p>
 
-            {/* DETAILS */}
+            {/* SCORE DETAILS */}
             <div className="space-y-[3px] text-sm text-[var(--text-dark)]">
               <p><strong>Trend:</strong> {master.trend || "–"}</p>
               <p><strong>Bias:</strong> {master.bias || "–"}</p>
               <p><strong>Risico:</strong> {master.risk || "–"}</p>
             </div>
 
-            {/* AI OUTLOOK – nieuwe soft variant */}
+            {/* PREMIUM SOFT OUTLOOK BLOCK */}
             {outlook && (
               <AIInsightBlock text={outlook} variant="soft" />
             )}

@@ -2,13 +2,10 @@
 
 import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
-import CardLoader from "@/components/ui/CardLoader";
+import CardLoader from "@/components/ui/CardLoader"; 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchLatestReport } from "@/lib/api/report";
-
-// Premium AI Insight Block
-import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
   const [loading, setLoading] = useState(true);
@@ -19,54 +16,46 @@ export default function ReportCard() {
       try {
         const data = await fetchLatestReport();
         setReport(data || null);
-      } catch (err) {
-        console.error("❌ ReportCard error:", err);
-      } finally {
-        setLoading(false);
-      }
+      } catch {}
+      setLoading(false);
     }
     load();
   }, []);
 
-  // Perfecte thumbnail-achtige triggertekst
-  const quote =
+  const text =
     report?.ai_summary_short ||
     report?.headline ||
-    "Jouw nieuwste rapport staat klaar — bekijk de inzichten.";
+    "Nieuw rapport beschikbaar.";
 
   return (
     <CardWrapper
       title="Daily Rapport"
       icon={<MessageSquare className="w-4 h-4 text-[var(--primary)]" />}
     >
-      <div className="flex flex-col gap-4 min-h-[200px]">
+      <div className="flex flex-col min-h-[170px]">
 
-        {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* EMPTY */}
         {!loading && !report && (
-          <p className="text-sm italic text-[var(--text-light)] py-2">
+          <p className="text-sm italic text-[var(--text-light)]">
             Nog geen rapport beschikbaar.
           </p>
         )}
 
-        {/* CONTENT */}
         {!loading && report && (
           <>
-            {/* Compact en clean insight-blok */}
-            <AIInsightBlock text={quote} variant="soft" />
+            <p className="text-sm text-[var(--text-light)] line-clamp-1">
+              {text}
+            </p>
 
-            {/* CTA altijd zichtbaar */}
             <Link
               href="/report"
               className="
-                mt-auto pt-1
-                text-xs font-medium
+                mt-auto text-xs font-medium
                 text-[var(--primary-dark)]
                 hover:text-[var(--primary)]
                 hover:underline
-                transition flex items-center gap-1
+                flex items-center gap-1
               "
             >
               Bekijk laatste rapport
@@ -74,6 +63,7 @@ export default function ReportCard() {
             </Link>
           </>
         )}
+
       </div>
     </CardWrapper>
   );

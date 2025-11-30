@@ -2,42 +2,39 @@
 
 import { Bot } from "lucide-react";
 
-export default function AIInsightBlock({ text, variant = "soft" }) {
+export default function AIInsightBlock({
+  text,
+  variant = "dashboard", // default nieuwe variant
+}) {
   if (!text) return null;
 
-  /* ---------------------------------------------
-     🎨 VARIANT STYLES — clean & consistent
-  --------------------------------------------- */
   const styles = {
-    soft: `
+    dashboard: `
       bg-[var(--surface-2)]
       border border-[var(--border)]
       text-[var(--text-light)]
+      rounded-lg p-3 text-xs leading-snug
+      relative overflow-hidden shadow-sm
     `,
-    accent: `
-      bg-[var(--surface-3)]
-      border border-[var(--border)]
-      text-[var(--text-dark)]
-    `,
-    trend: `
-      bg-[var(--surface-3)]
-      border border-[var(--border)]
-      text-[var(--text-dark)]
-    `
   };
 
-  const active = styles[variant] || styles.soft;
-
   return (
-    <div
-      className={`
-        w-full rounded-lg p-3 text-sm leading-relaxed
-        flex items-start gap-2 shadow-sm
-        ${active}
-      `}
-    >
-      <Bot className="w-4 h-4 mt-[2px] opacity-60 text-[var(--primary)]" />
-      <span>{text}</span>
+    <div className="w-full">
+      <div className={styles[variant] || styles.dashboard}>
+        <div className="flex items-start gap-2">
+          <Bot className="w-4 h-4 mt-[2px] text-[var(--primary)] opacity-70" />
+          <p className="line-clamp-3 pr-2">{text}</p>
+        </div>
+
+        {/* Fade overlay for clamped text */}
+        <div
+          className="
+            pointer-events-none
+            absolute bottom-0 left-0 right-0 h-6
+            bg-gradient-to-t from-[var(--surface-2)]
+          "
+        />
+      </div>
     </div>
   );
 }

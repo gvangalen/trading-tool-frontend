@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
 import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchLatestReport } from "@/lib/api/report";
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
@@ -15,7 +14,9 @@ export default function ReportCard() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchLatestReport();
+        // 🚀 Belangrijk: juiste endpoint gebruiken
+        const res = await fetch("/api/dailyreport/latest");
+        const data = await res.json();
         setReport(data || null);
       } catch (err) {
         console.error("❌ ReportCard error:", err);
@@ -26,10 +27,11 @@ export default function ReportCard() {
     load();
   }, []);
 
+  // Mini-quote voor op dashboard
   const quote =
     report?.ai_summary_short ||
     report?.headline ||
-    "Nieuw rapport beschikbaar!";
+    "Nieuw rapport is klaar!";
 
   return (
     <CardWrapper
@@ -38,14 +40,20 @@ export default function ReportCard() {
     >
       <div className="flex flex-col gap-4 min-h-[220px]">
 
+        {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
+        {/* EMPTY STATE */}
         {!loading && !report && (
-          <p className="italic text-[var(--text-light)]">Nog geen rapport beschikbaar.</p>
+          <p className="italic text-[var(--text-light)]">
+            Nog geen rapport beschikbaar.
+          </p>
         )}
 
+        {/* CONTENT */}
         {!loading && report && (
           <>
+            {/* Mini highlight */}
             <AIInsightBlock text={quote} variant="dashboard" />
 
             <Link
@@ -53,10 +61,12 @@ export default function ReportCard() {
               className="
                 mt-auto text-xs font-medium
                 text-[var(--primary-dark)]
-                hover:underline flex items-center gap-1
+                hover:underline 
+                flex items-center gap-1
               "
             >
-              Bekijk laatste rapport <ChevronRight className="w-3 h-3" />
+              Bekijk laatste rapport
+              <ChevronRight className="w-3 h-3" />
             </Link>
           </>
         )}

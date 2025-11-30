@@ -7,7 +7,7 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import AILoader from "@/components/ui/AILoader";
 import { fetchLastStrategy } from "@/lib/api/strategy";
 
-// ✨ Premium AI Insight component
+// Premium AI Insight component
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function TradingBotCard() {
@@ -47,12 +47,12 @@ export default function TradingBotCard() {
           </div>
         )}
 
-        {/* ERROR STATE */}
+        {/* ERROR */}
         {!loading && error && (
           <p className="text-sm text-red-600">{error}</p>
         )}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && !error && !strategy && (
           <p className="text-sm italic text-[var(--text-light)]">
             Nog geen strategie beschikbaar.
@@ -64,7 +64,7 @@ export default function TradingBotCard() {
           <div className="flex flex-col gap-4 flex-1">
 
             {/* BASIS VELDEN */}
-            <div className="space-y-[2px] text-sm text-[var(--text-dark)]">
+            <div className="space-y-[3px] text-sm text-[var(--text-dark)]">
               <p><strong>Setup:</strong> {strategy.setup_name}</p>
               <p><strong>Type:</strong> {strategy.strategy_type}</p>
               <p><strong>Asset:</strong> {strategy.symbol}</p>
@@ -83,7 +83,7 @@ export default function TradingBotCard() {
               )}
             </div>
 
-            {/* AI INSIGHT BLOCK — PREMIUM ACCENT VARIANT */}
+            {/* PREMIUM ACCENT BLOCK */}
             {explanation && (
               <AIInsightBlock text={explanation} variant="accent" />
             )}

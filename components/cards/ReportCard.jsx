@@ -2,12 +2,12 @@
 
 import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
-import CardLoader from "@/components/ui/CardLoader"; 
+import CardLoader from "@/components/ui/CardLoader";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchLatestReport } from "@/lib/api/report";
 
-// Nieuwe premium insight block
+// Premium AI Insight Block
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
@@ -28,11 +28,11 @@ export default function ReportCard() {
     load();
   }, []);
 
-  // Dynamische korte quote
+  // Perfecte thumbnail-achtige triggertekst
   const quote =
     report?.ai_summary_short ||
     report?.headline ||
-    "Nieuw rapport beschikbaar!";
+    "Jouw nieuwste rapport staat klaar — bekijk de inzichten.";
 
   return (
     <CardWrapper
@@ -44,7 +44,7 @@ export default function ReportCard() {
         {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && !report && (
           <p className="text-sm italic text-[var(--text-light)] py-2">
             Nog geen rapport beschikbaar.
@@ -54,14 +54,15 @@ export default function ReportCard() {
         {/* CONTENT */}
         {!loading && report && (
           <>
-            {/* Nieuwe AI Insight Block (soft variant) */}
+            {/* Compact en clean insight-blok */}
             <AIInsightBlock text={quote} variant="soft" />
 
-            {/* CTA */}
+            {/* CTA altijd zichtbaar */}
             <Link
               href="/report"
               className="
-                mt-auto text-xs font-medium
+                mt-auto pt-1
+                text-xs font-medium
                 text-[var(--primary-dark)]
                 hover:text-[var(--primary)]
                 hover:underline

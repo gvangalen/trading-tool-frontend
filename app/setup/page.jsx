@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Search, ClipboardList, PlusCircle } from "lucide-react";
+import {
+  Settings,
+  Search,
+  ClipboardList,
+  PlusCircle,
+} from "lucide-react";
 
 import SetupForm from "@/components/setup/SetupForm";
 import SetupList from "@/components/setup/SetupList";
 import { useSetupData } from "@/hooks/useSetupData";
 import CardWrapper from "@/components/ui/CardWrapper";
+
+// 🧠 Nieuw – AI Agent Panel
+import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 export default function SetupPage() {
   const [search, setSearch] = useState("");
@@ -44,28 +52,37 @@ export default function SetupPage() {
       </div>
 
       <p className="text-[var(--text-light)] max-w-2xl">
-        Beheer al je trading-setups. De AI valideert deze dagelijks op basis van macro-, technische- en marktdata.
+        Beheer al je trading-setups. De AI valideert deze dagelijks op basis van 
+        macro-, technische- en marktdata.
       </p>
+
+      {/* -------------------------------------------------- */}
+      {/* 🧠 AI Agent Insight – NIEUW */}
+      {/* -------------------------------------------------- */}
+      <AgentInsightPanel type="setup" />
 
       {/* -------------------------------------------------- */}
       {/* 📋 Huidige setups + zoekbalk */}
       {/* -------------------------------------------------- */}
-      <CardWrapper title={
-        <div className="flex items-center gap-2">
-          <ClipboardList className="text-[var(--primary)]" size={20} />
-          <span>Huidige Setups</span>
-        </div>
-      }>
-
+      <CardWrapper
+        title={
+          <div className="flex items-center gap-2">
+            <ClipboardList className="text-[var(--primary)]" size={20} />
+            <span>Huidige Setups</span>
+          </div>
+        }
+      >
         <div className="flex justify-between items-center mb-4">
 
           {/* Zoekveld */}
-          <div className="
-            flex items-center px-3 py-2 
-            bg-[var(--bg-soft)] border border-[var(--border)]
-            rounded-lg gap-2
-            focus-within:ring-1 focus-within:ring-[var(--primary)]
-          ">
+          <div
+            className="
+              flex items-center px-3 py-2 
+              bg-[var(--bg-soft)] border border-[var(--border)]
+              rounded-lg gap-2
+              focus-within:ring-1 focus-within:ring-[var(--primary)]
+            "
+          >
             <Search size={18} className="text-[var(--text-light)]" />
             <input
               type="text"
@@ -75,7 +92,6 @@ export default function SetupPage() {
               className="bg-transparent outline-none text-sm w-48"
             />
           </div>
-
         </div>
 
         {/* Setup lijst */}
@@ -93,19 +109,20 @@ export default function SetupPage() {
       {/* -------------------------------------------------- */}
       {/* ➕ Nieuwe setup */}
       {/* -------------------------------------------------- */}
-      <CardWrapper title={
-        <div className="flex items-center gap-2">
-          <PlusCircle className="text-[var(--primary)]" size={20} />
-          <span>Nieuwe Setup</span>
-        </div>
-      }>
+      <CardWrapper
+        title={
+          <div className="flex items-center gap-2">
+            <PlusCircle className="text-[var(--primary)]" size={20} />
+            <span>Nieuwe Setup</span>
+          </div>
+        }
+      >
         <p className="text-sm text-[var(--text-light)] mb-4">
           Vul alle details in om een nieuwe trading-setup toe te voegen.
         </p>
 
         <SetupForm onSaved={reloadSetups} />
       </CardWrapper>
-
     </div>
   );
 }

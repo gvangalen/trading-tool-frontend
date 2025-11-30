@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
 import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
-import CardLoader from "@/components/ui/CardLoader"; 
+import CardLoader from "@/components/ui/CardLoader";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchLatestReport } from "@/lib/api/report";
+import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
   const [loading, setLoading] = useState(true);
@@ -16,54 +17,49 @@ export default function ReportCard() {
       try {
         const data = await fetchLatestReport();
         setReport(data || null);
-      } catch {}
-      setLoading(false);
+      } catch (err) {
+        console.error("❌ ReportCard error:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
 
-  const text =
+  const quote =
     report?.ai_summary_short ||
     report?.headline ||
-    "Nieuw rapport beschikbaar.";
+    "Nieuw rapport beschikbaar!";
 
   return (
     <CardWrapper
       title="Daily Rapport"
       icon={<MessageSquare className="w-4 h-4 text-[var(--primary)]" />}
     >
-      <div className="flex flex-col min-h-[170px]">
+      <div className="flex flex-col gap-4 min-h-[220px]">
 
         {loading && <CardLoader text="Rapport laden…" />}
 
         {!loading && !report && (
-          <p className="text-sm italic text-[var(--text-light)]">
-            Nog geen rapport beschikbaar.
-          </p>
+          <p className="italic text-[var(--text-light)]">Nog geen rapport beschikbaar.</p>
         )}
 
         {!loading && report && (
           <>
-            <p className="text-sm text-[var(--text-light)] line-clamp-1">
-              {text}
-            </p>
+            <AIInsightBlock text={quote} variant="dashboard" />
 
             <Link
               href="/report"
               className="
                 mt-auto text-xs font-medium
                 text-[var(--primary-dark)]
-                hover:text-[var(--primary)]
-                hover:underline
-                flex items-center gap-1
+                hover:underline flex items-center gap-1
               "
             >
-              Bekijk laatste rapport
-              <ChevronRight className="w-3 h-3" />
+              Bekijk laatste rapport <ChevronRight className="w-3 h-3" />
             </Link>
           </>
         )}
-
       </div>
     </CardWrapper>
   );

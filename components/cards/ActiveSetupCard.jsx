@@ -7,7 +7,7 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import { fetchLastSetup } from "@/lib/api/setups";
 
-// Nieuwe premium block (soft highlight)
+// Premium insight block
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ActiveSetupCard() {
@@ -30,15 +30,15 @@ export default function ActiveSetupCard() {
   }, []);
 
   /* ===========================================================
-     🎨 Trend variant bepalen voor InsightBlock
+     🧠 Trend → juiste tekstvariant bepalen
   =========================================================== */
 
   const trend = setup?.trend?.toLowerCase() || "neutral";
 
   const TREND_TEXT = {
     bullish: "Deze setup is bullish en momenteel actief.",
-    bearish: "Deze setup is bearish en vereist voorzichtigheid.",
-    neutral: "Deze setup is actief, maar trend is neutraal.",
+    bearish: "Deze setup is bearish en vereist extra voorzichtigheid.",
+    neutral: "Deze setup is actief, maar de trend is neutraal.",
   };
 
   const trendMessage = TREND_TEXT[trend] ?? TREND_TEXT.neutral;
@@ -53,14 +53,14 @@ export default function ActiveSetupCard() {
         {/* LOADING */}
         {loading && <CardLoader text="Setup laden…" />}
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
         {!loading && !setup && (
           <p className="italic text-[var(--text-light)]">
             Geen actieve setup gevonden.
           </p>
         )}
 
-        {/* CONTENT */}
+        {/* DATA CONTENT */}
         {!loading && setup && (
           <div className="flex flex-col gap-4">
 
@@ -73,10 +73,11 @@ export default function ActiveSetupCard() {
               <p><strong>Asset:</strong> {setup.symbol || "–"}</p>
             </div>
 
-            {/* TREND INSIGHT BLOCK */}
+            {/* TREND INSIGHT — premium stijl */}
             <AIInsightBlock text={trendMessage} variant="trend" />
           </div>
         )}
+
       </div>
     </CardWrapper>
   );

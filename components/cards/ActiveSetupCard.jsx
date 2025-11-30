@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
-import { fetchLastSetup } from "@/lib/api/setups";
+
 import CardWrapper from "@/components/ui/CardWrapper";
+import CardLoader from "@/components/ui/CardLoader";
+import { fetchLastSetup } from "@/lib/api/setups";
+
+// Nieuwe premium block (soft highlight)
+import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ActiveSetupCard() {
   const [setup, setSetup] = useState(null);
@@ -25,30 +30,18 @@ export default function ActiveSetupCard() {
   }, []);
 
   /* ===========================================================
-     🎨 Trend styling
+     🎨 Trend variant bepalen voor InsightBlock
   =========================================================== */
 
   const trend = setup?.trend?.toLowerCase() || "neutral";
 
-  const TREND_STYLES = {
-    bullish: {
-      bg: "bg-green-50 dark:bg-green-900/20",
-      text: "text-green-700 dark:text-green-300",
-      border: "border-green-300 dark:border-green-800",
-    },
-    bearish: {
-      bg: "bg-red-50 dark:bg-red-900/20",
-      text: "text-red-700 dark:text-red-300",
-      border: "border-red-300 dark:border-red-800",
-    },
-    neutral: {
-      bg: "bg-gray-100 dark:bg-gray-800/30",
-      text: "text-gray-600 dark:text-gray-300",
-      border: "border-gray-300 dark:border-gray-700",
-    },
+  const TREND_TEXT = {
+    bullish: "Deze setup is bullish en momenteel actief.",
+    bearish: "Deze setup is bearish en vereist voorzichtigheid.",
+    neutral: "Deze setup is actief, maar trend is neutraal.",
   };
 
-  const trendStyle = TREND_STYLES[trend] ?? TREND_STYLES.neutral;
+  const trendMessage = TREND_TEXT[trend] ?? TREND_TEXT.neutral;
 
   return (
     <CardWrapper
@@ -58,13 +51,9 @@ export default function ActiveSetupCard() {
       <div className="flex flex-col gap-4 text-sm text-[var(--text-dark)] min-h-[220px]">
 
         {/* LOADING */}
-        {loading && (
-          <p className="text-[var(--text-light)] italic">
-            ⏳ Laden…
-          </p>
-        )}
+        {loading && <CardLoader text="Setup laden…" />}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && !setup && (
           <p className="italic text-[var(--text-light)]">
             Geen actieve setup gevonden.
@@ -84,19 +73,8 @@ export default function ActiveSetupCard() {
               <p><strong>Asset:</strong> {setup.symbol || "–"}</p>
             </div>
 
-            {/* TREND BADGE */}
-            <div
-              className={`
-                p-3 rounded-lg border
-                text-xs italic
-                ${trendStyle.bg}
-                ${trendStyle.text}
-                ${trendStyle.border}
-              `}
-            >
-              Deze setup is momenteel actief.  
-              Bekijk details op de setups-pagina.
-            </div>
+            {/* TREND INSIGHT BLOCK */}
+            <AIInsightBlock text={trendMessage} variant="trend" />
           </div>
         )}
       </div>

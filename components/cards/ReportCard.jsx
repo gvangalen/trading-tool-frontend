@@ -44,7 +44,7 @@ export default function ReportCard() {
         {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
         {!loading && !report && (
           <p className="text-sm italic text-[var(--text-light)] py-2">
             Nog geen rapport beschikbaar.
@@ -54,7 +54,7 @@ export default function ReportCard() {
         {/* CONTENT */}
         {!loading && report && (
           <>
-            {/* Nieuwe AI Insight Block (soft) */}
+            {/* Nieuwe AI Insight Block (soft variant) */}
             <AIInsightBlock text={quote} variant="soft" />
 
             {/* CTA */}

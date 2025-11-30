@@ -1,16 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Bot } from "lucide-react";
-
 import CardWrapper from "@/components/ui/CardWrapper";
 import AILoader from "@/components/ui/AILoader";
 import { fetchLastStrategy } from "@/lib/api/strategy";
+import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function TradingBotCard() {
   const [strategy, setStrategy] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -18,18 +17,15 @@ export default function TradingBotCard() {
         const data = await fetchLastStrategy();
         setStrategy(data && !data.message ? data : null);
       } catch (err) {
-        setError("Kan laatste strategy niet laden");
+        console.error("❌ TradingBotCard error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     load();
   }, []);
 
-  // Maximale 1-regel samenvatting van AI
-  const oneLiner =
-    strategy?.ai_summary_short ||
-    strategy?.ai_explanation?.split(".")[0] || // eerste zin als fallback
-    "Strategie beschikbaar.";
+  const explanation = strategy?.ai_explanation || "";
 
   return (
     <CardWrapper
@@ -38,42 +34,32 @@ export default function TradingBotCard() {
     >
       <div className="flex flex-col gap-4 min-h-[220px]">
 
-        {/* LOADING */}
         {loading && (
           <div className="flex justify-center py-6 flex-1">
             <AILoader variant="dots" size="md" text="Strategy laden…" />
           </div>
         )}
 
-        {/* ERROR */}
-        {!loading && error && (
-          <p className="text-sm text-red-600">{error}</p>
+        {!loading && !strategy && (
+          <p className="italic text-[var(--text-light)]">Nog geen strategie beschikbaar.</p>
         )}
 
-        {/* EMPTY */}
-        {!loading && !error && !strategy && (
-          <p className="text-sm italic text-[var(--text-light)]">
-            Nog geen strategie beschikbaar.
-          </p>
-        )}
-
-        {/* CONTENT */}
         {!loading && strategy && (
-          <div className="flex flex-col gap-4 flex-1">
-
-            {/* BASISGEGEVENS */}
+          <>
             <div className="space-y-[2px] text-sm text-[var(--text-dark)]">
               <p><strong>Setup:</strong> {strategy.setup_name}</p>
               <p><strong>Type:</strong> {strategy.strategy_type}</p>
               <p><strong>Asset:</strong> {strategy.symbol}</p>
               <p><strong>Timeframe:</strong> {strategy.timeframe}</p>
+              {strategy.entry && <p><strong>Entry:</strong> {strategy.entry}</p>}
+              {strategy.targets && (
+                <p><strong>Targets:</strong> {strategy.targets.join(", ")}</p>
+              )}
+              {strategy.stop_loss && <p><strong>SL:</strong> {strategy.stop_loss}</p>}
             </div>
 
-            {/* 1-REGEL SHORT AI SUMMARY */}
-            <p className="text-xs text-[var(--text-light)] line-clamp-1">
-              {oneLiner}
-            </p>
-          </div>
+            <AIInsightBlock text={explanation} variant="dashboard" />
+          </>
         )}
       </div>
     </CardWrapper>

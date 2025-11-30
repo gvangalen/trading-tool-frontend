@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   BarChart3,
   Coins,
-  TrendingUp,
   Rocket,
   Trophy,
   ChevronsUp,
@@ -25,12 +24,15 @@ import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";
 import { useMarketData } from "@/hooks/useMarketData";
 
-// 🔥 Nieuwe PageLoader
+// 🔥 Nieuwe Hybride PageLoader
 import PageLoader from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
+  // -------------------------------------------------------------------
+  // 📡 DATA HOOKS
+  // -------------------------------------------------------------------
   const {
     technicalData,
     handleRemove,
@@ -46,17 +48,19 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
-  /* --------------------------------------------------------
-     🔥 GLOBAL PAGE LOADING STATE
-     Laad de hele pagina tot ALLE data binnen is
-  -------------------------------------------------------- */
+  // -------------------------------------------------------------------
+  // 🔥 GLOBAL PAGE LOADING — Optie C
+  // Wacht tot ALLE dashboard-data aanwezig is
+  // -------------------------------------------------------------------
   const pageLoading =
     technicalLoading ||
     macroLoading ||
     !sevenDayData ||
     !btcLive;
 
-  // Scroll-button logic
+  // -------------------------------------------------------------------
+  // Scroll to top button logic
+  // -------------------------------------------------------------------
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -66,16 +70,16 @@ export default function DashboardPage() {
   const scrollToTop = () =>
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-  /* --------------------------------------------------------
-     🔥 Laat loader zien vóór hele dashboard
-  -------------------------------------------------------- */
+  // -------------------------------------------------------------------
+  // 🔥 Show Loader Before Everything Else
+  // -------------------------------------------------------------------
   if (pageLoading) {
     return <PageLoader text="Dashboard wordt geladen…" />;
   }
 
-  /* --------------------------------------------------------
-     🔥 DASHBOARD CONTENT
-  -------------------------------------------------------- */
+  // -------------------------------------------------------------------
+  // 🔥 DASHBOARD CONTENT
+  // -------------------------------------------------------------------
   return (
     <div className="max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
 
@@ -93,17 +97,17 @@ export default function DashboardPage() {
       {/* MAIN CONTENT ROW */}
       <div className="flex flex-col xl:flex-row gap-12">
 
-        {/* ========== MAIN COLUMN ========== */}
+        {/* MAIN COLUMN */}
         <main className="flex-1 space-y-12">
 
           {/* GAUGES */}
           <DashboardGauges />
 
-          {/* MARKET (in card) */}
+          {/* MARKET (CARD) */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Coins className="w-4 h-4" />
+                <Coins className="w-4 h-4 icon-primary" />
                 Market Data
               </div>
             }
@@ -129,11 +133,11 @@ export default function DashboardPage() {
             error={macroError}
           />
 
-          {/* TRADING ADVIES */}
+          {/* TRADING ADVICE */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Rocket className="w-4 h-4" />
+                <Rocket className="w-4 h-4 icon-primary" />
                 AI Tradingadvies
               </div>
             }
@@ -145,7 +149,7 @@ export default function DashboardPage() {
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4" />
+                <Trophy className="w-4 h-4 icon-primary" />
                 Top 3 Setups
               </div>
             }
@@ -154,7 +158,7 @@ export default function DashboardPage() {
           </CardWrapper>
         </main>
 
-        {/* ========== RIGHT SIDEBAR ========== */}
+        {/* RIGHT SIDEBAR */}
         <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />
@@ -170,7 +174,7 @@ export default function DashboardPage() {
             fixed bottom-6 right-6
             bg-[var(--primary)] text-white
             p-3 rounded-full shadow-lg
-            hover:bg-[var(--primary-dark)]
+            hover:bg-[var(--primary-strong)]
             transition-all
             focus:ring-2 focus:ring-[var(--primary)]
           "

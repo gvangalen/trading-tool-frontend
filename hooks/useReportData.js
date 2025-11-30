@@ -14,7 +14,7 @@ import {
   fetchQuarterlyReportLatest,
   fetchQuarterlyReportByDate,
   fetchQuarterlyReportDates,
-} from '@/lib/api/reportService';
+} from '@/lib/api/report';
 
 /**
  * ✅ Deze hook ondersteunt nu alle rapporttypes met gesplitste API-calls:

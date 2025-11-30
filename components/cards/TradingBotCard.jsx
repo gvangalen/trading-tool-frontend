@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { Bot } from "lucide-react";
@@ -7,7 +7,7 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import AILoader from "@/components/ui/AILoader";
 import { fetchLastStrategy } from "@/lib/api/strategy";
 
-// ✨ Nieuwe AI Insight block (premium)
+// ✨ Premium AI Insight component
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function TradingBotCard() {
@@ -83,9 +83,9 @@ export default function TradingBotCard() {
               )}
             </div>
 
-            {/* AI INSIGHT BLOCK — PREMIUM VERSIE */}
+            {/* AI INSIGHT BLOCK — PREMIUM ACCENT VARIANT */}
             {explanation && (
-              <AIInsightBlock text={explanation} />
+              <AIInsightBlock text={explanation} variant="accent" />
             )}
           </div>
         )}

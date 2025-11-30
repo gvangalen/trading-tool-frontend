@@ -4,30 +4,21 @@ import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+
+// Hook voor alle rapporten
+import { useReportData } from "@/hooks/useReportData";
+
+// Premium dashboard-variant block
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
-  const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState(null);
+  const {
+    report,
+    loading,
+    error,
+  } = useReportData("daily"); // ⬅️ Belangrijk: gebruik hook
 
-  useEffect(() => {
-    async function load() {
-      try {
-        // 🚀 Belangrijk: juiste endpoint gebruiken
-        const res = await fetch("/api/dailyreport/latest");
-        const data = await res.json();
-        setReport(data || null);
-      } catch (err) {
-        console.error("❌ ReportCard error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  // Mini-quote voor op dashboard
+  // Mini-quote
   const quote =
     report?.ai_summary_short ||
     report?.headline ||
@@ -43,8 +34,13 @@ export default function ReportCard() {
         {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* EMPTY STATE */}
-        {!loading && !report && (
+        {/* ERROR */}
+        {!loading && error && (
+          <p className="text-sm text-red-500 italic">{error}</p>
+        )}
+
+        {/* EMPTY */}
+        {!loading && !error && !report && (
           <p className="italic text-[var(--text-light)]">
             Nog geen rapport beschikbaar.
           </p>
@@ -53,7 +49,6 @@ export default function ReportCard() {
         {/* CONTENT */}
         {!loading && report && (
           <>
-            {/* Mini highlight */}
             <AIInsightBlock text={quote} variant="dashboard" />
 
             <Link
@@ -61,8 +56,7 @@ export default function ReportCard() {
               className="
                 mt-auto text-xs font-medium
                 text-[var(--primary-dark)]
-                hover:underline 
-                flex items-center gap-1
+                hover:underline flex items-center gap-1
               "
             >
               Bekijk laatste rapport

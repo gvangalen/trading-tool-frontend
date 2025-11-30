@@ -1,12 +1,9 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import { Brain } from "lucide-react";
 import { useScoresData } from "@/hooks/useScoresData";
-
-// Premium AI insight block
-import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function MasterScoreCard() {
   const { master, loading, error } = useScoresData();
@@ -21,7 +18,11 @@ export default function MasterScoreCard() {
   };
 
   const scoreValue = master?.score ? master.score.toFixed(1) : "–";
-  const outlook = master?.outlook || "";
+
+  // 1 REGEL korte outlook (geen blok!)
+  const outlookLine = master?.outlook
+    ? master.outlook.split(".")[0] // pak eerste zin
+    : "Geen outlook beschikbaar.";
 
   return (
     <CardWrapper
@@ -48,7 +49,7 @@ export default function MasterScoreCard() {
         {!loading && master && (
           <div className="flex flex-col gap-4 flex-1">
 
-            {/* SCORE BIG NUMBER */}
+            {/* SCORE */}
             <p
               className={`text-4xl font-bold tracking-tight ${getScoreColor(
                 master.score
@@ -57,18 +58,17 @@ export default function MasterScoreCard() {
               {scoreValue}
             </p>
 
-            {/* SCORE DETAILS */}
+            {/* DETAILS */}
             <div className="space-y-[3px] text-sm text-[var(--text-dark)]">
               <p><strong>Trend:</strong> {master.trend || "–"}</p>
               <p><strong>Bias:</strong> {master.bias || "–"}</p>
               <p><strong>Risico:</strong> {master.risk || "–"}</p>
             </div>
 
-            {/* PREMIUM SOFT OUTLOOK BLOCK */}
-            {outlook && (
-              <AIInsightBlock text={outlook} variant="soft" />
-            )}
-
+            {/* 1-REGEL OUTLOOK PREVIEW (geen blok) */}
+            <p className="text-xs text-[var(--text-light)] italic mt-auto line-clamp-1">
+              {outlookLine}
+            </p>
           </div>
         )}
       </div>

@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MessageSquare, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
+import CardLoader from "@/components/ui/CardLoader";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { fetchLatestReport } from "@/lib/api/report";
 
 export default function ReportCard() {
-  const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [report, setReport] = useState(null);
 
-  // 🔥 Laatste report ophalen
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/report/latest");
-        const data = await res.json();
-        if (data && !data.error) setReport(data);
+        const data = await fetchLatestReport();
+        setReport(data || null);
       } catch (err) {
         console.error("❌ ReportCard error:", err);
       } finally {
@@ -25,61 +25,65 @@ export default function ReportCard() {
     load();
   }, []);
 
-  // 🧠 Korte teaser (fallback = superkort)
-  const teaser =
-    report?.ai_insight_short ||
-    report?.summary_short ||
-    "Nieuw rapport is klaar.";
+  // Dynamische korte quote — fallback
+  const quote =
+    report?.ai_summary_short ||
+    report?.headline ||
+    "Nieuw rapport beschikbaar!";
 
   return (
     <CardWrapper
       title="Daily Rapport"
       icon={<MessageSquare className="w-4 h-4 text-[var(--primary)]" />}
     >
-      <div className="flex flex-col min-h-[140px] justify-between">
+      <div className="flex flex-col gap-4 min-h-[200px]">
 
-        {/* LOADING */}
-        {loading && (
-          <p className="text-[var(--text-light)] italic text-sm py-1">
-            ⏳ Rapport laden…
-          </p>
-        )}
+        {/* LOADING STATE */}
+        {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
         {!loading && !report && (
-          <p className="italic text-[var(--text-light)] text-sm py-1">
-            Geen rapport gevonden.
+          <p className="text-sm italic text-[var(--text-light)] py-2">
+            Nog geen rapport beschikbaar.
           </p>
         )}
 
-        {/* AI TEASER */}
+        {/* CONTENT */}
         {!loading && report && (
-          <div
-            className="
-              flex items-start gap-2
-              text-sm text-[var(--text-dark)]
-              bg-blue-100/40 dark:bg-blue-900/20
-              border border-blue-200/40 dark:border-blue-800/30
-              rounded-lg p-2 leading-snug
-            "
-          >
-            <Sparkles className="w-3 h-3 mt-[2px] text-blue-600 dark:text-blue-300" />
-            <span className="line-clamp-1">{teaser}</span>
-          </div>
+          <>
+            {/* QUOTE / HIGHLIGHT */}
+            <div
+              className="
+                text-sm italic 
+                text-[var(--text-light)]
+                bg-blue-100/40 dark:bg-blue-900/20
+                border border-blue-200/40 dark:border-blue-800/40
+                p-3 rounded-lg
+                leading-relaxed
+                flex gap-2 items-start
+              "
+            >
+              <MessageSquare className="w-4 h-4 mt-[2px] text-[var(--primary)]" />
+              <span>{quote}</span>
+            </div>
+
+            {/* CTA */}
+            <Link
+              href="/report"
+              className="
+                mt-auto text-xs font-medium
+                text-[var(--primary-dark)]
+                hover:text-[var(--primary)]
+                hover:underline
+                transition flex items-center gap-1
+              "
+            >
+              Bekijk laatste rapport
+              <ChevronRight className="w-3 h-3" />
+            </Link>
+          </>
         )}
 
-        {/* CTA */}
-        <Link
-          href="/report"
-          className="
-            text-xs font-medium mt-2
-            text-[var(--primary-dark)]
-            hover:text-[var(--primary)]
-            hover:underline transition
-          "
-        >
-          Open nieuwste rapport →
-        </Link>
       </div>
     </CardWrapper>
   );

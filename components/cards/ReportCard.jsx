@@ -2,10 +2,13 @@
 
 import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
-import CardLoader from "@/components/ui/CardLoader";
+import CardLoader from "@/components/ui/CardLoader"; 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchLatestReport } from "@/lib/api/report";
+
+// Nieuwe premium insight block
+import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
   const [loading, setLoading] = useState(true);
@@ -25,7 +28,7 @@ export default function ReportCard() {
     load();
   }, []);
 
-  // Dynamische korte quote — fallback
+  // Dynamische korte quote
   const quote =
     report?.ai_summary_short ||
     report?.headline ||
@@ -38,10 +41,10 @@ export default function ReportCard() {
     >
       <div className="flex flex-col gap-4 min-h-[200px]">
 
-        {/* LOADING STATE */}
+        {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && !report && (
           <p className="text-sm italic text-[var(--text-light)] py-2">
             Nog geen rapport beschikbaar.
@@ -51,21 +54,8 @@ export default function ReportCard() {
         {/* CONTENT */}
         {!loading && report && (
           <>
-            {/* QUOTE / HIGHLIGHT */}
-            <div
-              className="
-                text-sm italic 
-                text-[var(--text-light)]
-                bg-blue-100/40 dark:bg-blue-900/20
-                border border-blue-200/40 dark:border-blue-800/40
-                p-3 rounded-lg
-                leading-relaxed
-                flex gap-2 items-start
-              "
-            >
-              <MessageSquare className="w-4 h-4 mt-[2px] text-[var(--primary)]" />
-              <span>{quote}</span>
-            </div>
+            {/* Nieuwe AI Insight Block (soft) */}
+            <AIInsightBlock text={quote} variant="soft" />
 
             {/* CTA */}
             <Link
@@ -83,7 +73,6 @@ export default function ReportCard() {
             </Link>
           </>
         )}
-
       </div>
     </CardWrapper>
   );

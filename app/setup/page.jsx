@@ -13,7 +13,7 @@ import SetupList from "@/components/setup/SetupList";
 import { useSetupData } from "@/hooks/useSetupData";
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// 🧠 Nieuw – AI Agent Panel
+// 🧠 AI Agent Panel
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 export default function SetupPage() {
@@ -38,6 +38,12 @@ export default function SetupPage() {
     loadSetups();
   };
 
+  /* =====================================================
+     🛡️ SAFE FALLBACKS
+     voorkomt crash bij nieuwe gebruikers
+  ===================================================== */
+  const safeSetups = Array.isArray(setups) ? setups : [];
+
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
@@ -57,9 +63,9 @@ export default function SetupPage() {
       </p>
 
       {/* -------------------------------------------------- */}
-      {/* 🧠 AI Agent Insight – NIEUW */}
+      {/* 🧠 AI Agent Insight – SAFE */}
       {/* -------------------------------------------------- */}
-      <AgentInsightPanel type="setup" />
+      <AgentInsightPanel category="setup" />
 
       {/* -------------------------------------------------- */}
       {/* 📋 Huidige setups + zoekbalk */}
@@ -72,6 +78,7 @@ export default function SetupPage() {
           </div>
         }
       >
+
         <div className="flex justify-between items-center mb-4">
 
           {/* Zoekveld */}
@@ -96,7 +103,7 @@ export default function SetupPage() {
 
         {/* Setup lijst */}
         <SetupList
-          setups={setups}
+          setups={safeSetups}
           loading={loading}
           error={error}
           searchTerm={search}

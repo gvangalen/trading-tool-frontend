@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 
-/**
- * useAgentData(category)
- *
- * Haalt op:
- *  - agent insights (samenvatting)
- *  - agent reflections (subfactoren)
- *
- * category: "macro" | "market" | "technical" | "setup" | "strategy"
- */
 export function useAgentData(category) {
   const [insight, setInsight] = useState(null);
   const [reflections, setReflections] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  async function safeJson(res) {
+    if (!res || !res.ok) return null;
+
+    try {
+      return await res.json();
+    } catch (e) {
+      console.warn("⚠️ JSON parse mislukt → fallback null");
+      return null;
+    }
+  }
 
   useEffect(() => {
     if (!category) return;
@@ -20,41 +22,22 @@ export function useAgentData(category) {
     async function load() {
       setLoading(true);
 
-      console.log(
-        `🧠 [useAgentData] Ophalen AI-insights & reflections voor categorie: ${category}`
-      );
+      console.log(`🧠 [useAgentData] Load AI-data for: ${category}`);
 
       try {
-        // 🔥 Gebruik ALTIJD query params (correcte backend route)
-        const insightRes = await fetch(
-          `/api/agents/insights?category=${category}`
-        );
-        const reflectionsRes = await fetch(
-          `/api/agents/reflections?category=${category}`
-        );
+        const insightRes = await fetch(`/api/agents/insights?category=${category}`);
+        const reflectionsRes = await fetch(`/api/agents/reflections?category=${category}`);
 
-        let ins = null;
-        let refl = [];
+        // ✔️ JSON veilig parsen (nooit crash)
+        const ins = await safeJson(insightRes);
+        const refl = await safeJson(reflectionsRes);
 
-        try {
-          ins = await insightRes.json();
-        } catch {
-          console.warn("⚠️ Insight JSON niet leesbaar → null fallback");
-          ins = null;
-        }
+        // ✔️ Correcte fallbacks
+        setInsight(ins && typeof ins === "object" ? ins : null);
+        setReflections(Array.isArray(refl) ? refl : []);
 
-        try {
-          const parsed = await reflectionsRes.json();
-          refl = Array.isArray(parsed) ? parsed : [];
-        } catch {
-          console.warn("⚠️ Reflections JSON niet leesbaar → lege lijst");
-          refl = [];
-        }
-
-        setInsight(ins || null);
-        setReflections(refl || []);
       } catch (err) {
-        console.error("❌ [useAgentData] Fout bij ophalen:", err);
+        console.error("❌ [useAgentData] Fout:", err);
         setInsight(null);
         setReflections([]);
       } finally {
@@ -66,8 +49,8 @@ export function useAgentData(category) {
   }, [category]);
 
   return {
-    insight,       // hoofd AI-samenvatting
-    reflections,   // subfactoren
+    insight,
+    reflections,
     loading,
   };
 }

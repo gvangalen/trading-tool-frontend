@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/lib/config";
 
 export function useAgentData(category) {
   const [insight, setInsight] = useState(null);
@@ -25,17 +26,20 @@ export function useAgentData(category) {
       console.log(`🧠 [useAgentData] Load AI-data for: ${category}`);
 
       try {
-        const insightRes = await fetch(`/api/agents/insights?category=${category}`);
-        const reflectionsRes = await fetch(`/api/agents/reflections?category=${category}`);
+        // 👉 FIXED: juiste backend URL
+        const insightRes = await fetch(
+          `${API_BASE_URL}/api/agents/insights?category=${category}`
+        );
 
-        // ✔️ JSON veilig parsen (nooit crash)
+        const reflectionsRes = await fetch(
+          `${API_BASE_URL}/api/agents/reflections?category=${category}`
+        );
+
         const ins = await safeJson(insightRes);
         const refl = await safeJson(reflectionsRes);
 
-        // ✔️ Correcte fallbacks
-        setInsight(ins && typeof ins === "object" ? ins : null);
-        setReflections(Array.isArray(refl) ? refl : []);
-
+        setInsight(ins?.insight || null);
+        setReflections(refl?.reflections || []);
       } catch (err) {
         console.error("❌ [useAgentData] Fout:", err);
         setInsight(null);

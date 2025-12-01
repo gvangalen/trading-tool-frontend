@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchAgentInsight, fetchAgentReflections } from "@/lib/api/agents";
+import {
+  fetchAgentInsight,
+  fetchAgentReflections,
+} from "@/lib/api/agents";
 
 export function useAgentData(category) {
   const [insight, setInsight] = useState(null);
@@ -13,15 +16,18 @@ export function useAgentData(category) {
 
     async function load() {
       setLoading(true);
+      console.log(`🧠 [useAgentData] Load AI-data for: ${category}`);
 
       try {
-        const insightData = await fetchAgentInsight(category);
-        const reflectionData = await fetchAgentReflections(category);
+        // 👉 deze helpers praten al met API_BASE_URL en
+        // geven direct het binnenste object terug
+        const insightData = await fetchAgentInsight(category);      // object of null
+        const reflectionsData = await fetchAgentReflections(category); // array
 
-        setInsight(insightData?.insight || null);
-        setReflections(reflectionData?.reflections || []);
+        setInsight(insightData || null);
+        setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
       } catch (err) {
-        console.error("❌ useAgentData fout:", err);
+        console.error("❌ [useAgentData] Fout:", err);
         setInsight(null);
         setReflections([]);
       } finally {

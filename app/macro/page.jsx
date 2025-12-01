@@ -16,9 +16,6 @@ import { Globe, Brain, Activity } from "lucide-react";
 export default function MacroPage() {
   const [activeTab, setActiveTab] = useState("Dag");
 
-  // -------------------------------------------------------
-  // 📡 Macrodata (Dag / Week / Maand / Kwartaal)
-  // -------------------------------------------------------
   const {
     macroData,
     handleRemove,
@@ -26,13 +23,23 @@ export default function MacroPage() {
     error,
   } = useMacroData(activeTab);
 
-  // -------------------------------------------------------
-  // 📊 Totale Macro Score (uit score-API)
-  // -------------------------------------------------------
   const { macro, loading: loadingScore } = useScoresData();
 
   // -------------------------------------------------------
-  // 🎨 Score kleur op basis van nieuwe CSS-variabelen
+  // 🛡️ Safe fallback macro object (crash prevention)
+  // -------------------------------------------------------
+  const safeMacro = {
+    score: macro?.score ?? null,
+    trend: macro?.trend ?? "Onbekend",
+    bias: macro?.bias ?? "Neutraal",
+    risk: macro?.risk ?? "Onbekend",
+    summary:
+      macro?.summary ??
+      "Nog geen macro-inzichten beschikbaar. Voeg indicatoren toe of wacht op de eerste AI-run.",
+  };
+
+  // -------------------------------------------------------
+  // Score kleur
   // -------------------------------------------------------
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
@@ -46,24 +53,17 @@ export default function MacroPage() {
   };
 
   // -------------------------------------------------------
-  // 📌 Advies op basis van totale macro score
+  // Advies
   // -------------------------------------------------------
   const adviesText =
-    (macro?.score ?? 0) >= 75
+    (safeMacro.score ?? 0) >= 75
       ? "Positief"
-      : (macro?.score ?? 0) <= 25
+      : (safeMacro.score ?? 0) <= 25
       ? "Negatief"
       : "Neutraal";
 
-  // -------------------------------------------------------
-  // 🧱 RENDER
-  // -------------------------------------------------------
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
-
-      {/* ---------------------------------------------------
-          PAGE TITLE
-      ----------------------------------------------------- */}
       <div className="flex items-center gap-3">
         <Globe size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -71,17 +71,10 @@ export default function MacroPage() {
         </h1>
       </div>
 
-      {/* ---------------------------------------------------
-          AI SAMENVATTING
-      ----------------------------------------------------- */}
       <AgentInsightPanel category="macro" />
 
-      {/* ---------------------------------------------------
-          MACRO SCORE SUMMARY
-      ----------------------------------------------------- */}
       <CardWrapper>
         <div className="space-y-4">
-          {/* Titel */}
           <div className="flex items-center gap-3">
             <Brain className="text-purple-600" size={20} />
             <h2 className="text-lg font-semibold text-[var(--text-dark)]">
@@ -89,18 +82,16 @@ export default function MacroPage() {
             </h2>
           </div>
 
-          {/* Score */}
           <div className="text-xl font-bold flex items-center gap-3">
             {loadingScore ? (
               <span className="text-[var(--text-light)]">⏳</span>
             ) : (
-              <span className={getScoreColor(macro?.score)}>
-                {macro?.score ?? "–"}
+              <span className={getScoreColor(safeMacro.score)}>
+                {safeMacro.score ?? "–"}
               </span>
             )}
           </div>
 
-          {/* Advies */}
           <div className="flex items-center gap-3 text-lg">
             <Activity className="text-blue-500" size={20} />
             <span className="font-semibold">
@@ -125,21 +116,15 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
-      {/* ---------------------------------------------------
-          SCORE RULES VIEWER
-      ----------------------------------------------------- */}
       <MacroIndicatorScoreView />
 
-      {/* ---------------------------------------------------
-          TABS + TABEL
-      ----------------------------------------------------- */}
       <MacroTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         macroData={macroData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={handleRemove}   // 🔥 verwijderknop werkt nu altijd
+        handleRemove={handleRemove}
       />
     </div>
   );

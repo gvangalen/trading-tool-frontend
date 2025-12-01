@@ -2,20 +2,11 @@
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import { useAgentData } from "@/hooks/useAgentData";
-
-import {
-  Brain,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-} from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 export default function AgentInsightPanel({ category }) {
   const { insight, reflections, loading } = useAgentData(category);
 
-  /* ===========================================================
-     1) LOADING STATE
-  ============================================================ */
   if (loading) {
     return (
       <CardWrapper>
@@ -26,10 +17,7 @@ export default function AgentInsightPanel({ category }) {
     );
   }
 
-  /* ===========================================================
-     2) GEEN INSIGHTS → SAFE FALLBACK
-  ============================================================ */
-  if (!insight || typeof insight !== "object") {
+  if (!insight) {
     return (
       <CardWrapper>
         <p className="text-[var(--text-light)] text-sm">
@@ -39,11 +27,8 @@ export default function AgentInsightPanel({ category }) {
     );
   }
 
-  /* ===========================================================
-     3) VEILIG DESTRUCTUREN (met fallbacks)
-  ============================================================ */
   const {
-    avg_score = "–",
+    score = "–",
     trend = "neutral",
     bias = "–",
     risk = "–",
@@ -51,9 +36,6 @@ export default function AgentInsightPanel({ category }) {
     top_signals = [],
   } = insight;
 
-  /* ===========================================================
-     4) TREND ICON
-  ============================================================ */
   const trendIcon =
     trend === "bullish" ? (
       <TrendingUp className="text-green-500" />
@@ -63,9 +45,6 @@ export default function AgentInsightPanel({ category }) {
       <Minus className="text-yellow-500" />
     );
 
-  /* ===========================================================
-     5) RENDER
-  ============================================================ */
   return (
     <CardWrapper>
       {/* Header */}
@@ -113,7 +92,6 @@ export default function AgentInsightPanel({ category }) {
           <p className="text-xs font-semibold text-[var(--text-light)] uppercase mb-1">
             Belangrijkste signalen
           </p>
-
           <ul className="ml-2 space-y-1">
             {top_signals.map((s, i) => (
               <li key={i} className="text-sm text-[var(--text-dark)]">
@@ -135,15 +113,14 @@ export default function AgentInsightPanel({ category }) {
             {reflections.map((r, i) => (
               <div
                 key={i}
-                className="
-                  p-3 rounded-lg border border-[var(--card-border)]
-                  bg-[var(--bg-soft)] shadow-sm
-                "
+                className="p-3 rounded-lg border border-[var(--card-border)]
+                           bg-[var(--bg-soft)] shadow-sm"
               >
                 <div className="flex justify-between mb-1">
                   <span className="font-medium text-[var(--text-dark)] capitalize">
-                    {r.indicator ?? "Onbekend"}
+                    {r.indicator || "Onbekend"}
                   </span>
+
                   <span className="text-xs text-[var(--text-light)]">
                     Score: {r.ai_score ?? "–"} | Discipline:{" "}
                     {r.compliance ?? "–"}

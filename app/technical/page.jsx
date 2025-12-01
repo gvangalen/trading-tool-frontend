@@ -18,12 +18,26 @@ export default function TechnicalPage() {
 
   const {
     technicalData,
-    removeTechnicalIndicator,   // ⬅️ deze gebruiken we nu
+    removeTechnicalIndicator,
     loading: loadingIndicators,
     error,
   } = useTechnicalData(activeTab);
 
   const { technical, loading: loadingScore } = useScoresData();
+
+  /* =====================================================
+     🛡️ SAFE TECHNICAL FALLBACK STRUCTURE
+     voorkomt alle crashes bij nieuwe gebruiker
+  ===================================================== */
+  const safeTechnical = {
+    score: technical?.score ?? null,
+    trend: technical?.trend ?? "Onbekend",
+    bias: technical?.bias ?? "Neutraal",
+    risk: technical?.risk ?? "Onbekend",
+    summary:
+      technical?.summary ??
+      "Nog geen technische AI-inzichten beschikbaar. Voeg indicatoren toe of wacht op de eerste AI-run.",
+  };
 
   /* =====================================================
      SCORE → kleurklasse (zelfde logica als macro)
@@ -39,13 +53,19 @@ export default function TechnicalPage() {
     return "score-strong-sell";
   };
 
+  /* =====================================================
+     ADVIES
+  ===================================================== */
   const adviesText =
-    (technical?.score ?? 0) >= 75
+    (safeTechnical.score ?? 0) >= 75
       ? "Positief"
-      : (technical?.score ?? 0) <= 25
+      : (safeTechnical.score ?? 0) <= 25
       ? "Negatief"
       : "Neutraal";
 
+  /* =====================================================
+     RENDER
+  ===================================================== */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
       {/* ================================================
@@ -64,7 +84,7 @@ export default function TechnicalPage() {
       <AgentInsightPanel category="technical" />
 
       {/* ================================================
-          TOTALE TECHNISCHE SCORE (zoals Macro)
+          TOTALE TECHNICAL SCORE
       ================================================= */}
       <CardWrapper>
         <div className="space-y-4">
@@ -79,8 +99,8 @@ export default function TechnicalPage() {
             {loadingScore ? (
               <span className="text-[var(--text-light)]">⏳</span>
             ) : (
-              <span className={getScoreColor(technical?.score)}>
-                {technical?.score ?? "–"}
+              <span className={getScoreColor(safeTechnical.score)}>
+                {safeTechnical.score ?? "–"}
               </span>
             )}
           </div>
@@ -110,12 +130,12 @@ export default function TechnicalPage() {
       </CardWrapper>
 
       {/* ================================================
-          SCORE REGELS COMPONENT (Zoeken + Scoreregels)
+          TECHNISCHE INDICATOR SCOREREGELS VIEWER
       ================================================= */}
       <TechnicalIndicatorScoreView />
 
       {/* ================================================
-          TABS + TABEL (DayTable / WeekTable / Month / Quarter)
+          TABS + TABEL
       ================================================= */}
       <TechnicalTabs
         activeTab={activeTab}
@@ -123,7 +143,7 @@ export default function TechnicalPage() {
         technicalData={technicalData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={removeTechnicalIndicator}   // ⬅️ hier doorgeven
+        handleRemove={removeTechnicalIndicator}
       />
     </div>
   );

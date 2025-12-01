@@ -16,13 +16,21 @@ export default function ReportCard() {
     report,
     loading,
     error,
-  } = useReportData("daily"); // ⬅️ Belangrijk: gebruik hook
+  } = useReportData("daily");
 
-  // Mini-quote
+  // 🛡️ Report moet een echt object zijn → geen array, geen string
+  const safeReport =
+    report && typeof report === "object" && !Array.isArray(report)
+      ? report
+      : null;
+
+  // 🛡️ Quote MOET string zijn
   const quote =
-    report?.ai_summary_short ||
-    report?.headline ||
-    "Nieuw rapport is klaar!";
+    typeof safeReport?.ai_summary_short === "string"
+      ? safeReport.ai_summary_short
+      : typeof safeReport?.headline === "string"
+      ? safeReport.headline
+      : "Nieuw rapport is klaar!";
 
   return (
     <CardWrapper
@@ -40,14 +48,14 @@ export default function ReportCard() {
         )}
 
         {/* EMPTY */}
-        {!loading && !error && !report && (
+        {!loading && !error && !safeReport && (
           <p className="italic text-[var(--text-light)]">
             Nog geen rapport beschikbaar.
           </p>
         )}
 
         {/* CONTENT */}
-        {!loading && report && (
+        {!loading && safeReport && (
           <>
             <AIInsightBlock text={quote} variant="dashboard" />
 

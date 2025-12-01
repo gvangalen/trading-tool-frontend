@@ -1,10 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import {
-  fetchAgentInsight,
-  fetchAgentReflections,
+  fetchMacroInsight,
+  fetchMarketInsight,
+  fetchTechnicalInsight,
+  fetchSetupInsight,
+  fetchStrategyInsight,
+  fetchMacroReflections,
+  fetchMarketReflections,
+  fetchTechnicalReflections,
+  fetchSetupReflections,
+  fetchStrategyReflections,
 } from "@/lib/api/agents";
+
+const insightMap = {
+  macro: fetchMacroInsight,
+  market: fetchMarketInsight,
+  technical: fetchTechnicalInsight,
+  setup: fetchSetupInsight,
+  strategy: fetchStrategyInsight,
+};
+
+const reflectionMap = {
+  macro: fetchMacroReflections,
+  market: fetchMarketReflections,
+  technical: fetchTechnicalReflections,
+  setup: fetchSetupReflections,
+  strategy: fetchStrategyReflections,
+};
 
 export function useAgentData(category) {
   const [insight, setInsight] = useState(null);
@@ -14,26 +39,37 @@ export function useAgentData(category) {
   useEffect(() => {
     if (!category) return;
 
-    async function load() {
+    const load = async () => {
       setLoading(true);
-      console.log(`🧠 [useAgentData] Load AI-data for: ${category}`);
+      console.log(`🧠 [useAgentData] load voor categorie: ${category}`);
+
+      const fetchInsightFn = insightMap[category];
+      const fetchReflectionsFn = reflectionMap[category];
+
+      if (!fetchInsightFn || !fetchReflectionsFn) {
+        console.error(`❌ Geen fetch functie gevonden voor category=${category}`);
+        setInsight(null);
+        setReflections([]);
+        setLoading(false);
+        return;
+      }
 
       try {
-        // 👉 deze helpers praten al met API_BASE_URL en
-        // geven direct het binnenste object terug
-        const insightData = await fetchAgentInsight(category);      // object of null
-        const reflectionsData = await fetchAgentReflections(category); // array
+        const [insightData, reflectionsData] = await Promise.all([
+          fetchInsightFn(),
+          fetchReflectionsFn(),
+        ]);
 
         setInsight(insightData || null);
         setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
-      } catch (err) {
-        console.error("❌ [useAgentData] Fout:", err);
+      } catch (e) {
+        console.error("❌ [useAgentData] Fout:", e);
         setInsight(null);
         setReflections([]);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     load();
   }, [category]);

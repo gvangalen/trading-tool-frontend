@@ -1,21 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "@/lib/config";
+import { fetchAgentInsight, fetchAgentReflections } from "@/lib/api/agents";
 
 export function useAgentData(category) {
   const [insight, setInsight] = useState(null);
   const [reflections, setReflections] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  async function safeJson(res) {
-    if (!res || !res.ok) return null;
-
-    try {
-      return await res.json();
-    } catch (e) {
-      console.warn("⚠️ JSON parse mislukt → fallback null");
-      return null;
-    }
-  }
 
   useEffect(() => {
     if (!category) return;
@@ -23,25 +14,14 @@ export function useAgentData(category) {
     async function load() {
       setLoading(true);
 
-      console.log(`🧠 [useAgentData] Load AI-data for: ${category}`);
-
       try {
-        // 👉 FIXED: juiste backend URL
-        const insightRes = await fetch(
-          `${API_BASE_URL}/api/agents/insights?category=${category}`
-        );
+        const insightData = await fetchAgentInsight(category);
+        const reflectionData = await fetchAgentReflections(category);
 
-        const reflectionsRes = await fetch(
-          `${API_BASE_URL}/api/agents/reflections?category=${category}`
-        );
-
-        const ins = await safeJson(insightRes);
-        const refl = await safeJson(reflectionsRes);
-
-        setInsight(ins?.insight || null);
-        setReflections(refl?.reflections || []);
+        setInsight(insightData?.insight || null);
+        setReflections(reflectionData?.reflections || []);
       } catch (err) {
-        console.error("❌ [useAgentData] Fout:", err);
+        console.error("❌ useAgentData fout:", err);
         setInsight(null);
         setReflections([]);
       } finally {

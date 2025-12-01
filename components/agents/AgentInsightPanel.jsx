@@ -3,7 +3,6 @@
 import CardWrapper from "@/components/ui/CardWrapper";
 import { useAgentData } from "@/hooks/useAgentData";
 
-// Lucide icons
 import {
   Brain,
   TrendingUp,
@@ -14,6 +13,9 @@ import {
 export default function AgentInsightPanel({ category }) {
   const { insight, reflections, loading } = useAgentData(category);
 
+  /* ===========================================================
+     1) LOADING STATE
+  ============================================================ */
   if (loading) {
     return (
       <CardWrapper>
@@ -24,7 +26,10 @@ export default function AgentInsightPanel({ category }) {
     );
   }
 
-  if (!insight) {
+  /* ===========================================================
+     2) GEEN INSIGHTS → SAFE FALLBACK
+  ============================================================ */
+  if (!insight || typeof insight !== "object") {
     return (
       <CardWrapper>
         <p className="text-[var(--text-light)] text-sm">
@@ -34,15 +39,21 @@ export default function AgentInsightPanel({ category }) {
     );
   }
 
+  /* ===========================================================
+     3) VEILIG DESTRUCTUREN (met fallbacks)
+  ============================================================ */
   const {
-    avg_score,
-    trend,
-    bias,
-    risk,
-    summary,
-    top_signals,
+    avg_score = "–",
+    trend = "neutral",
+    bias = "–",
+    risk = "–",
+    summary = null,
+    top_signals = [],
   } = insight;
 
+  /* ===========================================================
+     4) TREND ICON
+  ============================================================ */
   const trendIcon =
     trend === "bullish" ? (
       <TrendingUp className="text-green-500" />
@@ -52,6 +63,9 @@ export default function AgentInsightPanel({ category }) {
       <Minus className="text-yellow-500" />
     );
 
+  /* ===========================================================
+     5) RENDER
+  ============================================================ */
   return (
     <CardWrapper>
       {/* Header */}
@@ -62,26 +76,26 @@ export default function AgentInsightPanel({ category }) {
         </h2>
       </div>
 
-      {/* Score + Trend/Bias/Risk */}
+      {/* Score + Trend + Bias + Risk */}
       <div className="flex items-center gap-6 mb-4">
         <div className="flex items-center gap-2">
           {trendIcon}
           <span className="text-sm text-[var(--text-dark)] capitalize">
-            {trend || "–"}
+            {trend}
           </span>
         </div>
 
         <div className="text-xs text-[var(--text-light)]">
           Bias:{" "}
           <strong className="capitalize text-[var(--text-dark)]">
-            {bias || "–"}
+            {bias}
           </strong>
         </div>
 
         <div className="text-xs text-[var(--text-light)]">
           Risico:{" "}
           <strong className="capitalize text-[var(--text-dark)]">
-            {risk || "–"}
+            {risk}
           </strong>
         </div>
       </div>
@@ -94,7 +108,7 @@ export default function AgentInsightPanel({ category }) {
       )}
 
       {/* Top Signals */}
-      {top_signals?.length > 0 && (
+      {Array.isArray(top_signals) && top_signals.length > 0 && (
         <div className="mt-1">
           <p className="text-xs font-semibold text-[var(--text-light)] uppercase mb-1">
             Belangrijkste signalen
@@ -111,7 +125,7 @@ export default function AgentInsightPanel({ category }) {
       )}
 
       {/* Reflections */}
-      {reflections?.length > 0 && (
+      {Array.isArray(reflections) && reflections.length > 0 && (
         <div className="mt-5">
           <p className="text-xs font-semibold text-[var(--text-light)] uppercase mb-2">
             Reflecties per indicator
@@ -128,7 +142,7 @@ export default function AgentInsightPanel({ category }) {
               >
                 <div className="flex justify-between mb-1">
                   <span className="font-medium text-[var(--text-dark)] capitalize">
-                    {r.indicator}
+                    {r.indicator ?? "Onbekend"}
                   </span>
                   <span className="text-xs text-[var(--text-light)]">
                     Score: {r.ai_score ?? "–"} | Discipline:{" "}
@@ -137,12 +151,14 @@ export default function AgentInsightPanel({ category }) {
                 </div>
 
                 <p className="text-sm text-[var(--text-dark)]">
-                  {r.comment}
+                  {r.comment ?? "Geen commentaar"}
                 </p>
 
-                <p className="text-xs text-[var(--text-light)] italic mt-1">
-                  {r.recommendation}
-                </p>
+                {r.recommendation && (
+                  <p className="text-xs text-[var(--text-light)] italic mt-1">
+                    {r.recommendation}
+                  </p>
+                )}
               </div>
             ))}
           </div>

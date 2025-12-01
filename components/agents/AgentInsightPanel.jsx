@@ -45,6 +45,24 @@ export default function AgentInsightPanel({ category }) {
       <Minus className="text-yellow-500" />
     );
 
+  // ------------------------------------------------------
+  // 🛠️ FIX: top_signals kunnen strings of objecten zijn
+  // ------------------------------------------------------
+  const renderSignal = (s) => {
+    if (typeof s === "string") return s;
+
+    if (s && typeof s === "object") {
+      // indicator + score
+      if (s.indicator && s.score !== undefined) {
+        return `${s.indicator}: ${s.score}`;
+      }
+      // fallback: mooi JSON tonen
+      return JSON.stringify(s);
+    }
+
+    return String(s ?? "");
+  };
+
   return (
     <CardWrapper>
       {/* Header */}
@@ -95,7 +113,7 @@ export default function AgentInsightPanel({ category }) {
           <ul className="ml-2 space-y-1">
             {top_signals.map((s, i) => (
               <li key={i} className="text-sm text-[var(--text-dark)]">
-                • {s}
+                • {renderSignal(s)}
               </li>
             ))}
           </ul>

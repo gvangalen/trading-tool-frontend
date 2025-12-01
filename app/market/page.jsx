@@ -1,6 +1,13 @@
 "use client";
 
-import { LineChart, TrendingUp, TrendingDown, Gauge, Info, Activity } from "lucide-react";
+import {
+  LineChart,
+  TrendingUp,
+  TrendingDown,
+  Gauge,
+  Info,
+  Activity,
+} from "lucide-react";
 
 // Hooks
 import { useMarketData } from "@/hooks/useMarketData";
@@ -35,19 +42,41 @@ export default function MarketPage() {
 
   const { market } = useScoresData();
 
-  // 🎨 Score kleur
+  /* ---------------------------------------------------------
+     SAFE FALLBACKS
+  --------------------------------------------------------- */
+
+  const safeMarketScore =
+    typeof market?.score === "number" ? market.score : null;
+
+  const safeLive = btcLive || {};
+  const safeMarketDayData = Array.isArray(marketDayData)
+    ? marketDayData
+    : [];
+  const safeSevenDay = Array.isArray(sevenDayData) ? sevenDayData : [];
+  const safeForward = Array.isArray(forwardReturns)
+    ? forwardReturns
+    : [];
+
+  /* ---------------------------------------------------------
+     🎨 Scorekleur
+  --------------------------------------------------------- */
   const scoreColor = (score) => {
-    if (!score && score !== 0) return "text-gray-600";
-    if (score >= 75) return "text-green-600";
-    if (score <= 25) return "text-red-600";
+    const n = typeof score === "number" ? score : Number(score);
+    if (isNaN(n)) return "text-gray-600";
+
+    if (n >= 75) return "text-green-600";
+    if (n <= 25) return "text-red-600";
     return "text-yellow-600";
   };
 
-  // 📈 Advies
+  /* ---------------------------------------------------------
+     📈 Advies tekst
+  --------------------------------------------------------- */
   const adviesText =
-    market?.score >= 75
+    safeMarketScore >= 75
       ? "Bullish"
-      : market?.score <= 25
+      : safeMarketScore <= 25
       ? "Bearish"
       : "Neutraal";
 
@@ -88,8 +117,12 @@ export default function MarketPage() {
             </h2>
           </div>
 
-          <div className={`text-2xl font-bold ${scoreColor(market?.score)}`}>
-            {loading ? "…" : market?.score?.toFixed(1) ?? "–"}
+          <div className={`text-2xl font-bold ${scoreColor(safeMarketScore)}`}>
+            {loading
+              ? "…"
+              : safeMarketScore !== null
+              ? safeMarketScore.toFixed(1)
+              : "–"}
           </div>
 
           <div className="flex items-center gap-2 text-lg">
@@ -114,42 +147,42 @@ export default function MarketPage() {
       {/* 💹 Live BTC Data */}
       {/* ------------------------------------------------------ */}
       <MarketLiveCard
-        price={btcLive?.price}
-        change24h={btcLive?.change_24h}
-        volume={btcLive?.volume}
-        timestamp={btcLive?.timestamp}
+        price={safeLive.price ?? null}
+        change24h={safeLive.change_24h ?? null}
+        volume={safeLive.volume ?? null}
+        timestamp={safeLive.timestamp ?? null}
       />
 
       {/* ------------------------------------------------------ */}
-      {/* ⚙️ Indicator Score View (Add Indicator) */}
+      {/* ⚙️ Indicator Score View */}
       {/* ------------------------------------------------------ */}
       <MarketIndicatorScoreView
-        availableIndicators={availableIndicators}
-        selectedIndicator={selectedIndicator}
-        scoreRules={scoreRules}
+        availableIndicators={availableIndicators || []}
+        selectedIndicator={selectedIndicator || null}
+        scoreRules={scoreRules || []}
         selectIndicator={selectIndicator}
         addMarketIndicator={addMarket}
       />
 
       {/* ------------------------------------------------------ */}
-      {/* 📅 Dagelijkse Market Analyse — DayTable PRO */}
+      {/* 📅 Dagelijkse Market Analyse */}
       {/* ------------------------------------------------------ */}
       <DayTable
         title="Dagelijkse Market Analyse"
         icon={<Activity className="w-5 h-5" />}
-        data={marketDayData}
+        data={safeMarketDayData}
         onRemove={removeMarket}
       />
 
       {/* ------------------------------------------------------ */}
       {/* 📆 7-Daagse Marktgeschiedenis */}
       {/* ------------------------------------------------------ */}
-      <MarketSevenDayTable history={sevenDayData} />
+      <MarketSevenDayTable history={safeSevenDay} />
 
       {/* ------------------------------------------------------ */}
       {/* 🔮 Forward Returns Tabs */}
       {/* ------------------------------------------------------ */}
-      <MarketForwardReturnTabs data={forwardReturns} />
+      <MarketForwardReturnTabs data={safeForward} />
     </div>
   );
 }

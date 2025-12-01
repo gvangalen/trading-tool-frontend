@@ -18,7 +18,7 @@ import { createStrategy } from "@/lib/api/strategy";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// 🧠 Nieuw – AI Insight Panel
+// 🧠 Updated AI Insight Panel (⚠ category i.p.v. type!)
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 export default function StrategyPage() {
@@ -28,6 +28,12 @@ export default function StrategyPage() {
 
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
+
+  /* -------------------------------------------------- */
+  /* 🔰 SAFE FALLBACKS */
+  /* -------------------------------------------------- */
+  const safeSetups = Array.isArray(setups) ? setups : [];
+  const safeStrategies = Array.isArray(strategies) ? strategies : [];
 
   /* -------------------------------------------------- */
   /* 🔄 Initial load */
@@ -57,7 +63,7 @@ export default function StrategyPage() {
   /* -------------------------------------------------- */
   const handleStrategySubmit = async (strategy) => {
     try {
-      const setup = setups.find(
+      const setup = safeSetups.find(
         (s) => String(s.id) === String(strategy.setup_id)
       );
 
@@ -93,40 +99,41 @@ export default function StrategyPage() {
   };
 
   /* -------------------------------------------------- */
-  /* 🔍 FILTERS */
+  /* 🔍 FILTERS (SAFE) */
   /* -------------------------------------------------- */
+
   const setupsWithoutTrading = useMemo(() => {
-    return setups.filter(
+    return safeSetups.filter(
       (s) =>
-        !strategies.some(
+        !safeStrategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === "trading"
+            String(strat.strategy_type || "").toLowerCase() === "trading"
         )
     );
-  }, [setups, strategies, refreshKey]);
+  }, [safeSetups, safeStrategies, refreshKey]);
 
   const setupsWithoutDCA = useMemo(() => {
-    return setups.filter(
+    return safeSetups.filter(
       (s) =>
-        !strategies.some(
+        !safeStrategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === "dca"
+            String(strat.strategy_type || "").toLowerCase() === "dca"
         )
     );
-  }, [setups, strategies, refreshKey]);
+  }, [safeSetups, safeStrategies, refreshKey]);
 
   const setupsWithoutManual = useMemo(() => {
-    return setups.filter(
+    return safeSetups.filter(
       (s) =>
-        !strategies.some(
+        !safeStrategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === "manual"
+            String(strat.strategy_type || "").toLowerCase() === "manual"
         )
     );
-  }, [setups, strategies, refreshKey]);
+  }, [safeSetups, safeStrategies, refreshKey]);
 
   /* -------------------------------------------------- */
   /* RENDER */
@@ -150,9 +157,9 @@ export default function StrategyPage() {
       </p>
 
       {/* -------------------------------------------------- */}
-      {/* 🧠 AI AGENT INSIGHTS – NIEUW */}
+      {/* 🧠 AI AGENT INSIGHTS – FIXED */}
       {/* -------------------------------------------------- */}
-      <AgentInsightPanel type="strategy" />
+      <AgentInsightPanel category="strategy" />
 
       {/* -------------------------------------------------- */}
       {/* 📋 Huidige strategieën */}

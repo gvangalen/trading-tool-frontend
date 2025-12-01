@@ -21,20 +21,13 @@ export default function AgentInsightPanel({ category }) {
     return (
       <CardWrapper>
         <p className="text-[var(--text-light)] text-sm">
-          Geen AI-analyse beschikbaar voor deze categorie.
+          Geen AI-analyse beschikbaar.
         </p>
       </CardWrapper>
     );
   }
 
-  const {
-    score = "–",
-    trend = "neutral",
-    bias = "–",
-    risk = "–",
-    summary = null,
-    top_signals = [],
-  } = insight;
+  const { score, trend, bias, risk, summary, top_signals } = insight;
 
   const trendIcon =
     trend === "bullish" ? (
@@ -45,35 +38,33 @@ export default function AgentInsightPanel({ category }) {
       <Minus className="text-yellow-500" />
     );
 
-  // ------------------------------------------------------
-  // 🛠️ FIX: top_signals kunnen strings of objecten zijn
-  // ------------------------------------------------------
-  const renderSignal = (s) => {
-    if (typeof s === "string") return s;
-
-    if (s && typeof s === "object") {
-      // indicator + score
-      if (s.indicator && s.score !== undefined) {
-        return `${s.indicator}: ${s.score}`;
-      }
-      // fallback: mooi JSON tonen
-      return JSON.stringify(s);
+  // ⭐ Normaliseer alle bullets
+  const normalizeBullet = (item) => {
+    if (!item) return "";
+    if (typeof item === "string") return item;
+    if (typeof item === "object") {
+      return Object.entries(item)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(" • ");
     }
-
-    return String(s ?? "");
+    return String(item);
   };
+
+  const cleanSignals = Array.isArray(top_signals)
+    ? top_signals.map(normalizeBullet)
+    : [];
 
   return (
     <CardWrapper>
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-4">
         <Brain className="w-5 h-5 text-[var(--text-dark)]" />
-        <h2 className="text-sm font-semibold text-[var(--text-dark)]">
+        <h2 className="text-lg font-semibold text-[var(--text-dark)]">
           AI {category.charAt(0).toUpperCase() + category.slice(1)} Analyse
         </h2>
       </div>
 
-      {/* Score + Trend + Bias + Risk */}
+      {/* Trend + Bias + Risk */}
       <div className="flex items-center gap-6 mb-4">
         <div className="flex items-center gap-2">
           {trendIcon}
@@ -98,59 +89,59 @@ export default function AgentInsightPanel({ category }) {
       </div>
 
       {/* Summary */}
-      {summary && (
-        <p className="text-sm text-[var(--text-dark)] leading-relaxed mb-4">
-          {summary}
-        </p>
-      )}
+      <p className="text-sm text-[var(--text-dark)] leading-relaxed mb-6">
+        {summary}
+      </p>
 
       {/* Top Signals */}
-      {Array.isArray(top_signals) && top_signals.length > 0 && (
-        <div className="mt-1">
+      {cleanSignals.length > 0 && (
+        <div className="mb-6">
           <p className="text-xs font-semibold text-[var(--text-light)] uppercase mb-1">
             Belangrijkste signalen
           </p>
-          <ul className="ml-2 space-y-1">
-            {top_signals.map((s, i) => (
+          <ul className="ml-4 space-y-1">
+            {cleanSignals.map((s, i) => (
               <li key={i} className="text-sm text-[var(--text-dark)]">
-                • {renderSignal(s)}
+                • {s}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Reflections */}
-      {Array.isArray(reflections) && reflections.length > 0 && (
-        <div className="mt-5">
-          <p className="text-xs font-semibold text-[var(--text-light)] uppercase mb-2">
+      {/* Reflecties */}
+      {reflections.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-[var(--text-light)] uppercase mb-3">
             Reflecties per indicator
           </p>
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             {reflections.map((r, i) => (
               <div
                 key={i}
-                className="p-3 rounded-lg border border-[var(--card-border)]
+                className="p-4 rounded-xl border border-[var(--card-border)]
                            bg-[var(--bg-soft)] shadow-sm"
               >
-                <div className="flex justify-between mb-1">
+                {/* Titel + score */}
+                <div className="flex justify-between mb-2">
                   <span className="font-medium text-[var(--text-dark)] capitalize">
-                    {r.indicator || "Onbekend"}
+                    {r.indicator}
                   </span>
 
                   <span className="text-xs text-[var(--text-light)]">
-                    Score: {r.ai_score ?? "–"} | Discipline:{" "}
-                    {r.compliance ?? "–"}
+                    Score: {r.ai_score} | Discipline: {r.compliance}
                   </span>
                 </div>
 
-                <p className="text-sm text-[var(--text-dark)]">
-                  {r.comment ?? "Geen commentaar"}
+                {/* Comment */}
+                <p className="text-sm text-[var(--text-dark)] mb-1">
+                  {r.comment}
                 </p>
 
+                {/* Recommendation */}
                 {r.recommendation && (
-                  <p className="text-xs text-[var(--text-light)] italic mt-1">
+                  <p className="text-xs text-[var(--text-light)] italic">
                     {r.recommendation}
                   </p>
                 )}

@@ -15,9 +15,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Als al ingelogd → redirect
+  // Als al ingelogd → direct naar dashboard
   if (isAuthenticated) {
-    router.push("/");
+    router.push("/dashboard");
   }
 
   const handleLogin = async (e) => {
@@ -33,7 +33,9 @@ export default function LoginPage() {
     }
 
     showSnackbar("Welkom terug! ✔", "success");
-    router.push("/");
+
+    // Na succesvolle login → dashboard
+    router.push("/dashboard");
   };
 
   return (

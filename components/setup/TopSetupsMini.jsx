@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '@/lib/config';
+import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/lib/config";
 
-// Lucide Icons (voor lijst)
-import { TrendingUp, TrendingDown, Scale, Brain, Filter } from 'lucide-react';
+// Lucide Icons
+import {
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  Brain,
+  Filter,
+} from "lucide-react";
 
 export default function TopSetupsMini() {
   const [topSetups, setTopSetups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [trendFilter, setTrendFilter] = useState('all');
+  const [trendFilter, setTrendFilter] = useState("all");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // -----------------------------
-  // Data ophalen
-  // -----------------------------
+  /* -------------------------------------------------------------
+     🔄 Data ophalen
+  ------------------------------------------------------------- */
   useEffect(() => {
     loadTopSetups();
     const interval = setInterval(() => loadTopSetups(), 60000);
@@ -24,17 +30,18 @@ export default function TopSetupsMini() {
   async function loadTopSetups() {
     try {
       setLoading(true);
-      let res;
 
+      let res;
       try {
         res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
-        if (!res.ok) throw new Error('Top endpoint faalt');
+        if (!res.ok) throw new Error("Top endpoint faalt");
       } catch {
         res = await fetch(`${API_BASE_URL}/api/setups`);
-        if (!res.ok) throw new Error('Fallback faalt');
+        if (!res.ok) throw new Error("Fallback faalt");
       }
 
       const data = await res.json();
+
       const setups = Array.isArray(data)
         ? data
         : Array.isArray(data.setups)
@@ -42,30 +49,30 @@ export default function TopSetupsMini() {
         : [];
 
       const sorted = setups
-        .filter((s) => typeof s.score === 'number')
+        .filter((s) => typeof s.score === "number")
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
 
       setTopSetups(sorted);
       setLastUpdated(new Date());
     } catch (error) {
-      console.error('❌ Fout bij laden setups:', error);
+      console.error("❌ Fout bij laden setups:", error);
       setTopSetups([]);
     } finally {
       setLoading(false);
     }
   }
 
-  // -----------------------------
-  // Filter
-  // -----------------------------
+  /* -------------------------------------------------------------
+     🎚 Filter
+  ------------------------------------------------------------- */
   const filteredSetups = topSetups
-    .filter((s) => trendFilter === 'all' || s.trend === trendFilter)
+    .filter((s) => trendFilter === "all" || s.trend === trendFilter)
     .slice(0, 3);
 
-  // -----------------------------
-  // Loading / Empty states
-  // -----------------------------
+  /* -------------------------------------------------------------
+     📡 Loading / Empty states
+  ------------------------------------------------------------- */
   if (loading) {
     return (
       <div className="text-[var(--text-light)] text-sm text-center py-4">
@@ -82,23 +89,23 @@ export default function TopSetupsMini() {
     );
   }
 
-  // -----------------------------
-  // Trend icon functie
-  // -----------------------------
+  /* -------------------------------------------------------------
+     📊 Trend icon helper
+  ------------------------------------------------------------- */
   const trendIcon = (trend) => {
     switch (trend) {
-      case 'bullish':
+      case "bullish":
         return <TrendingUp size={14} className="text-green-600" />;
-      case 'bearish':
+      case "bearish":
         return <TrendingDown size={14} className="text-red-600" />;
       default:
-        return <Scale size={14} className="text-gray-500" />;
+        return <Scale size={14} className="text-yellow-600" />;
     }
   };
 
-  // -----------------------------
-  // Component
-  // -----------------------------
+  /* -------------------------------------------------------------
+     🧠 Component
+  ------------------------------------------------------------- */
   return (
     <div className="space-y-4 text-sm">
 
@@ -116,7 +123,7 @@ export default function TopSetupsMini() {
         )}
       </div>
 
-      {/* Filter */}
+      {/* Filter dropdown */}
       <div className="flex items-center gap-2">
         <Filter size={14} className="text-[var(--text-light)]" />
         <select
@@ -168,7 +175,7 @@ export default function TopSetupsMini() {
               </div>
 
               <span className="font-semibold text-[var(--text-dark)]">
-                {setup.score?.toFixed(1) ?? '-'}
+                {setup.score?.toFixed(1) ?? "-"}
               </span>
             </li>
           ))

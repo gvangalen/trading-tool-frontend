@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+
 import StrategyFormTrading from './StrategyFormTrading';
 import StrategyFormDCA from './StrategyFormDCA';
 import StrategyFormManual from './StrategyFormManual';
+
+import { LineChart, Coins, Edit3 } from 'lucide-react';
 
 export default function StrategyTabs({
   onSubmit,
@@ -13,97 +16,120 @@ export default function StrategyTabs({
 }) {
   const [activeTab, setActiveTab] = useState('trading');
 
-  const tabStyle = (tab) =>
-    `px-4 py-2 text-sm rounded-md font-medium border transition ${
-      activeTab === tab
-        ? 'bg-blue-600 text-white border-blue-600'
-        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-    }`;
+  /* ===========================================================
+     TAB STYLE
+  ============================================================ */
+  const tabBase =
+    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border";
 
-  // Standaard handler: formulier returned “kale strategy”
+  const tabStyle = (tab) =>
+    activeTab === tab
+      ? `${tabBase} bg-[var(--primary)] text-white border-[var(--primary)] shadow-md`
+      : `${tabBase} bg-[var(--bg-soft)] text-[var(--text-dark)] border-[var(--border)] hover:bg-[var(--bg-hover)]`;
+
+  /* ===========================================================
+     HANDLER
+  ============================================================ */
   const handleStandardSubmit = (strategy, type) => {
     if (!onSubmit) return;
 
     const payload = {
       ...strategy,
-      strategy_type: type, // trading | dca | manual
+      strategy_type: type,
     };
 
     onSubmit(payload);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
-      {/* ======= TABS ======= */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* ===========================================================
+         TABS
+      ============================================================ */}
+      <div className="flex flex-wrap gap-3 mb-4">
+
+        {/* Trading */}
         <button
+          type="button"
           className={tabStyle('trading')}
           onClick={() => setActiveTab('trading')}
-          type="button"
         >
-          📈 Tradingstrategie (AI)
+          <LineChart size={16} />
+          Tradingstrategie (AI)
         </button>
 
+        {/* DCA */}
         <button
+          type="button"
           className={tabStyle('dca')}
           onClick={() => setActiveTab('dca')}
-          type="button"
         >
-          💰 DCA-strategie
+          <Coins size={16} />
+          DCA-strategie
         </button>
 
+        {/* Handmatig */}
         <button
+          type="button"
           className={tabStyle('manual')}
           onClick={() => setActiveTab('manual')}
-          type="button"
         >
-          ✍️ Handmatige strategie
+          <Edit3 size={16} />
+          Handmatige strategie
         </button>
       </div>
 
-      {/* ======= TRADING TAB ======= */}
+      {/* ===========================================================
+         TRADING TAB
+      ============================================================ */}
       {activeTab === 'trading' && (
-        <div className="space-y-2">
-
-          {/* Sub-title */}
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Koppel aan een setup zonder bestaande tradingstrategie.
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-light)]">
+            Koppel aan een setup die nog geen tradingstrategie heeft.
           </p>
 
           <StrategyFormTrading
             setups={setupsTrading}
-            onSubmit={(strategy) => handleStandardSubmit(strategy, 'trading')}
+            onSubmit={(strategy) =>
+              handleStandardSubmit(strategy, 'trading')
+            }
           />
         </div>
       )}
 
-      {/* ======= DCA TAB ======= */}
+      {/* ===========================================================
+         DCA TAB
+      ============================================================ */}
       {activeTab === 'dca' && (
-        <div className="space-y-2">
-
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Alleen setups die nog geen DCA-strategie hebben worden getoond.
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-light)]">
+            Hieronder staan setups die nog geen DCA-strategie hebben.
           </p>
 
           <StrategyFormDCA
             setups={setupsDCA}
-            onSubmit={(strategy) => handleStandardSubmit(strategy, 'dca')}
+            onSubmit={(strategy) =>
+              handleStandardSubmit(strategy, 'dca')
+            }
           />
         </div>
       )}
 
-      {/* ======= MANUAL TAB ======= */}
+      {/* ===========================================================
+         MANUAL TAB
+      ============================================================ */}
       {activeTab === 'manual' && (
-        <div className="space-y-2">
-
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Koppel aan een setup zonder bestaande handmatige strategie.
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-light)]">
+            Voeg een handmatige strategie toe aan een setup.
           </p>
 
           <StrategyFormManual
             setups={setupsManual}
-            onSubmit={(strategy) => handleStandardSubmit(strategy, 'manual')}
+            onSubmit={(strategy) =>
+              handleStandardSubmit(strategy, 'manual')
+            }
           />
         </div>
       )}

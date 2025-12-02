@@ -13,6 +13,7 @@ import { X } from "lucide-react";
 /* ===========================================================
    TYPES
 =========================================================== */
+
 type ModalTone = "primary" | "danger" | "info";
 
 export type ModalConfig = {
@@ -34,24 +35,28 @@ type ModalContextValue = {
 /* ===========================================================
    CONTEXT
 =========================================================== */
+
 const ModalContext = createContext<ModalContextValue | null>(null);
 
 export function useModal(): ModalContextValue {
   const ctx = useContext(ModalContext);
-  if (!ctx) throw new Error("❌ useModal moet binnen ModalProvider gebruikt worden");
+  if (!ctx) {
+    throw new Error("❌ useModal moet binnen ModalProvider gebruikt worden");
+  }
   return ctx;
 }
 
 /* ===========================================================
    PROVIDER
 =========================================================== */
+
 export function ModalProvider({ children }: { children: ReactNode }) {
   const [modal, setModal] = useState<ModalConfig | null>(null);
   const [busy, setBusy] = useState(false);
 
   const close = useCallback(() => {
     if (busy) return;
-    modal?.onCancel?.();
+    if (modal?.onCancel) modal.onCancel();
     setModal(null);
   }, [modal, busy]);
 
@@ -67,14 +72,17 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const handle = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        close();
+      }
     };
-    window.addEventListener("keydown", handle);
+
+    window.addEventListener("keydown", handleKey);
 
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", handle);
+      window.removeEventListener("keydown", handleKey);
     };
   }, [modal, close]);
 
@@ -87,7 +95,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
 }
 
 /* ===========================================================
-   MODAL ROOT – DE UI
+   MODAL ROOT – UI
 =========================================================== */
 
 function ModalRoot({
@@ -133,7 +141,11 @@ function ModalRoot({
         };
 
   const handleConfirm = async () => {
-    if (!onConfirm) return onClose();
+    if (!onConfirm) {
+      onClose();
+      return;
+    }
+
     try {
       setBusy(true);
       await onConfirm();

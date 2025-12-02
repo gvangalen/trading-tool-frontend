@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { API_BASE_URL } from "@/lib/config";
+import { useModal } from "@/components/modal/ModalProvider";
 
 const AuthContext = createContext(null);
 
@@ -22,10 +23,10 @@ export function useAuth() {
 }
 
 /* ===========================================================
-   fetchWithAuth — werkt met HttpOnly cookies
+   fetchWithAuth — HttpOnly cookies
 =========================================================== */
 async function fetchWithAuth(url, options = {}) {
-  const res = await fetch(url, {
+  return await fetch(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -33,8 +34,6 @@ async function fetchWithAuth(url, options = {}) {
     },
     ...options,
   });
-
-  return res;
 }
 
 /* ===========================================================
@@ -43,6 +42,8 @@ async function fetchWithAuth(url, options = {}) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // { id, email, role }
   const [loading, setLoading] = useState(true);
+
+  const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
      1) SESSION LADEN BIJ APP START
@@ -70,7 +71,7 @@ export function AuthProvider({ children }) {
   }, [loadSession]);
 
   /* -------------------------------------------------------
-     2) TOKEN REFRESHER (1x per 50 minuten)
+     2) TOKEN REFRESH (1x per 50 min)
   ------------------------------------------------------- */
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -78,8 +79,8 @@ export function AuthProvider({ children }) {
         await fetchWithAuth(`${API_BASE_URL}/api/auth/refresh`, {
           method: "POST",
         });
-      } catch (e) {
-        console.error("❌ Fout bij token refresh:", e);
+      } catch (err) {
+        console.error("❌ Token refresh fout:", err);
       }
     }, 50 * 60 * 1000);
 
@@ -97,7 +98,10 @@ export function AuthProvider({ children }) {
       });
 
       if (!res.ok) {
-        return { success: false, message: "Ongeldige inloggegevens" };
+        return {
+          success: false,
+          message: "Ongeldige inloggegevens",
+        };
       }
 
       const data = await res.json();
@@ -111,7 +115,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* -------------------------------------------------------
-     4) LOGOUT
+     4) LOGOUT — FIXED VERSION
   ------------------------------------------------------- */
   const logout = useCallback(async () => {
     try {
@@ -121,8 +125,16 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error("❌ Logout fout:", err);
     }
+
+    // Session leegmaken
     setUser(null);
-  }, []);
+
+    // Snackbar feedback
+    showSnackbar("Je bent veilig uitgelogd ✔", "success");
+
+    // Belangrijk: volledige redirect (anders blijft ProtectedLayout checken)
+    window.location.href = "/login";
+  }, [showSnackbar]);
 
   /* -------------------------------------------------------
      Output

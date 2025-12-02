@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import { toast } from 'react-hot-toast';
-import { useState } from 'react';
-import SetupEditModal from '@/components/setup/SetupEditModal';
-import { generateExplanation } from '@/lib/api/setups';
-import AILoader from '@/components/ui/AILoader';
+import { useState } from "react";
+import { useModal } from "@/components/modal/ModalProvider";
 
-// Nieuwe Lucide Icons
+import { generateExplanation } from "@/lib/api/setups";
+import AILoader from "@/components/ui/AILoader";
+
 import {
   Star,
   StarOff,
@@ -21,92 +20,134 @@ import {
   Tag,
   Pencil,
   Trash,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function SetupList({
   setups = [],
   loading,
   error,
-  searchTerm = '',
+  searchTerm = "",
   saveSetup,
   removeSetup,
   reload,
 }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedSetup, setSelectedSetup] = useState(null);
+  const { openConfirm, showSnackbar } = useModal();
 
-  // AI loading per ID
   const [aiLoading, setAiLoading] = useState({});
   const [justUpdated, setJustUpdated] = useState({});
 
-  // ---------------------------------------------------------
-  // 🔍 FILTERS
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     🔍 FILTERS
+  --------------------------------------------------------- */
   const filteredSetups = !searchTerm
     ? setups
     : setups.filter((s) =>
         s.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-  // ---------------------------------------------------------
-  // 🤖 AI EXPLANATION GENERATOR
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     🤖 AI UITLEG GENEREREN
+  --------------------------------------------------------- */
   async function handleGenerateExplanation(id) {
     try {
-      setAiLoading((p) => ({ ...p, [id]: true }));
+      setAiLoading((prev) => ({ ...prev, [id]: true }));
       await generateExplanation(id);
 
-      toast.success('AI-uitleg opgeslagen');
+      showSnackbar("AI-uitleg succesvol gegenereerd!", "success");
 
-      // highlight effect
-      setJustUpdated((p) => ({ ...p, [id]: true }));
+      setJustUpdated((prev) => ({ ...prev, [id]: true }));
       setTimeout(() => {
-        setJustUpdated((p) => ({ ...p, [id]: false }));
+        setJustUpdated((prev) => ({ ...prev, [id]: false }));
       }, 2000);
 
       reload && reload();
     } catch (err) {
       console.error(err);
-      toast.error('❌ AI generatie mislukt');
+      showSnackbar("AI generatie mislukt.", "danger");
     } finally {
-      setAiLoading((p) => ({ ...p, [id]: false }));
+      setAiLoading((prev) => ({ ...prev, [id]: false }));
     }
   }
 
-  // ---------------------------------------------------------
-  // 🗑️ DELETE SETUP
-  // ---------------------------------------------------------
-  async function handleRemove(id) {
-    try {
-      await removeSetup(id);
-      toast.success('Setup verwijderd');
-      reload && reload();
-    } catch (err) {
-      console.error(err);
-      toast.error('Verwijderen mislukt');
-    }
+  /* ---------------------------------------------------------
+     🗑️ DELETE SETUP
+  --------------------------------------------------------- */
+  function openDeleteModal(id) {
+    openConfirm({
+      title: "Setup verwijderen",
+      description: (
+        <p className="leading-relaxed">
+          Weet je zeker dat je deze setup wilt verwijderen?
+          <br />
+          <span className="text-red-600 font-medium">
+            Dit kan niet ongedaan worden gemaakt.
+          </span>
+        </p>
+      ),
+      icon: <Trash />,
+      tone: "danger",
+      confirmText: "Verwijderen",
+      cancelText: "Annuleren",
+      onConfirm: async () => {
+        try {
+          await removeSetup(id);
+          showSnackbar("Setup verwijderd.", "success");
+          reload && reload();
+        } catch (err) {
+          console.error(err);
+          showSnackbar("Verwijderen mislukt.", "danger");
+        }
+      },
+    });
   }
 
-  // ---------------------------------------------------------
-  // ✏️ EDIT MODAL
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     ✏️ EDIT SETUP — via ModalProvider
+  --------------------------------------------------------- */
   function openEditModal(setup) {
-    setSelectedSetup(setup);
-    setModalOpen(true);
+    openConfirm({
+      title: `Setup bewerken – ${setup.name}`,
+      icon: <Pencil />,
+      tone: "primary",
+      confirmText: "Opslaan",
+      cancelText: "Annuleren",
+      description: (
+        <SetupFormWrapper
+          setup={setup}
+          saveSetup={saveSetup}
+        />
+      ),
+      onConfirm: async () => {
+        document.querySelector("#setup-edit-submit")?.click();
+      },
+    });
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     🧩 Kleine wrapper omdat ModalProvider description static is
+  --------------------------------------------------------- */
+  function SetupFormWrapper({ setup }) {
+    const SetupForm = require("@/components/setup/SetupForm").default;
+
+    return (
+      <div className="space-y-6 pt-4">
+        <SetupForm
+          mode="edit"
+          initialData={setup}
+          onSaved={() => {
+            reload && reload();
+            showSnackbar("Setup bijgewerkt!", "success");
+          }}
+        />
+      </div>
+    );
+  }
+
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-6 mt-4">
-
-      <SetupEditModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        setup={selectedSetup}
-        reload={reload}
-      />
 
       {loading && <p className="text-sm text-gray-500">📡 Setups laden...</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -114,14 +155,16 @@ export default function SetupList({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredSetups.length > 0 ? (
           filteredSetups.map((setup) => {
-            const trend = (setup.trend || '').toLowerCase();
+            const trend = (setup.trend || "").toLowerCase();
 
             const trendIcon =
-              trend === 'bullish'
-                ? <TrendingUp size={16} className="text-green-600" />
-                : trend === 'bearish'
-                ? <TrendingDown size={16} className="text-red-600" />
-                : <Scale size={16} className="text-yellow-600" />;
+              trend === "bullish" ? (
+                <TrendingUp size={16} className="text-green-600" />
+              ) : trend === "bearish" ? (
+                <TrendingDown size={16} className="text-red-600" />
+              ) : (
+                <Scale size={16} className="text-yellow-600" />
+              );
 
             return (
               <div
@@ -134,17 +177,19 @@ export default function SetupList({
                   transition-all duration-200
                   hover:shadow-md hover:-translate-y-[2px]
 
-                  ${justUpdated[setup.id] ? 'ring-2 ring-green-500' : ''}
+                  ${justUpdated[setup.id] ? "ring-2 ring-green-500" : ""}
                 `}
               >
                 {/* AI overlay */}
                 {aiLoading[setup.id] && (
-                  <div className="
-                    absolute inset-0 rounded-2xl
-                    bg-white/50 dark:bg-black/40
-                    backdrop-blur-sm z-20 
-                    flex items-center justify-center
-                  ">
+                  <div
+                    className="
+                      absolute inset-0 rounded-2xl
+                      bg-white/50 dark:bg-black/40
+                      backdrop-blur-sm z-20 
+                      flex items-center justify-center
+                    "
+                  >
                     <AILoader
                       variant="dots"
                       size="md"
@@ -153,9 +198,11 @@ export default function SetupList({
                   </div>
                 )}
 
-                {/* Favoriet */}
+                {/* Favoriet toggle */}
                 <button
-                  onClick={() => openEditModal({ ...setup, favorite: !setup.favorite })}
+                  onClick={() =>
+                    openEditModal({ ...setup, favorite: !setup.favorite })
+                  }
                   className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500 transition"
                 >
                   {setup.favorite ? (
@@ -165,7 +212,7 @@ export default function SetupList({
                   )}
                 </button>
 
-                {/* Titel */}
+                {/* Naam */}
                 <h3 className="font-bold text-lg text-[var(--text-dark)] mb-2">
                   {setup.name}
                 </h3>
@@ -174,7 +221,7 @@ export default function SetupList({
                 <div className="flex items-center gap-2 mb-1 text-sm">
                   {trendIcon}
                   <span className="text-[var(--text-light)]">
-                    {setup.trend || 'Onbekend'}
+                    {setup.trend || "Onbekend"}
                   </span>
                 </div>
 
@@ -199,17 +246,20 @@ export default function SetupList({
 
                   <div className="flex items-center gap-2">
                     <Tag size={14} />
-                    {(setup.tags || []).join(', ') || 'Geen tags'}
+                    {(setup.tags || []).join(", ") || "Geen tags"}
                   </div>
                 </div>
 
                 {/* Uitleg */}
-                <div className="
-                  text-xs text-[var(--text-light)]
-                  bg-[var(--bg-soft)] p-3 rounded-xl border border-[var(--border)]
-                  mt-3
-                ">
-                  {setup.explanation || 'Geen uitleg beschikbaar.'}
+                <div
+                  className="
+                    text-xs text-[var(--text-light)]
+                    bg-[var(--bg-soft)] p-3 rounded-xl
+                    border border-[var(--border)]
+                    mt-3
+                  "
+                >
+                  {setup.explanation || "Geen uitleg beschikbaar."}
                 </div>
 
                 {/* AI knop */}
@@ -226,12 +276,11 @@ export default function SetupList({
                   `}
                 >
                   <Bot size={15} />
-                  {aiLoading[setup.id] ? 'Bezig…' : 'Genereer AI-uitleg'}
+                  {aiLoading[setup.id] ? "Bezig…" : "Genereer AI-uitleg"}
                 </button>
 
                 {/* Acties */}
                 <div className="flex justify-end gap-2 mt-4">
-
                   <button
                     onClick={() => openEditModal(setup)}
                     className="
@@ -244,7 +293,7 @@ export default function SetupList({
                   </button>
 
                   <button
-                    onClick={() => handleRemove(setup.id)}
+                    onClick={() => openDeleteModal(setup.id)}
                     className="
                       flex items-center gap-1 px-3 py-1 rounded-lg text-sm
                       bg-red-500 hover:bg-red-600 text-white
@@ -253,7 +302,6 @@ export default function SetupList({
                     <Trash size={14} />
                     Verwijder
                   </button>
-
                 </div>
               </div>
             );

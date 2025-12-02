@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Mail, Lock, UserPlus, LogIn } from "lucide-react";
+
+import { API_BASE_URL } from "@/lib/config";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useModal } from "@/components/modal/ModalProvider";
-import { Mail, Lock, UserPlus } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { registerUser, isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { showSnackbar } = useModal();
 
   const [email, setEmail] = useState("");
@@ -25,18 +27,44 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
 
-    const res = await registerUser(email, password);
+    try {
+      // 1️⃣ REGISTREREN
+      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!res.success) {
-      showSnackbar(res.message || "Registratie mislukt", "danger");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg =
+          data.detail ||
+          "Account aanmaken mislukt. Bestaat dit e-mailadres al?";
+        showSnackbar(msg, "danger");
+        setLoading(false);
+        return;
+      }
+
+      showSnackbar("Account aangemaakt ✔ Je wordt nu ingelogd…", "success");
+
+      // 2️⃣ AUTOMATISCH INLOGGEN
+      const loginRes = await login(email, password);
+
+      if (!loginRes.success) {
+        showSnackbar("Account gemaakt — log nu handmatig in", "info");
+        router.push("/login");
+        return;
+      }
+
+      // 3️⃣ NA LOGIN → dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("❌ Register fout:", err);
+      showSnackbar("Serverfout bij account aanmaken", "danger");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    showSnackbar("Account succesvol aangemaakt ✔", "success");
-
-    // Na registreren → login
-    router.push("/login");
   };
 
   return (
@@ -100,6 +128,7 @@ export default function RegisterPage() {
               <input
                 type="password"
                 required
+                minLength={6}
                 className="bg-transparent outline-none w-full"
                 placeholder="•••••••••"
                 value={password}
@@ -130,8 +159,9 @@ export default function RegisterPage() {
           Heb je al een account?{" "}
           <Link
             href="/login"
-            className="text-[var(--primary)] font-semibold hover:underline"
+            className="text-[var(--primary)] font-semibold hover:underline inline-flex items-center gap-1"
           >
+            <LogIn size={14} />
             Log in →
           </Link>
         </p>

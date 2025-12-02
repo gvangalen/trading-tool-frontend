@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import {
   LineChart,
@@ -18,25 +19,26 @@ import { createStrategy } from "@/lib/api/strategy";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// 🧠 Updated AI Insight Panel (⚠ category i.p.v. type!)
+// 🧠 Updated AI Insight Panel
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 export default function StrategyPage() {
+  const { showSnackbar } = useModal();
+
   const [search, setSearch] = useState("");
-  const [toast, setToast] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
 
   /* -------------------------------------------------- */
-  /* 🔰 SAFE FALLBACKS */
+  /* SAFE ARRAYS */
   /* -------------------------------------------------- */
   const safeSetups = Array.isArray(setups) ? setups : [];
   const safeStrategies = Array.isArray(strategies) ? strategies : [];
 
   /* -------------------------------------------------- */
-  /* 🔄 Initial load */
+  /* INITIAL LOAD */
   /* -------------------------------------------------- */
   useEffect(() => {
     loadSetups();
@@ -44,7 +46,7 @@ export default function StrategyPage() {
   }, []);
 
   /* -------------------------------------------------- */
-  /* 🔃 Refresh mechanics */
+  /* REFRESH EVERYTHING */
   /* -------------------------------------------------- */
   const refreshEverything = () => {
     loadStrategies();
@@ -53,13 +55,8 @@ export default function StrategyPage() {
     setTimeout(() => setRefreshKey((k) => k + 1), 30);
   };
 
-  const handleSuccess = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 4000);
-  };
-
   /* -------------------------------------------------- */
-  /* 📤 Strategie opslaan */
+  /* SUBMIT NEW STRATEGY */
   /* -------------------------------------------------- */
   const handleStrategySubmit = async (strategy) => {
     try {
@@ -68,7 +65,7 @@ export default function StrategyPage() {
       );
 
       if (!setup) {
-        setToast("❌ Geen geldige setup geselecteerd.");
+        showSnackbar("Geen geldige setup geselecteerd.", "danger");
         return;
       }
 
@@ -78,28 +75,26 @@ export default function StrategyPage() {
         setup_name: setup.name,
         symbol: setup.symbol,
         timeframe: setup.timeframe,
-
         explanation: strategy.explanation || strategy.rules || "",
-
         entry: strategy.entry ?? null,
         targets: strategy.targets || [],
         stop_loss: strategy.stop_loss ?? null,
-
         favorite: strategy.favorite ?? false,
         tags: strategy.tags || [],
       };
 
       await createStrategy(payload);
-      handleSuccess("✅ Strategie succesvol opgeslagen!");
+
+      showSnackbar("Strategie succesvol opgeslagen ✔", "success");
       refreshEverything();
     } catch (err) {
       console.error("❌ Strategie opslaan mislukt:", err);
-      setToast("❌ Strategie opslaan mislukt.");
+      showSnackbar("Strategie opslaan mislukt.", "danger");
     }
   };
 
   /* -------------------------------------------------- */
-  /* 🔍 FILTERS (SAFE) */
+  /* FILTERS */
   /* -------------------------------------------------- */
 
   const setupsWithoutTrading = useMemo(() => {
@@ -141,9 +136,7 @@ export default function StrategyPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* -------------------------------------------------- */}
-      {/* 🧭 Titel */}
-      {/* -------------------------------------------------- */}
+      {/* Titel */}
       <div className="flex items-center gap-3 mb-2">
         <LineChart size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -156,14 +149,10 @@ export default function StrategyPage() {
         De AI helpt bij validatie, tips en automatische generaties.
       </p>
 
-      {/* -------------------------------------------------- */}
-      {/* 🧠 AI AGENT INSIGHTS – FIXED */}
-      {/* -------------------------------------------------- */}
+      {/* AI AGENT INSIGHTS */}
       <AgentInsightPanel category="strategy" />
 
-      {/* -------------------------------------------------- */}
-      {/* 📋 Huidige strategieën */}
-      {/* -------------------------------------------------- */}
+      {/* Strategieën lijst */}
       <CardWrapper
         title={
           <div className="flex items-center gap-2">
@@ -173,8 +162,7 @@ export default function StrategyPage() {
         }
       >
         <div className="flex justify-between items-center mb-4">
-
-          {/* 🔎 Zoekveld */}
+          {/* Zoekveld */}
           <div
             className="
               flex items-center px-3 py-2
@@ -197,18 +185,7 @@ export default function StrategyPage() {
         <StrategyList searchTerm={search} key={refreshKey} />
       </CardWrapper>
 
-      {/* -------------------------------------------------- */}
-      {/* 🟢 Toast */}
-      {/* -------------------------------------------------- */}
-      {toast && (
-        <div className="bg-green-100 text-green-800 border border-green-300 px-4 py-2 rounded text-sm">
-          {toast}
-        </div>
-      )}
-
-      {/* -------------------------------------------------- */}
-      {/* ➕ Nieuwe strategie */}
-      {/* -------------------------------------------------- */}
+      {/* Nieuwe strategie */}
       <CardWrapper
         title={
           <div className="flex items-center gap-2">

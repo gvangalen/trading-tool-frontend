@@ -12,12 +12,11 @@ import {
   Tag,
   Sparkles,
   Star,
-  CheckCircle,
-  XCircle,
   Save,
 } from "lucide-react";
 
 import { saveNewSetup, updateSetup } from "@/lib/api/setups";
+import { useModal } from "@/components/modal/ModalProvider";
 
 export default function SetupForm({
   onSaved,
@@ -25,6 +24,7 @@ export default function SetupForm({
   initialData = null,
 }) {
   const isEdit = mode === "edit";
+  const { showSnackbar } = useModal();
 
   // ----------------------------------------------------
   // STATE
@@ -49,10 +49,7 @@ export default function SetupForm({
   const [macroScore, setMacroScore] = useState([30, 70]);
   const [technicalScore, setTechnicalScore] = useState([40, 80]);
   const [marketScore, setMarketScore] = useState([20, 60]);
-
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
 
   // ----------------------------------------------------
   // LOAD FOR EDIT
@@ -107,8 +104,6 @@ export default function SetupForm({
   // ----------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     setLoading(true);
 
     const payload = {
@@ -139,10 +134,12 @@ export default function SetupForm({
     try {
       if (isEdit) {
         await updateSetup(initialData.id, payload);
-        setSuccess("✔ Setup bijgewerkt!");
+        showSnackbar("Setup succesvol bijgewerkt!", "success");
       } else {
         await saveNewSetup(payload);
-        setSuccess("✔ Setup opgeslagen!");
+        showSnackbar("Nieuwe setup opgeslagen!", "success");
+
+        // Reset form only for NEW setups
         setFormData(emptyForm);
         setMacroScore([30, 70]);
         setTechnicalScore([40, 80]);
@@ -150,11 +147,9 @@ export default function SetupForm({
       }
 
       onSaved && onSaved();
-
-      setTimeout(() => setSuccess(""), 2500);
     } catch (err) {
       console.error("❌ Fout:", err);
-      setError("❌ Opslaan mislukt. Controleer je velden.");
+      showSnackbar("Opslaan mislukt — controleer de velden.", "danger");
     } finally {
       setLoading(false);
     }
@@ -181,21 +176,6 @@ export default function SetupForm({
   // ----------------------------------------------------
   return (
     <form onSubmit={handleSubmit} className="space-y-8 mt-4">
-
-      {/* Success / Error */}
-      {success && (
-        <div className="p-3 rounded-xl border border-green-300 bg-green-50 text-green-800 flex items-center gap-2">
-          <CheckCircle size={18} />
-          {success}
-        </div>
-      )}
-
-      {error && (
-        <div className="p-3 rounded-xl border border-red-300 bg-red-50 text-red-800 flex items-center gap-2">
-          <XCircle size={18} />
-          {error}
-        </div>
-      )}
 
       {/* ------------------------------------------------ */}
       {/* SECTIE: BASISGEGEVENS */}

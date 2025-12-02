@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useModal } from "@/components/modal/ModalProvider";
+
 import {
   Settings,
   Search,
@@ -10,6 +12,7 @@ import {
 
 import SetupForm from "@/components/setup/SetupForm";
 import SetupList from "@/components/setup/SetupList";
+
 import { useSetupData } from "@/hooks/useSetupData";
 import CardWrapper from "@/components/ui/CardWrapper";
 
@@ -18,6 +21,8 @@ import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
 export default function SetupPage() {
   const [search, setSearch] = useState("");
+
+  const { showSnackbar } = useModal();
 
   const {
     setups,
@@ -28,19 +33,20 @@ export default function SetupPage() {
     removeSetup,
   } = useSetupData();
 
-  // ⭐ Initial load
+  /* =====================================================
+     🔄 INITIAL LOAD
+  ===================================================== */
   useEffect(() => {
     loadSetups();
   }, []);
 
-  const reloadSetups = () => {
-    console.log("🔄 [SetupPage] Reload setups triggered");
-    loadSetups();
+  const reloadSetups = async () => {
+    await loadSetups();
+    showSnackbar("🔄 Setups vernieuwd", "info");
   };
 
   /* =====================================================
-     🛡️ SAFE FALLBACKS
-     voorkomt crash bij nieuwe gebruikers
+     🛡️ SAFE SETUPS
   ===================================================== */
   const safeSetups = Array.isArray(setups) ? setups : [];
 
@@ -63,12 +69,12 @@ export default function SetupPage() {
       </p>
 
       {/* -------------------------------------------------- */}
-      {/* 🧠 AI Agent Insight – SAFE */}
+      {/* 🧠 AI Agent Insight Panel  */}
       {/* -------------------------------------------------- */}
       <AgentInsightPanel category="setup" />
 
       {/* -------------------------------------------------- */}
-      {/* 📋 Huidige setups + zoekbalk */}
+      {/* 📋 Huidige setups */}
       {/* -------------------------------------------------- */}
       <CardWrapper
         title={
@@ -79,9 +85,8 @@ export default function SetupPage() {
         }
       >
 
+        {/* Zoekveld */}
         <div className="flex justify-between items-center mb-4">
-
-          {/* Zoekveld */}
           <div
             className="
               flex items-center px-3 py-2 

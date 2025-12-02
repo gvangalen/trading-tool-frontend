@@ -1,56 +1,137 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useModal } from "@/components/modal/ModalProvider";
+import { Mail, Lock, UserPlus } from "lucide-react";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { registerUser, isAuthenticated } = useAuth();
+  const { showSnackbar } = useModal();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Als al ingelogd → niet registreren
+  useEffect(() => {
+    if (isAuthenticated) router.push("/dashboard");
+  }, [isAuthenticated, router]);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const res = await registerUser(email, password);
+
+    if (!res.success) {
+      showSnackbar(res.message || "Registratie mislukt", "danger");
+      setLoading(false);
+      return;
+    }
+
+    showSnackbar("Account succesvol aangemaakt ✔", "success");
+
+    // Na registreren → login
+    router.push("/login");
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)] px-4">
-      <div className="bg-white dark:bg-[var(--card)] shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-800">
-
-        <h1 className="text-2xl font-bold text-center mb-2">Account aanmaken</h1>
-        <p className="text-center text-gray-500 mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-soft)] px-4">
+      <div
+        className="
+          w-full max-w-md 
+          bg-[var(--card-bg)] border border-[var(--card-border)]
+          rounded-2xl shadow-xl p-8
+          animate-fade-slide
+        "
+      >
+        <h1 className="text-3xl font-bold text-center mb-2 text-[var(--text-dark)]">
+          Account aanmaken
+        </h1>
+        <p className="text-center text-[var(--text-light)] mb-8">
           Maak een nieuw TradeLayer-account
         </p>
 
-        {/* Email */}
-        <label className="block text-sm font-medium mb-1">E-mail</label>
-        <input
-          type="email"
-          className="w-full mb-4 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-          placeholder="jij@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {/* Form */}
+        <form onSubmit={handleRegister} className="space-y-6">
+          {/* Email */}
+          <div>
+            <label className="text-sm text-[var(--text-light)] mb-1 block">
+              E-mail
+            </label>
+            <div
+              className="
+                flex items-center gap-2 
+                bg-[var(--bg-soft)] border border-[var(--border)]
+                rounded-xl px-3 py-2
+                focus-within:ring-1 focus-within:ring-[var(--primary)]
+              "
+            >
+              <Mail size={18} className="text-[var(--text-light)]" />
+              <input
+                type="email"
+                required
+                className="bg-transparent outline-none w-full"
+                placeholder="jij@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+          </div>
 
-        {/* Wachtwoord */}
-        <label className="block text-sm font-medium mb-1">Wachtwoord</label>
-        <input
-          type="password"
-          className="w-full mb-6 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          {/* Password */}
+          <div>
+            <label className="text-sm text-[var(--text-light)] mb-1 block">
+              Wachtwoord
+            </label>
+            <div
+              className="
+                flex items-center gap-2 
+                bg-[var(--bg-soft)] border border-[var(--border)]
+                rounded-xl px-3 py-2
+                focus-within:ring-1 focus-within:ring-[var(--primary)]
+              "
+            >
+              <Lock size={18} className="text-[var(--text-light)]" />
+              <input
+                type="password"
+                required
+                className="bg-transparent outline-none w-full"
+                placeholder="•••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
 
-        {/* Knop */}
-        <button
-          className="
-            w-full bg-blue-600 hover:bg-blue-700
-            text-white font-semibold py-3 rounded-lg
-            transition-all shadow-md
-          "
-        >
-          ➜ Account aanmaken
-        </button>
+          {/* Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="
+              w-full flex items-center justify-center gap-2
+              bg-[var(--primary)] hover:bg-[var(--primary-dark)]
+              text-white font-semibold py-3 rounded-xl
+              shadow-sm hover:shadow-md transition
+              disabled:bg-gray-400 disabled:cursor-not-allowed
+            "
+          >
+            <UserPlus size={18} />
+            {loading ? "Aanmaken…" : "Account aanmaken"}
+          </button>
+        </form>
 
         {/* Terug link */}
-        <p className="text-center text-gray-500 mt-6">
+        <p className="text-center text-[var(--text-light)] mt-6">
           Heb je al een account?{" "}
-          <Link href="/login" className="text-blue-600 font-semibold hover:underline">
+          <Link
+            href="/login"
+            className="text-[var(--primary)] font-semibold hover:underline"
+          >
             Log in →
           </Link>
         </p>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { useModal } from "@/components/modal/ModalProvider";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,10 +16,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Als al ingelogd → direct naar dashboard
-  if (isAuthenticated) {
-    router.push("/dashboard");
-  }
+  // 🚀 Als al ingelogd → direct dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,7 +37,7 @@ export default function LoginPage() {
 
     showSnackbar("Welkom terug! ✔", "success");
 
-    // Na succesvolle login → dashboard
+    // redirect
     router.push("/dashboard");
   };
 
@@ -129,6 +132,17 @@ export default function LoginPage() {
             {loading ? "Inloggen…" : "Inloggen"}
           </button>
         </form>
+
+        {/* ➕ Registratie link */}
+        <p className="text-center text-[var(--text-light)] mt-6">
+          Nog geen account?{" "}
+          <Link
+            href="/register"
+            className="text-[var(--primary)] font-semibold hover:underline"
+          >
+            Registreer →
+          </Link>
+        </p>
       </div>
     </div>
   );

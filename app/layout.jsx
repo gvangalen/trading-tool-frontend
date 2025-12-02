@@ -1,12 +1,10 @@
-"use client";
-
 import "../styles/globals.css";
 import NavBar from "@/components/ui/NavBar";
 import TopBar from "@/components/ui/TopBar";
 import { Toaster } from "react-hot-toast";
 
 import ClientProviders from "./ClientProviders";
-import { AuthProvider } from "@/components/auth/AuthProvider";
+import AuthClientProvider from "./AuthClientProvider";
 
 export const metadata = {
   title: "TradeLayer",
@@ -18,20 +16,13 @@ export default function RootLayout({ children }) {
     <html lang="nl">
       <body className="bg-[var(--bg)] text-[var(--text-dark)] relative">
         
-        {/* ================================================
-           🔐 AUTH PROVIDER (MOET HELE APP WRAPPEN!)
-        ================================================= */}
-        <AuthProvider>
-
-          {/* 🔥 Modal + andere client providers */}
+        {/* 🔐 Auth in client wrapper → toegestaan */}
+        <AuthClientProvider>
+          {/* Modal engine */}
           <ClientProviders>
-          
-            {/* Toast messages */}
             <Toaster position="top-right" />
 
-            {/* =============================== */}
-            {/* SIDEBAR — DESKTOP */}
-            {/* =============================== */}
+            {/* DESKTOP SIDEBAR */}
             <div className="hidden md:block">
               <div
                 className="
@@ -45,9 +36,7 @@ export default function RootLayout({ children }) {
               </div>
             </div>
 
-            {/* =============================== */}
-            {/* SIDEBAR — MOBILE */}
-            {/* =============================== */}
+            {/* MOBILE SIDEBAR */}
             <div
               id="mobileSidebar"
               className="
@@ -63,11 +52,8 @@ export default function RootLayout({ children }) {
               <NavBar />
             </div>
 
-            {/* =============================== */}
-            {/* CONTENT WRAPPER */}
-            {/* =============================== */}
+            {/* PAGE LAYOUT */}
             <div className="md:ml-64">
-
               {/* TOPBAR */}
               <div
                 className="
@@ -86,7 +72,7 @@ export default function RootLayout({ children }) {
               {/* PAGE CONTENT */}
               <main
                 className="
-                  pt-16  
+                  pt-16
                   px-4 md:px-8
                   pb-14
                   min-h-screen
@@ -96,9 +82,7 @@ export default function RootLayout({ children }) {
               </main>
             </div>
 
-            {/* =============================== */}
-            {/* MOBILE MENU SCRIPT */}
-            {/* =============================== */}
+            {/* MOBILE SIDEBAR SCRIPT */}
             <script
               dangerouslySetInnerHTML={{
                 __html: `
@@ -118,9 +102,8 @@ export default function RootLayout({ children }) {
                 `,
               }}
             />
-
           </ClientProviders>
-        </AuthProvider>
+        </AuthClientProvider>
       </body>
     </html>
   );

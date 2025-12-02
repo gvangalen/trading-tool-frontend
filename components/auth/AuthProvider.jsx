@@ -25,7 +25,7 @@ export function useAuth() {
    fetchWithAuth — werkt met HttpOnly cookies
 =========================================================== */
 async function fetchWithAuth(url: string, options: any = {}) {
-  const res = await fetch(url, {
+  return await fetch(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -33,15 +33,13 @@ async function fetchWithAuth(url: string, options: any = {}) {
     },
     ...options,
   });
-
-  return res;
 }
 
 /* ===========================================================
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id, email, role }
+  const [user, setUser] = useState(null); 
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
@@ -52,8 +50,8 @@ export function AuthProvider({ children }) {
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
       if (res.ok) {
-        const data = await res.json(); // <-- rechtstreeks user-object
-        setUser(data);
+        const data = await res.json();
+        setUser(data);         // ✔ juiste structuur
       } else {
         setUser(null);
       }
@@ -70,21 +68,27 @@ export function AuthProvider({ children }) {
   }, [loadSession]);
 
   /* -------------------------------------------------------
-     2) TOKEN REFRESHER (1x per 50 minuten)
+     2) TOKEN REFRESH — alleen als ingelogd
   ------------------------------------------------------- */
   useEffect(() => {
+    if (!user) return; // ✔ niet refreshen bij logout
+
     const interval = setInterval(async () => {
       try {
-        await fetchWithAuth(`${API_BASE_URL}/api/auth/refresh`, {
+        const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/refresh`, {
           method: "POST",
         });
+
+        if (res.ok) {
+          await loadSession(); // ✔ user state updaten
+        }
       } catch (e) {
         console.error("❌ Fout bij token refresh:", e);
       }
-    }, 50 * 60 * 1000); // elke 50 minuten
+    }, 50 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user, loadSession]);
 
   /* -------------------------------------------------------
      3) LOGIN
@@ -100,17 +104,14 @@ export function AuthProvider({ children }) {
         return { success: false, message: "Ongeldige inloggegevens" };
       }
 
-      // login return heeft structuur: { success, user }
-      const data = await res.json();
-
-      setUser(data.user || null);
+      await loadSession();  // ✔ haal actuele user op
 
       return { success: true };
     } catch (err) {
       console.error("❌ Login fout:", err);
       return { success: false, message: "Serverfout" };
     }
-  }, []);
+  }, [loadSession]);
 
   /* -------------------------------------------------------
      4) LOGOUT
@@ -127,7 +128,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* -------------------------------------------------------
-     Values exposed
+     VALUES
   ------------------------------------------------------- */
   const value = {
     user,

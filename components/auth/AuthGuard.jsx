@@ -1,13 +1,20 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import AILoader from "@/components/ui/AILoader";
 
-export default function ProtectedLayout({ children }) {
+export default function AuthGuard({ children }) {
   const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
 
-  // Tijdens auth-check → loader
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [loading, isAuthenticated, router]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -16,11 +23,9 @@ export default function ProtectedLayout({ children }) {
     );
   }
 
-  // Niet ingelogd → DIRECT redirect
   if (!isAuthenticated) {
-    redirect("/login");
+    return null;
   }
 
-  // Ingelogd → content tonen
   return <>{children}</>;
 }

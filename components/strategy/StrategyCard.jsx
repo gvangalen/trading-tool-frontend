@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/strategy';
 
 import StrategyEditModal from '@/components/strategy/StrategyEditModal';
+import DeleteModal from '@/components/ui/DeleteModal';
 import AILoader from '@/components/ui/AILoader';
 
 /* Lucide icons */
@@ -30,6 +31,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
   if (!strategy) return null;
 
   const [editing, setEditing] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [softWarning, setSoftWarning] = useState('');
@@ -58,15 +60,16 @@ export default function StrategyCard({ strategy, onUpdated }) {
   const display = (v) => (v ? v : '-');
 
   // -------------------------------------------------------------
-  // DELETE
+  // DELETE (via custom DeleteModal)
   // -------------------------------------------------------------
-  const handleDelete = async () => {
-    if (!confirm('Weet je zeker dat je deze strategie wilt verwijderen?')) return;
-
+  const confirmDelete = async () => {
     try {
       setLoading(true);
+      setDeleteOpen(false);
+
       await deleteStrategy(id);
       onUpdated && onUpdated(id);
+
     } catch (err) {
       console.error('❌ Delete fout:', err);
       setError('Verwijderen mislukt.');
@@ -145,11 +148,19 @@ export default function StrategyCard({ strategy, onUpdated }) {
   // -------------------------------------------------------------
   return (
     <>
+      {/* EDIT MODAL */}
       <StrategyEditModal
         open={editing}
         strategy={strategy}
         onClose={() => setEditing(false)}
         reload={onUpdated}
+      />
+
+      {/* DELETE MODAL */}
+      <DeleteModal
+        open={deleteOpen}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={confirmDelete}
       />
 
       <div
@@ -184,7 +195,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
             <button
               disabled={loading}
-              onClick={handleDelete}
+              onClick={() => setDeleteOpen(true)}
               className="text-red-500 hover:text-red-700"
             >
               <Trash2 className="w-5 h-5" />
@@ -201,19 +212,16 @@ export default function StrategyCard({ strategy, onUpdated }) {
         {!isDCA && (
           <div className="text-sm space-y-2 mb-4">
 
-            {/* Entry */}
             <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
               <ArrowRightLeft className="w-4 h-4 text-blue-500" />
               <span>Entry: {display(entry)}</span>
             </div>
 
-            {/* Targets */}
             <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
               <Target className="w-4 h-4 text-red-500" />
               <span>Targets: {Array.isArray(targets) ? targets.join(', ') : '-'}</span>
             </div>
 
-            {/* Stop-loss */}
             <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
               <ShieldAlert className="w-4 h-4 text-purple-500" />
               <span>Stop-loss: {display(stop_loss)}</span>
@@ -253,7 +261,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
         {/* FOOTER */}
         <div className="flex justify-between items-center mt-6">
 
-          {/* Generate AI */}
           <button
             disabled={loading}
             onClick={handleGenerate}

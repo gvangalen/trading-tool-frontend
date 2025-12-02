@@ -59,9 +59,9 @@ export default function StrategyCard({ strategy, onUpdated }) {
   const isDCA = strategy_type === 'dca';
   const display = (v) => (v ? v : '-');
 
-  // -------------------------------------------------------------
-  // DELETE (via custom DeleteModal)
-  // -------------------------------------------------------------
+  /* ================================================================
+     🔥 DELETE CONFIRMATION (via DeleteModal)
+  ================================================================ */
   const confirmDelete = async () => {
     try {
       setLoading(true);
@@ -78,9 +78,9 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // -------------------------------------------------------------
-  // AI GENERATE
-  // -------------------------------------------------------------
+  /* ================================================================
+     🤖 AI GENERATE
+  ================================================================ */
   const handleGenerate = async () => {
     try {
       setLoading(true);
@@ -143,9 +143,9 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  // -------------------------------------------------------------
-  // UI
-  // -------------------------------------------------------------
+  /* ================================================================
+     🎨 UI
+  ================================================================ */
   return (
     <>
       {/* EDIT MODAL */}
@@ -163,6 +163,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
         onConfirm={confirmDelete}
       />
 
+      {/* CARD */}
       <div
         className={`
           border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
@@ -171,9 +172,15 @@ export default function StrategyCard({ strategy, onUpdated }) {
         `}
       >
 
-        {/* AI LOADER */}
+        {/* AI LOADER OVERLAY */}
         {loading && (
-          <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
+          <div className="
+            absolute inset-0 z-20
+            bg-white/40 dark:bg-black/40 
+            backdrop-blur-sm 
+            flex items-center justify-center 
+            rounded-xl
+          ">
             <AILoader variant="dots" size="md" text="AI strategie genereren…" />
           </div>
         )}
@@ -261,6 +268,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
         {/* FOOTER */}
         <div className="flex justify-between items-center mt-6">
 
+          {/* AI generate */}
           <button
             disabled={loading}
             onClick={handleGenerate}

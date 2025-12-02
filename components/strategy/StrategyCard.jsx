@@ -32,7 +32,7 @@ import {
 export default function StrategyCard({ strategy, onUpdated }) {
   if (!strategy) return null;
 
-  const { openConfirm } = useModal();
+  const { openConfirm, showSnackbar } = useModal();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -62,14 +62,17 @@ export default function StrategyCard({ strategy, onUpdated }) {
   const display = (v) => (v ? v : "-");
 
   /* ================================================================
-     🟪 EDIT STRATEGY — via ModalProvider
+     🟪 EDIT STRATEGY — ModalProvider + snackbar
   ================================================================ */
   const handleSave = async (payload) => {
     try {
       await updateStrategy(strategy.id, payload);
       onUpdated && onUpdated(strategy.id);
+
+      showSnackbar("Strategie bijgewerkt ✔", "success");
     } catch (err) {
       console.error("❌ Strategie opslaan mislukt:", err);
+      showSnackbar("Opslaan mislukt", "danger");
     }
   };
 
@@ -121,7 +124,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
   };
 
   /* ================================================================
-     🔥 DELETE STRATEGY — via ModalProvider
+     🔥 DELETE — ModalProvider + Snackbar
   ================================================================ */
   const openDeleteModal = () => {
     openConfirm({
@@ -143,10 +146,13 @@ export default function StrategyCard({ strategy, onUpdated }) {
         try {
           setLoading(true);
           await deleteStrategy(id);
+
           onUpdated && onUpdated(id);
+          showSnackbar("Strategie verwijderd", "success");
         } catch (err) {
-          console.error("❌ Delete fout:", err);
+          console.error("❌ Verwijderen mislukt:", err);
           setError("Verwijderen mislukt.");
+          showSnackbar("Verwijderen mislukt", "danger");
         } finally {
           setLoading(false);
         }
@@ -155,7 +161,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
   };
 
   /* ================================================================
-     🤖 AI GENERATE
+     🤖 AI GENERATE — Snackbar support
   ================================================================ */
   const handleGenerate = async () => {
     try {
@@ -167,6 +173,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       if (!res?.task_id) {
         setError("❌ Ongeldige response van de server.");
+        showSnackbar("AI fout: ongeldige response", "danger");
         setLoading(false);
         return;
       }
@@ -198,6 +205,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       if (!status || status.state !== "SUCCESS") {
         setSoftWarning("⚠️ AI duurde lang — data wordt opgehaald...");
+        showSnackbar("AI duurt lang…", "info");
       }
 
       const final = await fetchStrategyBySetup(setup_id);
@@ -208,11 +216,14 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       onUpdated && onUpdated(final.strategy);
 
+      showSnackbar("Strategie succesvol gegenereerd ✔", "success");
+
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2500);
     } catch (err) {
       console.error("❌ AI fout:", err);
       setError("AI generatie mislukt.");
+      showSnackbar("AI generatie mislukt", "danger");
     } finally {
       setLoading(false);
     }
@@ -269,8 +280,8 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       {/* META INFO */}
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        <span className="uppercase font-medium">{strategy_type}</span> |{" "}
-        {symbol} {timeframe}
+        <span className="uppercase font-medium">{strategy_type}</span> | {symbol}{" "}
+        {timeframe}
       </p>
 
       {/* ENTRY / TARGETS / SL */}
@@ -299,12 +310,12 @@ export default function StrategyCard({ strategy, onUpdated }) {
       {ai_explanation && (
         <div
           className="
-          flex gap-3 p-4 rounded-xl
-          bg-purple-50 dark:bg-purple-900/20
-          border border-purple-200 dark:border-purple-700
-          text-sm text-purple-700 dark:text-purple-300
-          leading-relaxed mt-4
-        "
+            flex gap-3 p-4 rounded-xl
+            bg-purple-50 dark:bg-purple-900/20
+            border border-purple-200 dark:border-purple-700
+            text-sm text-purple-700 dark:text-purple-300
+            leading-relaxed mt-4
+          "
         >
           <Bot className="w-5 h-5 flex-shrink-0 mt-[2px]" />
           <div>

@@ -8,13 +8,14 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { X } from "lucide-react";
+
+import { X, CheckCircle2, Info, AlertTriangle } from "lucide-react";
 
 /* ===========================================================
    TYPES
 =========================================================== */
 
-type ModalTone = "primary" | "danger" | "info";
+type ModalTone = "primary" | "danger" | "info" | "success";
 
 export type ModalConfig = {
   title?: string;
@@ -27,9 +28,12 @@ export type ModalConfig = {
   onCancel?: () => void;
 };
 
-type ModalContextValue = {
+type SnackbarTone = "success" | "danger" | "info" | "primary";
+
+export type ModalContextValue = {
   openConfirm: (config: ModalConfig) => void;
   close: () => void;
+  showSnackbar: (msg: string, tone?: SnackbarTone) => void;
 };
 
 /* ===========================================================
@@ -40,9 +44,7 @@ const ModalContext = createContext<ModalContextValue | null>(null);
 
 export function useModal(): ModalContextValue {
   const ctx = useContext(ModalContext);
-  if (!ctx) {
-    throw new Error("❌ useModal moet binnen ModalProvider gebruikt worden");
-  }
+  if (!ctx) throw new Error("❌ useModal moet binnen ModalProvider gebruikt worden");
   return ctx;
 }
 
@@ -54,48 +56,71 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   const [modal, setModal] = useState<ModalConfig | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState<{
+    msg: string;
+    tone: SnackbarTone;
+    visible: boolean;
+  }>({ msg: "", tone: "success", visible: false });
+
+  /* --- CLOSE MODAL --- */
   const close = useCallback(() => {
     if (busy) return;
-    if (modal?.onCancel) modal.onCancel();
+    modal?.onCancel?.();
     setModal(null);
   }, [modal, busy]);
 
+  /* --- OPEN MODAL --- */
   const openConfirm = useCallback((config: ModalConfig) => {
     setBusy(false);
     setModal(config);
   }, []);
 
-  // Scroll lock + ESC
+  /* --- SNACKBAR --- */
+  const showSnackbar = useCallback(
+    (msg: string, tone: SnackbarTone = "success") => {
+      setSnackbar({ msg, tone, visible: true });
+
+      const timer = setTimeout(() => {
+        setSnackbar((s) => ({ ...s, visible: false }));
+      }, 2500);
+
+      return () => clearTimeout(timer);
+    },
+    []
+  );
+
+  /* --- SCROLL LOCK + ESCAPE --- */
   useEffect(() => {
     if (!modal) return;
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        close();
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && close();
+    window.addEventListener("keydown", esc);
 
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("keydown", esc);
     };
   }, [modal, close]);
 
   return (
-    <ModalContext.Provider value={{ openConfirm, close }}>
+    <ModalContext.Provider value={{ openConfirm, close, showSnackbar }}>
       {children}
+
+      {/* Modal Window */}
       <ModalRoot modal={modal} busy={busy} setBusy={setBusy} onClose={close} />
+
+      {/* Snackbar */}
+      <Snackbar snackbar={snackbar} />
     </ModalContext.Provider>
   );
 }
 
 /* ===========================================================
-   MODAL ROOT – UI
+   MODAL ROOT — UI
 =========================================================== */
 
 function ModalRoot({
@@ -134,6 +159,12 @@ function ModalRoot({
           iconText: "text-blue-600",
           confirm: "bg-blue-600 hover:bg-blue-700",
         }
+      : tone === "success"
+      ? {
+          iconBg: "bg-green-100 dark:bg-green-900/40",
+          iconText: "text-green-600",
+          confirm: "bg-green-600 hover:bg-green-700",
+        }
       : {
           iconBg: "bg-[var(--primary-soft)]",
           iconText: "text-[var(--primary)]",
@@ -150,62 +181,35 @@ function ModalRoot({
       setBusy(true);
       await onConfirm();
       onClose();
-    } catch (e) {
-      console.error("❌ Modal onConfirm error:", e);
+    } catch (err) {
+      console.error("❌ Modal onConfirm error:", err);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div
-      className="
-        fixed inset-0 z-[210]
-        bg-black/55 backdrop-blur-sm
-        flex items-center justify-center
-        px-4 animate-fade-in
-      "
-    >
-      <div
-        className="
-          w-full max-w-md
-          bg-[var(--card-bg)] dark:bg-[var(--card-bg)]
-          border border-[var(--card-border)]
-          rounded-2xl shadow-2xl
-          p-6 sm:p-7
-          animate-fade-slide
-          relative
-        "
-      >
-        {/* Close button */}
+    <div className="fixed inset-0 z-[210] bg-black/55 backdrop-blur-sm flex items-center justify-center px-4 animate-fade-in">
+      <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl shadow-2xl p-6 sm:p-7 animate-fade-slide relative">
+        {/* Close */}
         <button
           onClick={onClose}
-          className="
-            absolute top-3 right-3 
-            p-2 rounded-lg
-            text-gray-500 hover:text-gray-800 dark:hover:text-gray-100
-            hover:bg-black/10 dark:hover:bg-white/10
-            transition
-          "
+          className="absolute top-3 right-3 p-2 rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-black/10 dark:hover:bg-white/10 transition"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Header */}
+        {/* Title */}
         <div className="flex items-center gap-3 mb-4">
           {icon && (
-            <div
-              className={`rounded-full p-2 ${toneClasses.iconBg} flex items-center justify-center`}
-            >
+            <div className={`rounded-full p-2 ${toneClasses.iconBg}`}>
               <div className={toneClasses.iconText}>{icon}</div>
             </div>
           )}
-          <h2 className="text-xl font-semibold text-[var(--text-dark)] dark:text-white">
-            {title}
-          </h2>
+          <h2 className="text-xl font-semibold">{title}</h2>
         </div>
 
-        {/* Body */}
+        {/* Description */}
         {description && (
           <div className="text-sm text-gray-700 dark:text-gray-200 mb-6">
             {description}
@@ -215,32 +219,62 @@ function ModalRoot({
         {/* Buttons */}
         <div className="flex justify-end gap-3">
           <button
-            disabled={busy}
             onClick={onClose}
-            className="
-              px-4 py-2 rounded-xl text-sm
-              border border-gray-300 dark:border-gray-700
-              text-gray-700 dark:text-gray-200
-              bg-gray-50 dark:bg-gray-900
-              hover:bg-gray-100 dark:hover:bg-gray-800
-              transition
-            "
+            disabled={busy}
+            className="px-4 py-2 rounded-xl text-sm border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
             {cancelText}
           </button>
 
           <button
-            disabled={busy}
             onClick={handleConfirm}
-            className={`
-              px-4 py-2 rounded-xl text-sm text-white shadow-md
-              disabled:opacity-60 disabled:cursor-not-allowed
-              ${toneClasses.confirm}
-            `}
+            disabled={busy}
+            className={`px-4 py-2 rounded-xl text-sm text-white shadow-md ${toneClasses.confirm}`}
           >
             {busy ? "Bezig…" : confirmText}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================
+   SNACKBAR — UI
+=========================================================== */
+
+function Snackbar({
+  snackbar,
+}: {
+  snackbar: { msg: string; tone: SnackbarTone; visible: boolean };
+}) {
+  if (!snackbar.visible) return null;
+
+  const toneStyles = {
+    success: "bg-green-600",
+    danger: "bg-red-600",
+    info: "bg-blue-600",
+    primary: "bg-[var(--primary)]",
+  };
+
+  const Icon =
+    snackbar.tone === "danger"
+      ? AlertTriangle
+      : snackbar.tone === "info"
+      ? Info
+      : CheckCircle2;
+
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[220] animate-snackbar-fade">
+      <div
+        className={`
+          px-5 py-3 rounded-full shadow-xl backdrop-blur-lg
+          text-white flex items-center gap-2
+          ${toneStyles[snackbar.tone]}
+        `}
+      >
+        <Icon className="w-4 h-4" />
+        <span className="font-medium text-sm">{snackbar.msg}</span>
       </div>
     </div>
   );

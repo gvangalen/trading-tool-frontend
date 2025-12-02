@@ -1,18 +1,26 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useModal } from "@/components/modal/ModalProvider";
+
 import {
   User,
   Globe,
   Brain,
   LineChart,
   LogOut,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function AvatarMenu() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+
+  const router = useRouter();
+  const { logout, user } = useAuth();
+  const { showSnackbar } = useModal();
 
   /* Klik buiten = sluiten */
   useEffect(() => {
@@ -21,9 +29,17 @@ export default function AvatarMenu() {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  /* Uitloggen */
+  const handleLogout = async () => {
+    await logout();
+    showDropdown(false);
+    showSnackbar("Je bent uitgelogd", "success");
+    router.push("/login");
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -42,14 +58,14 @@ export default function AvatarMenu() {
         "
         title="Open profielmenu"
       >
-        G
+        {user?.email?.charAt(0)?.toUpperCase() || "?"}
       </button>
 
       {/* DROPDOWN */}
       {showDropdown && (
         <div
           className="
-            absolute right-0 mt-3 w-52
+            absolute right-0 mt-3 w-56
             bg-[var(--card-bg)]
             border border-[var(--card-border)]
             rounded-xl
@@ -58,6 +74,15 @@ export default function AvatarMenu() {
           "
         >
           <ul className="text-sm text-[var(--text-dark)]">
+            {/* Email + rol (info only) */}
+            {user && (
+              <li className="px-4 py-2 pb-3 border-b border-[var(--border)]">
+                <p className="font-semibold">{user.email}</p>
+                <p className="text-xs text-[var(--text-light)] capitalize">
+                  Rol: {user.role}
+                </p>
+              </li>
+            )}
 
             <DropdownItem href="/profile" icon={<User size={16} />}>
               Profiel
@@ -75,10 +100,9 @@ export default function AvatarMenu() {
               Tradingstijl
             </DropdownButton>
 
-            <DropdownButton icon={<LogOut size={16} />} danger>
+            <DropdownButton icon={<LogOut size={16} />} danger onClick={handleLogout}>
               Uitloggen
             </DropdownButton>
-
           </ul>
         </div>
       )}
@@ -106,15 +130,20 @@ function DropdownItem({ href, icon, children }) {
 }
 
 /* 📌 Component voor knoppen */
-function DropdownButton({ icon, children, danger = false }) {
+function DropdownButton({ icon, children, danger = false, onClick }) {
   return (
     <li>
       <button
+        onClick={onClick}
         className={`
           w-full text-left flex items-center gap-3 px-4 py-2.5
           rounded-lg transition
           hover:bg-[var(--bg-soft)]
-          ${danger ? "text-red-500 hover:text-red-600" : "text-[var(--text-dark)]"}
+          ${
+            danger
+              ? "text-red-500 hover:text-red-600"
+              : "text-[var(--text-dark)]"
+          }
         `}
       >
         <span className={`${danger ? "text-red-400" : "text-[var(--text-light)]"}`}>

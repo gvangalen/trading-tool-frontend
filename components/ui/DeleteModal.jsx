@@ -1,9 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import { Trash2, X } from "lucide-react";
 
 export default function DeleteModal({ open, onConfirm, onCancel }) {
   if (!open) return null;
+
+  // Scroll-lock + ESC to close
+  useEffect(() => {
+    if (open) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+
+      const esc = (e) => e.key === "Escape" && onCancel();
+      window.addEventListener("keydown", esc);
+
+      return () => {
+        document.body.style.overflow = prev;
+        window.removeEventListener("keydown", esc);
+      };
+    }
+  }, [open, onCancel]);
 
   return (
     <div
@@ -15,7 +32,6 @@ export default function DeleteModal({ open, onConfirm, onCancel }) {
         animate-fade-in
       "
     >
-      {/* MODAL BOX */}
       <div
         className="
           w-full max-w-md

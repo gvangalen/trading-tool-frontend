@@ -1,38 +1,29 @@
 "use client";
+
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 
-export default function DeleteModal({ open, onConfirm, onCancel }) {
-  if (!open) return null;
-
-  // ⛔ Zorg dat body niet scrollt terwijl modal open is
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
-
+function DeleteModalContent({ onConfirm, onCancel }) {
   return (
     <div
       className="
         fixed inset-0 
-        bg-black/40 backdrop-blur-sm
+        bg-black/40 backdrop-blur-sm 
         flex items-center justify-center
         z-[9999]
       "
     >
-      {/* MODAL CARD */}
       <div
         className="
           bg-white dark:bg-gray-900 
           rounded-2xl shadow-2xl 
-          p-6 w-full max-w-md 
-          animate-fade-slide 
+          p-6 w-full max-w-md mx-4
+          animate-fade-slide
           relative
         "
       >
-        {/* CLOSE BUTTON */}
+        {/* Close button */}
         <button
           onClick={onCancel}
           className="
@@ -72,7 +63,8 @@ export default function DeleteModal({ open, onConfirm, onCancel }) {
               px-4 py-2 rounded-lg 
               border border-gray-300 dark:border-gray-700
               text-gray-700 dark:text-gray-300 
-              hover:bg-gray-100 dark:hover:bg-gray-800 transition
+              hover:bg-gray-100 dark:hover:bg-gray-800
+              transition
             "
           >
             Annuleren
@@ -91,5 +83,35 @@ export default function DeleteModal({ open, onConfirm, onCancel }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DeleteModal({ open, onConfirm, onCancel }) {
+  if (typeof window === "undefined") return null;
+
+  // FIX: scroll lock correct toepassen
+  useEffect(() => {
+    if (open) {
+      // Scroll lock EN fix voor iOS/overscroll
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    } else {
+      // Altijd herstellen
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    }
+
+    return () => {
+      // Cleanup als component unmount
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <DeleteModalContent onConfirm={onConfirm} onCancel={onCancel} />,
+    document.body
   );
 }

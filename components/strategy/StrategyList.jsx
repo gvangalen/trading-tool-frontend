@@ -3,38 +3,34 @@
 import { useState, useEffect } from 'react';
 import { useStrategyData } from '@/hooks/useStrategyData';
 import StrategyCard from '@/components/strategy/StrategyCard';
+import { useModal } from "@/components/modal/ModalProvider";
 
 export default function StrategyList({ searchTerm = '' }) {
   const { strategies, loadStrategies } = useStrategyData();
-  const [toast, setToast] = useState('');
+  const { showSnackbar } = useModal(); // ✅ Nieuwe snackbar
+  const [initialized, setInitialized] = useState(false);
 
   // ---------------------------------------------------------
   // 🔄 Load strategies bij eerste render
   // ---------------------------------------------------------
   useEffect(() => {
-    loadStrategies().catch((err) =>
-      console.error('❌ Fout bij laden strategieën:', err)
-    );
+    loadStrategies()
+      .catch((err) =>
+        console.error('❌ Fout bij laden strategieën:', err)
+      )
+      .finally(() => setInitialized(true));
   }, []); // ← géén dependencies → voorkomt loops
 
   // ---------------------------------------------------------
-  // 🔔 Toast helper
-  // ---------------------------------------------------------
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
-  };
-
-  // ---------------------------------------------------------
-  // ♻️ Reload na update of delete
+  // ♻️ Reload na update/delete (via StrategyCard)
   // ---------------------------------------------------------
   const handleUpdated = async () => {
     await loadStrategies();
-    showToast('♻️ Strategie bijgewerkt!');
+    showSnackbar("Strategie bijgewerkt!", "success"); // ✅ Snack i.p.v. toast
   };
 
   // ---------------------------------------------------------
-  // 🔍 Filter + zoeken
+  // 🔍 Zoeken / filteren
   // ---------------------------------------------------------
   const filtered = strategies.filter((s) => {
     if (!s || !s.id) return false;
@@ -61,7 +57,7 @@ export default function StrategyList({ searchTerm = '' }) {
     <div className="space-y-6">
 
       {/* Geen resultaten */}
-      {sortedStrategies.length === 0 ? (
+      {initialized && sortedStrategies.length === 0 ? (
         <div className="text-center text-gray-500 pt-6">
           📭 Geen strategieën gevonden
         </div>
@@ -75,17 +71,7 @@ export default function StrategyList({ searchTerm = '' }) {
         ))
       )}
 
-      {/* Toast */}
-      {toast && (
-        <div className="
-          fixed top-4 right-4 
-          bg-black text-white 
-          px-4 py-2 rounded shadow-lg 
-          z-50 text-sm
-        ">
-          {toast}
-        </div>
-      )}
+      {/* ❗ Geen toast meer! Nieuwe snackbar wordt via ModalProvider getoond */}
     </div>
   );
 }

@@ -14,12 +14,11 @@ export default function RegisterPage() {
   const { login, isAuthenticated } = useAuth();
   const { showSnackbar } = useModal();
 
-  const [name, setName] = useState("");       // 👈 nieuw
+  const [name, setName] = useState(""); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Al ingelogd? → direct naar dashboard
   useEffect(() => {
     if (isAuthenticated) router.push("/dashboard");
   }, [isAuthenticated, router]);
@@ -29,12 +28,16 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1️⃣ Account aanmaken (backend krijgt alleen email + password)
+      // 1️⃣ Account aanmaken MET VOORNAAM
       const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          first_name: name,   // 🔥 belangrijk
+          email,
+          password
+        }),
       });
 
       if (!res.ok) {
@@ -47,18 +50,9 @@ export default function RegisterPage() {
         return;
       }
 
-      // Naam lokaal bewaren (optioneel, voor begroeting / avatar later)
-      if (name) {
-        try {
-          localStorage.setItem("tl_display_name", name);
-        } catch {
-          // niet kritisch
-        }
-      }
-
       showSnackbar("Account aangemaakt ✔ Je wordt nu ingelogd…", "success");
 
-      // 2️⃣ Direct inloggen met hetzelfde email/wachtwoord
+      // 2️⃣ Direct automatisch inloggen
       const loginRes = await login(email, password);
 
       if (!loginRes.success) {
@@ -67,7 +61,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // 3️⃣ Na succesvolle login → dashboard
+      // 3️⃣ Naar dashboard
       router.push("/dashboard");
     } catch (err) {
       console.error("❌ Register fout:", err);
@@ -79,14 +73,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-soft)] px-4">
-      <div
-        className="
-          w-full max-w-md 
-          bg-[var(--card-bg)] border border-[var(--card-border)]
-          rounded-2xl shadow-xl p-8
-          animate-fade-slide
-        "
-      >
+      <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--card-border)]
+                      rounded-2xl shadow-xl p-8 animate-fade-slide">
+
         <h1 className="text-3xl font-bold text-center mb-2 text-[var(--text-dark)]">
           Account aanmaken
         </h1>
@@ -94,24 +83,19 @@ export default function RegisterPage() {
           Maak een nieuw TradeLayer-account
         </p>
 
-        {/* Formulier */}
         <form onSubmit={handleRegister} className="space-y-6">
+
           {/* Naam */}
           <div>
             <label className="text-sm text-[var(--text-light)] mb-1 block">
               Naam
             </label>
-            <div
-              className="
-                flex items-center gap-2 
-                bg-[var(--bg-soft)] border border-[var(--border)]
-                rounded-xl px-3 py-2
-                focus-within:ring-1 focus-within:ring-[var(--primary)]
-              "
-            >
+            <div className="flex items-center gap-2 bg-[var(--bg-soft)] border border-[var(--border)]
+                            rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[var(--primary)]">
               <User size={18} className="text-[var(--text-light)]" />
               <input
                 type="text"
+                required
                 className="bg-transparent outline-none w-full"
                 placeholder="Jouw naam"
                 value={name}
@@ -122,17 +106,9 @@ export default function RegisterPage() {
 
           {/* E-mail */}
           <div>
-            <label className="text-sm text-[var(--text-light)] mb-1 block">
-              E-mail
-            </label>
-            <div
-              className="
-                flex items-center gap-2 
-                bg-[var(--bg-soft)] border border-[var(--border)]
-                rounded-xl px-3 py-2
-                focus-within:ring-1 focus-within:ring-[var(--primary)]
-              "
-            >
+            <label className="text-sm text-[var(--text-light)] mb-1 block">E-mail</label>
+            <div className="flex items-center gap-2 bg-[var(--bg-soft)] border border-[var(--border)]
+                            rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[var(--primary)]">
               <Mail size={18} className="text-[var(--text-light)]" />
               <input
                 type="email"
@@ -147,17 +123,9 @@ export default function RegisterPage() {
 
           {/* Wachtwoord */}
           <div>
-            <label className="text-sm text-[var(--text-light)] mb-1 block">
-              Wachtwoord
-            </label>
-            <div
-              className="
-                flex items-center gap-2 
-                bg-[var(--bg-soft)] border border-[var(--border)]
-                rounded-xl px-3 py-2
-                focus-within:ring-1 focus-within:ring-[var(--primary)]
-              "
-            >
+            <label className="text-sm text-[var(--text-light)] mb-1 block">Wachtwoord</label>
+            <div className="flex items-center gap-2 bg-[var(--bg-soft)] border border-[var(--border)]
+                            rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[var(--primary)]">
               <Lock size={18} className="text-[var(--text-light)]" />
               <input
                 type="password"
@@ -171,32 +139,26 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Submit-knop */}
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="
-              w-full flex items-center justify-center gap-2
-              bg-[var(--primary)] hover:bg-[var(--primary-dark)]
-              text-white font-semibold py-3 rounded-xl
-              shadow-sm hover:shadow-md transition
-              disabled:bg-gray-400 disabled:cursor-not-allowed
-            "
+            className="w-full flex items-center justify-center gap-2 bg-[var(--primary)]
+                       hover:bg-[var(--primary-dark)] text-white font-semibold py-3 rounded-xl
+                       shadow-sm hover:shadow-md transition disabled:bg-gray-400"
           >
             <UserPlus size={18} />
             {loading ? "Aanmaken…" : "Account aanmaken"}
           </button>
         </form>
 
-        {/* Naar login */}
         <p className="text-center text-[var(--text-light)] mt-6">
           Heb je al een account?{" "}
           <Link
             href="/login"
             className="text-[var(--primary)] font-semibold hover:underline inline-flex items-center gap-1"
           >
-            <LogIn size={14} />
-            Log in →
+            <LogIn size={14} /> Log in →
           </Link>
         </p>
       </div>

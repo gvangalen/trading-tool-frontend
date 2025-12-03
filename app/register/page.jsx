@@ -18,7 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Als al ingelogd → niet registreren
+  // Al ingelogd? → direct naar dashboard
   useEffect(() => {
     if (isAuthenticated) router.push("/dashboard");
   }, [isAuthenticated, router]);
@@ -28,7 +28,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1️⃣ REGISTREREN
+      // 1️⃣ Account aanmaken
       const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,7 +48,7 @@ export default function RegisterPage() {
 
       showSnackbar("Account aangemaakt ✔ Je wordt nu ingelogd…", "success");
 
-      // 2️⃣ AUTOMATISCH INLOGGEN
+      // 2️⃣ Direct inloggen met hetzelfde email/wachtwoord
       const loginRes = await login(email, password);
 
       if (!loginRes.success) {
@@ -57,7 +57,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // 3️⃣ NA LOGIN → dashboard
+      // 3️⃣ Na succesvolle login → dashboard
       router.push("/dashboard");
     } catch (err) {
       console.error("❌ Register fout:", err);
@@ -84,9 +84,9 @@ export default function RegisterPage() {
           Maak een nieuw TradeLayer-account
         </p>
 
-        {/* Form */}
+        {/* Formulier */}
         <form onSubmit={handleRegister} className="space-y-6">
-          {/* Email */}
+          {/* E-mail */}
           <div>
             <label className="text-sm text-[var(--text-light)] mb-1 block">
               E-mail
@@ -111,7 +111,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Password */}
+          {/* Wachtwoord */}
           <div>
             <label className="text-sm text-[var(--text-light)] mb-1 block">
               Wachtwoord
@@ -137,7 +137,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Button */}
+          {/* Submit-knop */}
           <button
             type="submit"
             disabled={loading}
@@ -154,7 +154,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Terug link */}
+        {/* Naar login */}
         <p className="text-center text-[var(--text-light)] mt-6">
           Heb je al een account?{" "}
           <Link

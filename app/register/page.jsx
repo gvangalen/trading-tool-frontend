@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, UserPlus, LogIn } from "lucide-react";
+import { Mail, Lock, UserPlus, LogIn, User } from "lucide-react";
 
 import { API_BASE_URL } from "@/lib/config";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const { login, isAuthenticated } = useAuth();
   const { showSnackbar } = useModal();
 
+  const [name, setName] = useState("");       // 👈 nieuw
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1️⃣ Account aanmaken
+      // 1️⃣ Account aanmaken (backend krijgt alleen email + password)
       const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,6 +45,15 @@ export default function RegisterPage() {
         showSnackbar(msg, "danger");
         setLoading(false);
         return;
+      }
+
+      // Naam lokaal bewaren (optioneel, voor begroeting / avatar later)
+      if (name) {
+        try {
+          localStorage.setItem("tl_display_name", name);
+        } catch {
+          // niet kritisch
+        }
       }
 
       showSnackbar("Account aangemaakt ✔ Je wordt nu ingelogd…", "success");
@@ -86,6 +96,30 @@ export default function RegisterPage() {
 
         {/* Formulier */}
         <form onSubmit={handleRegister} className="space-y-6">
+          {/* Naam */}
+          <div>
+            <label className="text-sm text-[var(--text-light)] mb-1 block">
+              Naam
+            </label>
+            <div
+              className="
+                flex items-center gap-2 
+                bg-[var(--bg-soft)] border border-[var(--border)]
+                rounded-xl px-3 py-2
+                focus-within:ring-1 focus-within:ring-[var(--primary)]
+              "
+            >
+              <User size={18} className="text-[var(--text-light)]" />
+              <input
+                type="text"
+                className="bg-transparent outline-none w-full"
+                placeholder="Jouw naam"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </div>
+
           {/* E-mail */}
           <div>
             <label className="text-sm text-[var(--text-light)] mb-1 block">

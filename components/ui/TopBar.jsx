@@ -2,13 +2,34 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
+
 import AvatarMenu from "@/components/ui/AvatarMenu";
 import { Search } from "lucide-react";
 
 export default function TopBar() {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
+  const { user } = useAuth();
 
+  /* -----------------------------
+      Dynamische begroeting
+  ------------------------------ */
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Goedemorgen";
+    if (hour < 18) return "Goedemiddag";
+    return "Goedenavond";
+  };
+
+  const displayName =
+    user?.first_name
+      ? `${user.first_name}${user.last_name ? " " + user.last_name : ""}`
+      : user?.email?.split("@")[0] || "gebruiker";
+
+  /* -----------------------------
+      Page titles
+  ------------------------------ */
   const titles = {
     "/": "Dashboard — Scores",
     "/market": "Market Data",
@@ -33,7 +54,7 @@ export default function TopBar() {
     >
       {/* LEFT SIDE */}
       <div className="flex items-center gap-4">
-        {/* MOBILE: MENU BUTTON */}
+        {/* MOBILE MENU BUTTON */}
         <button
           data-mobile-menu
           className="
@@ -52,15 +73,23 @@ export default function TopBar() {
           </svg>
         </button>
 
-        {/* PAGE TITLE */}
-        <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight">
-          {title}
-        </h1>
+        <div className="flex flex-col">
+          {/* PAGE TITLE */}
+          <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight">
+            {title}
+          </h1>
+
+          {/* DYNAMISCHE BEGROETING */}
+          {user && (
+            <span className="text-sm text-[var(--text-light)] mt-[-2px]">
+              {getGreeting()}, <span className="font-medium">{displayName}</span> 👋
+            </span>
+          )}
+        </div>
       </div>
 
       {/* RIGHT SIDE */}
       <div className="flex items-center gap-6">
-        
         {/* DESKTOP SEARCH */}
         <div
           className="
@@ -88,7 +117,7 @@ export default function TopBar() {
           />
         </div>
 
-        {/* AVATAR (nu donkerder border) */}
+        {/* AVATAR */}
         <div
           className="
             rounded-full

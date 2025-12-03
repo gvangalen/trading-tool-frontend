@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import { User, Globe, Brain, LineChart, LogOut } from "lucide-react";
 
@@ -10,7 +13,9 @@ export default function AvatarMenu() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
+  const router = useRouter();
   const { logout, user } = useAuth();
+  const { showSnackbar } = useModal();
 
   /* Klik buiten = sluiten */
   useEffect(() => {
@@ -24,10 +29,19 @@ export default function AvatarMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* Uitloggen → auth-provider regelt cookies + redirect + snackbar */
-  const handleLogout = () => {
+  /* Uitloggen → cookies via backend, UI hier */
+  const handleLogout = async () => {
+    // Dropdown dicht
     setShowDropdown(false);
-    logout(); // doet zelf: cookies wissen, user null, snackbar, window.location="/login"
+
+    // Backend logout (cookies + session)
+    await logout();
+
+    // Feedback + redirect
+    showSnackbar("Je bent veilig uitgelogd ✔", "success");
+    router.push("/login");
+    // of hard redirect:
+    // window.location.href = "/login";
   };
 
   return (

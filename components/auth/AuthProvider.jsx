@@ -9,7 +9,6 @@ import {
 } from "react";
 
 import { API_BASE_URL } from "@/lib/config";
-import { useModal } from "@/components/modal/ModalProvider";
 
 const AuthContext = createContext(null);
 
@@ -40,10 +39,8 @@ async function fetchWithAuth(url, options = {}) {
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id, email, role, first_name, last_name }
+  const [user, setUser] = useState(null); // { id, email, role }
   const [loading, setLoading] = useState(true);
-
-  const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
      1) SESSION LADEN BIJ APP START
@@ -98,16 +95,14 @@ export function AuthProvider({ children }) {
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
         return {
           success: false,
-          message: body?.detail || "Ongeldige inloggegevens",
+          message: "Ongeldige inloggegevens",
         };
       }
 
       const data = await res.json();
-      // backend stuurt { success, user: {...} }
-      setUser(data.user || data);
+      setUser(data.user || null);
 
       return { success: true };
     } catch (err) {
@@ -117,58 +112,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* -------------------------------------------------------
-     4) REGISTER
+     4) LOGOUT — ZONDER UI (UI doet AvatarMenu)
   ------------------------------------------------------- */
-  const registerUser = useCallback(
-    async (firstName, lastName, email, password) => {
-      try {
-        const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/register`, {
-          method: "POST",
-          body: JSON.stringify({
-            first_name: firstName,
-            last_name: lastName || null,
-            email,
-            password,
-          }),
-        });
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          return {
-            success: false,
-            message: body?.detail || "Registratie mislukt",
-          };
-        }
-
-        return { success: true };
-      } catch (err) {
-        console.error("❌ Register fout:", err);
-        return { success: false, message: "Serverfout" };
-      }
-    },
-    []
-  );
-
-  /* -------------------------------------------------------
-     5) LOGOUT — FIXED VERSION
-  ------------------------------------------------------- */
-  const logout = useCallback(() => {
-    // We doen fetch, maar we laten errors niet meer "lekken"
-    fetchWithAuth(`${API_BASE_URL}/api/auth/logout`, {
-      method: "POST",
-    }).catch((err) => {
+  const logout = useCallback(async () => {
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/api/auth/logout`, {
+        method: "POST",
+      });
+    } catch (err) {
       console.error("❌ Logout fout:", err);
-    });
+    }
 
-    // Session leegmaken
+    // Session leegmaken; redirect & snackbar doet de caller
     setUser(null);
-
-    // Snackbar feedback
-    showSnackbar("Je bent veilig uitgelogd ✔", "success");
-
-    // Hard redirect zodat alles clean is
-    window.location.href = "/login";
-  }, [showSnackbar]);
+  }, []);
 
   /* -------------------------------------------------------
      Output
@@ -179,7 +136,6 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     login,
     logout,
-    registerUser,
     fetchWithAuth,
     reload: loadSession,
   };

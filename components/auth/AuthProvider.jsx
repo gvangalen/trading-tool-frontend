@@ -40,7 +40,7 @@ async function fetchWithAuth(url, options = {}) {
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id, email, role }
+  const [user, setUser] = useState(null); // { id, email, role, first_name, last_name }
   const [loading, setLoading] = useState(true);
 
   const { showSnackbar } = useModal();
@@ -98,14 +98,16 @@ export function AuthProvider({ children }) {
       });
 
       if (!res.ok) {
+        const body = await res.json().catch(() => null);
         return {
           success: false,
-          message: "Ongeldige inloggegevens",
+          message: body?.detail || "Ongeldige inloggegevens",
         };
       }
 
       const data = await res.json();
-      setUser(data.user || null);
+      // backend stuurt { success, user: {...} }
+      setUser(data.user || data);
 
       return { success: true };
     } catch (err) {
@@ -115,16 +117,48 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* -------------------------------------------------------
-     4) LOGOUT — FIXED VERSION
+     4) REGISTER
   ------------------------------------------------------- */
-  const logout = useCallback(async () => {
-    try {
-      await fetchWithAuth(`${API_BASE_URL}/api/auth/logout`, {
-        method: "POST",
-      });
-    } catch (err) {
+  const registerUser = useCallback(
+    async (firstName, lastName, email, password) => {
+      try {
+        const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/register`, {
+          method: "POST",
+          body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName || null,
+            email,
+            password,
+          }),
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          return {
+            success: false,
+            message: body?.detail || "Registratie mislukt",
+          };
+        }
+
+        return { success: true };
+      } catch (err) {
+        console.error("❌ Register fout:", err);
+        return { success: false, message: "Serverfout" };
+      }
+    },
+    []
+  );
+
+  /* -------------------------------------------------------
+     5) LOGOUT — FIXED VERSION
+  ------------------------------------------------------- */
+  const logout = useCallback(() => {
+    // We doen fetch, maar we laten errors niet meer "lekken"
+    fetchWithAuth(`${API_BASE_URL}/api/auth/logout`, {
+      method: "POST",
+    }).catch((err) => {
       console.error("❌ Logout fout:", err);
-    }
+    });
 
     // Session leegmaken
     setUser(null);
@@ -132,7 +166,7 @@ export function AuthProvider({ children }) {
     // Snackbar feedback
     showSnackbar("Je bent veilig uitgelogd ✔", "success");
 
-    // Belangrijk: volledige redirect (anders blijft ProtectedLayout checken)
+    // Hard redirect zodat alles clean is
     window.location.href = "/login";
   }, [showSnackbar]);
 
@@ -145,6 +179,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     login,
     logout,
+    registerUser,
     fetchWithAuth,
     reload: loadSession,
   };

@@ -2,36 +2,30 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
-
 import AvatarMenu from "@/components/ui/AvatarMenu";
 import { Search } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function TopBar() {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const { user } = useAuth();
 
-  /* -----------------------------
-      Dynamische begroeting
-  ------------------------------ */
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Goedemorgen";
-    if (hour < 18) return "Goedemiddag";
-    return "Goedenavond";
-  };
+  /* ======== Dynamische begroeting ======== */
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12
+      ? "Goedemorgen"
+      : hour < 18
+      ? "Goedemiddag"
+      : "Goedenavond";
 
-  const displayName =
-    user?.first_name
-      ? `${user.first_name}${user.last_name ? " " + user.last_name : ""}`
-      : user?.email?.split("@")[0] || "gebruiker";
+  const firstName = user?.first_name || "";
+  const greetingText = firstName ? `${greeting}, ${firstName} 👋` : `${greeting} 👋`;
 
-  /* -----------------------------
-      Page titles
-  ------------------------------ */
+  /* ======== Pagina titel op basis van route ======== */
   const titles = {
-    "/": "Dashboard — Scores",
+    "/": "Trading Dashboard",
     "/market": "Market Data",
     "/macro": "Macro Analyse",
     "/technical": "Technische Indicatoren",
@@ -52,45 +46,23 @@ export default function TopBar() {
         text-[var(--topbar-text)]
       "
     >
-      {/* LEFT SIDE */}
-      <div className="flex items-center gap-4">
-        {/* MOBILE MENU BUTTON */}
-        <button
-          data-mobile-menu
-          className="
-            md:hidden p-2 rounded-lg
-            hover:bg-black/5
-            transition
-          "
-        >
-          <svg
-            width="24"
-            height="24"
-            stroke="currentColor"
-            className="text-[var(--topbar-text)]"
-          >
-            <path d="M3 6h18M3 12h18M3 18h18" strokeWidth="2" />
-          </svg>
-        </button>
-
-        <div className="flex flex-col">
-          {/* PAGE TITLE */}
-          <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight">
-            {title}
-          </h1>
-
-          {/* DYNAMISCHE BEGROETING */}
-          {user && (
-            <span className="text-sm text-[var(--text-light)] mt-[-2px]">
-              {getGreeting()}, <span className="font-medium">{displayName}</span> 👋
-            </span>
-          )}
-        </div>
+      {/* LEFT SIDE — Titel */}
+      <div className="flex items-center gap-4 min-w-[200px]">
+        <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight whitespace-nowrap">
+          {title}
+        </h1>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="flex items-center gap-6">
-        {/* DESKTOP SEARCH */}
+      {/* CENTER — Greeting */}
+      <div className="hidden md:flex flex-1 justify-center">
+        <p className="text-[var(--text-dark)] text-base font-medium">
+          {greetingText}
+        </p>
+      </div>
+
+      {/* RIGHT — Search + Avatar */}
+      <div className="flex items-center gap-6 min-w-[200px] justify-end">
+        {/* Desktop Search */}
         <div
           className="
             hidden md:flex items-center gap-3
@@ -98,8 +70,7 @@ export default function TopBar() {
             bg-[var(--bg-soft)]
             border border-[rgba(0,0,0,0.08)]
             hover:border-[rgba(0,0,0,0.15)]
-            transition
-            shadow-sm
+            transition shadow-sm
           "
         >
           <Search className="w-5 h-5 text-[var(--text-light)]" />
@@ -117,7 +88,7 @@ export default function TopBar() {
           />
         </div>
 
-        {/* AVATAR */}
+        {/* Avatar */}
         <div
           className="
             rounded-full

@@ -21,7 +21,7 @@ export default function TopBar() {
       : "Goedenavond";
 
   const firstName = user?.first_name || "";
-  const greetingText = firstName ? `${greeting}, ${firstName} 👋` : `${greeting} 👋`;
+  const greetingText = firstName ? `${greeting}, ${firstName}` : greeting;
 
   /* ======== Pagina titel op basis van route ======== */
   const titles = {

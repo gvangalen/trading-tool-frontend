@@ -2,25 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useModal } from "@/components/modal/ModalProvider";
 
-import {
-  User,
-  Globe,
-  Brain,
-  LineChart,
-  LogOut,
-} from "lucide-react";
+import { User, Globe, Brain, LineChart, LogOut } from "lucide-react";
 
 export default function AvatarMenu() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
-  const router = useRouter();
   const { logout, user } = useAuth();
-  const { showSnackbar } = useModal();
 
   /* Klik buiten = sluiten */
   useEffect(() => {
@@ -29,16 +19,15 @@ export default function AvatarMenu() {
         setShowDropdown(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* Uitloggen */
-  const handleLogout = async () => {
-    await logout();
-    showDropdown(false);
-    showSnackbar("Je bent uitgelogd", "success");
-    router.push("/login");
+  /* Uitloggen → auth-provider regelt cookies + redirect + snackbar */
+  const handleLogout = () => {
+    setShowDropdown(false);
+    logout(); // doet zelf: cookies wissen, user null, snackbar, window.location="/login"
   };
 
   return (
@@ -89,7 +78,7 @@ export default function AvatarMenu() {
             </DropdownItem>
 
             <DropdownButton icon={<Globe size={16} />}>
-              Taal & Regio
+              Taal &amp; Regio
             </DropdownButton>
 
             <DropdownButton icon={<Brain size={16} />}>
@@ -100,7 +89,11 @@ export default function AvatarMenu() {
               Tradingstijl
             </DropdownButton>
 
-            <DropdownButton icon={<LogOut size={16} />} danger onClick={handleLogout}>
+            <DropdownButton
+              icon={<LogOut size={16} />}
+              danger
+              onClick={handleLogout}
+            >
               Uitloggen
             </DropdownButton>
           </ul>
@@ -146,7 +139,11 @@ function DropdownButton({ icon, children, danger = false, onClick }) {
           }
         `}
       >
-        <span className={`${danger ? "text-red-400" : "text-[var(--text-light)]"}`}>
+        <span
+          className={`${
+            danger ? "text-red-400" : "text-[var(--text-light)]"
+          }`}
+        >
           {icon}
         </span>
         <span>{children}</span>

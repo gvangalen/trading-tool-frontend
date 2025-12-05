@@ -9,8 +9,12 @@ import {
 } from "react";
 
 import { API_BASE_URL } from "@/lib/config";
+import {
+  setCurrentUserId,
+  clearCurrentUserId,
+} from "@/lib/user"; // ✅ user-id koppelen aan frontend
 
-const AuthContext = createContext(null);
+const AuthContext = createContext<any>(null);
 
 /* ===========================================================
    Hook
@@ -24,7 +28,7 @@ export function useAuth() {
 /* ===========================================================
    fetchWithAuth — HttpOnly cookies
 =========================================================== */
-async function fetchWithAuth(url, options = {}) {
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return await fetch(url, {
     credentials: "include",
     headers: {
@@ -38,8 +42,8 @@ async function fetchWithAuth(url, options = {}) {
 /* ===========================================================
    AUTH PROVIDER
 =========================================================== */
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id, email, role }
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<any>(null); // { id, email, role }
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
@@ -51,13 +55,21 @@ export function AuthProvider({ children }) {
 
       if (res.ok) {
         const data = await res.json();
-        setUser(data);
+        const u = data.user || data; // backend kan {user: {...}} of direct {...} teruggeven
+        setUser(u);
+
+        // ✅ user_id syncen naar localStorage (voor apiClient.ts)
+        if (u && u.id) {
+          setCurrentUserId(u.id);
+        }
       } else {
         setUser(null);
+        clearCurrentUserId(); // ❌ geen geldige sessie → zorg dat user_id leeg is
       }
     } catch (err) {
       console.error("❌ Fout bij ophalen session:", err);
       setUser(null);
+      clearCurrentUserId();
     } finally {
       setLoading(false);
     }
@@ -87,7 +99,7 @@ export function AuthProvider({ children }) {
   /* -------------------------------------------------------
      3) LOGIN
   ------------------------------------------------------- */
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
@@ -102,7 +114,14 @@ export function AuthProvider({ children }) {
       }
 
       const data = await res.json();
-      setUser(data.user || null);
+      const u = data.user || data;
+
+      setUser(u);
+
+      // ✅ user_id opslaan voor alle API-calls (apiClient.ts)
+      if (u && u.id) {
+        setCurrentUserId(u.id);
+      }
 
       return { success: true };
     } catch (err) {
@@ -123,8 +142,9 @@ export function AuthProvider({ children }) {
       console.error("❌ Logout fout:", err);
     }
 
-    // Session leegmaken; redirect & snackbar doet de caller
+    // Session + user_id leegmaken; redirect & snackbar doet de caller
     setUser(null);
+    clearCurrentUserId(); // ✅ ook localStorage opruimen
   }, []);
 
   /* -------------------------------------------------------

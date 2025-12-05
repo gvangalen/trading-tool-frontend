@@ -1,16 +1,58 @@
 // frontend/lib/apiClient.ts
+//----------------------------------------------------------
+//  GLOBAL API CLIENT
+//  - Injecteert automatisch user_id in elke request
+//  - Voegt user_id toe aan query én aan POST/PUT bodies
+//  - Zorgt dat de frontend altijd data van de juiste gebruiker ophaalt
+//----------------------------------------------------------
+
 import { getCurrentUserId } from "./user";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002";
 
+//----------------------------------------------------------
+// 🆔 Helper: user_id toevoegen aan URL
+//----------------------------------------------------------
 function withUserId(path: string): string {
   const userId = getCurrentUserId();
+
+  if (!userId) {
+    console.warn("⚠️ [apiClient] Geen userId beschikbaar — URL blijft ongewijzigd");
+    return path;
+  }
+
   const separator = path.includes("?") ? "&" : "?";
+
+  // voorkomen dat user_id dubbel wordt toegevoegd:
+  if (path.includes("user_id=")) return path;
+
   return `${path}${separator}user_id=${userId}`;
 }
 
+//----------------------------------------------------------
+// 🛠️ Helper: body verrijken met user_id
+//----------------------------------------------------------
+function attachUserIdToBody(body: any): any {
+  const userId = getCurrentUserId();
+
+  if (!userId) {
+    console.warn("⚠️ [apiClient] body zonder userId verstuurd (nog niet ingelogd?)");
+    return body || {};
+  }
+
+  return {
+    ...(body || {}),
+    user_id: userId,
+  };
+}
+
+//----------------------------------------------------------
+// 📡 GET
+//----------------------------------------------------------
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${withUserId(path)}`;
+
   const res = await fetch(url, {
     ...init,
     method: "GET",
@@ -23,21 +65,24 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error(`GET ${url} failed:`, res.status, text);
+    console.error(`❌ API GET ${url} failed:`, res.status, text);
     throw new Error(`API GET failed (${res.status})`);
   }
 
   return res.json() as Promise<T>;
 }
 
-export async function apiPost<T>(path: string, body: any, init?: RequestInit): Promise<T> {
+//----------------------------------------------------------
+// 📡 POST
+//----------------------------------------------------------
+export async function apiPost<T>(
+  path: string,
+  body: any,
+  init?: RequestInit
+): Promise<T> {
   const url = `${API_BASE_URL}${withUserId(path)}`;
-  const userId = getCurrentUserId();
 
-  const payload = {
-    ...body,
-    user_id: userId, // ✅ ook in body meesturen (voor backend die body leest)
-  };
+  const payload = attachUserIdToBody(body);
 
   const res = await fetch(url, {
     ...init,
@@ -51,21 +96,24 @@ export async function apiPost<T>(path: string, body: any, init?: RequestInit): P
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error(`POST ${url} failed:`, res.status, text);
+    console.error(`❌ API POST ${url} failed:`, res.status, text);
     throw new Error(`API POST failed (${res.status})`);
   }
 
   return res.json() as Promise<T>;
 }
 
-export async function apiPut<T>(path: string, body: any, init?: RequestInit): Promise<T> {
+//----------------------------------------------------------
+// 📡 PUT
+//----------------------------------------------------------
+export async function apiPut<T>(
+  path: string,
+  body: any,
+  init?: RequestInit
+): Promise<T> {
   const url = `${API_BASE_URL}${withUserId(path)}`;
-  const userId = getCurrentUserId();
 
-  const payload = {
-    ...body,
-    user_id: userId,
-  };
+  const payload = attachUserIdToBody(body);
 
   const res = await fetch(url, {
     ...init,
@@ -79,14 +127,20 @@ export async function apiPut<T>(path: string, body: any, init?: RequestInit): Pr
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error(`PUT ${url} failed:`, res.status, text);
+    console.error(`❌ API PUT ${url} failed:`, res.status, text);
     throw new Error(`API PUT failed (${res.status})`);
   }
 
   return res.json() as Promise<T>;
 }
 
-export async function apiDelete<T>(path: string, init?: RequestInit): Promise<T> {
+//----------------------------------------------------------
+// 📡 DELETE
+//----------------------------------------------------------
+export async function apiDelete<T>(
+  path: string,
+  init?: RequestInit
+): Promise<T> {
   const url = `${API_BASE_URL}${withUserId(path)}`;
 
   const res = await fetch(url, {
@@ -100,11 +154,10 @@ export async function apiDelete<T>(path: string, init?: RequestInit): Promise<T>
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error(`DELETE ${url} failed:`, res.status, text);
+    console.error(`❌ API DELETE ${url} failed:`, res.status, text);
     throw new Error(`API DELETE failed (${res.status})`);
   }
 
-  // sommige delete-routes hebben geen JSON
   try {
     return (await res.json()) as T;
   } catch {

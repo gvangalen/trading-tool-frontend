@@ -1,9 +1,7 @@
-// frontend/lib/apiClient.ts
 //----------------------------------------------------------
 //  GLOBAL API CLIENT
+//  - Stuurt cookies mee via credentials: "include"
 //  - Injecteert automatisch user_id in elke request
-//  - Voegt user_id toe aan query én aan POST/PUT bodies
-//  - Zorgt dat de frontend altijd data van de juiste gebruiker ophaalt
 //----------------------------------------------------------
 
 import { getCurrentUserId } from "./user";
@@ -17,34 +15,22 @@ const API_BASE_URL =
 function withUserId(path: string): string {
   const userId = getCurrentUserId();
 
-  if (!userId) {
-    console.warn("⚠️ [apiClient] Geen userId beschikbaar — URL blijft ongewijzigd");
-    return path;
-  }
+  if (!userId) return path;
 
-  const separator = path.includes("?") ? "&" : "?";
-
-  // voorkomen dat user_id dubbel wordt toegevoegd:
+  const sep = path.includes("?") ? "&" : "?";
   if (path.includes("user_id=")) return path;
 
-  return `${path}${separator}user_id=${userId}`;
+  return `${path}${sep}user_id=${userId}`;
 }
 
 //----------------------------------------------------------
-// 🛠️ Helper: body verrijken met user_id
+// 🛠️ body verrijken met user_id
 //----------------------------------------------------------
 function attachUserIdToBody(body: any): any {
   const userId = getCurrentUserId();
+  if (!userId) return body || {};
 
-  if (!userId) {
-    console.warn("⚠️ [apiClient] body zonder userId verstuurd (nog niet ingelogd?)");
-    return body || {};
-  }
-
-  return {
-    ...(body || {}),
-    user_id: userId,
-  };
+  return { ...(body || {}), user_id: userId };
 }
 
 //----------------------------------------------------------
@@ -56,6 +42,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
     method: "GET",
+    credentials: "include",          // 🔥 BELANGRIJK
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -81,12 +68,12 @@ export async function apiPost<T>(
   init?: RequestInit
 ): Promise<T> {
   const url = `${API_BASE_URL}${withUserId(path)}`;
-
   const payload = attachUserIdToBody(body);
 
   const res = await fetch(url, {
     ...init,
     method: "POST",
+    credentials: "include",          // 🔥 BELANGRIJK
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -112,12 +99,12 @@ export async function apiPut<T>(
   init?: RequestInit
 ): Promise<T> {
   const url = `${API_BASE_URL}${withUserId(path)}`;
-
   const payload = attachUserIdToBody(body);
 
   const res = await fetch(url, {
     ...init,
     method: "PUT",
+    credentials: "include",          // 🔥 BELANGRIJK
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -146,6 +133,7 @@ export async function apiDelete<T>(
   const res = await fetch(url, {
     ...init,
     method: "DELETE",
+    credentials: "include",          // 🔥 BELANGRIJK
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),

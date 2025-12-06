@@ -4,7 +4,7 @@
 //  - Injecteert automatisch user_id in elke request
 //----------------------------------------------------------
 
-import { getCurrentUserId } from "./apiUserId";   // ✅ BELANGRIJKE FIX
+import { getCurrentUserId } from "./user";   // ✅ ENIGE juiste import
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002";
@@ -42,7 +42,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
     method: "GET",
-    credentials: "include",          // 🔥 BELANGRIJK
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -73,7 +73,7 @@ export async function apiPost<T>(
   const res = await fetch(url, {
     ...init,
     method: "POST",
-    credentials: "include",          // 🔥 BELANGRIJK
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -104,7 +104,7 @@ export async function apiPut<T>(
   const res = await fetch(url, {
     ...init,
     method: "PUT",
-    credentials: "include",          // 🔥 BELANGRIJK
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -133,7 +133,7 @@ export async function apiDelete<T>(
   const res = await fetch(url, {
     ...init,
     method: "DELETE",
-    credentials: "include",          // 🔥 BELANGRIJK
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),

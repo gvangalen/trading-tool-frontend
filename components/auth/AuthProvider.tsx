@@ -9,10 +9,14 @@ import {
 } from "react";
 
 import { API_BASE_URL } from "@/lib/config";
+
+// ✨ NIEUW: importeer de juiste helpers
 import {
-  setCurrentUserId,
-  clearCurrentUserId,
-} from "@/lib/api/user"; // ✅ user-id koppelen aan frontend
+  getCurrentUserId,
+  saveUserLocal,
+  loadUserLocal,
+  clearUserLocal,
+} from "@/lib/api/user";
 
 const AuthContext = createContext<any>(null);
 
@@ -43,7 +47,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null); // { id, email, role }
+  const [user, setUser] = useState<any>(loadUserLocal());
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
@@ -55,21 +59,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (res.ok) {
         const data = await res.json();
-        const u = data.user || data; // backend kan {user: {...}} of direct {...} teruggeven
-        setUser(u);
+        const u = data.user || data;
 
-        // ✅ user_id syncen naar localStorage (voor apiClient.ts)
-        if (u && u.id) {
-          setCurrentUserId(u.id);
-        }
+        setUser(u);
+        saveUserLocal(u); // 👉 user opslaan
       } else {
         setUser(null);
-        clearCurrentUserId(); // ❌ geen geldige sessie → zorg dat user_id leeg is
+        clearUserLocal();
       }
     } catch (err) {
-      console.error("❌ Fout bij ophalen session:", err);
+      console.error("❌ Session load error:", err);
       setUser(null);
-      clearCurrentUserId();
+      clearUserLocal();
     } finally {
       setLoading(false);
     }
@@ -107,21 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!res.ok) {
-        return {
-          success: false,
-          message: "Ongeldige inloggegevens",
-        };
+        return { success: false, message: "Ongeldige inloggegevens" };
       }
 
       const data = await res.json();
       const u = data.user || data;
 
       setUser(u);
-
-      // ✅ user_id opslaan voor alle API-calls (apiClient.ts)
-      if (u && u.id) {
-        setCurrentUserId(u.id);
-      }
+      saveUserLocal(u);
 
       return { success: true };
     } catch (err) {
@@ -131,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /* -------------------------------------------------------
-     4) LOGOUT — ZONDER UI (UI doet AvatarMenu)
+     4) LOGOUT
   ------------------------------------------------------- */
   const logout = useCallback(async () => {
     try {
@@ -142,9 +136,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("❌ Logout fout:", err);
     }
 
-    // Session + user_id leegmaken; redirect & snackbar doet de caller
     setUser(null);
-    clearCurrentUserId(); // ✅ ook localStorage opruimen
+    clearUserLocal(); // 🔥 user + id uit localStorage
   }, []);
 
   /* -------------------------------------------------------

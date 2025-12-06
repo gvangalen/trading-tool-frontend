@@ -12,7 +12,7 @@ import { API_BASE_URL } from "@/lib/config";
 import {
   setCurrentUserId,
   clearCurrentUserId,
-} from "@/lib/user"; // ✅ user-id koppelen aan frontend
+} from "@/lib/api/user"; // ✅ user-id koppelen aan frontend
 
 const AuthContext = createContext<any>(null);
 

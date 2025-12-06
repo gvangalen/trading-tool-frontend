@@ -4,7 +4,7 @@
 //  - Injecteert automatisch user_id in elke request
 //----------------------------------------------------------
 
-import { getCurrentUserId } from "./user";
+import { getCurrentUserId } from "./apiUserId";   // ✅ BELANGRIJKE FIX
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002";

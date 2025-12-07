@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_BASE_URL } from "@/lib/config";
+import { fetchAuth } from "@/lib/api/auth";    // 🔥 BELANGRIJK!
+import { toast } from "react-hot-toast";
 
 // Lucide Icons
 import {
@@ -31,20 +32,19 @@ export default function TopSetupsMini() {
     try {
       setLoading(true);
 
-      let res;
-      try {
-        res = await fetch(`${API_BASE_URL}/api/setups/top?limit=10`);
-        if (!res.ok) throw new Error("Top endpoint faalt");
-      } catch {
-        res = await fetch(`${API_BASE_URL}/api/setups`);
-        if (!res.ok) throw new Error("Fallback faalt");
-      }
+      let data;
 
-      const data = await res.json();
+      // ⭐ PROBEER EERST echte endpoint
+      try {
+        data = await fetchAuth(`/api/setups/top?limit=10`, { method: "GET" });
+      } catch (err) {
+        console.warn("⚠️ Top endpoint faalt, fallback naar /setups", err);
+        data = await fetchAuth(`/api/setups`, { method: "GET" });
+      }
 
       const setups = Array.isArray(data)
         ? data
-        : Array.isArray(data.setups)
+        : Array.isArray(data?.setups)
         ? data.setups
         : [];
 
@@ -57,6 +57,7 @@ export default function TopSetupsMini() {
       setLastUpdated(new Date());
     } catch (error) {
       console.error("❌ Fout bij laden setups:", error);
+      toast.error("Top-setups laden mislukt.");
       setTopSetups([]);
     } finally {
       setLoading(false);
@@ -90,7 +91,7 @@ export default function TopSetupsMini() {
   }
 
   /* -------------------------------------------------------------
-     📊 Trend icon helper
+     📊 Trend icons
   ------------------------------------------------------------- */
   const trendIcon = (trend) => {
     switch (trend) {
@@ -169,7 +170,7 @@ export default function TopSetupsMini() {
                     {setup.name}
                   </span>
                   <span className="ml-2 text-xs text-[var(--text-light)]">
-                    {setup.indicators?.split(',')[0] || '–'}
+                    {setup.indicators?.split(',')[0] || "–"}
                   </span>
                 </div>
               </div>

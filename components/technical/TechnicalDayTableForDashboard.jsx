@@ -14,6 +14,11 @@ export default function TechnicalDayTableForDashboard({
     return <SkeletonTable rows={5} columns={5} />;
   }
 
+  // ❌ Error niet meer tonen aan gebruiker, alleen loggen
+  if (error) {
+    console.error("Technische data fout op dashboard:", error);
+  }
+
   // Data normaliseren
   const safeData = Array.isArray(data) ? data : [];
 
@@ -25,21 +30,13 @@ export default function TechnicalDayTableForDashboard({
     interpretation: item.uitleg ?? item.explanation ?? "–",
   }));
 
+  // 👉 Altijd DayTable tonen — ook als formatted.length === 0
   return (
-    <div className="space-y-2">
-
-      {/* ❌-error: tonen maar NIET returnen */}
-      {error && (
-        <div className="text-red-500 px-2 text-sm">{error}</div>
-      )}
-
-      {/* ✔ ALTIJD tabel tonen */}
-      <DayTable
-        title="Technische Analyse"
-        icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
-        data={formatted}
-        onRemove={null}
-      />
-    </div>
+    <DayTable
+      title="Technische Analyse"
+      icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
+      data={formatted}
+      onRemove={null}
+    />
   );
 }

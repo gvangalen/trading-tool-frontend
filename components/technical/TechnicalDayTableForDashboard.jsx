@@ -14,12 +14,7 @@ export default function TechnicalDayTableForDashboard({
     return <SkeletonTable rows={5} columns={5} />;
   }
 
-  // ❌ ERROR
-  if (error) {
-    return <div className="text-red-500 p-4">{error}</div>;
-  }
-
-  // Data altijd normaliseren
+  // Data normaliseren
   const safeData = Array.isArray(data) ? data : [];
 
   const formatted = safeData.map((item) => ({
@@ -30,13 +25,21 @@ export default function TechnicalDayTableForDashboard({
     interpretation: item.uitleg ?? item.explanation ?? "–",
   }));
 
-  // 👉 ALTIJD DayTable renderen — ook wanneer formatted.length === 0
   return (
-    <DayTable
-      title="Technische Analyse"
-      icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
-      data={formatted}
-      onRemove={null}
-    />
+    <div className="space-y-2">
+
+      {/* ❌-error: tonen maar NIET returnen */}
+      {error && (
+        <div className="text-red-500 px-2 text-sm">{error}</div>
+      )}
+
+      {/* ✔ ALTIJD tabel tonen */}
+      <DayTable
+        title="Technische Analyse"
+        icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
+        data={formatted}
+        onRemove={null}
+      />
+    </div>
   );
 }

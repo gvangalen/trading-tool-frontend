@@ -3,19 +3,22 @@
 import { Info, Trash2 } from "lucide-react";
 
 /**
- * 📅 DayTable — PRO 2.3
- * - uniforme stijl
- * - delete-knop alleen zichtbaar als onRemove is meegegeven
+ * 📅 DayTable — PRO 2.4
+ * - Altijd een tabel met header tonen
+ * - Geen "Geen data beschikbaar." tekst meer
+ * - Delete-knop alleen zichtbaar als onRemove is meegegeven
  */
 export default function DayTable({
   title = null,
   icon = null,
   data = [],
-  onRemove = null, // ❗ bepaalt of delete-knop zichtbaar is
+  onRemove = null,
 }) {
   const hasRemove = typeof onRemove === "function";
 
-  /* ------------ Header ------------- */
+  // Zorg dat data altijd een array is
+  const safeData = Array.isArray(data) ? data : [];
+
   const renderHeader = () => (
     <thead className="bg-[var(--bg-soft)] text-[var(--text-light)] text-xs uppercase">
       <tr className="border-b border-[var(--card-border)]">
@@ -34,23 +37,6 @@ export default function DayTable({
     </thead>
   );
 
-  /* ------------ Geen data fallback ------------- */
-  if (!Array.isArray(data) || data.length === 0) {
-    return (
-      <div className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
-        {title && (
-          <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-[var(--text-dark)] flex items-center gap-2">
-            {icon} {title}
-          </div>
-        )}
-
-        <div className="p-4 text-center text-[var(--text-light)] italic">
-          Geen data beschikbaar.
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
       {title && (
@@ -62,9 +48,10 @@ export default function DayTable({
       <table className="w-full text-sm">
         {renderHeader()}
         <tbody>
-          {data.map((item, idx) => (
+          {safeData.map((item, idx) => (
             <DayRow key={idx} item={item} onRemove={onRemove} />
           ))}
+          {/* ⚠️ Geen expliciete "Geen data" row → bij 0 items is tbody gewoon leeg */}
         </tbody>
       </table>
     </div>
@@ -113,7 +100,6 @@ function DayRow({ item, onRemove }) {
         {interpretation || "–"}
       </td>
 
-      {/* Delete button */}
       {onRemove && (
         <td className="px-4 py-3 text-center">
           <button

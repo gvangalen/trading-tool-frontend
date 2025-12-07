@@ -45,7 +45,6 @@ export function getCurrentUserId(): number | null {
    🧷 COMPAT-LAAG — voor bestaande imports in AuthProvider
 ======================================================= */
 
-// 🔁 AuthProvider roept deze nog aan — blijft ondersteund
 export function setCurrentUserId(id: number | string) {
   if (typeof window === "undefined") return;
 
@@ -55,7 +54,6 @@ export function setCurrentUserId(id: number | string) {
   saveUserLocal(merged);
 }
 
-// 🔁 AuthProvider logout gebruikt dit — werkt nu correct
 export function clearCurrentUserId() {
   clearUserLocal();
 }
@@ -64,16 +62,19 @@ export function clearCurrentUserId() {
    🌐 Wrapper om altijd cookies (JWT) mee te sturen
 ======================================================= */
 
-async function fetchAuth(path: string, options: any = {}) {
+async function fetchAuthInternal(path: string, options: any = {}) {
   return await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    credentials: "include", // 🔥 cookies meesturen!
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
   });
 }
+
+// ✅ HIER exporteren zodat andere bestanden hem kunnen gebruiken
+export const fetchAuth = fetchAuthInternal;
 
 /* =======================================================
    🔐 LOGIN
@@ -97,7 +98,6 @@ export async function apiLogin(email: string, password: string) {
     const data = await res.json();
     const user = data.user || data;
 
-    // 🔥 sla user lokaal op → apiClient kan user_id injecteren
     saveUserLocal(user);
 
     return { success: true, user };
@@ -114,9 +114,7 @@ export async function apiLogin(email: string, password: string) {
 export async function apiLogout() {
   try {
     await fetchAuth(`/api/auth/logout`, { method: "POST" });
-
     clearUserLocal();
-
     return { success: true };
   } catch (err) {
     console.error("❌ apiLogout error:", err);
@@ -153,7 +151,6 @@ export async function apiMe() {
 
     const user = await res.json();
 
-    // 🔥 update lokale user (bijv. name, role veranderd)
     saveUserLocal(user);
 
     return { success: true, user };

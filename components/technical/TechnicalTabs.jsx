@@ -19,6 +19,7 @@ export default function TechnicalTabs({
   error,
 }) {
   const renderTable = () => {
+    // ⏳ LOADING (maar blijf de CardWrapper renderen)
     if (loading) {
       return (
         <div className="p-4 text-center text-[var(--text-light)]">
@@ -27,27 +28,23 @@ export default function TechnicalTabs({
       );
     }
 
-    if (error) {
-      return (
-        <div className="p-4 text-center text-red-500">
-          ❌ {error}
-        </div>
-      );
-    }
+    // Altijd technicalData normaliseren
+    const safeData = Array.isArray(technicalData)
+      ? technicalData
+      : [];
 
     switch (activeTab) {
       case "Dag":
-        // 👉 Alleen de Dag-table krijgt een delete-knop
-        return <DayTable data={technicalData} onRemove={handleRemove} />;
+        return <DayTable data={safeData} onRemove={handleRemove} />;
 
       case "Week":
-        return <WeekTable data={technicalData} />;
+        return <WeekTable data={safeData} />;
 
       case "Maand":
-        return <MonthTable data={technicalData} />;
+        return <MonthTable data={safeData} />;
 
       case "Kwartaal":
-        return <QuarterTable data={technicalData} />;
+        return <QuarterTable data={safeData} />;
 
       default:
         return null;
@@ -74,9 +71,20 @@ export default function TechnicalTabs({
         ))}
       </div>
 
-      {/* 🔹 Tabel */}
+      {/* 🔹 Tabel in kaart */}
       <CardWrapper>
-        <div className="p-2">{renderTable()}</div>
+        <div className="p-2">
+
+          {/* ❌ error tonen boven tabel — NIET meer returnen! */}
+          {error && (
+            <div className="text-red-500 text-sm mb-2 text-center">
+              ❌ {error}
+            </div>
+          )}
+
+          {renderTable()}
+
+        </div>
       </CardWrapper>
     </>
   );

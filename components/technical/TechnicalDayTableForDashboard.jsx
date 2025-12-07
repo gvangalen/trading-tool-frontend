@@ -9,8 +9,7 @@ export default function TechnicalDayTableForDashboard({
   loading = false,
   error = "",
 }) {
-
-  // ⏳ LOADING (zonder card)
+  // ⏳ LOADING (zonder card, DayTable heeft eigen layout)
   if (loading) {
     return (
       <div>
@@ -19,7 +18,7 @@ export default function TechnicalDayTableForDashboard({
     );
   }
 
-  // ❌ ERROR (zonder card)
+  // ❌ ERROR (geen tabel tonen, alleen fout)
   if (error) {
     return (
       <div className="text-red-500 p-4">
@@ -28,20 +27,13 @@ export default function TechnicalDayTableForDashboard({
     );
   }
 
-  // ⚠️ GEEN DATA (zonder card)
-  if (!Array.isArray(data) || data.length === 0) {
-    return (
-      <div className="p-4 text-center text-[var(--text-light)] flex items-center justify-center gap-2">
-        <AlertCircle className="w-4 h-4" />
-        <span>Geen technische data beschikbaar.</span>
-      </div>
-    );
-  }
+  // Zorg dat data altijd een array is
+  const safeData = Array.isArray(data) ? data : [];
 
   // ============================================
   // ✔️ DATA CONVERTEN NAAR DAYTABLE-FORMAAT
   // ============================================
-  const formatted = data.map((item) => ({
+  const formatted = safeData.map((item) => ({
     name: item.indicator || item.name || "–",
     value: item.value ?? item.waarde ?? "–",
     score: item.score ?? null,
@@ -51,11 +43,20 @@ export default function TechnicalDayTableForDashboard({
 
   // ⭐️ TABEL — READ-ONLY MODE
   return (
-    <DayTable
-      title="Technische Analyse"
-      icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
-      data={formatted}
-      onRemove={null}   // 🚫 geen verwijderknop
-    />
+    <div className="space-y-2">
+      <DayTable
+        title="Technische Analyse"
+        icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
+        data={formatted}
+        onRemove={null} // 🚫 geen verwijderknop
+      />
+
+      {formatted.length === 0 && (
+        <div className="p-2 text-center text-[var(--text-light)] text-xs flex items-center justify-center gap-2 italic">
+          <AlertCircle className="w-4 h-4" />
+          <span>Nog geen technische indicatoren toegevoegd.</span>
+        </div>
+      )}
+    </div>
   );
 }

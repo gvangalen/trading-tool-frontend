@@ -3,10 +3,9 @@
 import { Info, Trash2 } from "lucide-react";
 
 /**
- * 📅 DayTable — PRO 2.4
- * - Altijd een tabel met header tonen
- * - Geen "Geen data beschikbaar." tekst meer
- * - Delete-knop alleen zichtbaar als onRemove is meegegeven
+ * 📅 DayTable — PRO 2.5
+ * - Altijd tabel + header
+ * - Lege fallback-rij bij 0 data-items
  */
 export default function DayTable({
   title = null,
@@ -16,7 +15,6 @@ export default function DayTable({
 }) {
   const hasRemove = typeof onRemove === "function";
 
-  // Zorg dat data altijd een array is
   const safeData = Array.isArray(data) ? data : [];
 
   const renderHeader = () => (
@@ -48,10 +46,22 @@ export default function DayTable({
       <table className="w-full text-sm">
         {renderHeader()}
         <tbody>
+          {/* ✔ Bij GEEN DATA → 1 nette fallback-rij */}
+          {safeData.length === 0 && (
+            <tr className="border-t border-[var(--card-border)] bg-[var(--bg-soft)]">
+              <td
+                colSpan={hasRemove ? 6 : 5}
+                className="px-4 py-4 text-center italic text-[var(--text-light)]"
+              >
+                Nog geen data beschikbaar.
+              </td>
+            </tr>
+          )}
+
+          {/* ✔ Normale datarijen */}
           {safeData.map((item, idx) => (
             <DayRow key={idx} item={item} onRemove={onRemove} />
           ))}
-          {/* ⚠️ Geen expliciete "Geen data" row → bij 0 items is tbody gewoon leeg */}
         </tbody>
       </table>
     </div>

@@ -58,10 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
       if (res.ok) {
-        const u = await res.json(); // 🎯 gebruikte variant
+        const u = await res.json();
 
         setUser(u);
-        saveUserLocal(u); // opslaan
+        saveUserLocal(u);
       } else {
         setUser(null);
         clearUserLocal();
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /* -------------------------------------------------------
-     3) LOGIN
+     3) LOGIN — FIXED ✔ data.user gebruiken
   ------------------------------------------------------- */
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -110,7 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: "Ongeldige inloggegevens" };
       }
 
-      const u = await res.json();
+      const data = await res.json();
+      const u = data.user; // ⬅️ BELANGRIJK: backend stuurt { success, user }
 
       setUser(u);
       saveUserLocal(u);
@@ -139,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /* -------------------------------------------------------
-     Output
+     CONTEXT OUTPUT
   ------------------------------------------------------- */
   const value = {
     user,

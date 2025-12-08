@@ -5,7 +5,7 @@ import GaugeChart from "@/components/ui/GaugeChart";
 import TopSetupsMini from "@/components/setup/TopSetupsMini";
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// Lucide icons
+// Icons
 import { Globe2, LineChart, DollarSign, Settings2 } from "lucide-react";
 
 export default function DashboardGauges() {
@@ -16,25 +16,29 @@ export default function DashboardGauges() {
       title: "Macro",
       icon: <Globe2 className="w-4 h-4" />,
       data: macro,
-      emptyText: "Nog geen macrodata beschikbaar.",
+      emptyText:
+        "Nog geen macrodata beschikbaar. Voeg macro-indicatoren toe op de Macro-pagina.",
     },
     {
       title: "Technical",
       icon: <LineChart className="w-4 h-4" />,
       data: technical,
-      emptyText: "Nog geen technische analyse beschikbaar.",
+      emptyText:
+        "Nog geen technische analyse beschikbaar. Voeg indicatoren toe op de Technisch-pagina.",
     },
     {
       title: "Market",
       icon: <DollarSign className="w-4 h-4" />,
       data: market,
-      emptyText: "Nog geen marktdata beschikbaar.",
+      emptyText:
+        "Nog geen marktdata beschikbaar. Market data wordt automatisch opgehaald.",
     },
     {
       title: "Setup",
       icon: <Settings2 className="w-4 h-4" />,
       data: setup,
-      emptyText: "Geen actieve setups gevonden.",
+      emptyText:
+        "Geen actieve setups gevonden. Maak een setup aan op de Setup-pagina.",
       showTopSetups: true,
     },
   ];
@@ -56,7 +60,7 @@ export default function DashboardGauges() {
 }
 
 /* =====================================================
-   SINGLE GAUGE CARD — Clean PRO Look (with empty state)
+   SINGLE GAUGE CARD
 ===================================================== */
 
 function GaugeCard({
@@ -70,25 +74,31 @@ function GaugeCard({
   const hasScore = typeof score === "number" && score > 0;
 
   const numericScore = hasScore ? score : 0;
-  const displayScore = Math.round(numericScore); // altijd een getal tonen (0–100)
+  const displayScore = Math.round(numericScore);
 
-  // Ruwe uitleg uit backend
+  // Backend explanation
   const rawExplanation =
     data?.explanation || data?.uitleg || data?.interpretation || "";
 
   const cleanedExplanation = String(rawExplanation).trim();
 
-  // ✨ Herken generieke / lege teksten zoals "Geen uitleg beschikbaar"
   const isGenericExplanation =
     cleanedExplanation === "" ||
     cleanedExplanation.toLowerCase().startsWith("geen uitleg");
 
-  // Dit is wat we uiteindelijk tonen onder de meter
+  // Final text shown under meter
   const displayExplanation = isGenericExplanation
     ? emptyText
     : cleanedExplanation;
 
-  const topContributors = data?.top_contributors || [];
+  const topContributors = Array.isArray(data?.top_contributors)
+    ? data.top_contributors
+    : [];
+
+  // Prevent duplicate setup fallback message
+  const hasSetups =
+    Array.isArray(data?.top_contributors) &&
+    data.top_contributors.length > 0;
 
   return (
     <CardWrapper>
@@ -138,8 +148,8 @@ function GaugeCard({
         </div>
       )}
 
-      {/* MINI-SETUPS (SETUP gauge) */}
-      {showTopSetups && (
+      {/* ONLY show setups if there ARE setups */}
+      {showTopSetups && hasSetups && (
         <div className="mt-4">
           <TopSetupsMini />
         </div>

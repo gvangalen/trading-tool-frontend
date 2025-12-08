@@ -1,11 +1,10 @@
-// middleware.js
 import { NextResponse } from "next/server";
 
 export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // 0️⃣ Bypass voor API, Next static, favicon en images
+  // 0️⃣ Skip API, static files, favicon, images
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
@@ -15,7 +14,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Publieke routes
+  // Public routes (geen login nodig)
   const publicRoutes = [
     "/login",
     "/register",
@@ -32,30 +31,27 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ Public routes → doorlaten
+  // 1️⃣ Public routes → doorgaan
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Haal Bearer token uit headers
-  const authHeader = req.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.replace("Bearer ", "")
-    : null;
-
+  // 2️⃣ Lees access_token cookie (COOKIE-AUTH!)
+  const token = req.cookies.get("access_token")?.value;
   if (!token) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding-status ophalen via Bearer AUTH
+  // 3️⃣ Onboarding status ophalen met COOKIE-forwarding automatisch
   let onboarding;
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    const res = await fetch(`${apiUrl}/onboarding/status`, {
+    const res = await fetch(`${apiUrl}/api/onboarding/status`, {
+      credentials: "include", // ⬅️ BELANGRIJK!
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `access_token=${token}`,
       },
     });
 
@@ -81,7 +77,7 @@ export async function middleware(req) {
     !!has_market &&
     !!has_strategy;
 
-  // 4️⃣ Onboarding incomplete → redirect naar onboarding begin
+  // 4️⃣ Onboarding incomplete → redirect
   if (!onboardingComplete) {
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
@@ -91,7 +87,7 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding complete → block onboarding pages
+  // 5️⃣ Onboarding complete → /onboarding blokkeren
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

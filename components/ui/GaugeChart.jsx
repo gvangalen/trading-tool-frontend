@@ -12,20 +12,41 @@ import {
 // Vereiste registratie
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
-export default function GaugeChart({ value = 0 }) {
+export default function GaugeChart({ value = 0, displayValue = null }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // Clamp value between 0–100
-  const percentage = Math.max(0, Math.min(100, value));
+  // ------------------------------
+  // 🟦 Determine whether real score exists
+  // ------------------------------
+  const hasRealValue =
+    typeof value === "number" && !isNaN(value) && value > 0;
 
-  // Kleur op basis van score
-  const scoreColor =
-    percentage >= 70
-      ? '#22c55e'
-      : percentage >= 40
-      ? '#facc15'
-      : '#ef4444';
+  // ------------------------------
+  // 🟦 Clamp gauge fill percentage
+  // If no real score → show empty arc (0%)
+  // ------------------------------
+  const percentage = hasRealValue
+    ? Math.max(0, Math.min(100, value))
+    : 0;
+
+  // ------------------------------
+  // 🟦 Gauge color (only when score exists)
+  // ------------------------------
+  const scoreColor = hasRealValue
+    ? (
+        percentage >= 70
+          ? '#22c55e' // green
+          : percentage >= 40
+          ? '#facc15' // yellow
+          : '#ef4444' // red
+      )
+    : '#d1d5db'; // soft gray when no data
+
+  // ------------------------------
+  // 🟦 Display text inside gauge
+  // ------------------------------
+  const scoreLabel = displayValue ?? (hasRealValue ? percentage : "—");
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -42,7 +63,10 @@ export default function GaugeChart({ value = 0 }) {
         datasets: [
           {
             data: [percentage, 100 - percentage],
-            backgroundColor: [scoreColor, '#e5e7eb'],
+            backgroundColor: [
+              scoreColor,
+              '#e5e7eb' // grijs restant
+            ],
             borderWidth: 0,
             cutout: '80%',
             circumference: 180,
@@ -82,9 +106,9 @@ export default function GaugeChart({ value = 0 }) {
           text-[var(--text-dark)]
           pointer-events-none
         "
-        style={{ marginBottom: '-6px' }} // trekt score dichter tegen de meter
+        style={{ marginBottom: '-6px' }}
       >
-        {percentage}
+        {scoreLabel}
       </div>
 
     </div>

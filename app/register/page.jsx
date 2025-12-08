@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, UserPlus, LogIn, User } from "lucide-react";
@@ -19,8 +19,15 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // voorkomt dubbele redirects zoals bij login
+  const redirected = useRef(false);
+
+  // 🚀 Als user al ingelogd is → direct naar dashboard
   useEffect(() => {
-    if (isAuthenticated) router.push("/dashboard");
+    if (isAuthenticated && !redirected.current) {
+      redirected.current = true;
+      router.replace("/dashboard");
+    }
   }, [isAuthenticated, router]);
 
   const handleRegister = async (e) => {
@@ -28,13 +35,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1️⃣ Account aanmaken MET VOORNAAM
+      // 1️⃣ Account aanmaken
       const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          first_name: name,   // 🔥 belangrijk
+          first_name: name,
           email,
           password
         }),
@@ -42,27 +49,27 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const msg =
-          data.detail ||
-          "Account aanmaken mislukt. Bestaat dit e-mailadres al?";
-        showSnackbar(msg, "danger");
+        showSnackbar(
+          data.detail || "Account aanmaken mislukt. Bestaat dit e-mailadres al?",
+          "danger"
+        );
         setLoading(false);
         return;
       }
 
       showSnackbar("Account aangemaakt ✔ Je wordt nu ingelogd…", "success");
 
-      // 2️⃣ Direct automatisch inloggen
+      // 2️⃣ Automatisch inloggen
       const loginRes = await login(email, password);
 
       if (!loginRes.success) {
         showSnackbar("Account gemaakt — log nu handmatig in", "info");
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
       // 3️⃣ Naar dashboard
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err) {
       console.error("❌ Register fout:", err);
       showSnackbar("Serverfout bij account aanmaken", "danger");

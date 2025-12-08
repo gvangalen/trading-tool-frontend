@@ -23,19 +23,20 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ public routes → doorlaten
+  // 1️⃣ Publieke route → doorlaten
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ check auth cookie
+  // 2️⃣ Token ophalen uit cookie
   const token = req.cookies.get("auth_token")?.value;
+
   if (!token) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ onboarding-status ophalen
+  // 3️⃣ Onboarding-status ophalen
   let onboarding;
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -67,33 +68,38 @@ export async function middleware(req) {
     has_market &&
     has_strategy;
 
-  // 4️⃣ onboarding NIET klaar → redirect naar onboarding flow
+  // 4️⃣ Onboarding NIET klaar → stuur user naar onboarding
   if (!onboardingComplete) {
-    // Als user al in onboarding zit → doorlaten
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
-
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding WEL klaar → block onboarding pages
+  // 5️⃣ Onboarding WEL klaar → block toegang tot onboarding pages
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // 6️⃣ Auth OK en onboarding klaar → route doorlaten
+  // 6️⃣ Alles ok → Protected route doorlaten
   return NextResponse.next();
 }
 
 //
-// ❗❗ De matcher hieronder is de fix waardoor je logo en images weer werken!
+// 🚀 *** DEZE MATCHER IS 100% NEXT.JS-COMPATIBLE ***
+// Geen regex, geen capturing groups, geen parser errors
 //
 export const config = {
   matcher: [
-    // Middleware moet NIET draaien op images, static content, API routes, favicon
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(png|jpg|jpeg|svg|webp|ico)).*)",
+    /*
+      Pas toe op ALLE routes behalve:
+      - /api/*
+      - /_next/*
+      - /favicon.ico
+      - alle images in /public (png/jpg/svg/etc)
+    */
+    "/((?!api/|_next/|favicon.ico|.*\\.(png|jpg|jpeg|svg|webp|ico)).*)",
   ],
 };

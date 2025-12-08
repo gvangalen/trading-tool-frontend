@@ -48,18 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     1) SESSION LADEN (met kleine delay + retry)
+     1) SESSION LADEN
   ------------------------------------------------------- */
   const loadSession = useCallback(async () => {
     try {
-      // 🩹 Fix race condition: cookies zijn soms 0–50ms te laat
-      await new Promise((r) => setTimeout(r, 30));
+      await new Promise((r) => setTimeout(r, 40)); // kleine race fix
 
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
       if (res.ok) {
         const u = await res.json();
-
         setUser(u);
         saveUserLocal(u);
       } else {
@@ -80,24 +78,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadSession]);
 
   /* -------------------------------------------------------
-     2) TOKEN REFRESH (werkt met HttpOnly cookie)
+     2) TOKEN REFRESH
   ------------------------------------------------------- */
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const intv = setInterval(async () => {
       try {
         await fetchWithAuth(`${API_BASE_URL}/api/auth/refresh`, {
           method: "POST",
         });
       } catch (err) {
-        console.error("❌ Token refresh fout:", err);
+        console.error("❌ Refresh fout:", err);
       }
-    }, 50 * 60 * 1000); // 50 min
-
-    return () => clearInterval(interval);
+    }, 50 * 60 * 1000);
+    return () => clearInterval(intv);
   }, []);
 
   /* -------------------------------------------------------
-     3) LOGIN — FIXED ✔ data.user gebruiken
+     3) LOGIN — **MET REDIRECT**
   ------------------------------------------------------- */
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -111,10 +108,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await res.json();
-      const u = data.user; // ⬅️ BELANGRIJK: backend stuurt { success, user }
+      const u = data.user;
 
       setUser(u);
       saveUserLocal(u);
+
+      // 🔥 Belangrijk: DIRECT redirecten naar onboarding
+      if (typeof window !== "undefined") {
+        window.location.href = "/onboarding"; // of "/dashboard"
+      }
 
       return { success: true };
     } catch (err) {
@@ -137,6 +139,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(null);
     clearUserLocal();
+
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
   }, []);
 
   /* -------------------------------------------------------

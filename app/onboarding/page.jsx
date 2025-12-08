@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { CheckCircle, Circle, ArrowRight } from "lucide-react";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import useOnboarding from "@/lib/hooks/useOnboarding";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 export default function OnboardingPage() {
   const {

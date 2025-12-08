@@ -5,7 +5,7 @@ import GaugeChart from "@/components/ui/GaugeChart";
 import TopSetupsMini from "@/components/setup/TopSetupsMini";
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// Icons
+// Lucide icons
 import { Globe2, LineChart, DollarSign, Settings2 } from "lucide-react";
 
 export default function DashboardGauges() {
@@ -16,25 +16,25 @@ export default function DashboardGauges() {
       title: "Macro",
       icon: <Globe2 className="w-4 h-4" />,
       data: macro,
-      emptyText: "Voeg macro-indicatoren toe om trends te analyseren.",
+      emptyText: "Nog geen macrodata beschikbaar.",
     },
     {
       title: "Technical",
       icon: <LineChart className="w-4 h-4" />,
       data: technical,
-      emptyText: "Voeg technische indicatoren toe voor signalen.",
+      emptyText: "Nog geen technische analyse beschikbaar.",
     },
     {
       title: "Market",
       icon: <DollarSign className="w-4 h-4" />,
       data: market,
-      emptyText: "Market data wordt zichtbaar zodra eerste gegevens zijn geladen.",
+      emptyText: "Nog geen marktdata beschikbaar.",
     },
     {
       title: "Setup",
       icon: <Settings2 className="w-4 h-4" />,
       data: setup,
-      emptyText: "Maak een setup aan om een setupscore te ontvangen.",
+      emptyText: "Geen actieve setups gevonden.",
       showTopSetups: true,
     },
   ];
@@ -56,7 +56,7 @@ export default function DashboardGauges() {
 }
 
 /* =====================================================
-   SINGLE GAUGE CARD (PRO 2.4)
+   SINGLE GAUGE CARD — Clean PRO Look (with empty state)
 ===================================================== */
 
 function GaugeCard({
@@ -66,22 +66,29 @@ function GaugeCard({
   emptyText,
   showTopSetups = false,
 }) {
-  const score = Number(data?.score ?? 0);
-  const numericScore = isNaN(score) ? 0 : score;
+  const score = data?.score;
+  const hasScore = typeof score === "number" && score > 0;
 
-  const explanation =
-    data?.explanation ||
-    data?.uitleg ||
-    data?.interpretation ||
-    "";
+  const numericScore = hasScore ? score : 0;
+  const displayScore = Math.round(numericScore); // altijd een getal tonen (0–100)
+
+  // Ruwe uitleg uit backend
+  const rawExplanation =
+    data?.explanation || data?.uitleg || data?.interpretation || "";
+
+  const cleanedExplanation = String(rawExplanation).trim();
+
+  // ✨ Herken generieke / lege teksten zoals "Geen uitleg beschikbaar"
+  const isGenericExplanation =
+    cleanedExplanation === "" ||
+    cleanedExplanation.toLowerCase().startsWith("geen uitleg");
+
+  // Dit is wat we uiteindelijk tonen onder de meter
+  const displayExplanation = isGenericExplanation
+    ? emptyText
+    : cleanedExplanation;
 
   const topContributors = data?.top_contributors || [];
-
-  const finalExplanation =
-    explanation.trim() ||
-    (topContributors.length
-      ? `Belangrijkste factoren: ${topContributors.join(", ")}`
-      : emptyText);
 
   return (
     <CardWrapper>
@@ -105,7 +112,7 @@ function GaugeCard({
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        <GaugeChart value={numericScore} />
+        <GaugeChart value={numericScore} displayValue={displayScore} />
       </div>
 
       {/* CONTRIBUTORS */}
@@ -116,9 +123,9 @@ function GaugeCard({
           </p>
 
           <div className="space-y-1">
-            {topContributors.map((c, idx) => (
+            {topContributors.map((c, i) => (
               <div
-                key={idx}
+                key={i}
                 className="
                   text-xs text-[var(--text-dark)]
                   pl-1 border-l-2 border-[var(--primary)]
@@ -131,7 +138,7 @@ function GaugeCard({
         </div>
       )}
 
-      {/* SETUP MINI-CARDS */}
+      {/* MINI-SETUPS (SETUP gauge) */}
       {showTopSetups && (
         <div className="mt-4">
           <TopSetupsMini />
@@ -140,7 +147,7 @@ function GaugeCard({
 
       {/* EXPLANATION */}
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-light)] italic">
-        {finalExplanation}
+        {displayExplanation}
       </p>
     </CardWrapper>
   );

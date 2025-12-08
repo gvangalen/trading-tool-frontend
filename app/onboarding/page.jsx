@@ -17,7 +17,9 @@ export default function OnboardingPage() {
     reload,
   } = useOnboarding();
 
-  // Redirect logica
+  /* -------------------------------------------------------
+     Redirect zodra onboarding gereed is
+  ------------------------------------------------------- */
   const onboardingComplete =
     status?.setup &&
     status?.technical &&
@@ -25,7 +27,6 @@ export default function OnboardingPage() {
     status?.market &&
     status?.strategy;
 
-  // Automatisch redirect naar dashboard als compleet
   useEffect(() => {
     if (onboardingComplete) {
       const timer = setTimeout(() => {
@@ -36,6 +37,9 @@ export default function OnboardingPage() {
     }
   }, [onboardingComplete]);
 
+  /* -------------------------------------------------------
+     Loading UI
+  ------------------------------------------------------- */
   if (loading || !status) {
     return (
       <div className="max-w-screen-md mx-auto py-10 px-4 text-center">
@@ -44,9 +48,9 @@ export default function OnboardingPage() {
     );
   }
 
-  // ---------------------------------------
-  // ONBOARDING STEPS DEFINITIE (VERBONDEN MET BACKEND)
-  // ---------------------------------------
+  /* -------------------------------------------------------
+     Onboarding stappen definitie
+  ------------------------------------------------------- */
   const steps = [
     {
       key: "setup",
@@ -105,7 +109,7 @@ export default function OnboardingPage() {
         </p>
       </div>
 
-      {/* FOUTMELDING */}
+      {/* Error melding */}
       {error && (
         <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
           ❌ {error}
@@ -119,7 +123,7 @@ export default function OnboardingPage() {
         </h2>
 
         <div className="space-y-6">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <StepRow
               key={step.key}
               step={step}
@@ -130,7 +134,7 @@ export default function OnboardingPage() {
         </div>
       </CardWrapper>
 
-      {/* Dashboard knop */}
+      {/* Als onboarding klaar is */}
       {onboardingComplete && (
         <CardWrapper>
           <div className="text-center">
@@ -152,12 +156,25 @@ export default function OnboardingPage() {
 }
 
 /* ============================================================
-   ROW COMPONENT — ieder onboarding item
+   Step Row Component
+   FIXED VERSION — veilige completeStep() + redirect
 ============================================================ */
 function StepRow({ step, completeStep, disabled }) {
   const isDone = step.done;
-
   const buttonLabel = isDone ? "Bekijken" : "Starten";
+
+  const handleClick = async () => {
+    try {
+      if (!isDone) {
+        await completeStep(step.key);
+      }
+    } catch (err) {
+      console.warn(`Step '${step.key}' kon niet worden opgeslagen → doorgaan`, err);
+    }
+
+    // We gaan ALTIJD door naar de pagina
+    window.location.href = step.link;
+  };
 
   return (
     <div className="flex items-start gap-4 p-4 border border-[var(--card-border)] rounded-lg bg-white shadow-sm">
@@ -173,25 +190,21 @@ function StepRow({ step, completeStep, disabled }) {
 
       {/* Tekst */}
       <div className="flex-1">
-        <h3 className="font-semibold text-[var(--text-dark)]">
-          {step.title}
-        </h3>
+        <h3 className="font-semibold text-[var(--text-dark)]">{step.title}</h3>
         <p className="text-[var(--text-light)] text-sm">{step.description}</p>
       </div>
 
-      {/* Actie-knop */}
+      {/* Button */}
       <div>
         <button
           disabled={disabled}
-          onClick={() => {
-            if (!isDone) completeStep(step.key);
-            window.location.href = step.link;
-          }}
+          onClick={handleClick}
           className={`
             px-4 py-2 rounded-lg text-sm border transition
-            ${isDone
-              ? "border-gray-300 text-gray-500 hover:bg-gray-100"
-              : "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
+            ${
+              isDone
+                ? "border-gray-300 text-gray-500 hover:bg-gray-100"
+                : "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
             }
           `}
         >

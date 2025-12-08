@@ -1,106 +1,118 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "@/lib/axios"; // jouw axios-instance
+import { useState, useEffect, useCallback } from "react";
+import { fetchAuth } from "@/lib/api/auth";
 
 /**
- * 🧠 useOnboarding()
- * - Haalt onboarding status op
- * - Markeer stappen als voltooid
- * - Bepaalt of gebruiker dashboard mag zien
+ * 🧠 useOnboarding
+ *
+ * Praat met de backend endpoints:
+ *  - GET  /api/onboarding/status
+ *  - POST /api/onboarding/complete_step
+ *  - POST /api/onboarding/finish
+ *  - POST /api/onboarding/reset   (dev/test)
  */
-
-export default function useOnboarding() {
-  const [steps, setSteps] = useState({
-    setup: false,
-    technical: false,
-    macro: false,
-    market: false,
-    strategy: false,
-    finished: false,
-  });
-
+export function useOnboarding() {
+  const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [savingStep, setSavingStep] = useState(false);
-  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  // ------------------------------
-  // 🔵 1. Laad onboarding status bij mount
-  // ------------------------------
-  useEffect(() => {
-    let mounted = true;
+  // ============================
+  // 📡 1) Status ophalen
+  // ============================
+  const fetchStatus = useCallback(async () => {
+    try {
+      setLoading(true);
 
-    async function fetchStatus() {
-      try {
-        setLoading(true);
-        const res = await axios.get("/api/onboarding/status");
-
-        if (mounted) {
-          setSteps({
-            setup: res.data.setup || false,
-            technical: res.data.technical || false,
-            macro: res.data.macro || false,
-            market: res.data.market || false,
-            strategy: res.data.strategy || false,
-            finished: res.data.finished || false,
-          });
-        }
-      } catch (err) {
-        console.error("❌ Onboarding status load failed:", err);
-        if (mounted) setError("Kon onboarding-status niet laden.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      // fetchAuth geeft direct de JSON terug (geen res.data)
+      const res = await fetchAuth("/api/onboarding/status");
+      setStatus(res);
+    } catch (err) {
+      console.error("❌ Failed to load onboarding status:", err);
+    } finally {
+      setLoading(false);
     }
-
-    fetchStatus();
-    return () => (mounted = false);
   }, []);
 
-  // ------------------------------
-  // 🔵 2. Onboarding-stap afronden
-  // ------------------------------
-  async function completeStep(stepName) {
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  // ============================
+  // ✔ 2) Stap afronden
+  // ============================
+  const completeStep = async (step) => {
     try {
-      setSavingStep(true);
-      await axios.post("/api/onboarding/complete_step", { step: stepName });
+      setSaving(true);
 
-      // Update local state zodat UI direct reageert
-      setSteps((prev) => {
-        const updated = { ...prev, [stepName]: true };
-
-        // Als alle stappen true → finished = true
-        const allDone =
-          updated.setup &&
-          updated.technical &&
-          updated.macro &&
-          updated.market &&
-          updated.strategy;
-
-        return { ...updated, finished: allDone };
+      await fetchAuth("/api/onboarding/complete_step", {
+        method: "POST",
+        body: JSON.stringify({ step }),
       });
 
-      return true;
+      // Daarna status opnieuw ophalen
+      await fetchStatus();
     } catch (err) {
-      console.error("❌ Failed to complete onboarding step:", err);
-      setError("Kon stap niet opslaan.");
-      return false;
+      console.error(`❌ Failed to complete onboarding step: ${step}`, err);
     } finally {
-      setSavingStep(false);
+      setSaving(false);
     }
-  }
+  };
 
-  // ------------------------------
-  // 🔵 3. Mag gebruiker dashboard zien?
-  // ------------------------------
-  const isOnboardingComplete = steps.finished === true;
+  // ============================
+  // 🚀 3) Onboarding afronden
+  // ============================
+  const finish = async () => {
+    try {
+      setSaving(true);
+
+      await fetchAuth("/api/onboarding/finish", {
+        method: "POST",
+      });
+
+      await fetchStatus();
+    } catch (err) {
+      console.error("❌ Failed to finish onboarding", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ============================
+  // 🔄 4) Reset (dev / testen)
+  // ============================
+  const reset = async () => {
+    try {
+      setSaving(true);
+
+      await fetchAuth("/api/onboarding/reset", {
+        method: "POST",
+      });
+
+      await fetchStatus();
+    } catch (err) {
+      console.error("❌ Failed to reset onboarding", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handy flags
+  const completed =
+    status?.has_setup &&
+    status?.has_technical &&
+    status?.has_macro &&
+    status?.has_market &&
+    status?.has_strategy;
 
   return {
+    status,
     loading,
-    error,
-    steps,
+    saving,
+    completed,
     completeStep,
-    savingStep,
-    isOnboardingComplete,
+    finish,
+    reset,
+    refresh: fetchStatus,
   };
 }

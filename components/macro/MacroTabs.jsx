@@ -18,40 +18,60 @@ export default function MacroTabs({
   error,
   handleRemove,
 }) {
-  const renderTableBody = () => {
+  // Always normalize data
+  const safeData = Array.isArray(macroData) ? macroData : [];
+
+  // Choose table component based on tab
+  const renderTable = () => {
+    // ⏳ LOADING → alleen skeleton/empty state in een tabel
     if (loading) {
       return (
-        <tr>
-          <td colSpan="100%" className="p-4 text-center text-gray-500">
-            ⏳ Laden...
-          </td>
-        </tr>
+        <DayTable
+          title="Macro Indicatoren"
+          data={[]}   // force empty UI
+          onRemove={null}
+        />
       );
     }
 
+    // Log error but do NOT show to user
     if (error) {
-      return (
-        <tr>
-          <td colSpan="100%" className="p-4 text-center text-red-500">
-            ❌ {error}
-          </td>
-        </tr>
-      );
+      console.error("MacroTabs error:", error);
     }
 
     switch (activeTab) {
       case "Dag":
-        // 👉 Alleen DAG krijgt delete-functie
-        return <DayTable data={macroData} onRemove={handleRemove} />;
+        return (
+          <DayTable
+            title="Macro Indicatoren"
+            data={safeData}
+            onRemove={handleRemove} // Alleen Dag-tab ondersteunt verwijderen
+          />
+        );
 
       case "Week":
-        return <WeekTable data={macroData} />;
+        return (
+          <WeekTable
+            title="Macro Indicatoren"
+            data={safeData}
+          />
+        );
 
       case "Maand":
-        return <MonthTable data={macroData} />;
+        return (
+          <MonthTable
+            title="Macro Indicatoren"
+            data={safeData}
+          />
+        );
 
       case "Kwartaal":
-        return <QuarterTable data={macroData} />;
+        return (
+          <QuarterTable
+            title="Macro Indicatoren"
+            data={safeData}
+          />
+        );
 
       default:
         return null;
@@ -77,12 +97,9 @@ export default function MacroTabs({
         ))}
       </div>
 
+      {/* 🔹 PRO Card Wrapper */}
       <CardWrapper>
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto text-sm">
-            <tbody>{renderTableBody()}</tbody>
-          </table>
-        </div>
+        {renderTable()}
       </CardWrapper>
     </>
   );

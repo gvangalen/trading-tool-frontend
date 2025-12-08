@@ -1,31 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { CheckCircle, Circle, ArrowRight } from "lucide-react";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { fetchAuth } from "@/lib/api/auth"; // voor /api/onboarding/status
+import useOnboarding from "@/lib/hooks/useOnboarding";
 
 export default function OnboardingPage() {
-  const [status, setStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    status,
+    loading,
+    error,
+    complete,
+    finish,
+    updating,
+    reload,
+  } = useOnboarding();
 
-  // ============================
-  // 📡 Haal onboarding status op
-  // ============================
+  // Redirect logica
+  const onboardingComplete =
+    status?.setup &&
+    status?.technical &&
+    status?.macro &&
+    status?.market &&
+    status?.strategy;
+
+  // Automatisch redirect naar dashboard als compleet
   useEffect(() => {
-    async function loadStatus() {
-      try {
-        const res = await fetchAuth("/api/onboarding/status");
-        setStatus(res);
-      } catch (err) {
-        console.error("Onboarding status error:", err);
-      } finally {
-        setLoading(false);
-      }
+    if (onboardingComplete) {
+      const timer = setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 800);
+
+      return () => clearTimeout(timer);
     }
-    loadStatus();
-  }, []);
+  }, [onboardingComplete]);
 
   if (loading || !status) {
     return (
@@ -35,61 +44,53 @@ export default function OnboardingPage() {
     );
   }
 
-  // ============================
-  // 🧠 Stappen bepalen (6 steps)
-  // ============================
-
+  // ---------------------------------------
+  // ONBOARDING STEPS DEFINITIE (VERBONDEN MET BACKEND)
+  // ---------------------------------------
   const steps = [
     {
       key: "setup",
       title: "Setup aanmaken",
       description: "Maak jouw eerste trading setup aan.",
-      done: status.has_setup,
+      done: status.setup,
       link: "/setups",
     },
     {
       key: "technical",
       title: "Technische indicatoren",
-      description: "Voeg technische indicatoren toe (RSI, MA, Volume…).",
-      done: status.has_technical,
+      description: "Voeg RSI, MA200, Volume of andere indicatoren toe.",
+      done: status.technical,
       link: "/technical",
     },
     {
       key: "macro",
       title: "Macro indicatoren",
-      description: "Voeg macrodata toe zoals DXY, F&G Index, BTC Dominantie.",
-      done: status.has_macro,
+      description: "Voeg macro-indicatoren toe (DXY, F&G Index, BTC dominante).",
+      done: status.macro,
       link: "/macro",
     },
     {
       key: "market",
       title: "Market indicatoren",
-      description: "Selecteer marktindicatoren zoals prijs, volume, volatiliteit.",
-      done: status.has_market,
+      description: "De tool gebruikt prijs, volume en volatiliteit automatisch.",
+      done: status.market,
       link: "/market",
     },
     {
       key: "strategy",
       title: "Strategie genereren",
-      description: "Genereer AI-strategie voor je setup.",
-      done: status.has_strategy,
+      description: "Genereer je eerste AI-strategie voor de setup.",
+      done: status.strategy,
       link: "/strategies",
     },
     {
       key: "complete",
       title: "Onboarding afronden",
       description: "Alle stappen voltooid → dashboard activeren.",
-      done:
-        status.has_setup &&
-        status.has_technical &&
-        status.has_macro &&
-        status.has_market &&
-        status.has_strategy,
+      done: onboardingComplete,
       link: "/dashboard",
     },
   ];
-
-  const onboardingComplete = steps[5].done;
 
   return (
     <div className="max-w-screen-md mx-auto py-12 px-6 space-y-8 animate-fade-slide">
@@ -104,6 +105,13 @@ export default function OnboardingPage() {
         </p>
       </div>
 
+      {/* FOUTMELDING */}
+      {error && (
+        <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+          ❌ {error}
+        </div>
+      )}
+
       {/* Stappenlijst */}
       <CardWrapper>
         <h2 className="text-xl font-semibold mb-4 text-[var(--text-dark)]">
@@ -112,7 +120,12 @@ export default function OnboardingPage() {
 
         <div className="space-y-6">
           {steps.map((step, index) => (
-            <StepRow key={index} step={step} />
+            <StepRow
+              key={step.key}
+              step={step}
+              completeStep={complete}
+              disabled={updating}
+            />
           ))}
         </div>
       </CardWrapper>
@@ -141,12 +154,17 @@ export default function OnboardingPage() {
 /* ============================================================
    ROW COMPONENT — ieder onboarding item
 ============================================================ */
-function StepRow({ step }) {
+function StepRow({ step, completeStep, disabled }) {
+  const isDone = step.done;
+
+  const buttonLabel = isDone ? "Bekijken" : "Starten";
+
   return (
     <div className="flex items-start gap-4 p-4 border border-[var(--card-border)] rounded-lg bg-white shadow-sm">
+
       {/* Status icoon */}
       <div>
-        {step.done ? (
+        {isDone ? (
           <CheckCircle className="w-6 h-6 text-green-500" />
         ) : (
           <Circle className="w-6 h-6 text-gray-300" />
@@ -161,20 +179,24 @@ function StepRow({ step }) {
         <p className="text-[var(--text-light)] text-sm">{step.description}</p>
       </div>
 
-      {/* Actie */}
+      {/* Actie-knop */}
       <div>
-        <a
-          href={step.link}
-          className="
-            px-4 py-2 rounded-lg text-sm border
-            border-[var(--primary)]
-            text-[var(--primary)]
-            hover:bg-[var(--primary)] hover:text-white
-            transition
-          "
+        <button
+          disabled={disabled}
+          onClick={() => {
+            if (!isDone) completeStep(step.key);
+            window.location.href = step.link;
+          }}
+          className={`
+            px-4 py-2 rounded-lg text-sm border transition
+            ${isDone
+              ? "border-gray-300 text-gray-500 hover:bg-gray-100"
+              : "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
+            }
+          `}
         >
-          {step.done ? "Bekijken" : "Starten"}
-        </a>
+          {buttonLabel}
+        </button>
       </div>
     </div>
   );

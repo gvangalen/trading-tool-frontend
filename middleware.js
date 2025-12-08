@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { fetchAuth } from "@/lib/api/auth";
 
 export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // Publieke routes
+  // Publieke routes (geen auth required)
   const publicRoutes = [
     "/login",
     "/register",
@@ -23,28 +22,31 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ Publieke routes → altijd doorlaten
+  // 1️⃣ Public routes → altijd doorlaten
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Ophalen van auth-token via cookies
+  // 2️⃣ Check auth token
   const token = req.cookies.get("auth_token")?.value;
-
-  // Niet ingelogd → stuur naar login
   if (!token) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Haal onboarding-status op via backend
+  // 3️⃣ Onboarding status ophalen via backend API
   let onboarding;
   try {
-    onboarding = await fetchAuth("/api/onboarding/status", {
-      headers: { Cookie: `auth_token=${token}` },
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${apiUrl}/onboarding/status`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
+    onboarding = await res.json();
   } catch (err) {
-    console.error("Onboarding middleware error:", err);
+    console.error("Onboarding middleware fetch error:", err);
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -64,29 +66,27 @@ export async function middleware(req) {
     has_market &&
     has_strategy;
 
-  // 4️⃣ Onboarding nog NIET klaar → force redirect naar /onboarding
+  // 4️⃣ Onboarding NIET klaar → redirect naar /onboarding
   if (!onboardingComplete) {
-    // Als gebruiker al op onboarding zit → ok
+    // Als user al in onboarding → doorlaten
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
 
-    // Elke andere pagina blokkeren
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding klaar → blokkeer toegang tot onboarding pagina’s
+  // 5️⃣ Onboarding WEL klaar → blokkeer toegang tot onboarding pages
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // 6️⃣ Alles OK → doorlaten
+  // 6️⃣ Alles ok → protected pages doorlaten
   return NextResponse.next();
 }
 
-// Middleware configuratie
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico).*)",

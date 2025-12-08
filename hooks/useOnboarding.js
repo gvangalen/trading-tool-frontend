@@ -1,124 +1,121 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchAuth } from "@/lib/api/auth";
+import { API_BASE_URL } from "@/lib/config";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 /**
- * 🧠 useOnboarding — JWT correct + race condition fix
+ * 🧠 useOnboarding
+ *
+ * Let op:
+ *  - Gebruikt nu cookie-auth via fetchWithAuth
+ *  - Geen Bearer tokens / fetchAuth meer
  */
 export function useOnboarding() {
-  const [status, setStatus] = useState(null);
+  const { isAuthenticated, fetchWithAuth } = useAuth();
+
+  const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
 
-  // -----------------------------------------------------
-  // 1️⃣ Check of user is ingelogd (via backend cookies)
-  // -----------------------------------------------------
-  const checkAuth = useCallback(async () => {
-    try {
-      const me = await fetchAuth("/api/auth/me");
-
-      if (me && me.id) {
-        setAuthenticated(true);
-        return true;
-      }
-    } catch (err) {
-      console.warn("User is not authenticated.");
+  // ======================================
+  // 1️⃣ Status ophalen
+  // ======================================
+  const fetchStatus = useCallback(async () => {
+    if (!isAuthenticated) {
+      setStatus(null);
+      setLoading(false);
+      return;
     }
 
-    setAuthenticated(false);
-    return false;
-  }, []);
-
-  // -----------------------------------------------------
-  // 2️⃣ Onboarding status ophalen
-  // -----------------------------------------------------
-  const fetchStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetchAuth("/api/onboarding/status");
-      setStatus(res);
+
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/api/onboarding/status`
+      );
+
+      if (!res.ok) {
+        console.error(
+          "❌ Failed to load onboarding status:",
+          res.status,
+          await res.text().catch(() => "")
+        );
+        return;
+      }
+
+      const data = await res.json();
+      setStatus(data);
     } catch (err) {
       console.error("❌ Failed to load onboarding status:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, fetchWithAuth]);
 
-  // -----------------------------------------------------
-  // 🔄 3️⃣ Start: eerst auth check → daarna ONBOARDING
-  // -----------------------------------------------------
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    fetchStatus();
+  }, [fetchStatus]);
 
-  // 🔄 Wanneer authenticated verandert → status ophalen
-  useEffect(() => {
-    if (authenticated) {
-      fetchStatus();
-    }
-  }, [authenticated, fetchStatus]);
+  // ======================================
+  // 2️⃣ Helper voor POST-acties
+  // ======================================
+  const postStep = useCallback(
+    async (url: string, body?: any) => {
+      if (!isAuthenticated) return;
 
-  // -----------------------------------------------------
-  // 4️⃣ Actions
-  // -----------------------------------------------------
-  const completeStep = async (step) => {
-    if (!authenticated) return;
+      try {
+        setSaving(true);
 
-    try {
-      setSaving(true);
-      await fetchAuth("/api/onboarding/complete_step", {
-        method: "POST",
-        body: JSON.stringify({ step }),
-      });
-      await fetchStatus();
-    } catch (err) {
-      console.error(`❌ Failed to complete onboarding step: ${step}`, err);
-    } finally {
-      setSaving(false);
-    }
-  };
+        const res = await fetchWithAuth(`${API_BASE_URL}${url}`, {
+          method: "POST",
+          body: body ? JSON.stringify(body) : undefined,
+        });
 
-  const finish = async () => {
-    if (!authenticated) return;
+        if (!res.ok) {
+          console.error(
+            "❌ Onboarding POST error:",
+            url,
+            res.status,
+            await res.text().catch(() => "")
+          );
+        }
 
-    try {
-      setSaving(true);
-      await fetchAuth("/api/onboarding/finish", { method: "POST" });
-      await fetchStatus();
-    } finally {
-      setSaving(false);
-    }
-  };
+        await fetchStatus();
+      } catch (err) {
+        console.error("❌ Onboarding POST error:", url, err);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [isAuthenticated, fetchWithAuth, fetchStatus]
+  );
 
-  const reset = async () => {
-    if (!authenticated) return;
+  // ======================================
+  // 3️⃣ Acties
+  // ======================================
+  const completeStep = (step: string) =>
+    postStep("/api/onboarding/complete_step", { step });
 
-    try {
-      setSaving(true);
-      await fetchAuth("/api/onboarding/reset", { method: "POST" });
-      await fetchStatus();
-    } finally {
-      setSaving(false);
-    }
-  };
+  const finish = () => postStep("/api/onboarding/finish");
 
-  // -----------------------------------------------------
-  // 5️⃣ Flags
-  // -----------------------------------------------------
+  const reset = () => postStep("/api/onboarding/reset");
+
+  // ======================================
+  // 4️⃣ Flags
+  // ======================================
   const completed =
-    status?.has_setup &&
-    status?.has_technical &&
-    status?.has_macro &&
-    status?.has_market &&
-    status?.has_strategy;
+    !!status?.has_setup &&
+    !!status?.has_technical &&
+    !!status?.has_macro &&
+    !!status?.has_market &&
+    !!status?.has_strategy;
 
   return {
     status,
     loading,
     saving,
-    authenticated,
+    authenticated: isAuthenticated,
     completed,
     completeStep,
     finish,

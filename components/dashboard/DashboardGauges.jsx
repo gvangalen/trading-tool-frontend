@@ -5,7 +5,7 @@ import GaugeChart from "@/components/ui/GaugeChart";
 import TopSetupsMini from "@/components/setup/TopSetupsMini";
 import CardWrapper from "@/components/ui/CardWrapper";
 
-// Lucide icons
+// Icons
 import { Globe2, LineChart, DollarSign, Settings2 } from "lucide-react";
 
 export default function DashboardGauges() {
@@ -16,26 +16,26 @@ export default function DashboardGauges() {
       title: "Macro",
       icon: <Globe2 className="w-4 h-4" />,
       data: macro,
-      emptyText: "Nog geen macrodata beschikbaar.",
+      emptyText: "Voeg macro-indicatoren toe om trends te analyseren.",
     },
     {
       title: "Technical",
       icon: <LineChart className="w-4 h-4" />,
       data: technical,
-      emptyText: "Nog geen technische analyse beschikbaar.",
+      emptyText: "Voeg technische indicatoren toe voor signalen.",
     },
     {
       title: "Market",
       icon: <DollarSign className="w-4 h-4" />,
       data: market,
-      emptyText: "Nog geen marktdata beschikbaar.",
+      emptyText: "Market data wordt zichtbaar zodra eerste gegevens zijn geladen.",
     },
     {
       title: "Setup",
       icon: <Settings2 className="w-4 h-4" />,
       data: setup,
-      emptyText: "Geen actieve setups gevonden.",
-      showSetups: true,
+      emptyText: "Maak een setup aan om een setupscore te ontvangen.",
+      showTopSetups: true,
     },
   ];
 
@@ -48,7 +48,7 @@ export default function DashboardGauges() {
           icon={g.icon}
           data={g.data}
           emptyText={g.emptyText}
-          showTopSetups={g.showSetups}
+          showTopSetups={g.showTopSetups}
         />
       ))}
     </div>
@@ -56,7 +56,7 @@ export default function DashboardGauges() {
 }
 
 /* =====================================================
-   SINGLE GAUGE CARD — Clean PRO Look (with empty state)
+   SINGLE GAUGE CARD (PRO 2.4)
 ===================================================== */
 
 function GaugeCard({
@@ -66,22 +66,22 @@ function GaugeCard({
   emptyText,
   showTopSetups = false,
 }) {
-  const score = data?.score;
-
-  const hasScore = typeof score === "number" && score > 0;
-
-  const numericScore = hasScore ? score : 0;
-  const displayScore = hasScore ? Math.round(numericScore) : "—";
+  const score = Number(data?.score ?? 0);
+  const numericScore = isNaN(score) ? 0 : score;
 
   const explanation =
-    (data?.explanation ||
-      data?.uitleg ||
-      data?.interpretation ||
-      null) ?? null;
+    data?.explanation ||
+    data?.uitleg ||
+    data?.interpretation ||
+    "";
 
   const topContributors = data?.top_contributors || [];
 
-  const showExplanation = explanation?.trim?.() || emptyText;
+  const finalExplanation =
+    explanation.trim() ||
+    (topContributors.length
+      ? `Belangrijkste factoren: ${topContributors.join(", ")}`
+      : emptyText);
 
   return (
     <CardWrapper>
@@ -105,7 +105,7 @@ function GaugeCard({
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        <GaugeChart value={numericScore} displayValue={displayScore} />
+        <GaugeChart value={numericScore} />
       </div>
 
       {/* CONTRIBUTORS */}
@@ -116,9 +116,9 @@ function GaugeCard({
           </p>
 
           <div className="space-y-1">
-            {topContributors.map((c, i) => (
+            {topContributors.map((c, idx) => (
               <div
-                key={i}
+                key={idx}
                 className="
                   text-xs text-[var(--text-dark)]
                   pl-1 border-l-2 border-[var(--primary)]
@@ -131,7 +131,7 @@ function GaugeCard({
         </div>
       )}
 
-      {/* MINI-SETUPS (SETUP gauge) */}
+      {/* SETUP MINI-CARDS */}
       {showTopSetups && (
         <div className="mt-4">
           <TopSetupsMini />
@@ -140,7 +140,7 @@ function GaugeCard({
 
       {/* EXPLANATION */}
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-light)] italic">
-        {showExplanation}
+        {finalExplanation}
       </p>
     </CardWrapper>
   );

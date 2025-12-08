@@ -4,7 +4,7 @@ export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // 0️⃣ Skip API, static files, favicon, images
+  // 0️⃣ Skip API, static files en images
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
@@ -14,7 +14,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Public routes
+  // Publieke routes (geen login nodig)
   const publicRoutes = [
     "/login",
     "/register",
@@ -22,6 +22,7 @@ export async function middleware(req) {
     "/reset-password",
   ];
 
+  // Onboarding routes
   const onboardingRoutes = [
     "/onboarding",
     "/onboarding/setup",
@@ -31,12 +32,12 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ Public route → doorgaan
+  // 1️⃣ Public route → doorlaten
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ ACCESS TOKEN alleen checken (maar NIET sturen!)
+  // 2️⃣ Check JWT cookie (NIET meesturen!)
   const token = req.cookies.get("access_token")?.value;
 
   if (!token) {
@@ -44,19 +45,21 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Backend zelf laat cookies forwarden — NIET zelf meesturen!
+  // 3️⃣ Onboarding status ophalen via backend
+  //    Browser stuurt cookie automatisch mee door credentials: "include"
   let onboarding;
+
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
-      credentials: "include", // Browser stuurt cookie door
+      credentials: "include", // cookie forwarding door browser
     });
 
     onboarding = await res.json();
   } catch (err) {
-    console.error("❌ Middleware error:", err);
+    console.error("❌ Middleware onboarding fetch error:", err);
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -76,16 +79,17 @@ export async function middleware(req) {
     !!has_market &&
     !!has_strategy;
 
-  // 4️⃣ Onboarding incomplete → redirect
+  // 4️⃣ Onboarding incomplete → redirect naar onboarding
   if (!onboardingComplete) {
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
+
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding complete → redirect /onboarding → dashboard
+  // 5️⃣ Onboarding complete → block access to onboarding pages
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

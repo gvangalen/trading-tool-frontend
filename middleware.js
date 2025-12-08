@@ -1,10 +1,11 @@
+// middleware.js
 import { NextResponse } from "next/server";
 
 export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // Publieke routes (geen auth required)
+  // Publieke routes (geen login nodig)
   const publicRoutes = [
     "/login",
     "/register",
@@ -22,19 +23,19 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ Public routes → altijd doorlaten
+  // 1️⃣ public routes → doorlaten
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Check auth token
+  // 2️⃣ check auth cookie
   const token = req.cookies.get("auth_token")?.value;
   if (!token) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding status ophalen via backend API
+  // 3️⃣ onboarding-status ophalen
   let onboarding;
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -46,7 +47,7 @@ export async function middleware(req) {
 
     onboarding = await res.json();
   } catch (err) {
-    console.error("Onboarding middleware fetch error:", err);
+    console.error("❌ Onboarding middleware fetch error:", err);
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -66,9 +67,9 @@ export async function middleware(req) {
     has_market &&
     has_strategy;
 
-  // 4️⃣ Onboarding NIET klaar → redirect naar /onboarding
+  // 4️⃣ onboarding NIET klaar → redirect naar onboarding flow
   if (!onboardingComplete) {
-    // Als user al in onboarding → doorlaten
+    // Als user al in onboarding zit → doorlaten
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
@@ -77,18 +78,22 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding WEL klaar → blokkeer toegang tot onboarding pages
+  // 5️⃣ Onboarding WEL klaar → block onboarding pages
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // 6️⃣ Alles ok → protected pages doorlaten
+  // 6️⃣ Auth OK en onboarding klaar → route doorlaten
   return NextResponse.next();
 }
 
+//
+// ❗❗ De matcher hieronder is de fix waardoor je logo en images weer werken!
+//
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Middleware moet NIET draaien op images, static content, API routes, favicon
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(png|jpg|jpeg|svg|webp|ico)).*)",
   ],
 };

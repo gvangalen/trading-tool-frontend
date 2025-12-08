@@ -14,7 +14,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Public routes (geen login nodig)
+  // Public routes
   const publicRoutes = [
     "/login",
     "/register",
@@ -31,33 +31,32 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ Public routes → doorgaan
+  // 1️⃣ Public route → doorgaan
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Lees access_token cookie (COOKIE-AUTH!)
+  // 2️⃣ ACCESS TOKEN alleen checken (maar NIET sturen!)
   const token = req.cookies.get("access_token")?.value;
+
   if (!token) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding status ophalen met COOKIE-forwarding automatisch
+  // 3️⃣ Backend zelf laat cookies forwarden — NIET zelf meesturen!
   let onboarding;
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
-      credentials: "include", // ⬅️ BELANGRIJK!
-      headers: {
-        Cookie: `access_token=${token}`,
-      },
+      method: "GET",
+      credentials: "include", // Browser stuurt cookie door
     });
 
     onboarding = await res.json();
   } catch (err) {
-    console.error("❌ Onboarding middleware error", err);
+    console.error("❌ Middleware error:", err);
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -82,12 +81,11 @@ export async function middleware(req) {
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
-
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding complete → /onboarding blokkeren
+  // 5️⃣ Onboarding complete → redirect /onboarding → dashboard
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

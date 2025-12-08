@@ -9,10 +9,7 @@ import {
 } from "react";
 
 import { API_BASE_URL } from "@/lib/config";
-
-// ✨ NIEUW: importeer de juiste helpers
 import {
-  getCurrentUserId,
   saveUserLocal,
   loadUserLocal,
   clearUserLocal,
@@ -30,11 +27,11 @@ export function useAuth() {
 }
 
 /* ===========================================================
-   fetchWithAuth — HttpOnly cookies
+   fetchWithAuth — stuurt cookies mee
 =========================================================== */
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return await fetch(url, {
-    credentials: "include",
+    credentials: "include", // ⬅️ CRUCIAAL VOOR JWT COOKIES
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -51,18 +48,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     1) SESSION LADEN BIJ APP START
+     1) SESSION LADEN (met kleine delay + retry)
   ------------------------------------------------------- */
   const loadSession = useCallback(async () => {
     try {
+      // 🩹 Fix race condition: cookies zijn soms 0–50ms te laat
+      await new Promise((r) => setTimeout(r, 30));
+
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
       if (res.ok) {
-        const data = await res.json();
-        const u = data.user || data;
+        const u = await res.json(); // 🎯 gebruikte variant
 
         setUser(u);
-        saveUserLocal(u); // 👉 user opslaan
+        saveUserLocal(u); // opslaan
       } else {
         setUser(null);
         clearUserLocal();
@@ -81,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadSession]);
 
   /* -------------------------------------------------------
-     2) TOKEN REFRESH (1x per 50 min)
+     2) TOKEN REFRESH (werkt met HttpOnly cookie)
   ------------------------------------------------------- */
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -92,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error("❌ Token refresh fout:", err);
       }
-    }, 50 * 60 * 1000);
+    }, 50 * 60 * 1000); // 50 min
 
     return () => clearInterval(interval);
   }, []);
@@ -111,8 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: "Ongeldige inloggegevens" };
       }
 
-      const data = await res.json();
-      const u = data.user || data;
+      const u = await res.json();
 
       setUser(u);
       saveUserLocal(u);
@@ -137,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(null);
-    clearUserLocal(); // 🔥 user + id uit localStorage
+    clearUserLocal();
   }, []);
 
   /* -------------------------------------------------------

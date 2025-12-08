@@ -3,25 +3,25 @@
 import { API_BASE_URL } from "@/lib/config";
 
 /* =======================================================
-   📌 Local Storage Keys
+   📌 Local Storage Helpers (centrale opslag)
 ======================================================= */
 
 const LOCAL_USER_KEY = "tt_current_user";
-const LOCAL_TOKEN_KEY = "tt_access_token";
 
-/* =======================================================
-   📦 User opslaan
-======================================================= */
-
-export function saveUserLocal(user) {
+export function saveUserLocal(user: any) {
+  if (!user) return;
   if (typeof window === "undefined") return;
   localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
 }
 
 export function loadUserLocal() {
   if (typeof window === "undefined") return null;
+
+  const raw = localStorage.getItem(LOCAL_USER_KEY);
+  if (!raw) return null;
+
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_USER_KEY));
+    return JSON.parse(raw);
   } catch {
     return null;
   }
@@ -33,69 +33,93 @@ export function clearUserLocal() {
 }
 
 /* =======================================================
-   🔑 Token opslaan
+   🆔 user_id helpers (blijft voor apiClient)
 ======================================================= */
 
-export function saveAccessToken(token) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(LOCAL_TOKEN_KEY, token);
+export function getCurrentUserId(): number | null {
+  const user = loadUserLocal();
+  return user?.id ? Number(user.id) : null;
 }
 
-export function loadAccessToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(LOCAL_TOKEN_KEY);
+export function setCurrentUserId(id: number | string) {
+  if (typeof window === "undefined") return;
+
+  const existing = loadUserLocal() || {};
+  const merged = { ...existing, id: Number(id) };
+
+  saveUserLocal(merged);
 }
 
-export function clearAccessToken() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(LOCAL_TOKEN_KEY);
+export function clearCurrentUserId() {
+  clearUserLocal();
 }
 
 /* =======================================================
-   🌐 fetchAuth — stuurt ALTIJD Bearer token mee
+   🌐 fetchAuth — altijd cookies meesturen
+   - GEEN Bearer headers
+   - Stuurt HttpOnly cookies mee via credentials: "include"
+   - Geeft direct JSON terug (of null)
 ======================================================= */
 
-export async function fetchAuth(path, options = {}) {
-  const token = loadAccessToken();
-
-  return fetch(`${API_BASE_URL}${path}`, {
+async function fetchAuthInternal(
+  path: string,
+  options: RequestInit = {}
+): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
+
+  if (!res.ok) {
+    // Voor gewone calls gooien we een error; login/refresh gebruiken eigen fetch
+    const text = await res.text().catch(() => "");
+    console.error(`❌ fetchAuth ${path} failed:`, res.status, text);
+    throw new Error(`Auth request failed (${res.status})`);
+  }
+
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
+export const fetchAuth = fetchAuthInternal;
+
 /* =======================================================
-   🔐 LOGIN
+   🔐 LOGIN (gebruikt eigen fetch, geen fetchAuth)
 ======================================================= */
 
-export async function apiLogin(email, password) {
+export async function apiLogin(email: string, password: string) {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
+      const body = await res.json().catch(() => null);
       return {
         success: false,
-        message: data?.detail || "Ongeldige inloggegevens",
+        message: body?.detail || "Ongeldige inloggegevens",
       };
     }
 
-    // ⬇️ IMPORTANT: token opslaan
-    saveAccessToken(data.access_token);
+    const data = await res.json();
+    const user = data.user || data;
 
-    // user opslaan
-    saveUserLocal(data.user);
+    // Backend zet cookies, wij bewaren alleen user in localStorage
+    saveUserLocal(user);
 
-    return { success: true, user: data.user };
+    return { success: true, user };
   } catch (err) {
     console.error("❌ apiLogin error:", err);
     return { success: false, message: "Serverfout" };
@@ -107,31 +131,70 @@ export async function apiLogin(email, password) {
 ======================================================= */
 
 export async function apiLogout() {
-  clearAccessToken();
-  clearUserLocal();
-  return { success: true };
+  try {
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    clearUserLocal();
+    return { success: true };
+  } catch (err) {
+    console.error("❌ apiLogout error:", err);
+    return { success: false };
+  }
 }
 
 /* =======================================================
    🔁 REFRESH TOKEN
 ======================================================= */
 
-export async function apiRefresh() {
-  // Alleen nodig als je refresh token systeem gebruikt
-  // (nu nog niet)
-  return { success: true };
+export async function apiRefresh(refreshToken?: string) {
+  // In jouw huidige setup doet de backend refresh via cookie,
+  // dus refreshToken in body is optioneel / niet nodig.
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : undefined,
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      console.error("❌ apiRefresh failed:", res.status, body);
+      return { success: false };
+    }
+
+    const data = await res.json().catch(() => ({}));
+    // access_token wordt door backend NIET in cookie gezet in Bearer-mode,
+    // maar in jouw huidige cookie-setup gebruiken we dit niet meer actief.
+    return { success: true, ...data };
+  } catch (err) {
+    console.error("❌ apiRefresh error:", err);
+    return { success: false };
+  }
 }
 
 /* =======================================================
-   👤 apiMe — synchroniseer backend user naar client
+   👤 ME — synchroniseert backend → localStorage
 ======================================================= */
 
 export async function apiMe() {
   try {
-    const res = await fetchAuth(`/api/auth/me`);
+    const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!res.ok) {
-      clearAccessToken();
       clearUserLocal();
       return { success: false, user: null };
     }

@@ -5,16 +5,12 @@ import { API_BASE_URL } from "@/lib/config";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 /**
- * 🧠 useOnboarding
- *
- * Let op:
- *  - Gebruikt nu cookie-auth via fetchWithAuth
- *  - Geen Bearer tokens / fetchAuth meer
+ * useOnboarding (COOKIE-AUTH versie)
  */
 export function useOnboarding() {
   const { isAuthenticated, fetchWithAuth } = useAuth();
 
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -31,9 +27,7 @@ export function useOnboarding() {
     try {
       setLoading(true);
 
-      const res = await fetchWithAuth(
-        `${API_BASE_URL}/api/onboarding/status`
-      );
+      const res = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/status`);
 
       if (!res.ok) {
         console.error(
@@ -58,10 +52,10 @@ export function useOnboarding() {
   }, [fetchStatus]);
 
   // ======================================
-  // 2️⃣ Helper voor POST-acties
+  // 2️⃣ POST helper
   // ======================================
   const postStep = useCallback(
-    async (url: string, body?: any) => {
+    async (url, body) => {
       if (!isAuthenticated) return;
 
       try {
@@ -94,7 +88,7 @@ export function useOnboarding() {
   // ======================================
   // 3️⃣ Acties
   // ======================================
-  const completeStep = (step: string) =>
+  const completeStep = (step) =>
     postStep("/api/onboarding/complete_step", { step });
 
   const finish = () => postStep("/api/onboarding/finish");

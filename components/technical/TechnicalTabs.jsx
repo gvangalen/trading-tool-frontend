@@ -18,33 +18,60 @@ export default function TechnicalTabs({
   loading,
   error,
 }) {
+
+  // Altijd data normaliseren
+  const safeData = Array.isArray(technicalData) ? technicalData : [];
+
   const renderTable = () => {
-    // ⏳ LOADING (maar blijf de CardWrapper renderen)
+    // ⏳ LOADING → geen error tonen, gewoon lege state via message
     if (loading) {
       return (
-        <div className="p-4 text-center text-[var(--text-light)]">
-          ⏳ Technische data laden...
-        </div>
+        <DayTable
+          title="Technische Analyse"
+          data={[]}   // Forceer lege tabel
+          onRemove={null}
+        />
       );
     }
 
-    // Altijd technicalData normaliseren
-    const safeData = Array.isArray(technicalData)
-      ? technicalData
-      : [];
+    // ❌ Error → niet tonen aan gebruiker, wel loggen
+    if (error) {
+      console.error("❌ TechnicalTabs error:", error);
+    }
 
     switch (activeTab) {
       case "Dag":
-        return <DayTable data={safeData} onRemove={handleRemove} />;
+        return (
+          <DayTable
+            title="Technische Analyse"
+            data={safeData}
+            onRemove={handleRemove}
+          />
+        );
 
       case "Week":
-        return <WeekTable data={safeData} />;
+        return (
+          <WeekTable
+            title="Technische Analyse"
+            data={safeData}
+          />
+        );
 
       case "Maand":
-        return <MonthTable data={safeData} />;
+        return (
+          <MonthTable
+            title="Technische Analyse"
+            data={safeData}
+          />
+        );
 
       case "Kwartaal":
-        return <QuarterTable data={safeData} />;
+        return (
+          <QuarterTable
+            title="Technische Analyse"
+            data={safeData}
+          />
+        );
 
       default:
         return null;
@@ -74,16 +101,7 @@ export default function TechnicalTabs({
       {/* 🔹 Tabel in kaart */}
       <CardWrapper>
         <div className="p-2">
-
-          {/* ❌ error tonen boven tabel — NIET meer returnen! */}
-          {error && (
-            <div className="text-red-500 text-sm mb-2 text-center">
-              ❌ {error}
-            </div>
-          )}
-
           {renderTable()}
-
         </div>
       </CardWrapper>
     </>

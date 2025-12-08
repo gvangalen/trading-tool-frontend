@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Globe2 } from "lucide-react";
+import { Globe2 } from "lucide-react";
 import SkeletonTable from "@/components/ui/SkeletonTable";
 import DayTable from "@/components/ui/DayTable";
 
@@ -9,40 +9,36 @@ export default function MacroSummaryTableForDashboard({
   loading = false,
   error = "",
 }) {
-  // ⏳ LOADING (altijd zonder card)
+  // ⏳ LOADING → alleen skeleton
   if (loading) {
     return <SkeletonTable rows={5} columns={5} />;
   }
 
-  // ❌ ERROR
+  // Log fout alleen in console, niet in UI
   if (error) {
-    return (
-      <div className="text-red-500 p-4">
-        {error}
-      </div>
-    );
+    console.error("Macro data fout op dashboard:", error);
   }
 
-  // Zorg dat data altijd een array is
+  // Data altijd normaliseren
   const safeData = Array.isArray(data) ? data : [];
 
-  // ⭐ DayTable ontvangt de data direct (macro heeft al juiste vorm)
-  return (
-    <div className="space-y-2">
-      <DayTable
-        title="Macro Indicatoren"
-        icon={<Globe2 className="w-5 h-5 text-[var(--primary)]" />}
-        data={safeData}
-        onRemove={null} // ➝ Geen verwijderknoppen in dashboard
-      />
+  // Eventueel mappen naar DayTable-formaat (nu vrij generiek)
+  const formatted = safeData.map((item) => ({
+    name: item.indicator || item.name || "–",
+    value: item.value ?? item.waarde ?? "–",
+    score: item.score ?? null,
+    action: item.advice ?? item.advies ?? "–",
+    interpretation: item.uitleg ?? item.interpretation ?? "–",
+  }));
 
-      {/* ⚠️ Lege tabel melding */}
-      {safeData.length === 0 && (
-        <div className="p-2 text-center text-[var(--text-light)] text-xs flex items-center justify-center gap-2 italic">
-          <AlertCircle className="w-4 h-4" />
-          <span>Nog geen macro-indicatoren toegevoegd.</span>
-        </div>
-      )}
-    </div>
+  // 👉 Altijd DayTable renderen
+  // Bij 0 items toont DayTable zelf: "Nog geen data beschikbaar."
+  return (
+    <DayTable
+      title="Macro Indicatoren"
+      icon={<Globe2 className="w-5 h-5 text-[var(--primary)]" />}
+      data={formatted}
+      onRemove={null}
+    />
   );
 }

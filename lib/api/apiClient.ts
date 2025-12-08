@@ -1,52 +1,37 @@
 //----------------------------------------------------------
-//  GLOBAL API CLIENT
-//  - Stuurt cookies mee via credentials: "include"
-//  - Injecteert automatisch user_id in elke request
+//  GLOBAL API CLIENT — 100% Bearer JWT AUTH
 //----------------------------------------------------------
 
-import { getCurrentUserId } from "./user";   // ✅ ENIGE juiste import
+import { loadAccessToken } from "@/lib/api/auth"; // token loader
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002";
 
 //----------------------------------------------------------
-// 🆔 Helper: user_id toevoegen aan URL
+// 🔧 Helper: Authorization header toevoegen
 //----------------------------------------------------------
-function withUserId(path: string): string {
-  const userId = getCurrentUserId();
 
-  if (!userId) return path;
+function authHeaders(init?: RequestInit) {
+  const token = loadAccessToken();
 
-  const sep = path.includes("?") ? "&" : "?";
-  if (path.includes("user_id=")) return path;
-
-  return `${path}${sep}user_id=${userId}`;
-}
-
-//----------------------------------------------------------
-// 🛠️ body verrijken met user_id
-//----------------------------------------------------------
-function attachUserIdToBody(body: any): any {
-  const userId = getCurrentUserId();
-  if (!userId) return body || {};
-
-  return { ...(body || {}), user_id: userId };
+  return {
+    "Content-Type": "application/json",
+    ...(init?.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 }
 
 //----------------------------------------------------------
 // 📡 GET
 //----------------------------------------------------------
+
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
-  const url = `${API_BASE_URL}${withUserId(path)}`;
+  const url = `${API_BASE_URL}${path}`;
 
   const res = await fetch(url, {
     ...init,
     method: "GET",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
+    headers: authHeaders(init),
     cache: "no-store",
   });
 
@@ -62,23 +47,19 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
 //----------------------------------------------------------
 // 📡 POST
 //----------------------------------------------------------
+
 export async function apiPost<T>(
   path: string,
-  body: any,
+  body?: any,
   init?: RequestInit
 ): Promise<T> {
-  const url = `${API_BASE_URL}${withUserId(path)}`;
-  const payload = attachUserIdToBody(body);
+  const url = `${API_BASE_URL}${path}`;
 
   const res = await fetch(url, {
     ...init,
     method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    body: JSON.stringify(payload),
+    headers: authHeaders(init),
+    body: body ? JSON.stringify(body) : undefined,
   });
 
   if (!res.ok) {
@@ -93,23 +74,19 @@ export async function apiPost<T>(
 //----------------------------------------------------------
 // 📡 PUT
 //----------------------------------------------------------
+
 export async function apiPut<T>(
   path: string,
-  body: any,
+  body?: any,
   init?: RequestInit
 ): Promise<T> {
-  const url = `${API_BASE_URL}${withUserId(path)}`;
-  const payload = attachUserIdToBody(body);
+  const url = `${API_BASE_URL}${path}`;
 
   const res = await fetch(url, {
     ...init,
     method: "PUT",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    body: JSON.stringify(payload),
+    headers: authHeaders(init),
+    body: body ? JSON.stringify(body) : undefined,
   });
 
   if (!res.ok) {
@@ -124,20 +101,17 @@ export async function apiPut<T>(
 //----------------------------------------------------------
 // 📡 DELETE
 //----------------------------------------------------------
+
 export async function apiDelete<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const url = `${API_BASE_URL}${withUserId(path)}`;
+  const url = `${API_BASE_URL}${path}`;
 
   const res = await fetch(url, {
     ...init,
     method: "DELETE",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
+    headers: authHeaders(init),
   });
 
   if (!res.ok) {

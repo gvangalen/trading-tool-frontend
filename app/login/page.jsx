@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Mail, Lock, LogIn } from "lucide-react";
@@ -16,10 +16,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🚀 Als al ingelogd → direct dashboard
+  // voorkomt dubbele redirects
+  const redirected = useRef(false);
+
+  // 🚀 Al ingelogd? → direct naar dashboard
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard");
+    if (isAuthenticated && !redirected.current) {
+      redirected.current = true;
+      router.replace("/dashboard");
     }
   }, [isAuthenticated, router]);
 
@@ -37,8 +41,8 @@ export default function LoginPage() {
 
     showSnackbar("Welkom terug! ✔", "success");
 
-    // redirect
-    router.push("/dashboard");
+    // Redirect → gebruik replace voor correcte UX
+    router.replace("/dashboard");
   };
 
   return (

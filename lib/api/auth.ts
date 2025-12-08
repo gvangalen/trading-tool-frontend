@@ -3,25 +3,25 @@
 import { API_BASE_URL } from "@/lib/config";
 
 /* =======================================================
-   📌 Local Storage Helpers (centrale opslag)
+   📌 Local Storage Keys
 ======================================================= */
 
 const LOCAL_USER_KEY = "tt_current_user";
+const LOCAL_TOKEN_KEY = "tt_access_token";
 
-export function saveUserLocal(user: any) {
-  if (!user) return;
+/* =======================================================
+   📦 User opslaan
+======================================================= */
+
+export function saveUserLocal(user) {
   if (typeof window === "undefined") return;
   localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
 }
 
 export function loadUserLocal() {
   if (typeof window === "undefined") return null;
-
-  const raw = localStorage.getItem(LOCAL_USER_KEY);
-  if (!raw) return null;
-
   try {
-    return JSON.parse(raw);
+    return JSON.parse(localStorage.getItem(LOCAL_USER_KEY));
   } catch {
     return null;
   }
@@ -33,74 +33,69 @@ export function clearUserLocal() {
 }
 
 /* =======================================================
-   🆔 user_id ophalen (wordt gebruikt door apiClient)
+   🔑 Token opslaan
 ======================================================= */
 
-export function getCurrentUserId(): number | null {
-  const user = loadUserLocal();
-  return user?.id ? Number(user.id) : null;
-}
-
-/* =======================================================
-   🧷 COMPAT-LAAG — voor bestaande imports in AuthProvider
-======================================================= */
-
-export function setCurrentUserId(id: number | string) {
+export function saveAccessToken(token) {
   if (typeof window === "undefined") return;
-
-  const existing = loadUserLocal() || {};
-  const merged = { ...existing, id: Number(id) };
-
-  saveUserLocal(merged);
+  localStorage.setItem(LOCAL_TOKEN_KEY, token);
 }
 
-export function clearCurrentUserId() {
-  clearUserLocal();
+export function loadAccessToken() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(LOCAL_TOKEN_KEY);
+}
+
+export function clearAccessToken() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(LOCAL_TOKEN_KEY);
 }
 
 /* =======================================================
-   🌐 Wrapper om altijd cookies (JWT) mee te sturen
+   🌐 fetchAuth — stuurt ALTIJD Bearer token mee
 ======================================================= */
 
-async function fetchAuthInternal(path: string, options: any = {}) {
-  return await fetch(`${API_BASE_URL}${path}`, {
+export async function fetchAuth(path, options = {}) {
+  const token = loadAccessToken();
+
+  return fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 }
-
-// ✅ HIER exporteren zodat andere bestanden hem kunnen gebruiken
-export const fetchAuth = fetchAuthInternal;
 
 /* =======================================================
    🔐 LOGIN
 ======================================================= */
 
-export async function apiLogin(email: string, password: string) {
+export async function apiLogin(email, password) {
   try {
-    const res = await fetchAuth(`/api/auth/login`, {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const body = await res.json().catch(() => null);
       return {
         success: false,
-        message: body?.detail || "Ongeldige inloggegevens",
+        message: data?.detail || "Ongeldige inloggegevens",
       };
     }
 
-    const data = await res.json();
-    const user = data.user || data;
+    // ⬇️ IMPORTANT: token opslaan
+    saveAccessToken(data.access_token);
 
-    saveUserLocal(user);
+    // user opslaan
+    saveUserLocal(data.user);
 
-    return { success: true, user };
+    return { success: true, user: data.user };
   } catch (err) {
     console.error("❌ apiLogin error:", err);
     return { success: false, message: "Serverfout" };
@@ -112,14 +107,9 @@ export async function apiLogin(email: string, password: string) {
 ======================================================= */
 
 export async function apiLogout() {
-  try {
-    await fetchAuth(`/api/auth/logout`, { method: "POST" });
-    clearUserLocal();
-    return { success: true };
-  } catch (err) {
-    console.error("❌ apiLogout error:", err);
-    return { success: false };
-  }
+  clearAccessToken();
+  clearUserLocal();
+  return { success: true };
 }
 
 /* =======================================================
@@ -127,17 +117,13 @@ export async function apiLogout() {
 ======================================================= */
 
 export async function apiRefresh() {
-  try {
-    const res = await fetchAuth(`/api/auth/refresh`, { method: "POST" });
-    return { success: res.ok };
-  } catch (err) {
-    console.error("❌ apiRefresh error:", err);
-    return { success: false };
-  }
+  // Alleen nodig als je refresh token systeem gebruikt
+  // (nu nog niet)
+  return { success: true };
 }
 
 /* =======================================================
-   👤 ME — synchroniseert backend user → local storage
+   👤 apiMe — synchroniseer backend user naar client
 ======================================================= */
 
 export async function apiMe() {
@@ -145,12 +131,12 @@ export async function apiMe() {
     const res = await fetchAuth(`/api/auth/me`);
 
     if (!res.ok) {
+      clearAccessToken();
       clearUserLocal();
       return { success: false, user: null };
     }
 
     const user = await res.json();
-
     saveUserLocal(user);
 
     return { success: true, user };

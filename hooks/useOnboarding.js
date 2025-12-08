@@ -6,25 +6,41 @@ import { fetchAuth } from "@/lib/api/auth";
 /**
  * 🧠 useOnboarding
  *
- * Praat met de backend endpoints:
- *  - GET  /api/onboarding/status
- *  - POST /api/onboarding/complete_step
- *  - POST /api/onboarding/finish
- *  - POST /api/onboarding/reset   (dev/test)
+ * Let op:
+ *  - Onboarding mag ALLEEN worden geladen als user is ingelogd.
  */
 export function useOnboarding() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
 
-  // ============================
-  // 📡 1) Status ophalen
-  // ============================
+  // ======================================
+  // 1️⃣ Eerst checken of user is ingelogd
+  // ======================================
+  const checkAuth = useCallback(async () => {
+    try {
+      const me = await fetchAuth("/api/auth/me");
+      if (me && me.id) {
+        setAuthenticated(true);
+      }
+    } catch (err) {
+      // Niet ingelogd → geen fouten gooien
+      setAuthenticated(false);
+    }
+  }, []);
+
+  // ======================================
+  // 2️⃣ Onboarding status ophalen
+  // ======================================
   const fetchStatus = useCallback(async () => {
+    if (!authenticated) {
+      // ⛔ Niet proberen indien user NIET ingelogd is
+      return;
+    }
+
     try {
       setLoading(true);
-
-      // fetchAuth geeft direct de JSON terug (geen res.data)
       const res = await fetchAuth("/api/onboarding/status");
       setStatus(res);
     } catch (err) {
@@ -32,25 +48,31 @@ export function useOnboarding() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authenticated]);
 
+  // ======================================
+  // Start: eerst auth checken → daarna status
+  // ======================================
   useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
+    checkAuth().then(() => {
+      if (authenticated) {
+        fetchStatus();
+      }
+    });
+  }, [checkAuth, fetchStatus, authenticated]);
 
-  // ============================
-  // ✔ 2) Stap afronden
-  // ============================
+  // ======================================
+  // 3️⃣ Step complete
+  // ======================================
   const completeStep = async (step) => {
+    if (!authenticated) return;
+
     try {
       setSaving(true);
-
       await fetchAuth("/api/onboarding/complete_step", {
         method: "POST",
         body: JSON.stringify({ step }),
       });
-
-      // Daarna status opnieuw ophalen
       await fetchStatus();
     } catch (err) {
       console.error(`❌ Failed to complete onboarding step: ${step}`, err);
@@ -59,45 +81,34 @@ export function useOnboarding() {
     }
   };
 
-  // ============================
-  // 🚀 3) Onboarding afronden
-  // ============================
+  // Finish onboarding
   const finish = async () => {
+    if (!authenticated) return;
+
     try {
       setSaving(true);
-
-      await fetchAuth("/api/onboarding/finish", {
-        method: "POST",
-      });
-
+      await fetchAuth("/api/onboarding/finish", { method: "POST" });
       await fetchStatus();
-    } catch (err) {
-      console.error("❌ Failed to finish onboarding", err);
     } finally {
       setSaving(false);
     }
   };
 
-  // ============================
-  // 🔄 4) Reset (dev / testen)
-  // ============================
   const reset = async () => {
+    if (!authenticated) return;
+
     try {
       setSaving(true);
-
-      await fetchAuth("/api/onboarding/reset", {
-        method: "POST",
-      });
-
+      await fetchAuth("/api/onboarding/reset", { method: "POST" });
       await fetchStatus();
-    } catch (err) {
-      console.error("❌ Failed to reset onboarding", err);
     } finally {
       setSaving(false);
     }
   };
 
-  // Handy flags
+  // ======================================
+  // Flags
+  // ======================================
   const completed =
     status?.has_setup &&
     status?.has_technical &&
@@ -109,6 +120,7 @@ export function useOnboarding() {
     status,
     loading,
     saving,
+    authenticated,
     completed,
     completeStep,
     finish,

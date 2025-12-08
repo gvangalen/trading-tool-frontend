@@ -1,18 +1,19 @@
 // -----------------------------------------------------
-// lib/user.ts
+// lib/user.ts — JWT-compatible version
 // -----------------------------------------------------
 
 /**
  * Waar we de ingelogde user opslaan in localStorage
- * via apiLogin() of apiMe()
+ * (profiel info, niet voor security!)
  */
 const LOCAL_USER_KEY = "tt_current_user";
 
 /**
- * User lokaal opslaan
+ * User lokaal opslaan (UI only)
  */
 export function saveUserLocal(user: any) {
   if (!user) return;
+  if (typeof window === "undefined") return;
   localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
 }
 
@@ -36,13 +37,7 @@ export function loadUserLocal() {
  * User verwijderen (logout)
  */
 export function clearUserLocal() {
+  if (typeof window === "undefined") return;
   localStorage.removeItem(LOCAL_USER_KEY);
 }
 
-/**
- * Belangrijk: user_id ophalen voor API calls
- */
-export function getCurrentUserId(): number | null {
-  const user = loadUserLocal();
-  return user?.id ? Number(user.id) : null;
-}

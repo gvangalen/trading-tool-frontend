@@ -4,10 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { fetchAuth } from "@/lib/api/auth";
 
 /**
- * 🧠 useOnboarding
- *
- * Let op:
- *  - Onboarding mag ALLEEN worden geladen als user is ingelogd.
+ * 🧠 useOnboarding — JWT correct + race condition fix
  */
 export function useOnboarding() {
   const [status, setStatus] = useState(null);
@@ -15,30 +12,29 @@ export function useOnboarding() {
   const [saving, setSaving] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
 
-  // ======================================
-  // 1️⃣ Eerst checken of user is ingelogd
-  // ======================================
+  // -----------------------------------------------------
+  // 1️⃣ Check of user is ingelogd (via backend cookies)
+  // -----------------------------------------------------
   const checkAuth = useCallback(async () => {
     try {
       const me = await fetchAuth("/api/auth/me");
+
       if (me && me.id) {
         setAuthenticated(true);
+        return true;
       }
     } catch (err) {
-      // Niet ingelogd → geen fouten gooien
-      setAuthenticated(false);
+      console.warn("User is not authenticated.");
     }
+
+    setAuthenticated(false);
+    return false;
   }, []);
 
-  // ======================================
+  // -----------------------------------------------------
   // 2️⃣ Onboarding status ophalen
-  // ======================================
+  // -----------------------------------------------------
   const fetchStatus = useCallback(async () => {
-    if (!authenticated) {
-      // ⛔ Niet proberen indien user NIET ingelogd is
-      return;
-    }
-
     try {
       setLoading(true);
       const res = await fetchAuth("/api/onboarding/status");
@@ -48,22 +44,25 @@ export function useOnboarding() {
     } finally {
       setLoading(false);
     }
-  }, [authenticated]);
+  }, []);
 
-  // ======================================
-  // Start: eerst auth checken → daarna status
-  // ======================================
+  // -----------------------------------------------------
+  // 🔄 3️⃣ Start: eerst auth check → daarna ONBOARDING
+  // -----------------------------------------------------
   useEffect(() => {
-    checkAuth().then(() => {
-      if (authenticated) {
-        fetchStatus();
-      }
-    });
-  }, [checkAuth, fetchStatus, authenticated]);
+    checkAuth();
+  }, [checkAuth]);
 
-  // ======================================
-  // 3️⃣ Step complete
-  // ======================================
+  // 🔄 Wanneer authenticated verandert → status ophalen
+  useEffect(() => {
+    if (authenticated) {
+      fetchStatus();
+    }
+  }, [authenticated, fetchStatus]);
+
+  // -----------------------------------------------------
+  // 4️⃣ Actions
+  // -----------------------------------------------------
   const completeStep = async (step) => {
     if (!authenticated) return;
 
@@ -81,7 +80,6 @@ export function useOnboarding() {
     }
   };
 
-  // Finish onboarding
   const finish = async () => {
     if (!authenticated) return;
 
@@ -106,9 +104,9 @@ export function useOnboarding() {
     }
   };
 
-  // ======================================
-  // Flags
-  // ======================================
+  // -----------------------------------------------------
+  // 5️⃣ Flags
+  // -----------------------------------------------------
   const completed =
     status?.has_setup &&
     status?.has_technical &&

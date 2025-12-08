@@ -12,27 +12,28 @@ import {
 // Vereiste registratie
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend);
 
-export default function GaugeChart({ value = 0, displayValue = null }) {
+export default function GaugeChart({ value = 0 }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // ------------------------------
-  // 🟦 Determine whether real score exists
-  // ------------------------------
+  // ----------------------------------------------------------
+  // 🟦 Determine if a real value exists (> 0)
+  // ----------------------------------------------------------
   const hasRealValue =
     typeof value === "number" && !isNaN(value) && value > 0;
 
-  // ------------------------------
-  // 🟦 Clamp gauge fill percentage
-  // If no real score → show empty arc (0%)
-  // ------------------------------
+  // ----------------------------------------------------------
+  // 🟦 Gauge fill percentage (0–100)
+  // ----------------------------------------------------------
   const percentage = hasRealValue
     ? Math.max(0, Math.min(100, value))
     : 0;
 
-  // ------------------------------
-  // 🟦 Gauge color (only when score exists)
-  // ------------------------------
+  // ----------------------------------------------------------
+  // 🟦 Gauge color
+  // - Real score → traffic light colors
+  // - No score   → soft gray
+  // ----------------------------------------------------------
   const scoreColor = hasRealValue
     ? (
         percentage >= 70
@@ -41,22 +42,22 @@ export default function GaugeChart({ value = 0, displayValue = null }) {
           ? '#facc15' // yellow
           : '#ef4444' // red
       )
-    : '#d1d5db'; // soft gray when no data
+    : '#d1d5db'; // soft gray when no score exists
 
-  // ------------------------------
-  // 🟦 Display text inside gauge
-  // ------------------------------
-  const scoreLabel = displayValue ?? (hasRealValue ? percentage : "—");
+  // ----------------------------------------------------------
+  // 🟦 Displayed value (always 0 when empty)
+  // ----------------------------------------------------------
+  const displayScore = hasRealValue ? Math.round(percentage) : 0;
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Vernietig oude chart
+    // Vernietig oude ChartJS instantie
     if (chartRef.current) {
       chartRef.current.destroy();
     }
 
-    // Nieuwe chart
+    // Maak nieuwe chart
     chartRef.current = new Chart(canvasRef.current, {
       type: 'doughnut',
       data: {
@@ -64,8 +65,8 @@ export default function GaugeChart({ value = 0, displayValue = null }) {
           {
             data: [percentage, 100 - percentage],
             backgroundColor: [
-              scoreColor,
-              '#e5e7eb' // grijs restant
+              scoreColor, // gevulde arc
+              '#e5e7eb'   // lege arc
             ],
             borderWidth: 0,
             cutout: '80%',
@@ -96,7 +97,7 @@ export default function GaugeChart({ value = 0, displayValue = null }) {
       {/* Chart Canvas */}
       <canvas ref={canvasRef} className="max-w-[180px]" />
 
-      {/* Score onder meter */}
+      {/* Score-waarde */}
       <div
         className="
           absolute
@@ -108,7 +109,7 @@ export default function GaugeChart({ value = 0, displayValue = null }) {
         "
         style={{ marginBottom: '-6px' }}
       >
-        {scoreLabel}
+        {displayScore}
       </div>
 
     </div>

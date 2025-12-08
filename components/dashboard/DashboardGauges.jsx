@@ -16,21 +16,25 @@ export default function DashboardGauges() {
       title: "Macro",
       icon: <Globe2 className="w-4 h-4" />,
       data: macro,
+      emptyText: "Nog geen macrodata beschikbaar.",
     },
     {
       title: "Technical",
       icon: <LineChart className="w-4 h-4" />,
       data: technical,
+      emptyText: "Nog geen technische analyse beschikbaar.",
     },
     {
       title: "Market",
       icon: <DollarSign className="w-4 h-4" />,
       data: market,
+      emptyText: "Nog geen marktdata beschikbaar.",
     },
     {
       title: "Setup",
       icon: <Settings2 className="w-4 h-4" />,
       data: setup,
+      emptyText: "Geen actieve setups gevonden.",
       showSetups: true,
     },
   ];
@@ -42,11 +46,8 @@ export default function DashboardGauges() {
           key={idx}
           title={g.title}
           icon={g.icon}
-          score={g.data?.score}
-          explanation={
-            g.data?.explanation || g.data?.uitleg || g.data?.interpretation
-          }
-          topContributors={g.data?.top_contributors || []}
+          data={g.data}
+          emptyText={g.emptyText}
           showTopSetups={g.showSetups}
         />
       ))}
@@ -55,28 +56,32 @@ export default function DashboardGauges() {
 }
 
 /* =====================================================
-   SINGLE GAUGE CARD — Clean PRO Look
+   SINGLE GAUGE CARD — Clean PRO Look (with empty state)
 ===================================================== */
 
 function GaugeCard({
   title,
   icon,
-  score,
-  explanation,
-  topContributors = [],
+  data,
+  emptyText,
   showTopSetups = false,
 }) {
-  const numericScore =
-    typeof score === "number" ? score : Number(score ?? 0) || 0;
+  const score = data?.score;
 
-  const displayScore = Math.round(numericScore);
+  const hasScore = typeof score === "number" && score > 0;
 
-  const autoExplanation =
-    topContributors.length > 0
-      ? `Belangrijkste factoren: ${topContributors.join(", ")}`
-      : "Geen aanvullende uitleg beschikbaar.";
+  const numericScore = hasScore ? score : 0;
+  const displayScore = hasScore ? Math.round(numericScore) : "—";
 
-  const displayExplanation = (explanation || "").trim() || autoExplanation;
+  const explanation =
+    (data?.explanation ||
+      data?.uitleg ||
+      data?.interpretation ||
+      null) ?? null;
+
+  const topContributors = data?.top_contributors || [];
+
+  const showExplanation = explanation?.trim?.() || emptyText;
 
   return (
     <CardWrapper>
@@ -100,8 +105,7 @@ function GaugeCard({
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        {/* Score wordt nu getoond IN de GaugeChart */}
-        <GaugeChart value={displayScore} />
+        <GaugeChart value={numericScore} displayValue={displayScore} />
       </div>
 
       {/* CONTRIBUTORS */}
@@ -134,9 +138,9 @@ function GaugeCard({
         </div>
       )}
 
-      {/* Explanation */}
+      {/* EXPLANATION */}
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-light)] italic">
-        {displayExplanation}
+        {showExplanation}
       </p>
     </CardWrapper>
   );

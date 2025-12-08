@@ -5,7 +5,17 @@ export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // Publieke routes (geen login nodig)
+  // 0️⃣ Bypass voor API, Next static, favicon en images
+  if (
+    path.startsWith("/api") ||
+    path.startsWith("/_next") ||
+    path === "/favicon.ico" ||
+    /\.(png|jpg|jpeg|svg|webp|ico)$/.test(path)
+  ) {
+    return NextResponse.next();
+  }
+
+  // Publieke routes
   const publicRoutes = [
     "/login",
     "/register",
@@ -13,7 +23,6 @@ export async function middleware(req) {
     "/reset-password",
   ];
 
-  // Onboarding routes
   const onboardingRoutes = [
     "/onboarding",
     "/onboarding/setup",
@@ -23,23 +32,27 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
-  // 1️⃣ Publieke route → doorlaten
+  // 1️⃣ Public routes → doorlaten
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Token ophalen uit cookie
-  const token = req.cookies.get("auth_token")?.value;
+  // 2️⃣ Haal Bearer token uit headers
+  const authHeader = req.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.replace("Bearer ", "")
+    : null;
 
   if (!token) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding-status ophalen
+  // 3️⃣ Onboarding-status ophalen via Bearer AUTH
   let onboarding;
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
     const res = await fetch(`${apiUrl}/onboarding/status`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -48,7 +61,7 @@ export async function middleware(req) {
 
     onboarding = await res.json();
   } catch (err) {
-    console.error("❌ Onboarding middleware fetch error:", err);
+    console.error("❌ Onboarding middleware error", err);
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -59,47 +72,34 @@ export async function middleware(req) {
     has_macro,
     has_market,
     has_strategy,
-  } = onboarding;
+  } = onboarding || {};
 
   const onboardingComplete =
-    has_setup &&
-    has_technical &&
-    has_macro &&
-    has_market &&
-    has_strategy;
+    !!has_setup &&
+    !!has_technical &&
+    !!has_macro &&
+    !!has_market &&
+    !!has_strategy;
 
-  // 4️⃣ Onboarding NIET klaar → stuur user naar onboarding
+  // 4️⃣ Onboarding incomplete → redirect naar onboarding begin
   if (!onboardingComplete) {
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
+
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding WEL klaar → block toegang tot onboarding pages
+  // 5️⃣ Onboarding complete → block onboarding pages
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // 6️⃣ Alles ok → Protected route doorlaten
   return NextResponse.next();
 }
 
-//
-// 🚀 *** DEZE MATCHER IS 100% NEXT.JS-COMPATIBLE ***
-// Geen regex, geen capturing groups, geen parser errors
-//
 export const config = {
-  matcher: [
-    /*
-      Pas toe op ALLE routes behalve:
-      - /api/*
-      - /_next/*
-      - /favicon.ico
-      - alle images in /public (png/jpg/svg/etc)
-    */
-    "/((?!api/|_next/|favicon.ico|.*\\.(png|jpg|jpeg|svg|webp|ico)).*)",
-  ],
+  matcher: ["/(.*)"],
 };

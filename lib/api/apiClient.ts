@@ -1,25 +1,9 @@
 //----------------------------------------------------------
-//  GLOBAL API CLIENT — 100% Bearer JWT AUTH
+//  GLOBAL API CLIENT — COOKIE-BASED AUTH (CORRECT VERSION)
 //----------------------------------------------------------
-
-import { loadAccessToken } from "@/lib/api/auth"; // token loader
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002";
-
-//----------------------------------------------------------
-// 🔧 Helper: Authorization header toevoegen
-//----------------------------------------------------------
-
-function authHeaders(init?: RequestInit) {
-  const token = loadAccessToken();
-
-  return {
-    "Content-Type": "application/json",
-    ...(init?.headers || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 //----------------------------------------------------------
 // 📡 GET
@@ -31,7 +15,11 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
     method: "GET",
-    headers: authHeaders(init),
+    credentials: "include",       // ⬅️ COOKIE MEEGEVEN
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
     cache: "no-store",
   });
 
@@ -41,7 +29,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`API GET failed (${res.status})`);
   }
 
-  return res.json() as Promise<T>;
+  return res.json();
 }
 
 //----------------------------------------------------------
@@ -58,7 +46,11 @@ export async function apiPost<T>(
   const res = await fetch(url, {
     ...init,
     method: "POST",
-    headers: authHeaders(init),
+    credentials: "include",        // ⬅️ COOKIE MEEGEVEN
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -68,7 +60,7 @@ export async function apiPost<T>(
     throw new Error(`API POST failed (${res.status})`);
   }
 
-  return res.json() as Promise<T>;
+  return res.json();
 }
 
 //----------------------------------------------------------
@@ -85,7 +77,11 @@ export async function apiPut<T>(
   const res = await fetch(url, {
     ...init,
     method: "PUT",
-    headers: authHeaders(init),
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -95,23 +91,24 @@ export async function apiPut<T>(
     throw new Error(`API PUT failed (${res.status})`);
   }
 
-  return res.json() as Promise<T>;
+  return res.json();
 }
 
 //----------------------------------------------------------
 // 📡 DELETE
 //----------------------------------------------------------
 
-export async function apiDelete<T>(
-  path: string,
-  init?: RequestInit
-): Promise<T> {
+export async function apiDelete<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
   const res = await fetch(url, {
     ...init,
     method: "DELETE",
-    headers: authHeaders(init),
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
   });
 
   if (!res.ok) {
@@ -120,8 +117,9 @@ export async function apiDelete<T>(
     throw new Error(`API DELETE failed (${res.status})`);
   }
 
+  // Sommige deletes hebben geen JSON body
   try {
-    return (await res.json()) as T;
+    return await res.json();
   } catch {
     return {} as T;
   }

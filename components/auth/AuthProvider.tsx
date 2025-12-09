@@ -31,7 +31,7 @@ export function useAuth() {
 =========================================================== */
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return await fetch(url, {
-    credentials: "include", // ⬅️ CRUCIAAL VOOR JWT COOKIES
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -48,11 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     1) SESSION LADEN
+     1) SESSION LADEN — met veilige delay (100ms)
   ------------------------------------------------------- */
   const loadSession = useCallback(async () => {
     try {
-      await new Promise((r) => setTimeout(r, 40)); // kleine race fix
+      await new Promise((r) => setTimeout(r, 100)); // race fix
 
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
@@ -90,11 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("❌ Refresh fout:", err);
       }
     }, 50 * 60 * 1000);
+
     return () => clearInterval(intv);
   }, []);
 
   /* -------------------------------------------------------
-     3) LOGIN — **MET REDIRECT**
+     3) LOGIN — GEEN redirect! middleware bepaalt flow
   ------------------------------------------------------- */
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -113,10 +114,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       saveUserLocal(u);
 
-      // 🔥 Belangrijk: DIRECT redirecten naar onboarding
-      if (typeof window !== "undefined") {
-        window.location.href = "/onboarding"; // of "/dashboard"
-      }
+      // wacht even zodat cookies 100% zijn ingesteld
+      await new Promise((r) => setTimeout(r, 150));
+
+      // 👉 middleware stuurt nu automatisch naar /onboarding of /dashboard
+      window.location.href = "/";
 
       return { success: true };
     } catch (err) {
@@ -140,9 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     clearUserLocal();
 
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
+    window.location.href = "/login";
   }, []);
 
   /* -------------------------------------------------------

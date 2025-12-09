@@ -10,22 +10,15 @@ export default function OnboardingPage() {
   const {
     status,
     loading,
-    error,
-    complete,
-    finish,
-    updating,
-    reload,
+    saving,
+    completed,
+    completeStep,
   } = useOnboarding();
 
   /* -------------------------------------------------------
      Redirect zodra onboarding gereed is
   ------------------------------------------------------- */
-  const onboardingComplete =
-    status?.setup &&
-    status?.technical &&
-    status?.macro &&
-    status?.market &&
-    status?.strategy;
+  const onboardingComplete = completed;
 
   useEffect(() => {
     if (onboardingComplete) {
@@ -50,41 +43,42 @@ export default function OnboardingPage() {
 
   /* -------------------------------------------------------
      Onboarding stappen definitie
+     Let op: we gebruiken nu has_setup / has_macro etc.
   ------------------------------------------------------- */
   const steps = [
     {
       key: "setup",
       title: "Setup aanmaken",
       description: "Maak jouw eerste trading setup aan.",
-      done: status.setup,
+      done: status.has_setup,
       link: "/setups",
     },
     {
       key: "technical",
       title: "Technische indicatoren",
       description: "Voeg RSI, MA200, Volume of andere indicatoren toe.",
-      done: status.technical,
+      done: status.has_technical,
       link: "/technical",
     },
     {
       key: "macro",
       title: "Macro indicatoren",
       description: "Voeg macro-indicatoren toe (DXY, F&G Index, BTC dominante).",
-      done: status.macro,
+      done: status.has_macro,
       link: "/macro",
     },
     {
       key: "market",
       title: "Market indicatoren",
       description: "De tool gebruikt prijs, volume en volatiliteit automatisch.",
-      done: status.market,
+      done: status.has_market,
       link: "/market",
     },
     {
       key: "strategy",
       title: "Strategie genereren",
       description: "Genereer je eerste AI-strategie voor de setup.",
-      done: status.strategy,
+      done: status.has_strategy,
       link: "/strategies",
     },
     {
@@ -98,7 +92,6 @@ export default function OnboardingPage() {
 
   return (
     <div className="max-w-screen-md mx-auto py-12 px-6 space-y-8 animate-fade-slide">
-
       {/* HEADER */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-[var(--text-dark)]">
@@ -108,13 +101,6 @@ export default function OnboardingPage() {
           Voltooi de stappen hieronder om jouw persoonlijke tradingdashboard te activeren.
         </p>
       </div>
-
-      {/* Error melding */}
-      {error && (
-        <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
-          ❌ {error}
-        </div>
-      )}
 
       {/* Stappenlijst */}
       <CardWrapper>
@@ -127,8 +113,8 @@ export default function OnboardingPage() {
             <StepRow
               key={step.key}
               step={step}
-              completeStep={complete}
-              disabled={updating}
+              completeStep={completeStep}
+              disabled={saving}
             />
           ))}
         </div>
@@ -156,29 +142,27 @@ export default function OnboardingPage() {
 }
 
 /* ============================================================
-   Step Row Component
-   FIXED VERSION — veilige completeStep() + redirect
+   Step Row Component — completeStep + redirect
 ============================================================ */
 function StepRow({ step, completeStep, disabled }) {
-  const isDone = step.done;
+  const isDone = !!step.done;
   const buttonLabel = isDone ? "Bekijken" : "Starten";
 
   const handleClick = async () => {
     try {
-      if (!isDone) {
+      if (!isDone && step.key !== "complete") {
         await completeStep(step.key);
       }
     } catch (err) {
-      console.warn(`Step '${step.key}' kon niet worden opgeslagen → doorgaan`, err);
+      console.warn(`Step '${step.key}' kon niet worden opgeslagen → toch door`, err);
     }
 
-    // We gaan ALTIJD door naar de pagina
+    // Altijd naar de bijbehorende pagina
     window.location.href = step.link;
   };
 
   return (
     <div className="flex items-start gap-4 p-4 border border-[var(--card-border)] rounded-lg bg-white shadow-sm">
-
       {/* Status icoon */}
       <div>
         {isDone ? (

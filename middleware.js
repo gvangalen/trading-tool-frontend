@@ -14,7 +14,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Publieke routes (geen login nodig)
+  // Publieke routes
   const publicRoutes = [
     "/login",
     "/register",
@@ -37,7 +37,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Check JWT cookie (NIET meesturen!)
+  // 2️⃣ Check JWT cookie
   const token = req.cookies.get("access_token")?.value;
 
   if (!token) {
@@ -45,17 +45,24 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding status ophalen via backend
-  //    Browser stuurt cookie automatisch mee door credentials: "include"
+  // 3️⃣ Onboarding status ophalen
   let onboarding;
-
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+    // ❗ Middleware loopt server-side → GEEN credentials: "include"
+    const cookie = req.headers.get("cookie") ?? "";
+
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
-      credentials: "include", // cookie forwarding door browser
+      headers: {
+        Cookie: cookie, // ⬅️ JUISTE manier om FastAPI JWT cookie aan backend door te geven
+      },
     });
+
+    if (!res.ok) {
+      throw new Error(`Backend returned ${res.status}`);
+    }
 
     onboarding = await res.json();
   } catch (err) {
@@ -79,17 +86,16 @@ export async function middleware(req) {
     !!has_market &&
     !!has_strategy;
 
-  // 4️⃣ Onboarding incomplete → redirect naar onboarding
+  // 4️⃣ Incomplete onboarding → redirect
   if (!onboardingComplete) {
     if (onboardingRoutes.some((r) => path.startsWith(r))) {
       return NextResponse.next();
     }
-
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding complete → block access to onboarding pages
+  // 5️⃣ Complete onboarding → onboarding routes blokkeren
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

@@ -18,9 +18,6 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
   const [scoreRules, setScoreRules] = useState([]);
   const [added, setAdded] = useState(false);
 
-  /* -------------------------------------------------------
-     📡 Indicatorlijst ophalen
-  ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
@@ -33,9 +30,6 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
     load();
   }, []);
 
-  /* -------------------------------------------------------
-     📊 Scoreregels ophalen
-  ------------------------------------------------------- */
   const onSelect = async (indicator) => {
     setSelected(indicator);
 
@@ -52,11 +46,13 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
     }
   };
 
-  /* -------------------------------------------------------
-     ➕ Toevoegen
-  ------------------------------------------------------- */
   const handleAdd = async () => {
-    if (!selected || !addTechnicalIndicator) return;
+    if (!selected) return;
+
+    if (!addTechnicalIndicator) {
+      console.warn("⚠️ addTechnicalIndicator is NOT passed from parent!");
+      return;
+    }
 
     try {
       await addTechnicalIndicator(selected.name);
@@ -76,9 +72,6 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         </div>
       }
     >
-      {/* -------------------------------------------------------
-         🔎 Indicator zoeken
-      ------------------------------------------------------- */}
       <UniversalSearchDropdown
         label="Zoek een technische indicator"
         items={allIndicators}
@@ -87,9 +80,6 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         placeholder="Typ bijvoorbeeld RSI, MA200, Volume..."
       />
 
-      {/* -------------------------------------------------------
-         📊 Scoreregels tabel
-      ------------------------------------------------------- */}
       {selected && scoreRules.length > 0 && (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-[var(--text-dark)] mb-3">
@@ -135,9 +125,7 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
                           {r.range_min} – {r.range_max}
                         </td>
 
-                        <td
-                          className={`p-3 text-center font-semibold ${scoreClass}`}
-                        >
+                        <td className={`p-3 text-center font-semibold ${scoreClass}`}>
                           {r.score}
                         </td>
 
@@ -161,18 +149,12 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         </div>
       )}
 
-      {/* -------------------------------------------------------
-         Placeholder als niets geselecteerd
-      ------------------------------------------------------- */}
       {!selected && (
         <p className="mt-4 text-sm text-[var(--text-light)] italic">
           Selecteer een indicator om de scoreregels te bekijken.
         </p>
       )}
 
-      {/* -------------------------------------------------------
-         ➕ Toevoegen knop
-      ------------------------------------------------------- */}
       <div className="mt-5 flex items-center gap-3">
         <button
           onClick={handleAdd}
@@ -193,9 +175,7 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         </button>
 
         {added && (
-          <span className="text-green-600 text-sm">
-            ✔️ Succesvol toegevoegd
-          </span>
+          <span className="text-green-600 text-sm">✔️ Succesvol toegevoegd</span>
         )}
       </div>
     </CardWrapper>

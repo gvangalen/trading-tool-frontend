@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CheckCircle, Circle, ArrowRight } from "lucide-react";
+import { CheckCircle, Circle } from "lucide-react";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -12,18 +12,8 @@ export default function OnboardingPage() {
     loading,
     saving,
     completed,
-    completeStep,
+    allowedSteps,
   } = useOnboarding();
-
-  // Redirect zodra onboarding klaar is
-  useEffect(() => {
-    if (completed) {
-      const timer = setTimeout(() => {
-        window.location.href = "/";
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [completed]);
 
   if (loading || !status) {
     return (
@@ -33,14 +23,23 @@ export default function OnboardingPage() {
     );
   }
 
-  // JUISTE routes volgens sidebar
+  /** ⭐ Nieuwe correcte volgorde */
   const steps = [
     {
-      key: "setup",
-      title: "Setup aanmaken",
-      description: "Maak jouw eerste trading setup aan.",
-      done: status.has_setup,
-      link: "/setup",
+      key: "market",
+      title: "Market data",
+      description: "Prijs, volume & 7D marktdata worden automatisch opgehaald.",
+      done: status.has_market,
+      link: "/market",
+      unlocked: allowedSteps.market,
+    },
+    {
+      key: "macro",
+      title: "Macro indicatoren",
+      description: "Voeg macro-indicatoren toe zoals DXY, Fear & Greed en ETF data.",
+      done: status.has_macro,
+      link: "/macro",
+      unlocked: allowedSteps.macro,
     },
     {
       key: "technical",
@@ -48,33 +47,29 @@ export default function OnboardingPage() {
       description: "Voeg RSI, MA200, Volume of andere indicatoren toe.",
       done: status.has_technical,
       link: "/technical",
+      unlocked: allowedSteps.technical,
     },
     {
-      key: "macro",
-      title: "Macro indicatoren",
-      description: "Voeg macro-indicatoren toe.",
-      done: status.has_macro,
-      link: "/macro",
-    },
-    {
-      key: "market",
-      title: "Market indicatoren",
-      description: "Prijs, volume & 7D data worden automatisch gevuld.",
-      done: status.has_market,
-      link: "/market",
+      key: "setup",
+      title: "Setup aanmaken",
+      description: "Maak jouw eerste trading setup aan.",
+      done: status.has_setup,
+      link: "/setup",
+      unlocked: allowedSteps.setup,
     },
     {
       key: "strategy",
-      title: "Strategie genereren",
-      description: "Genereer je eerste AI-strategie.",
+      title: "Strategieën genereren",
+      description: "Genereer je eerste AI-tradingstrategie.",
       done: status.has_strategy,
       link: "/strategy",
+      unlocked: allowedSteps.strategy,
     },
   ];
 
   return (
     <div className="max-w-screen-md mx-auto py-12 px-6 space-y-8 animate-fade-slide">
-      
+
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-[var(--text-dark)]">
           🚀 Onboarding
@@ -94,8 +89,7 @@ export default function OnboardingPage() {
             <StepRow
               key={step.key}
               step={step}
-              completeStep={completeStep}
-              disabled={saving}
+              saving={saving}
             />
           ))}
         </div>
@@ -103,7 +97,7 @@ export default function OnboardingPage() {
 
       {completed && (
         <CardWrapper>
-          <div className="text-center">
+          <div className="text-center py-4">
             <p className="mb-4 text-[var(--text-dark)] font-medium">
               🎉 Je onboarding is volledig afgerond!
             </p>
@@ -111,8 +105,7 @@ export default function OnboardingPage() {
               href="/"
               className="inline-flex items-center gap-2 bg-[var(--primary)] text-white px-6 py-3 rounded-lg shadow hover:bg-[var(--primary-strong)] transition"
             >
-              Naar Dashboard
-              <ArrowRight className="w-4 h-4" />
+              Naar dashboard
             </a>
           </div>
         </CardWrapper>
@@ -121,24 +114,21 @@ export default function OnboardingPage() {
   );
 }
 
-function StepRow({ step, completeStep, disabled }) {
+function StepRow({ step, saving }) {
   const isDone = !!step.done;
-  const buttonLabel = isDone ? "Bekijken" : "Starten";
+  const isUnlocked = !!step.unlocked;
 
-  const handleClick = async () => {
-    try {
-      if (!isDone) {
-        await completeStep(step.key);
-      }
-    } catch (err) {
-      console.warn("Kon stap niet opslaan, maar redirect toch →", step.key);
+  const handleClick = () => {
+    if (isUnlocked) {
+      window.location.href = step.link;
     }
-
-    window.location.href = step.link;
   };
 
   return (
-    <div className="flex items-start gap-4 p-4 border rounded-lg bg-white shadow-sm">
+    <div className={`
+      flex items-start gap-4 p-4 border rounded-lg shadow-sm
+      ${isUnlocked ? "bg-white" : "bg-gray-100 opacity-60"}
+    `}>
       
       <div>
         {isDone ? (
@@ -149,24 +139,27 @@ function StepRow({ step, completeStep, disabled }) {
       </div>
 
       <div className="flex-1">
-        <h3 className="font-semibold text-[var(--text-dark)]">{step.title}</h3>
-        <p className="text-[var(--text-light)] text-sm">{step.description}</p>
+        <h3 className="font-semibold text-[var(--text-dark)]">
+          {step.title}
+        </h3>
+        <p className="text-[var(--text-light)] text-sm">
+          {step.description}
+        </p>
       </div>
 
       <div>
         <button
-          disabled={disabled}
+          disabled={!isUnlocked || saving}
           onClick={handleClick}
           className={`
             px-4 py-2 rounded-lg text-sm border transition
-            ${
-              isDone
-                ? "border-gray-300 text-gray-500 hover:bg-gray-100"
-                : "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
+            ${isUnlocked
+              ? "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
+              : "border-gray-300 text-gray-400 cursor-not-allowed"
             }
           `}
         >
-          {buttonLabel}
+          {isDone ? "Bekijken" : "Starten"}
         </button>
       </div>
     </div>

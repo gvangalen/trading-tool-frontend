@@ -33,10 +33,10 @@ export default function SetupPage() {
     removeSetup,
   } = useSetupData();
 
-  // 🔥 Onboarding hook
+  // ⭐ Onboarding hook
   const { status, loading: onboardingLoading } = useOnboarding();
 
-  // Bepaal of onboarding nog bezig is
+  // Onboarding nog bezig?
   const onboardingActive =
     !onboardingLoading &&
     status &&
@@ -63,6 +63,9 @@ export default function SetupPage() {
   ===================================================== */
   const safeSetups = Array.isArray(setups) ? setups : [];
 
+  /* =====================================================
+     RENDER
+  ===================================================== */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
@@ -127,7 +130,6 @@ export default function SetupPage() {
           </div>
         }
       >
-
         {/* Zoekveld */}
         <div className="flex justify-between items-center mb-4">
           <div

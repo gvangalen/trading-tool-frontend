@@ -5,15 +5,13 @@ import { useState } from "react";
 import { TrendingUp, Brain, Activity } from "lucide-react";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
-import { useScoresData } from "@/hooks/useScoresData";
+import { useScoresData } from "@/lib/api/scores";
 
 import TechnicalTabs from "@/components/technical/TechnicalTabs";
 import TechnicalIndicatorScoreView from "@/components/technical/TechnicalIndicatorScoreView";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
-
-// ⭐ JOUW ECHTE BANNER
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function TechnicalPage() {
@@ -21,6 +19,7 @@ export default function TechnicalPage() {
 
   const {
     technicalData,
+    addTechnicalIndicator,      // ⬅️ DIT MISSTE JE!
     removeTechnicalIndicator,
     loading: loadingIndicators,
     error,
@@ -29,7 +28,7 @@ export default function TechnicalPage() {
   const { technical, loading: loadingScore } = useScoresData();
 
   /* =====================================================
-     SAFE FALLBACK VOOR NIEUWE GEBRUIKER
+     SAFE FALLBACK
   ===================================================== */
   const safeTechnical = {
     score: technical?.score ?? null,
@@ -41,13 +40,9 @@ export default function TechnicalPage() {
       "Nog geen technische AI-inzichten beschikbaar. Voeg indicatoren toe of wacht op de eerste AI-run.",
   };
 
-  /* =====================================================
-     SCORE → kleurklasse
-  ===================================================== */
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
     if (isNaN(n)) return "text-[var(--text-light)]";
-
     if (n >= 80) return "score-strong-buy";
     if (n >= 60) return "score-buy";
     if (n >= 40) return "score-neutral";
@@ -55,9 +50,6 @@ export default function TechnicalPage() {
     return "score-strong-sell";
   };
 
-  /* =====================================================
-     ADVIES TEKST
-  ===================================================== */
   const adviesText =
     (safeTechnical.score ?? 0) >= 75
       ? "Positief"
@@ -65,18 +57,11 @@ export default function TechnicalPage() {
       ? "Negatief"
       : "Neutraal";
 
-  /* =====================================================
-     PAGE RENDER
-  ===================================================== */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ⭐ ONBOARDING BANNER – Step 2/5 */}
       <OnboardingBanner step="technical" />
 
-      {/* -------------------------------------------------- */}
-      {/* PAGE TITLE */}
-      {/* -------------------------------------------------- */}
       <div className="flex items-center gap-3">
         <TrendingUp size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -84,14 +69,8 @@ export default function TechnicalPage() {
         </h1>
       </div>
 
-      {/* -------------------------------------------------- */}
-      {/* AI SAMENVATTING */}
-      {/* -------------------------------------------------- */}
       <AgentInsightPanel category="technical" />
 
-      {/* -------------------------------------------------- */}
-      {/* TOTALE TECHNICAL SCORE */}
-      {/* -------------------------------------------------- */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -135,14 +114,11 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* -------------------------------------------------- */}
-      {/* SCOREREGEL VIEWER */}
-      {/* -------------------------------------------------- */}
-      <TechnicalIndicatorScoreView />
+      {/* ⭐⭐⭐⭐⭐ FIX AANGEBRACHT: addTechnicalIndicator DOORGEGEVEN */}
+      <TechnicalIndicatorScoreView 
+        addTechnicalIndicator={addTechnicalIndicator}
+      />
 
-      {/* -------------------------------------------------- */}
-      {/* TABS */}
-      {/* -------------------------------------------------- */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}

@@ -8,24 +8,26 @@ import CardWrapper from "@/components/ui/CardWrapper";
 // Nieuwe icons
 import { Settings, PlusCircle, BarChart3 } from "lucide-react";
 
+// Snackbar
+import { useModal } from "@/components/modal/ModalProvider";
+
 export default function SetupManager() {
   const { reloadSetups, setups, loading, error } = useSetupData();
+  const { showSnackbar } = useModal();
 
   // Globale refresh functie (ook gebruikt door SetupList & SetupForm)
   const handleRefresh = async () => {
     await reloadSetups();
+
+    // 👉 Onze eigen Snackbar, geen toast meer
+    showSnackbar("Setup succesvol opgeslagen!", "success");
+
+    // 👉 Automatisch omhoog scrollen
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <div
-      className="
-        max-w-6xl mx-auto p-8 space-y-10
-        animate-fade-slide
-      "
-    >
-      {/* -------------------------------------------------- */}
-      {/* 🧭 Titel */}
-      {/* -------------------------------------------------- */}
+    <div className="max-w-6xl mx-auto p-8 space-y-10 animate-fade-slide">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-3xl font-semibold text-[var(--text-dark)] tracking-tight">
           <Settings size={26} className="text-[var(--primary)]" />
@@ -33,9 +35,6 @@ export default function SetupManager() {
         </h2>
       </div>
 
-      {/* -------------------------------------------------- */}
-      {/* ➕ Nieuwe Setup */}
-      {/* -------------------------------------------------- */}
       <CardWrapper
         title={
           <span className="flex items-center gap-2">
@@ -51,9 +50,6 @@ export default function SetupManager() {
         <SetupForm mode="new" onSaved={handleRefresh} />
       </CardWrapper>
 
-      {/* -------------------------------------------------- */}
-      {/* 📋 Actieve Setups */}
-      {/* -------------------------------------------------- */}
       <CardWrapper
         title={
           <span className="flex items-center gap-2">

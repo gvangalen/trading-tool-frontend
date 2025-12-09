@@ -12,12 +12,20 @@ import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 
 import { BarChart2, Plus } from "lucide-react";
 
+// ⭐ Jouw snackbar + modal systeem
+import { useModal } from "@/components/ui/ModalProvider";
+
 export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
-  const [added, setAdded] = useState(false);
 
+  // ⭐ Snackbar functie uit eigen systeem
+  const { showSnackbar } = useModal();
+
+  /* -------------------------------------------------------
+     📡 Indicatorlijst ophalen
+  ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
@@ -25,11 +33,19 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         setAllIndicators(list || []);
       } catch (err) {
         console.error("❌ technical indicators ophalen", err);
+
+        showSnackbar(
+          "Kon indicatorlijst niet ophalen.",
+          "danger"
+        );
       }
     }
     load();
   }, []);
 
+  /* -------------------------------------------------------
+     📊 Scoreregels ophalen
+  ------------------------------------------------------- */
   const onSelect = async (indicator) => {
     setSelected(indicator);
 
@@ -43,23 +59,39 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
       setScoreRules(rules || []);
     } catch (err) {
       console.error("❌ scoreregels ophalen", err);
+
+      showSnackbar(
+        "Kon scoreregels niet ophalen.",
+        "danger"
+      );
     }
   };
 
+  /* -------------------------------------------------------
+     ➕ Toevoegen
+  ------------------------------------------------------- */
   const handleAdd = async () => {
     if (!selected) return;
 
     if (!addTechnicalIndicator) {
-      console.warn("⚠️ addTechnicalIndicator is NOT passed from parent!");
+      console.warn("⚠️ addTechnicalIndicator missing in parent");
+
+      showSnackbar("Toevoegfunctie ontbreekt!", "danger");
       return;
     }
 
     try {
       await addTechnicalIndicator(selected.name);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2500);
+
+      // ⭐ Gebruik snackbar i.p.v. simpele melding
+      showSnackbar(
+        `${selected.display_name || selected.name} toegevoegd aan technische analyse.`,
+        "success"
+      );
     } catch (err) {
       console.error("❌ Toevoegen mislukt", err);
+
+      showSnackbar("Toevoegen mislukt. Probeer opnieuw.", "danger");
     }
   };
 
@@ -80,6 +112,9 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         placeholder="Typ bijvoorbeeld RSI, MA200, Volume..."
       />
 
+      {/* -------------------------------------------------------
+         📊 TABEL MET SCOREREGELS
+      ------------------------------------------------------- */}
       {selected && scoreRules.length > 0 && (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-[var(--text-dark)] mb-3">
@@ -102,7 +137,7 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
               </thead>
 
               <tbody>
-                {[...scoreRules]
+                {scoreRules
                   .sort((a, b) => Number(a.range_min) - Number(b.range_min))
                   .map((r, idx) => {
                     const scoreClass =
@@ -121,25 +156,15 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
                         key={idx}
                         className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition"
                       >
-                        <td className="p-3">
-                          {r.range_min} – {r.range_max}
-                        </td>
-
+                        <td className="p-3">{r.range_min} – {r.range_max}</td>
                         <td className={`p-3 text-center font-semibold ${scoreClass}`}>
                           {r.score}
                         </td>
-
                         <td className="p-3 text-center italic text-[var(--text-light)]">
                           {r.trend}
                         </td>
-
-                        <td className="p-3 text-[var(--text-dark)]">
-                          {r.interpretation}
-                        </td>
-
-                        <td className="p-3 text-[var(--text-light)]">
-                          {r.action}
-                        </td>
+                        <td className="p-3">{r.interpretation}</td>
+                        <td className="p-3 text-[var(--text-light)]">{r.action}</td>
                       </tr>
                     );
                   })}
@@ -155,6 +180,9 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         </p>
       )}
 
+      {/* -------------------------------------------------------
+         ➕ KNOP
+      ------------------------------------------------------- */}
       <div className="mt-5 flex items-center gap-3">
         <button
           onClick={handleAdd}
@@ -173,10 +201,6 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
           <Plus size={18} />
           Voeg toe aan technische analyse
         </button>
-
-        {added && (
-          <span className="text-green-600 text-sm">✔️ Succesvol toegevoegd</span>
-        )}
       </div>
     </CardWrapper>
   );

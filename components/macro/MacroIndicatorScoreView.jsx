@@ -11,20 +11,18 @@ import {
 import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 
-import {
-  Search,
-  TrendingUp,
-  TrendingDown,
-  Plus,
-  Info,
-  BarChart2,
-} from "lucide-react";
+import { BarChart2, Plus } from "lucide-react";
+
+// ⭐ Snackbar + Modal systeem
+import { useModal } from "@/components/ui/ModalProvider";
 
 export default function MacroIndicatorScoreView() {
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
-  const [added, setAdded] = useState(false);
+
+  // ⭐ Snackbar functie ophalen
+  const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
      📡 Indicatorlijst ophalen
@@ -33,9 +31,11 @@ export default function MacroIndicatorScoreView() {
     async function load() {
       try {
         const list = await getMacroIndicatorNames();
-        setAllIndicators(list);
+        setAllIndicators(list || []);
       } catch (err) {
-        console.error("❌ macro indicators ophalen", err);
+        console.error("❌ macro indicators ophalen:", err);
+
+        showSnackbar("Kon macro-indicatoren niet ophalen.", "danger");
       }
     }
     load();
@@ -47,11 +47,18 @@ export default function MacroIndicatorScoreView() {
   const onSelect = async (indicator) => {
     setSelected(indicator);
 
+    if (!indicator?.name) {
+      setScoreRules([]);
+      return;
+    }
+
     try {
       const rules = await getScoreRulesForMacroIndicator(indicator.name);
       setScoreRules(rules || []);
     } catch (err) {
-      console.error("❌ scoreregels ophalen", err);
+      console.error("❌ scoreregels ophalen:", err);
+
+      showSnackbar("Kon scoreregels niet ophalen.", "danger");
     }
   };
 
@@ -63,10 +70,15 @@ export default function MacroIndicatorScoreView() {
 
     try {
       await macroDataAdd(selected.name);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2500);
+
+      showSnackbar(
+        `${selected.display_name || selected.name} toegevoegd aan macro-analyse.`,
+        "success"
+      );
     } catch (err) {
-      console.error("❌ Toevoegen mislukt", err);
+      console.error("❌ Toevoegen mislukt:", err);
+
+      showSnackbar("Toevoegen mislukt. Probeer opnieuw.", "danger");
     }
   };
 
@@ -80,7 +92,7 @@ export default function MacroIndicatorScoreView() {
       }
     >
       {/* -------------------------------------------------------
-         🔎 Indicator zoeken
+         🔎 Zoeken dropdown
       ------------------------------------------------------- */}
       <UniversalSearchDropdown
         label="Zoek een macro-indicator"
@@ -97,7 +109,9 @@ export default function MacroIndicatorScoreView() {
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-[var(--text-dark)] mb-3">
             Scoreregels voor:{" "}
-            <span className="text-[var(--primary)]">{selected.display_name}</span>
+            <span className="text-[var(--primary)]">
+              {selected.display_name || selected.name}
+            </span>
           </h3>
 
           <div className="overflow-x-auto rounded-xl border border-[var(--card-border)]">
@@ -190,12 +204,6 @@ export default function MacroIndicatorScoreView() {
           <Plus size={18} />
           Toevoegen aan Macro-analyse
         </button>
-
-        {added && (
-          <span className="text-green-600 text-sm">
-            ✔️ Succesvol toegevoegd
-          </span>
-        )}
       </div>
     </CardWrapper>
   );

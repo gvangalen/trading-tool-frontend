@@ -5,23 +5,19 @@ import { useEffect, useState } from "react";
 import {
   getMacroIndicatorNames,
   getScoreRulesForMacroIndicator,
-  macroDataAdd,
 } from "@/lib/api/macro";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 
 import { BarChart2, Plus } from "lucide-react";
-
-// ⭐ Snackbar + Modal systeem
 import { useModal } from "@/components/modal/ModalProvider";
 
-export default function MacroIndicatorScoreView() {
+export default function MacroIndicatorScoreView({ addMacroIndicator }) {
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
 
-  // ⭐ Snackbar functie ophalen
   const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
@@ -34,7 +30,6 @@ export default function MacroIndicatorScoreView() {
         setAllIndicators(list || []);
       } catch (err) {
         console.error("❌ macro indicators ophalen:", err);
-
         showSnackbar("Kon macro-indicatoren niet ophalen.", "danger");
       }
     }
@@ -57,19 +52,19 @@ export default function MacroIndicatorScoreView() {
       setScoreRules(rules || []);
     } catch (err) {
       console.error("❌ scoreregels ophalen:", err);
-
       showSnackbar("Kon scoreregels niet ophalen.", "danger");
     }
   };
 
   /* -------------------------------------------------------
-     ➕ Toevoegen
+     ➕ Toevoegen (nu correct met live refresh)
   ------------------------------------------------------- */
   const handleAdd = async () => {
     if (!selected) return;
 
     try {
-      await macroDataAdd(selected.name);
+      // ⭐ Gebruik de hook-functie, NIET rechtstreeks macroDataAdd()
+      await addMacroIndicator(selected.name);
 
       showSnackbar(
         `${selected.display_name || selected.name} toegevoegd aan macro-analyse.`,
@@ -77,7 +72,6 @@ export default function MacroIndicatorScoreView() {
       );
     } catch (err) {
       console.error("❌ Toevoegen mislukt:", err);
-
       showSnackbar("Toevoegen mislukt. Probeer opnieuw.", "danger");
     }
   };
@@ -91,9 +85,6 @@ export default function MacroIndicatorScoreView() {
         </div>
       }
     >
-      {/* -------------------------------------------------------
-         🔎 Zoeken dropdown
-      ------------------------------------------------------- */}
       <UniversalSearchDropdown
         label="Zoek een macro-indicator"
         items={allIndicators}
@@ -102,9 +93,6 @@ export default function MacroIndicatorScoreView() {
         placeholder="Typ een indicator zoals DXY, CPI, rente, BTC dominantie..."
       />
 
-      {/* -------------------------------------------------------
-         📊 Scoreregels tabel
-      ------------------------------------------------------- */}
       {selected && scoreRules.length > 0 && (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-[var(--text-dark)] mb-3">
@@ -176,7 +164,6 @@ export default function MacroIndicatorScoreView() {
         </div>
       )}
 
-      {/* Geen selectie */}
       {!selected && (
         <p className="mt-4 text-sm text-[var(--text-light)] italic">
           Selecteer een indicator om de scoreregels te bekijken.

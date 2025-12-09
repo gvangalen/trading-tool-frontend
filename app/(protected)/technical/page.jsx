@@ -5,7 +5,7 @@ import { useState } from "react";
 import { TrendingUp, Brain, Activity } from "lucide-react";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
-import { useScoresData } from "@/lib/api/scores";
+import { useScoresData } from "@/hooks/useScoresData";
 
 import TechnicalTabs from "@/components/technical/TechnicalTabs";
 import TechnicalIndicatorScoreView from "@/components/technical/TechnicalIndicatorScoreView";

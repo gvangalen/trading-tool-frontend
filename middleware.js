@@ -14,78 +14,60 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // 1️⃣ Publieke routes (geen login nodig)
+  // 1️⃣ Publieke routes
   const publicRoutes = ["/login", "/register"];
 
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Check of er een access_token cookie is
+  // 2️⃣ Check JWT cookie
   const token = req.cookies.get("access_token")?.value;
 
   if (!token) {
-    // Geen cookie → naar login
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding-status ophalen bij backend
-  //    BELANGRIJK: zet de cookies van deze request door!
+  // 3️⃣ Onboarding-status ophalen (MET cookies!)
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const cookieHeader = req.headers.get("cookie") || "";
 
-  let onboarding: any = null;
+  let onboarding = null;
 
   try {
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
       headers: {
-        // ⬅️ DIT ontbrak: backend krijgt nu dezelfde cookies als /auth/me
-        cookie: cookieHeader,
+        cookie: cookieHeader, // ⚠️ DIT is cruciaal
         "Content-Type": "application/json",
       },
     });
 
     if (res.status === 401) {
-      // Token ongeldig/expired aan backend-kant → terug naar login
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
 
     if (!res.ok) {
-      console.error(
-        "[middleware] /api/onboarding/status error:",
-        res.status,
-        await res.text().catch(() => "")
-      );
-      // In geval van andere fout: laat request doorgaan i.p.v. infinite redirect
+      console.error("[middleware] onboarding status error:", res.status);
       return NextResponse.next();
     }
 
     onboarding = await res.json();
   } catch (err) {
-    console.error("[middleware] Failed to fetch onboarding status:", err);
-    // Veilig fallback: niets forceren, gewoon doorlaten
+    console.error("[middleware] fetch failed:", err);
     return NextResponse.next();
   }
 
-  const {
-    has_setup,
-    has_technical,
-    has_macro,
-    has_market,
-    has_strategy,
-  } = onboarding || {};
-
   const onboardingComplete =
-    !!has_setup &&
-    !!has_technical &&
-    !!has_macro &&
-    !!has_market &&
-    !!has_strategy;
+    onboarding?.has_setup &&
+    onboarding?.has_technical &&
+    onboarding?.has_macro &&
+    onboarding?.has_market &&
+    onboarding?.has_strategy;
 
-  // 4️⃣ Routes die TIJDENS onboarding zijn toegestaan
+  // 4️⃣ Routes toegestaan TIJDENS onboarding
   const allowedDuringOnboarding = [
     "/onboarding",
     "/setups",
@@ -95,9 +77,7 @@ export async function middleware(req) {
     "/strategies",
   ];
 
-  // Onboarding nog NIET klaar
   if (!onboardingComplete) {
-    // Als je op onboarding of 1 van de feature-pagina’s klikt → gewoon doorlaten
     if (
       allowedDuringOnboarding.some((route) =>
         path.startsWith(route)
@@ -106,18 +86,16 @@ export async function middleware(req) {
       return NextResponse.next();
     }
 
-    // Alles anders (bijv. /dashboard) → terug naar onboarding
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Onboarding IS klaar → /onboarding blokkeren
+  // 5️⃣ Blokkeer onboarding-pagina’s zodra klaar
   if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // 6️⃣ Normale doorgang
   return NextResponse.next();
 }
 

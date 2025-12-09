@@ -4,59 +4,61 @@ export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // 0️⃣ System routes overslaan
+  console.log("⛔ MIDDLEWARE HIT:", path);
+
+  // System files skippen
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
-    path === "/favicon.ico" ||
     /\.(png|jpg|jpeg|svg|webp|ico)$/.test(path)
   ) {
     return NextResponse.next();
   }
 
-  // 1️⃣ Publieke routes
+  // Public pages
   const publicRoutes = ["/login", "/register"];
-
   if (publicRoutes.includes(path)) {
+    console.log("➡️ Public route toegestaan:", path);
     return NextResponse.next();
   }
 
-  // 2️⃣ Check JWT cookie
+  // Token check
   const token = req.cookies.get("access_token")?.value;
+  console.log("🍪 Token aanwezig?", token ? "JA" : "NEE");
 
   if (!token) {
+    console.log("❌ GEEN token → redirect naar login");
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding-status ophalen (MET cookies!)
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const cookieHeader = req.headers.get("cookie") || "";
-
+  // Onboarding check met cookie doorsturen
   let onboarding = null;
+  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   try {
+    console.log("🔍 Fetch onboarding status…");
+
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
       headers: {
-        cookie: cookieHeader, // ⚠️ DIT is cruciaal
-        "Content-Type": "application/json",
+        cookie: req.headers.get("cookie") || "",
       },
     });
 
+    console.log("📡 Backend response:", res.status);
+
     if (res.status === 401) {
+      console.log("❌ Backend zegt 401 → redirect login");
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
 
-    if (!res.ok) {
-      console.error("[middleware] onboarding status error:", res.status);
-      return NextResponse.next();
-    }
-
     onboarding = await res.json();
+    console.log("📦 Onboarding JSON:", onboarding);
+
   } catch (err) {
-    console.error("[middleware] fetch failed:", err);
+    console.log("💥 FOUT tijdens onboarding fetch:", err);
     return NextResponse.next();
   }
 
@@ -67,7 +69,8 @@ export async function middleware(req) {
     onboarding?.has_market &&
     onboarding?.has_strategy;
 
-  // 4️⃣ Routes toegestaan TIJDENS onboarding
+  console.log("🎯 Onboarding compleet?", onboardingComplete);
+
   const allowedDuringOnboarding = [
     "/onboarding",
     "/setups",
@@ -78,24 +81,24 @@ export async function middleware(req) {
   ];
 
   if (!onboardingComplete) {
-    if (
-      allowedDuringOnboarding.some((route) =>
-        path.startsWith(route)
-      )
-    ) {
+    if (allowedDuringOnboarding.some((route) => path.startsWith(route))) {
+      console.log("🟢 Toegestane onboarding route:", path);
       return NextResponse.next();
     }
 
+    console.log("🔴 Onboarding NIET klaar → redirect naar /onboarding");
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Blokkeer onboarding-pagina’s zodra klaar
+  // Block onboarding routes if already completed
   if (onboardingComplete && path.startsWith("/onboarding")) {
+    console.log("🚫 Onboarding al klaar → redirect /dashboard");
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
+  console.log("🟢 Normaal doorgelaten:", path);
   return NextResponse.next();
 }
 

@@ -24,7 +24,8 @@ export default function MacroPage() {
   // ====== Macro data hook ======
   const {
     macroData,
-    removeMacroIndicator,      // ✅ juiste functie
+    addMacroIndicator,        // ⭐ JE WAS DEZE VERGETEN!
+    removeMacroIndicator,
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
@@ -33,7 +34,7 @@ export default function MacroPage() {
   const { macro, loading: loadingScore } = useScoresData();
 
   // -------------------------------------------------------
-  // 🛡️ SAFE FALLBACK OBJECT (voorkomt crashes)
+  // 🛡️ SAFE FALLBACK OBJECT
   // -------------------------------------------------------
   const safeMacro = {
     score: macro?.score ?? null,
@@ -46,7 +47,7 @@ export default function MacroPage() {
   };
 
   // -------------------------------------------------------
-  // 🎨 Score kleur op basis van waarde
+  // 🎨 Score kleur
   // -------------------------------------------------------
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
@@ -60,7 +61,7 @@ export default function MacroPage() {
   };
 
   // -------------------------------------------------------
-  // 📉 Advies (UI)
+  // 📉 Advies
   // -------------------------------------------------------
   const adviesText =
     (safeMacro.score ?? 0) >= 75
@@ -69,6 +70,9 @@ export default function MacroPage() {
       ? "Negatief"
       : "Neutraal";
 
+  // -------------------------------------------------------
+  // PAGE RENDER
+  // -------------------------------------------------------
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
@@ -131,7 +135,7 @@ export default function MacroPage() {
       </CardWrapper>
 
       {/* Scorelogica viewer */}
-      <MacroIndicatorScoreView />
+      <MacroIndicatorScoreView addMacroIndicator={addMacroIndicator} />
 
       {/* Tabs met data */}
       <MacroTabs
@@ -140,7 +144,7 @@ export default function MacroPage() {
         macroData={macroData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={removeMacroIndicator}   // ⬅️ juiste functie
+        handleRemove={removeMacroIndicator}
       />
     </div>
   );

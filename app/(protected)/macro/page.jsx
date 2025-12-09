@@ -5,31 +5,35 @@ import { useState } from "react";
 // 🔥 Onboarding banner
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
+// Hooks
 import { useMacroData } from "@/hooks/useMacroData";
 import { useScoresData } from "@/hooks/useScoresData";
 
+// Components
 import MacroTabs from "@/components/macro/MacroTabs";
 import MacroIndicatorScoreView from "@/components/macro/MacroIndicatorScoreView";
-
 import CardWrapper from "@/components/ui/CardWrapper";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
+// Icons
 import { Globe, Brain, Activity } from "lucide-react";
 
 export default function MacroPage() {
   const [activeTab, setActiveTab] = useState("Dag");
 
+  // ====== Macro data hook ======
   const {
     macroData,
-    removeMacroIndicator,   // ⬅️ FIXED
+    removeMacroIndicator,      // ✅ juiste functie
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
 
+  // ====== Score engine hook ======
   const { macro, loading: loadingScore } = useScoresData();
 
   // -------------------------------------------------------
-  // Fallback macro object
+  // 🛡️ SAFE FALLBACK OBJECT (voorkomt crashes)
   // -------------------------------------------------------
   const safeMacro = {
     score: macro?.score ?? null,
@@ -42,7 +46,7 @@ export default function MacroPage() {
   };
 
   // -------------------------------------------------------
-  // Score kleur
+  // 🎨 Score kleur op basis van waarde
   // -------------------------------------------------------
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
@@ -56,7 +60,7 @@ export default function MacroPage() {
   };
 
   // -------------------------------------------------------
-  // Advies
+  // 📉 Advies (UI)
   // -------------------------------------------------------
   const adviesText =
     (safeMacro.score ?? 0) >= 75
@@ -68,9 +72,10 @@ export default function MacroPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* 🔥 Onboarding stap 3 banner */}
+      {/* 🔥 Onboarding stap 3 */}
       <OnboardingBanner step="macro" />
 
+      {/* Titel */}
       <div className="flex items-center gap-3">
         <Globe size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -78,8 +83,10 @@ export default function MacroPage() {
         </h1>
       </div>
 
+      {/* AI Insight Panel */}
       <AgentInsightPanel category="macro" />
 
+      {/* Totale Macro Score */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -123,15 +130,17 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
+      {/* Scorelogica viewer */}
       <MacroIndicatorScoreView />
 
+      {/* Tabs met data */}
       <MacroTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         macroData={macroData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={removeMacroIndicator}  // ⬅️ FIXED
+        handleRemove={removeMacroIndicator}   // ⬅️ juiste functie
       />
     </div>
   );

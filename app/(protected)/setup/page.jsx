@@ -15,7 +15,7 @@ import SetupList from "@/components/setup/SetupList";
 
 import { useSetupData } from "@/hooks/useSetupData";
 
-// ⭐ Jouw nieuwe component
+// ⭐ Onboarding component
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 import CardWrapper from "@/components/ui/CardWrapper";
@@ -41,9 +41,12 @@ export default function SetupPage() {
     loadSetups();
   }, []);
 
+  /* =====================================================
+     REFRESH (zonder snackbar!)
+     → snackbar komt vanuit SetupForm of SetupList
+  ===================================================== */
   const reloadSetups = async () => {
     await loadSetups();
-    showSnackbar("🔄 Setups vernieuwd", "info");
   };
 
   const safeSetups = Array.isArray(setups) ? setups : [];
@@ -55,7 +58,7 @@ export default function SetupPage() {
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
       {/* -------------------------------------------------- */}
-      {/* ⭐ ONBOARDING BANNER (Stap 1: setups) */}
+      {/* ⭐ ONBOARDING BANNER */}
       {/* -------------------------------------------------- */}
       <OnboardingBanner step="setup" />
 
@@ -117,9 +120,9 @@ export default function SetupPage() {
           loading={loading}
           error={error}
           searchTerm={search}
-          saveSetup={saveSetup}
-          removeSetup={removeSetup}
-          reload={reloadSetups}
+          saveSetup={saveSetup}       // Snackbar komt vanuit component
+          removeSetup={removeSetup}   // Snackbar komt vanuit component
+          reload={reloadSetups}       // Geen snackbar hier → perfect
         />
       </CardWrapper>
 
@@ -138,6 +141,7 @@ export default function SetupPage() {
           Vul alle details in om een nieuwe trading-setup toe te voegen.
         </p>
 
+        {/* 👇 Snackbar komt vanuit SetupForm → niet hier */}
         <SetupForm onSaved={reloadSetups} />
       </CardWrapper>
     </div>

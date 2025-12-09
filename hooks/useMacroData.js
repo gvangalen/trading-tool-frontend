@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
 import {
   fetchMacroDataByDay,
   fetchMacroDataByWeek,
@@ -13,8 +12,10 @@ import {
   deleteMacroIndicator,
 } from '@/lib/api/macro';
 
+import { useModal } from '@/components/ui/ModalContext';
+
 /* ============================================================
-   ✅ HOOFD-HOOK (volledige refresh + normalisatie)
+   ⭐ OFFICIËLE MACRO HOOK — VERSIE 2025 PERFECT
 ============================================================ */
 export function useMacroData(activeTab = 'Dag') {
 
@@ -25,17 +26,27 @@ export function useMacroData(activeTab = 'Dag') {
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
-  /* ------------------------------------------------------------
-     🎯 1. Load indicator lijst
-  ------------------------------------------------------------ */
-  useEffect(() => {
-    getMacroIndicatorNames()
-      .then((list) => setIndicatorNames(Array.isArray(list) ? list : []))
-      .catch(() => {});
-  }, []);
+  const { showSnackbar, openConfirm } = useModal();
+
 
   /* ------------------------------------------------------------
-     🎯 2. Load macro data per tab (dag/week/maand/kwartaal)
+     📌 1. Indicatornamen laden
+  ------------------------------------------------------------ */
+  useEffect(() => {
+    async function loadIndicators() {
+      try {
+        const list = await getMacroIndicatorNames();
+        setIndicatorNames(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('❌ Fout bij ophalen indicatornamen:', err);
+      }
+    }
+    loadIndicators();
+  }, []);
+
+
+  /* ------------------------------------------------------------
+     📌 2. Macrodata laden per tab
   ------------------------------------------------------------ */
   useEffect(() => {
     loadData();
@@ -47,33 +58,16 @@ export function useMacroData(activeTab = 'Dag') {
 
     try {
       let raw;
-
       switch (activeTab) {
-        case 'Dag':
-          raw = await fetchMacroDataByDay();
-          break;
-
-        case 'Week':
-          raw = await fetchMacroDataByWeek();
-          break;
-
-        case 'Maand':
-          raw = await fetchMacroDataByMonth();
-          break;
-
-        case 'Kwartaal':
-          raw = await fetchMacroDataByQuarter();
-          break;
-
-        default:
-          raw = await fetchMacroDataByDay();
+        case 'Dag':      raw = await fetchMacroDataByDay(); break;
+        case 'Week':     raw = await fetchMacroDataByWeek(); break;
+        case 'Maand':    raw = await fetchMacroDataByMonth(); break;
+        case 'Kwartaal': raw = await fetchMacroDataByQuarter(); break;
+        default:         raw = await fetchMacroDataByDay();
       }
 
       if (!Array.isArray(raw)) throw new Error('Macrodata is geen array');
 
-      /* ------------------------------------------------------------
-         🔁 Normalisatie zodat front-end tabel ALTIJD consistente keys heeft
-      ------------------------------------------------------------ */
       const normalized = raw.map((item) => ({
         name: item.name || item.indicator || '–',
         value: item.value ?? item.waarde ?? null,
@@ -87,7 +81,7 @@ export function useMacroData(activeTab = 'Dag') {
       setMacroData(normalized);
 
     } catch (err) {
-      console.error('❌ Macro data load error:', err);
+      console.error('❌ Macrodata load error:', err);
       setMacroData([]);
       setError('Fout bij laden van macrodata');
     } finally {
@@ -95,60 +89,67 @@ export function useMacroData(activeTab = 'Dag') {
     }
   }
 
+
   /* ------------------------------------------------------------
-     🧠 3. Load scoreregels (voor ScoreView)
+     📌 3. Scoreregels voor MacroIndicatorScoreView
   ------------------------------------------------------------ */
-  async function loadScoreRules(indicatorName) {
-    if (!indicatorName) return;
+  async function loadScoreRules(indicator) {
+    if (!indicator) return;
 
     try {
-      const rules = await getScoreRulesForMacroIndicator(indicatorName);
+      const rules = await getScoreRulesForMacroIndicator(indicator);
       setScoreRules(Array.isArray(rules) ? rules : []);
     } catch (err) {
-      console.error('❌ Score rules error:', err);
+      console.error('❌ Fout bij scoreregels:', err);
     }
   }
 
+
   /* ------------------------------------------------------------
-     ➕ 4. Indicator toevoegen (fixed refresh)
+     ➕ 4. Macro-indicator toevoegen + Snackbar + Instant UI
   ------------------------------------------------------------ */
-  async function addMacroIndicator(indicatorName) {
-    if (!indicatorName) return;
+  async function addMacroIndicator(name) {
+    if (!name) return;
 
     try {
-      await macroDataAdd(indicatorName);
+      await macroDataAdd(name);
 
-      // ⭐ Direct updaten → realtime UI
-      await loadData();
+      await loadData();               // ⬅️ DIRECT REFRESH
+      showSnackbar(`Macro indicator '${name}' toegevoegd ✔️`, 'success');
 
     } catch (err) {
-      console.error('❌ Toevoegen macro indicator mislukt:', err);
+      console.error('❌ Fout bij toevoegen macro-indicator:', err);
+      showSnackbar(`Toevoegen mislukt voor '${name}'`, 'danger');
     }
   }
 
+
   /* ------------------------------------------------------------
-     🗑️ 5. Indicator verwijderen (optimistische update)
+     🗑️ 5. Verwijderen via jouw Modal-systeem (geen window.confirm!)
   ------------------------------------------------------------ */
-  async function removeMacroIndicator(name) {
+  function removeMacroIndicator(name) {
     if (!name || name === '–') return;
 
-    const confirmDelete = window.confirm(
-      `Weet je zeker dat je '${name}' wilt verwijderen?`
-    );
-    if (!confirmDelete) return;
+    openConfirm({
+      title: 'Macro-indicator verwijderen',
+      description: `Weet je zeker dat je '${name}' wilt verwijderen?`,
+      tone: 'danger',
+      confirmText: 'Verwijderen',
+      onConfirm: async () => {
+        try {
+          await deleteMacroIndicator(name);
 
-    try {
-      await deleteMacroIndicator(name);
+          setMacroData((prev) => prev.filter((m) => m.name !== name));
+          showSnackbar(`'${name}' verwijderd ✔️`, 'success');
 
-      // Optimistische update → direct uit UI
-      setMacroData((prev) => prev.filter((item) => item.name !== name));
-
-      // Eventueel: await loadData();
-    } catch (err) {
-      alert('❌ Verwijderen mislukt.');
-      console.error(err);
-    }
+        } catch (err) {
+          console.error('❌ Fout bij verwijderen macro-indicator:', err);
+          showSnackbar(`Verwijderen mislukt voor '${name}'`, 'danger');
+        }
+      },
+    });
   }
+
 
   /* ------------------------------------------------------------
      🔄 RETURN OBJECT
@@ -164,6 +165,6 @@ export function useMacroData(activeTab = 'Dag') {
 
     addMacroIndicator,
     removeMacroIndicator,
-    reload: loadData, // optional extra helper
+    reload: loadData,
   };
 }

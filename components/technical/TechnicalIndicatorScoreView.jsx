@@ -13,7 +13,7 @@ import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 import { BarChart2, Plus } from "lucide-react";
 
 // ⭐ Jouw snackbar + modal systeem
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
   const [allIndicators, setAllIndicators] = useState([]);

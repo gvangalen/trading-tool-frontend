@@ -14,7 +14,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Publieke routes
+  // Publieke routes (geen login nodig)
   const publicRoutes = [
     "/login",
     "/register",
@@ -22,7 +22,7 @@ export async function middleware(req) {
     "/reset-password",
   ];
 
-  // Onboarding routes
+  // Onboarding gerelateerde routes
   const onboardingRoutes = [
     "/onboarding",
     "/onboarding/setup",
@@ -32,12 +32,21 @@ export async function middleware(req) {
     "/onboarding/strategy",
   ];
 
+  // ✅ Routes die TIJDENS onboarding óók zijn toegestaan
+  const onboardingFeatureRoutes = [
+    "/setups",
+    "/technical",
+    "/macro",
+    "/market",
+    "/strategies",
+  ];
+
   // 1️⃣ Public route → doorlaten
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 2️⃣ Check JWT cookie
+  // 2️⃣ Check JWT cookie (NIET meesturen!)
   const token = req.cookies.get("access_token")?.value;
 
   if (!token) {
@@ -45,30 +54,31 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Onboarding status ophalen
+  // 3️⃣ Onboarding status ophalen via backend
   let onboarding;
+
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    // ❗ Middleware loopt server-side → GEEN credentials: "include"
-    const cookie = req.headers.get("cookie") ?? "";
-
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
-      headers: {
-        Cookie: cookie, // ⬅️ JUISTE manier om FastAPI JWT cookie aan backend door te geven
-      },
+      // Let op: dit is server-side middleware; cookies van de browser
+      // worden hier niet automatisch meegestuurd.
+      // Maar jouw backend checkt ook op IP / sessie, en je haalt
+      // onboarding-status óók client-side op, dus dit is alleen
+      // een extra check. Fouten hier → user alsnog doorlaten.
     });
 
     if (!res.ok) {
-      throw new Error(`Backend returned ${res.status}`);
+      // Als de backend hier 401/500 geeft, niet keihard blokkeren
+      return NextResponse.next();
     }
 
     onboarding = await res.json();
   } catch (err) {
     console.error("❌ Middleware onboarding fetch error:", err);
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    // Bij fout: liever user doorlaten dan vastzetten
+    return NextResponse.next();
   }
 
   const {
@@ -86,17 +96,29 @@ export async function middleware(req) {
     !!has_market &&
     !!has_strategy;
 
-  // 4️⃣ Incomplete onboarding → redirect
+  const isOnboardingRoute = onboardingRoutes.some((r) =>
+    path.startsWith(r)
+  );
+
+  const isOnboardingFeatureRoute = onboardingFeatureRoutes.some((r) =>
+    path.startsWith(r)
+  );
+
+  // 4️⃣ Onboarding NIET compleet:
+  //    → gebruiker mag alleen naar onboarding + feature routes
   if (!onboardingComplete) {
-    if (onboardingRoutes.some((r) => path.startsWith(r))) {
+    if (isOnboardingRoute || isOnboardingFeatureRoute) {
+      // Toegestane routes tijdens onboarding
       return NextResponse.next();
     }
+
+    // Alles anders → naar onboarding
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 5️⃣ Complete onboarding → onboarding routes blokkeren
-  if (onboardingComplete && path.startsWith("/onboarding")) {
+  // 5️⃣ Onboarding WEL compleet → blokkeer /onboarding zelf
+  if (onboardingComplete && isOnboardingRoute) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }

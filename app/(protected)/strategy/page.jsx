@@ -8,7 +8,6 @@ import {
   Search,
   PlusCircle,
   ClipboardList,
-  Info,
 } from "lucide-react";
 
 import StrategyList from "@/components/strategy/StrategyList";
@@ -21,8 +20,8 @@ import { createStrategy } from "@/lib/api/strategy";
 import CardWrapper from "@/components/ui/CardWrapper";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
-// ⭐ Onboarding hook
-import { useOnboarding } from "@/hooks/useOnboarding";
+// ⭐ JOUW ECHTE BANNER
+import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function StrategyPage() {
   const { showSnackbar } = useModal();
@@ -38,20 +37,6 @@ export default function StrategyPage() {
   /* -------------------------------------------------- */
   const safeSetups = Array.isArray(setups) ? setups : [];
   const safeStrategies = Array.isArray(strategies) ? strategies : [];
-
-  /* -------------------------------------------------- */
-  /* ONBOARDING STATUS */
-  /* -------------------------------------------------- */
-  const { status, loading: onboardingLoading } = useOnboarding();
-
-  const onboardingActive =
-    !onboardingLoading &&
-    status &&
-    (!status.has_setup ||
-      !status.has_technical ||
-      !status.has_macro ||
-      !status.has_market ||
-      !status.has_strategy);
 
   /* -------------------------------------------------- */
   /* INITIAL LOAD */
@@ -109,9 +94,8 @@ export default function StrategyPage() {
   };
 
   /* -------------------------------------------------- */
-  /* FILTERS */
+  /* FILTER LOGIC */
   /* -------------------------------------------------- */
-
   const setupsWithoutTrading = useMemo(() => {
     return safeSetups.filter(
       (s) =>
@@ -146,40 +130,13 @@ export default function StrategyPage() {
   }, [safeSetups, safeStrategies, refreshKey]);
 
   /* -------------------------------------------------- */
-  /* RENDER */
+  /* RENDER PAGE */
   /* -------------------------------------------------- */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* -------------------------------------------------- */}
-      {/* 🚀 ONBOARDING-BANNER */}
-      {/* -------------------------------------------------- */}
-      {onboardingActive && (
-        <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-xl shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Info className="text-yellow-600 w-6 h-6" />
-            <div>
-              <h3 className="font-semibold text-yellow-800">
-                Onboarding nog niet voltooid
-              </h3>
-              <p className="text-sm text-yellow-700">
-                Je moet nog stappen afronden om alle functionaliteit te ontgrendelen.
-              </p>
-            </div>
-          </div>
-
-          <a
-            href="/onboarding"
-            className="
-              px-4 py-2 rounded-lg text-sm 
-              bg-yellow-600 text-white 
-              hover:bg-yellow-700 transition
-            "
-          >
-            Verder met onboarding
-          </a>
-        </div>
-      )}
+      {/* ⭐ ONBOARDING BANNER — Step 5 */}
+      <OnboardingBanner step="strategy" />
 
       {/* Titel */}
       <div className="flex items-center gap-3 mb-2">
@@ -190,11 +147,11 @@ export default function StrategyPage() {
       </div>
 
       <p className="text-[var(--text-light)] max-w-2xl">
-        Bouw, beheer en optimaliseer je tradingstrategieën.  
+        Bouw, beheer en optimaliseer je tradingstrategieën.
         De AI helpt bij validatie, tips en automatische generaties.
       </p>
 
-      {/* AI AGENT INSIGHTS */}
+      {/* AI Panel */}
       <AgentInsightPanel category="strategy" />
 
       {/* Strategieën lijst */}

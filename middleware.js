@@ -73,7 +73,7 @@ export async function middleware(req) {
 
   const allowedDuringOnboarding = [
     "/onboarding",
-    "/setups",
+    "/setup",
     "/technical",
     "/macro",
     "/market",

@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+// 🔥 Onboarding banner toevoegen
+import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
+
 import { useMacroData } from "@/hooks/useMacroData";
 import { useScoresData } from "@/hooks/useScoresData";
 
@@ -64,6 +67,10 @@ export default function MacroPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
+
+      {/* 🔥 Onboarding stap 3 banner */}
+      <OnboardingBanner step="macro" />
+
       <div className="flex items-center gap-3">
         <Globe size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">

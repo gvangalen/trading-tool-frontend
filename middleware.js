@@ -4,7 +4,7 @@ export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // Skip system/asset routes
+  // 0️⃣ System routes overslaan
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
@@ -14,47 +14,78 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Public routes (geen login vereist)
-  const publicRoutes = ["/login", "/register", "/forgot-password"];
+  // 1️⃣ Publieke routes (geen login nodig)
+  const publicRoutes = ["/login", "/register"];
+
   if (publicRoutes.includes(path)) {
     return NextResponse.next();
   }
 
-  // 🔐 Cookie check
+  // 2️⃣ Check of er een access_token cookie is
   const token = req.cookies.get("access_token")?.value;
 
   if (!token) {
+    // Geen cookie → naar login
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 📝 Onboarding-status ophalen
-  let onboarding;
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  // 3️⃣ Onboarding-status ophalen bij backend
+  //    BELANGRIJK: zet de cookies van deze request door!
+  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const cookieHeader = req.headers.get("cookie") || "";
 
+  let onboarding: any = null;
+
+  try {
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
-      credentials: "include",
+      headers: {
+        // ⬅️ DIT ontbrak: backend krijgt nu dezelfde cookies als /auth/me
+        cookie: cookieHeader,
+        "Content-Type": "application/json",
+      },
     });
 
-    if (!res.ok) {
-      // Als backend niet werkt → laat user niet crashen, gewoon naar login
+    if (res.status === 401) {
+      // Token ongeldig/expired aan backend-kant → terug naar login
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
 
+    if (!res.ok) {
+      console.error(
+        "[middleware] /api/onboarding/status error:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+      // In geval van andere fout: laat request doorgaan i.p.v. infinite redirect
+      return NextResponse.next();
+    }
+
     onboarding = await res.json();
   } catch (err) {
-    console.error("❌ Middleware: onboarding fetch error", err);
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    console.error("[middleware] Failed to fetch onboarding status:", err);
+    // Veilig fallback: niets forceren, gewoon doorlaten
+    return NextResponse.next();
   }
 
-  // 👉 Backend stuurt: onboarding.onboarding_complete
-  const onboardingComplete = onboarding?.onboarding_complete === true;
+  const {
+    has_setup,
+    has_technical,
+    has_macro,
+    has_market,
+    has_strategy,
+  } = onboarding || {};
 
-  // 🚦 Routes die tijdens onboarding gebruikt mogen worden
+  const onboardingComplete =
+    !!has_setup &&
+    !!has_technical &&
+    !!has_macro &&
+    !!has_market &&
+    !!has_strategy;
+
+  // 4️⃣ Routes die TIJDENS onboarding zijn toegestaan
   const allowedDuringOnboarding = [
     "/onboarding",
     "/setups",
@@ -64,27 +95,32 @@ export async function middleware(req) {
     "/strategies",
   ];
 
-  // 🟥 Onboarding NIET voltooid → redirect
+  // Onboarding nog NIET klaar
   if (!onboardingComplete) {
-    // onboarding pagina's + featurepagina's wel toestaan
-    if (allowedDuringOnboarding.some((r) => path.startsWith(r))) {
+    // Als je op onboarding of 1 van de feature-pagina’s klikt → gewoon doorlaten
+    if (
+      allowedDuringOnboarding.some((route) =>
+        path.startsWith(route)
+      )
+    ) {
       return NextResponse.next();
     }
 
-    // Alles anders → terugleiden naar onboarding
+    // Alles anders (bijv. /dashboard) → terug naar onboarding
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 🟩 Onboarding WÉL voltooid → blokkeer onboarding routes
-  if (path.startsWith("/onboarding")) {
+  // 5️⃣ Onboarding IS klaar → /onboarding blokkeren
+  if (onboardingComplete && path.startsWith("/onboarding")) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
+  // 6️⃣ Normale doorgang
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|static|favicon.ico).*)"],
+  matcher: ["/(.*)"],
 };

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-// 🔥 Onboarding banner toevoegen
+// 🔥 Onboarding banner
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 import { useMacroData } from "@/hooks/useMacroData";
@@ -21,7 +21,7 @@ export default function MacroPage() {
 
   const {
     macroData,
-    handleRemove,
+    removeMacroIndicator,   // ⬅️ FIXED
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
@@ -29,7 +29,7 @@ export default function MacroPage() {
   const { macro, loading: loadingScore } = useScoresData();
 
   // -------------------------------------------------------
-  // 🛡️ Safe fallback macro object (crash prevention)
+  // Fallback macro object
   // -------------------------------------------------------
   const safeMacro = {
     score: macro?.score ?? null,
@@ -131,7 +131,7 @@ export default function MacroPage() {
         macroData={macroData}
         loading={loadingIndicators}
         error={error}
-        handleRemove={handleRemove}
+        handleRemove={removeMacroIndicator}  // ⬅️ FIXED
       />
     </div>
   );

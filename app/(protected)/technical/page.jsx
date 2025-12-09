@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-import { TrendingUp, Brain, Activity } from "lucide-react";
+import { TrendingUp, Brain, Activity, Info } from "lucide-react";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useScoresData } from "@/hooks/useScoresData";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 import TechnicalTabs from "@/components/technical/TechnicalTabs";
 import TechnicalIndicatorScoreView from "@/components/technical/TechnicalIndicatorScoreView";
@@ -25,9 +26,21 @@ export default function TechnicalPage() {
 
   const { technical, loading: loadingScore } = useScoresData();
 
+  // 🔥 Onboarding hook
+  const { status, loading: onboardingLoading } = useOnboarding();
+
+  // Bepaal of onboarding nog niet klaar is
+  const onboardingActive =
+    !onboardingLoading &&
+    status &&
+    (!status.has_setup ||
+      !status.has_technical ||
+      !status.has_macro ||
+      !status.has_market ||
+      !status.has_strategy);
+
   /* =====================================================
-     🛡️ SAFE TECHNICAL FALLBACK STRUCTURE
-     voorkomt alle crashes bij nieuwe gebruiker
+     SAFE FALLBACK VOOR NIEUWE GEBRUIKER
   ===================================================== */
   const safeTechnical = {
     score: technical?.score ?? null,
@@ -40,7 +53,7 @@ export default function TechnicalPage() {
   };
 
   /* =====================================================
-     SCORE → kleurklasse (zelfde logica als macro)
+     SCORE → kleurklasse
   ===================================================== */
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
@@ -54,7 +67,7 @@ export default function TechnicalPage() {
   };
 
   /* =====================================================
-     ADVIES
+     ADVIES TEKST
   ===================================================== */
   const adviesText =
     (safeTechnical.score ?? 0) >= 75
@@ -64,13 +77,44 @@ export default function TechnicalPage() {
       : "Neutraal";
 
   /* =====================================================
-     RENDER
+     PAGE RENDER
   ===================================================== */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
-      {/* ================================================
-          PAGE TITLE
-      ================================================= */}
+
+      {/* -------------------------------------------------- */}
+      {/* 🚀 ONBOARDING-BANNER */}
+      {/* -------------------------------------------------- */}
+      {onboardingActive && (
+        <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-xl shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Info className="text-yellow-600 w-6 h-6" />
+            <div>
+              <h3 className="font-semibold text-yellow-800">
+                Onboarding nog niet voltooid
+              </h3>
+              <p className="text-sm text-yellow-700">
+                Je moet nog stappen afronden om je trading dashboard te activeren.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="/onboarding"
+            className="
+              px-4 py-2 rounded-lg text-sm 
+              bg-yellow-600 text-white 
+              hover:bg-yellow-700 transition
+            "
+          >
+            Verder met onboarding
+          </a>
+        </div>
+      )}
+
+      {/* -------------------------------------------------- */}
+      {/* PAGE TITLE */}
+      {/* -------------------------------------------------- */}
       <div className="flex items-center gap-3">
         <TrendingUp size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -78,14 +122,14 @@ export default function TechnicalPage() {
         </h1>
       </div>
 
-      {/* ================================================
-          AI SAMENVATTING
-      ================================================= */}
+      {/* -------------------------------------------------- */}
+      {/* AI SAMENVATTING */}
+      {/* -------------------------------------------------- */}
       <AgentInsightPanel category="technical" />
 
-      {/* ================================================
-          TOTALE TECHNICAL SCORE
-      ================================================= */}
+      {/* -------------------------------------------------- */}
+      {/* TOTALE TECHNICAL SCORE */}
+      {/* -------------------------------------------------- */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -129,14 +173,14 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* ================================================
-          TECHNISCHE INDICATOR SCOREREGELS VIEWER
-      ================================================= */}
+      {/* -------------------------------------------------- */}
+      {/* SCORE-REGEL VIEWER */}
+      {/* -------------------------------------------------- */}
       <TechnicalIndicatorScoreView />
 
-      {/* ================================================
-          TABS + TABEL
-      ================================================= */}
+      {/* -------------------------------------------------- */}
+      {/* TABS */}
+      {/* -------------------------------------------------- */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}

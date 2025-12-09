@@ -18,23 +18,23 @@ export default function MacroTabs({
   error,
   handleRemove,
 }) {
-  // Always normalize data
+  // Always guard macroData
   const safeData = Array.isArray(macroData) ? macroData : [];
 
-  // Choose table component based on tab
+  // ---------------------------------------------------------
+  // 🔍 Table selector
+  // ---------------------------------------------------------
   const renderTable = () => {
-    // ⏳ LOADING → alleen skeleton/empty state in een tabel
     if (loading) {
       return (
-        <DayTable
+        <DayTable 
           title="Macro Indicatoren"
-          data={[]}   // force empty UI
-          onRemove={null}
+          data={[]} 
+          onRemove={() => {}} // veilige no-op functie
         />
       );
     }
 
-    // Log error but do NOT show to user
     if (error) {
       console.error("MacroTabs error:", error);
     }
@@ -45,42 +45,36 @@ export default function MacroTabs({
           <DayTable
             title="Macro Indicatoren"
             data={safeData}
-            onRemove={handleRemove} // Alleen Dag-tab ondersteunt verwijderen
+            onRemove={handleRemove}   // enige tab met delete
           />
         );
 
       case "Week":
-        return (
-          <WeekTable
-            title="Macro Indicatoren"
-            data={safeData}
-          />
-        );
+        return <WeekTable title="Macro Indicatoren" data={safeData} />;
 
       case "Maand":
-        return (
-          <MonthTable
-            title="Macro Indicatoren"
-            data={safeData}
-          />
-        );
+        return <MonthTable title="Macro Indicatoren" data={safeData} />;
 
       case "Kwartaal":
-        return (
-          <QuarterTable
-            title="Macro Indicatoren"
-            data={safeData}
-          />
-        );
+        return <QuarterTable title="Macro Indicatoren" data={safeData} />;
 
       default:
-        return null;
+        return (
+          <DayTable 
+            title="Macro Indicatoren"
+            data={safeData}
+            onRemove={handleRemove}
+          />
+        );
     }
   };
 
+  // ---------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------
   return (
     <>
-      {/* 🔹 Tabs */}
+      {/* Tabs */}
       <div className="flex space-x-4 mb-4">
         {TABS.map((tab) => (
           <button
@@ -89,7 +83,8 @@ export default function MacroTabs({
             className={`px-4 py-2 rounded font-semibold border transition ${
               activeTab === tab
                 ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200"
+                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100 
+                   dark:bg-gray-900 dark:text-gray-200"
             }`}
           >
             {tab}
@@ -97,10 +92,7 @@ export default function MacroTabs({
         ))}
       </div>
 
-      {/* 🔹 PRO Card Wrapper */}
-      <CardWrapper>
-        {renderTable()}
-      </CardWrapper>
+      <CardWrapper>{renderTable()}</CardWrapper>
     </>
   );
 }

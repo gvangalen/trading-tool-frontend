@@ -9,12 +9,12 @@ import {
 } from "@/lib/api/macro";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import UniversalSearchDropdown from "@/components/modal/UniversalSearchDropdown";
+import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 
 import { BarChart2, Plus } from "lucide-react";
 
 // ⭐ Snackbar + Modal systeem
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 export default function MacroIndicatorScoreView() {
   const [allIndicators, setAllIndicators] = useState([]);

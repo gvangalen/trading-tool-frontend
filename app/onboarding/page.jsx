@@ -15,24 +15,16 @@ export default function OnboardingPage() {
     completeStep,
   } = useOnboarding();
 
-  /* -------------------------------------------------------
-     Redirect zodra onboarding gereed is
-  ------------------------------------------------------- */
-  const onboardingComplete = completed;
-
+  // Redirect zodra onboarding klaar is
   useEffect(() => {
-    if (onboardingComplete) {
+    if (completed) {
       const timer = setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       }, 800);
-
       return () => clearTimeout(timer);
     }
-  }, [onboardingComplete]);
+  }, [completed]);
 
-  /* -------------------------------------------------------
-     Loading UI
-  ------------------------------------------------------- */
   if (loading || !status) {
     return (
       <div className="max-w-screen-md mx-auto py-10 px-4 text-center">
@@ -41,17 +33,14 @@ export default function OnboardingPage() {
     );
   }
 
-  /* -------------------------------------------------------
-     Onboarding stappen definitie
-     Let op: we gebruiken nu has_setup / has_macro etc.
-  ------------------------------------------------------- */
+  // JUISTE routes volgens sidebar
   const steps = [
     {
       key: "setup",
       title: "Setup aanmaken",
       description: "Maak jouw eerste trading setup aan.",
       done: status.has_setup,
-      link: "/setups",
+      link: "/setup",
     },
     {
       key: "technical",
@@ -63,46 +52,38 @@ export default function OnboardingPage() {
     {
       key: "macro",
       title: "Macro indicatoren",
-      description: "Voeg macro-indicatoren toe (DXY, F&G Index, BTC dominante).",
+      description: "Voeg macro-indicatoren toe.",
       done: status.has_macro,
       link: "/macro",
     },
     {
       key: "market",
       title: "Market indicatoren",
-      description: "De tool gebruikt prijs, volume en volatiliteit automatisch.",
+      description: "Prijs, volume & 7D data worden automatisch gevuld.",
       done: status.has_market,
       link: "/market",
     },
     {
       key: "strategy",
       title: "Strategie genereren",
-      description: "Genereer je eerste AI-strategie voor de setup.",
+      description: "Genereer je eerste AI-strategie.",
       done: status.has_strategy,
-      link: "/strategies",
-    },
-    {
-      key: "complete",
-      title: "Onboarding afronden",
-      description: "Alle stappen voltooid → dashboard activeren.",
-      done: onboardingComplete,
-      link: "/dashboard",
+      link: "/strategy",
     },
   ];
 
   return (
     <div className="max-w-screen-md mx-auto py-12 px-6 space-y-8 animate-fade-slide">
-      {/* HEADER */}
+      
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-[var(--text-dark)]">
           🚀 Onboarding
         </h1>
         <p className="text-[var(--text-light)] mt-2">
-          Voltooi de stappen hieronder om jouw persoonlijke tradingdashboard te activeren.
+          Voltooi de stappen hieronder om jouw tradingdashboard te activeren.
         </p>
       </div>
 
-      {/* Stappenlijst */}
       <CardWrapper>
         <h2 className="text-xl font-semibold mb-4 text-[var(--text-dark)]">
           Jouw voortgang
@@ -120,15 +101,14 @@ export default function OnboardingPage() {
         </div>
       </CardWrapper>
 
-      {/* Als onboarding klaar is */}
-      {onboardingComplete && (
+      {completed && (
         <CardWrapper>
           <div className="text-center">
             <p className="mb-4 text-[var(--text-dark)] font-medium">
-              🎉 Je onboarding is voltooid!
+              🎉 Je onboarding is volledig afgerond!
             </p>
             <a
-              href="/dashboard"
+              href="/"
               className="inline-flex items-center gap-2 bg-[var(--primary)] text-white px-6 py-3 rounded-lg shadow hover:bg-[var(--primary-strong)] transition"
             >
               Naar Dashboard
@@ -141,29 +121,25 @@ export default function OnboardingPage() {
   );
 }
 
-/* ============================================================
-   Step Row Component — completeStep + redirect
-============================================================ */
 function StepRow({ step, completeStep, disabled }) {
   const isDone = !!step.done;
   const buttonLabel = isDone ? "Bekijken" : "Starten";
 
   const handleClick = async () => {
     try {
-      if (!isDone && step.key !== "complete") {
+      if (!isDone) {
         await completeStep(step.key);
       }
     } catch (err) {
-      console.warn(`Step '${step.key}' kon niet worden opgeslagen → toch door`, err);
+      console.warn("Kon stap niet opslaan, maar redirect toch →", step.key);
     }
 
-    // Altijd naar de bijbehorende pagina
     window.location.href = step.link;
   };
 
   return (
-    <div className="flex items-start gap-4 p-4 border border-[var(--card-border)] rounded-lg bg-white shadow-sm">
-      {/* Status icoon */}
+    <div className="flex items-start gap-4 p-4 border rounded-lg bg-white shadow-sm">
+      
       <div>
         {isDone ? (
           <CheckCircle className="w-6 h-6 text-green-500" />
@@ -172,13 +148,11 @@ function StepRow({ step, completeStep, disabled }) {
         )}
       </div>
 
-      {/* Tekst */}
       <div className="flex-1">
         <h3 className="font-semibold text-[var(--text-dark)]">{step.title}</h3>
         <p className="text-[var(--text-light)] text-sm">{step.description}</p>
       </div>
 
-      {/* Button */}
       <div>
         <button
           disabled={disabled}

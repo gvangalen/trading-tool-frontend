@@ -9,7 +9,7 @@ import {
 } from "@/lib/api/macro";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
+import UniversalSearchDropdown from "@/components/modal/UniversalSearchDropdown";
 
 import { BarChart2, Plus } from "lucide-react";
 

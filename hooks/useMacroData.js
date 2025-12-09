@@ -12,7 +12,7 @@ import {
   deleteMacroIndicator,
 } from '@/lib/api/macro';
 
-import { useModal } from '@/components/ui/ModalContext';
+import { useModal } from "@/components/modal/ModalProvider";
 
 /* ============================================================
    ⭐ OFFICIËLE MACRO HOOK — VERSIE 2025 PERFECT

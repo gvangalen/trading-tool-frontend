@@ -77,7 +77,7 @@ export async function middleware(req) {
     "/technical",
     "/macro",
     "/market",
-    "/strategies",
+    "/strategy"
   ];
 
   if (!onboardingComplete) {

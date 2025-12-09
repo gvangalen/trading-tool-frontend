@@ -27,7 +27,7 @@ export default function MacroTabs({
   const renderTable = () => {
     if (loading) {
       return (
-        <DayTable 
+        <DayTable
           title="Macro Indicatoren"
           data={[]} 
           onRemove={() => {}} // veilige no-op functie
@@ -45,22 +45,37 @@ export default function MacroTabs({
           <DayTable
             title="Macro Indicatoren"
             data={safeData}
-            onRemove={handleRemove}   // enige tab met delete
+            onRemove={handleRemove} // enige tab met delete
           />
         );
 
       case "Week":
-        return <WeekTable title="Macro Indicatoren" data={safeData} />;
+        return (
+          <WeekTable
+            title="Macro Indicatoren"
+            data={safeData}
+          />
+        );
 
       case "Maand":
-        return <MonthTable title="Macro Indicatoren" data={safeData} />;
+        return (
+          <MonthTable
+            title="Macro Indicatoren"
+            data={safeData}
+          />
+        );
 
       case "Kwartaal":
-        return <QuarterTable title="Macro Indicatoren" data={safeData} />;
+        return (
+          <QuarterTable
+            title="Macro Indicatoren"
+            data={safeData}
+          />
+        );
 
       default:
         return (
-          <DayTable 
+          <DayTable
             title="Macro Indicatoren"
             data={safeData}
             onRemove={handleRemove}
@@ -83,8 +98,7 @@ export default function MacroTabs({
             className={`px-4 py-2 rounded font-semibold border transition ${
               activeTab === tab
                 ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100 
-                   dark:bg-gray-900 dark:text-gray-200"
+                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200"
             }`}
           >
             {tab}
@@ -92,7 +106,9 @@ export default function MacroTabs({
         ))}
       </div>
 
-      <CardWrapper>{renderTable()}</CardWrapper>
+      <CardWrapper>
+        {renderTable()}
+      </CardWrapper>
     </>
   );
 }

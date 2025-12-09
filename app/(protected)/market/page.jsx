@@ -24,6 +24,9 @@ import MarketSevenDayTable from "@/components/market/MarketSevenDayTable";
 import MarketForwardReturnTabs from "@/components/market/MarketForwardReturnTabs";
 import MarketIndicatorScoreView from "@/components/market/MarketIndicatorScoreView";
 
+// ⭐ JOUW ECHTE ONBOARDING BANNER
+import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
+
 export default function MarketPage() {
   const {
     btcLive,
@@ -82,6 +85,9 @@ export default function MarketPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
+
+      {/* ⭐⭐⭐ ONBOARDING BANNER – Stap 4 van 5 ⭐⭐⭐ */}
+      <OnboardingBanner step="market" />
 
       {/* ------------------------------------------------------ */}
       {/* 📌 Titel */}

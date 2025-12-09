@@ -8,14 +8,15 @@ import {
   Search,
   ClipboardList,
   PlusCircle,
-  Info,
 } from "lucide-react";
 
 import SetupForm from "@/components/setup/SetupForm";
 import SetupList from "@/components/setup/SetupList";
 
 import { useSetupData } from "@/hooks/useSetupData";
-import { useOnboarding } from "@/hooks/useOnboarding";
+
+// ⭐ Jouw nieuwe component
+import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
@@ -33,21 +34,8 @@ export default function SetupPage() {
     removeSetup,
   } = useSetupData();
 
-  // ⭐ Onboarding hook
-  const { status, loading: onboardingLoading } = useOnboarding();
-
-  // Onboarding nog bezig?
-  const onboardingActive =
-    !onboardingLoading &&
-    status &&
-    (!status.has_setup ||
-      !status.has_technical ||
-      !status.has_macro ||
-      !status.has_market ||
-      !status.has_strategy);
-
   /* =====================================================
-     🔄 INITIAL LOAD
+     INITIAL LOAD
   ===================================================== */
   useEffect(() => {
     loadSetups();
@@ -58,9 +46,6 @@ export default function SetupPage() {
     showSnackbar("🔄 Setups vernieuwd", "info");
   };
 
-  /* =====================================================
-     🛡️ SAFE SETUPS
-  ===================================================== */
   const safeSetups = Array.isArray(setups) ? setups : [];
 
   /* =====================================================
@@ -70,37 +55,12 @@ export default function SetupPage() {
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
       {/* -------------------------------------------------- */}
-      {/* 🚀 ONBOARDING-BANNER */}
+      {/* ⭐ ONBOARDING BANNER (Stap 1: setups) */}
       {/* -------------------------------------------------- */}
-      {onboardingActive && (
-        <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-xl shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Info className="text-yellow-600 w-6 h-6" />
-            <div>
-              <h3 className="font-semibold text-yellow-800">
-                Onboarding nog niet voltooid
-              </h3>
-              <p className="text-sm text-yellow-700">
-                Je moet nog stappen afronden om je trading dashboard te activeren.
-              </p>
-            </div>
-          </div>
-
-          <a
-            href="/onboarding"
-            className="
-              px-4 py-2 rounded-lg text-sm 
-              bg-yellow-600 text-white 
-              hover:bg-yellow-700 transition
-            "
-          >
-            Verder met onboarding
-          </a>
-        </div>
-      )}
+      <OnboardingBanner step="setup" />
 
       {/* -------------------------------------------------- */}
-      {/* 🧩 Titel */}
+      {/* Titel */}
       {/* -------------------------------------------------- */}
       <div className="flex items-center gap-3 mb-2">
         <Settings size={28} className="text-[var(--primary)]" />
@@ -115,12 +75,12 @@ export default function SetupPage() {
       </p>
 
       {/* -------------------------------------------------- */}
-      {/* 🧠 AI Agent Insight Panel  */}
+      {/* AI Panel */}
       {/* -------------------------------------------------- */}
       <AgentInsightPanel category="setup" />
 
       {/* -------------------------------------------------- */}
-      {/* 📋 Huidige setups */}
+      {/* Setup lijst */}
       {/* -------------------------------------------------- */}
       <CardWrapper
         title={
@@ -130,6 +90,7 @@ export default function SetupPage() {
           </div>
         }
       >
+
         {/* Zoekveld */}
         <div className="flex justify-between items-center mb-4">
           <div
@@ -151,7 +112,6 @@ export default function SetupPage() {
           </div>
         </div>
 
-        {/* Setup lijst */}
         <SetupList
           setups={safeSetups}
           loading={loading}
@@ -164,7 +124,7 @@ export default function SetupPage() {
       </CardWrapper>
 
       {/* -------------------------------------------------- */}
-      {/* ➕ Nieuwe setup */}
+      {/* Nieuwe setup */}
       {/* -------------------------------------------------- */}
       <CardWrapper
         title={

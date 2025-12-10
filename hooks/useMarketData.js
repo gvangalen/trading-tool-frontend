@@ -10,20 +10,13 @@ import {
   fetchForwardReturnsQuarter,
   fetchForwardReturnsYear,
 
-  // Scorelogica
+  // ✔ nieuwe correcte user-based API
+  fetchMarketDayData,
   getMarketIndicatorNames,
   getScoreRulesForMarketIndicator,
-
-  // Active indicatoren (dagtabel)
-  getActiveMarketIndicators,
-
-  // Indicator beheer
-  marketDataAdd,
-  marketDataDelete,
-
-  // ✔️ JUISTE FUNCTIE
-  fetchMarketDayData,
-
+  marketIndicatorAdd,
+  marketIndicatorDelete,
+  getUserMarketIndicators,
 } from '@/lib/api/market';
 
 import { getDailyScores } from '@/lib/api/scores';
@@ -105,15 +98,15 @@ export function useMarketData() {
       setMarketScore(aiMarketScore);
       setAdviesState(getAdvies(aiMarketScore));
 
-      // ✔️ Dagdata correct ophalen
+      // ✔ User-specific dagdata
       const dayData = await fetchMarketDayData();
       setMarketDayData(dayData || []);
 
-      // Active indicators
-      const active = await getActiveMarketIndicators();
+      // ✔ User indicator lijst
+      const active = await getUserMarketIndicators();
       setActiveMarketIndicators(active || []);
 
-      // Beschikbare indicatoren
+      // ✔ Beschikbare globale indicatornamen
       const names = await getMarketIndicatorNames();
       setAvailableIndicators(names || []);
 
@@ -152,10 +145,10 @@ export function useMarketData() {
   }
 
 
-  // INDICATOR TOEVPGEN
+  // INDICATOR TOEVOEGEN (per gebruiker)
   async function addMarket(name) {
     try {
-      await marketDataAdd(name);
+      await marketIndicatorAdd(name);
       await refreshDayData();
       await refreshActiveIndicators();
     } catch (err) {
@@ -163,10 +156,10 @@ export function useMarketData() {
     }
   }
 
-  // INDICATOR VERWIJDEREN
+  // INDICATOR VERWIJDEREN (per gebruiker)
   async function removeMarket(name) {
     try {
-      await marketDataDelete(name);
+      await marketIndicatorDelete(name);
       await refreshDayData();
       await refreshActiveIndicators();
     } catch (err) {
@@ -182,7 +175,7 @@ export function useMarketData() {
   }
 
   async function refreshActiveIndicators() {
-    const active = await getActiveMarketIndicators();
+    const active = await getUserMarketIndicators();
     setActiveMarketIndicators(active || []);
   }
 

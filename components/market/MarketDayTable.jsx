@@ -6,6 +6,7 @@ export default function MarketDayTable({ data = [], onRemove }) {
   const [localData, setLocalData] = useState([]);
 
   useEffect(() => {
+    // Zorg dat we een kopie hebben met IDs
     setLocalData(Array.isArray(data) ? data : []);
   }, [data]);
 
@@ -25,14 +26,18 @@ export default function MarketDayTable({ data = [], onRemove }) {
       : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
-  const handleDelete = async (name) => {
-    if (!name) return;
+  // 🟦 DELETE NU MET ID ipv NAME
+  const handleDelete = async (id) => {
+    if (!id) return;
 
-    if (!window.confirm(`Weet je zeker dat je "${name}" wilt verwijderen?`)) return;
+    const item = localData.find((x) => x.id === id);
+    const label = item?.name || 'indicator';
+
+    if (!window.confirm(`Weet je zeker dat je "${label}" wilt verwijderen?`)) return;
 
     try {
-      await onRemove(name);
-      setLocalData(localData.filter((i) => i.name !== name));
+      await onRemove(id);
+      setLocalData(localData.filter((i) => i.id !== id));
     } catch (err) {
       console.error('❌ Verwijderen mislukt:', err);
       alert('❌ Verwijderen mislukt.');
@@ -55,7 +60,7 @@ export default function MarketDayTable({ data = [], onRemove }) {
   return (
     <>
       {localData.map((item) => (
-        <tr key={item.name} className="border-t dark:border-gray-700">
+        <tr key={item.id} className="border-t dark:border-gray-700">
           <td className="p-2 font-medium">{item.name}</td>
           <td className="p-2 text-center">{formatValue(item.value)}</td>
           <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
@@ -63,9 +68,11 @@ export default function MarketDayTable({ data = [], onRemove }) {
           </td>
           <td className="p-2 text-center">{item.action || '–'}</td>
           <td className="p-2">{item.interpretation || 'Geen uitleg'}</td>
+
+          {/* ❌ DELETE KNOP → werkt nu met ID */}
           <td className="p-2 text-center">
             <button
-              onClick={() => handleDelete(item.name)}
+              onClick={() => handleDelete(item.id)}
               className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
             >
               ❌

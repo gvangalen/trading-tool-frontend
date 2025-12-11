@@ -5,26 +5,26 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import Link from "next/link";
 
-// Hook voor alle rapporten
+// Hook voor rapporten (daily / weekly / monthly)
 import { useReportData } from "@/hooks/useReportData";
 
-// Premium dashboard-variant block
+// Premium AI-insight block
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
-  const {
-    report,
-    loading,
-    error,
-  } = useReportData("daily");
+  const { report, loading, error } = useReportData("daily");
 
-  // 🛡️ Report moet een echt object zijn → geen array, geen string
+  // -----------------------------
+  // 1️⃣ Veilig report object
+  // -----------------------------
   const safeReport =
     report && typeof report === "object" && !Array.isArray(report)
       ? report
       : null;
 
-  // 🛡️ Quote MOET string zijn
+  // -----------------------------
+  // 2️⃣ AI quote, fallback
+  // -----------------------------
   const quote =
     typeof safeReport?.ai_summary_short === "string"
       ? safeReport.ai_summary_short
@@ -39,28 +39,53 @@ export default function ReportCard() {
     >
       <div className="flex flex-col gap-4 min-h-[220px]">
 
-        {/* LOADING */}
+        {/* ----------------------------------------- */}
+        {/* 🟡 LOADING */}
+        {/* ----------------------------------------- */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* ERROR */}
-        {!loading && error && (
-          <p className="text-sm text-red-500 italic">{error}</p>
-        )}
-
-        {/* EMPTY */}
-        {!loading && !error && !safeReport && (
-          <p className="italic text-[var(--text-light)]">
-            Nog geen rapport beschikbaar.
+        {/* ----------------------------------------- */}
+        {/* 🔴 ERROR (maar GEEN fallback 404 tonen) */}
+        {/* ----------------------------------------- */}
+        {!loading && error && error !== 404 && (
+          <p className="text-sm text-red-500 italic">
+            Rapport kon niet geladen worden.
           </p>
         )}
 
-        {/* CONTENT */}
+        {/* ----------------------------------------- */}
+        {/* 🟦 FIRST-TIME USER → GEEN RAPPORT (404) */}
+        {/* ----------------------------------------- */}
+        {!loading && (error === 404 || (!safeReport && !error)) && (
+          <div className="text-sm text-[var(--text-light)] italic">
+            ✨ Je eerste dagelijkse rapport wordt
+            <span className="font-semibold"> morgen vroeg automatisch</span>{" "}
+            gegenereerd door de AI.
+
+            <div className="mt-3">
+              <Link
+                href="/report/example"
+                className="
+                  text-[var(--primary-dark)]
+                  hover:underline
+                  font-medium
+                "
+              >
+                Bekijk voorbeeldrapport →
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------------------------------- */}
+        {/* 🟢 ER IS WEL EEN RAPPORT */}
+        {/* ----------------------------------------- */}
         {!loading && safeReport && (
           <>
             <AIInsightBlock text={quote} variant="dashboard" />
 
             <Link
-              href="/report"
+              href={`/report?date=${safeReport.report_date}`}
               className="
                 mt-auto text-xs font-medium
                 text-[var(--primary-dark)]

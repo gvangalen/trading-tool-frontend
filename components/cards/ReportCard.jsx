@@ -4,33 +4,39 @@ import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import Link from "next/link";
-
-// Hook voor rapporten (daily / weekly / monthly)
 import { useReportData } from "@/hooks/useReportData";
-
-// Premium AI-insight block
 import AIInsightBlock from "@/components/ui/AIInsightBlock";
 
 export default function ReportCard() {
   const { report, loading, error } = useReportData("daily");
 
-  // -----------------------------
-  // 1️⃣ Veilig report object
-  // -----------------------------
+  // ------------------------------------
+  // Correct: report moet object zijn
+  // ------------------------------------
   const safeReport =
     report && typeof report === "object" && !Array.isArray(report)
       ? report
       : null;
 
-  // -----------------------------
-  // 2️⃣ AI quote, fallback
-  // -----------------------------
+  // ------------------------------------
+  // AI quote fallback
+  // ------------------------------------
   const quote =
     typeof safeReport?.ai_summary_short === "string"
       ? safeReport.ai_summary_short
       : typeof safeReport?.headline === "string"
       ? safeReport.headline
       : "Nieuw rapport is klaar!";
+
+  // -------------------------
+  // Fix: 404 detectie
+  // hook geeft soms: 404, "404", "Not Found"
+  // -------------------------
+  const is404 =
+    error === 404 ||
+    error === "404" ||
+    error === "Not Found" ||
+    error === "NotFound";
 
   return (
     <CardWrapper
@@ -39,37 +45,26 @@ export default function ReportCard() {
     >
       <div className="flex flex-col gap-4 min-h-[220px]">
 
-        {/* ----------------------------------------- */}
-        {/* 🟡 LOADING */}
-        {/* ----------------------------------------- */}
+        {/* LOADING */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* ----------------------------------------- */}
-        {/* 🔴 ERROR (alleen tonen als GEEN 404) */}
-        {/* ----------------------------------------- */}
-        {!loading && error && error !== 404 && (
+        {/* ERROR (maar GEEN 404 → echte fout) */}
+        {!loading && error && !is404 && (
           <p className="text-sm text-red-500 italic">
             Rapport kon niet geladen worden.
           </p>
         )}
 
-        {/* ----------------------------------------- */}
-        {/* 🟦 FIRST-TIME USER → GEEN RAPPORT (404) */}
-        {/* ----------------------------------------- */}
-        {!loading && (error === 404 || (!safeReport && !error)) && (
-          <div className="text-sm text-[var(--text-light)] italic leading-relaxed">
+        {/* FIRST TIME USER → 404 Fallback */}
+        {!loading && is404 && (
+          <div className="text-sm text-[var(--text-light)] italic">
             ✨ Je eerste dagelijkse rapport wordt
-            <span className="font-semibold"> morgen vroeg automatisch </span>
+            <span className="font-semibold"> morgen vroeg automatisch</span>{" "}
             gegenereerd door de AI.
-
             <div className="mt-3">
               <Link
                 href="/report"
-                className="
-                  text-[var(--primary-dark)]
-                  hover:underline
-                  font-medium
-                "
+                className="text-[var(--primary-dark)] hover:underline font-medium"
               >
                 Bekijk voorbeeldrapport →
               </Link>
@@ -77,15 +72,13 @@ export default function ReportCard() {
           </div>
         )}
 
-        {/* ----------------------------------------- */}
-        {/* 🟢 ER IS WEL EEN RAPPORT */}
-        {/* ----------------------------------------- */}
+        {/* ER IS WEL EEN RAPPORT */}
         {!loading && safeReport && (
           <>
             <AIInsightBlock text={quote} variant="dashboard" />
 
             <Link
-              href={`/report?date=${safeReport.report_date}`}
+              href="/report"
               className="
                 mt-auto text-xs font-medium
                 text-[var(--primary-dark)]

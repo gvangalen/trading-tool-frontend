@@ -11,7 +11,7 @@ export default function ReportCard() {
   const { report, loading, error } = useReportData("daily");
 
   // ------------------------------------
-  // Correct: report moet object zijn
+  // 1️⃣ Report moet een object zijn
   // ------------------------------------
   const safeReport =
     report && typeof report === "object" && !Array.isArray(report)
@@ -19,7 +19,18 @@ export default function ReportCard() {
       : null;
 
   // ------------------------------------
-  // AI quote fallback
+  // 2️⃣ 404 / "nog geen rapport" detectie
+  // hook geeft soms: 404, "404", "Not Found"
+  // ------------------------------------
+  const is404 =
+    error === 404 ||
+    error === "404" ||
+    error === "Not Found" ||
+    error === "NotFound" ||
+    (error && `${error}`.toLowerCase().includes("not found"));
+
+  // ------------------------------------
+  // 3️⃣ AI quote fallback
   // ------------------------------------
   const quote =
     typeof safeReport?.ai_summary_short === "string"
@@ -28,36 +39,22 @@ export default function ReportCard() {
       ? safeReport.headline
       : "Nieuw rapport is klaar!";
 
-  // -------------------------
-  // Fix: 404 detectie
-  // hook geeft soms: 404, "404", "Not Found"
-  // -------------------------
-  const is404 =
-    error === 404 ||
-    error === "404" ||
-    error === "Not Found" ||
-    error === "NotFound";
-
   return (
     <CardWrapper
       title="Daily Rapport"
       icon={<MessageSquare className="w-4 h-4 text-[var(--primary)]" />}
     >
       <div className="flex flex-col gap-4 min-h-[220px]">
-
-        {/* LOADING */}
+        {/* ===================== */}
+        {/* ⏳ LOADING */}
+        {/* ===================== */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* ERROR (maar GEEN 404 → echte fout) */}
-        {!loading && error && !is404 && (
-          <p className="text-sm text-red-500 italic">
-            Rapport kon niet geladen worden.
-          </p>
-        )}
-
-        {/* FIRST TIME USER → 404 Fallback */}
-        {!loading && is404 && (
-          <div className="text-sm text-[var(--text-light)] italic">
+        {/* ===================== */}
+        {/* 🟦 GEEN RAPPORT (404 / eerste dag) */}
+        {/* ===================== */}
+        {!loading && !safeReport && (is404 || !error) && (
+          <div className="text-sm text-[var(--text-light)] leading-relaxed">
             ✨ Je eerste dagelijkse rapport wordt
             <span className="font-semibold"> morgen vroeg automatisch</span>{" "}
             gegenereerd door de AI.
@@ -72,7 +69,18 @@ export default function ReportCard() {
           </div>
         )}
 
-        {/* ER IS WEL EEN RAPPORT */}
+        {/* ===================== */}
+        {/* 🔴 ECHTE ERROR (geen 404) */}
+        {/* ===================== */}
+        {!loading && !safeReport && error && !is404 && (
+          <p className="text-sm text-red-500 italic">
+            Rapport kon niet geladen worden.
+          </p>
+        )}
+
+        {/* ===================== */}
+        {/* 🟢 RAPPORT AANWEZIG */}
+        {/* ===================== */}
         {!loading && safeReport && (
           <>
             <AIInsightBlock text={quote} variant="dashboard" />

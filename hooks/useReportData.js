@@ -26,7 +26,7 @@ export function useReportData(reportType = 'daily') {
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('latest');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // ⬅️ BELANGRIJK: geen string default
+  const [error, setError] = useState(null); // null | 404 | 'error'
 
   const fetchFunctions = {
     daily: {
@@ -72,7 +72,7 @@ export function useReportData(reportType = 'daily') {
     }
 
     loadDates();
-  }, [reportType]);
+  }, [reportType, current]);
 
   // ==========================
   // 📄 Rapport ophalen
@@ -114,7 +114,7 @@ export function useReportData(reportType = 'daily') {
         } else {
           console.error(`❌ Report error (${reportType})`, err);
           setReport(null);
-          setError('error'); // echte fout
+          setError('error');
         }
       } finally {
         setLoading(false);
@@ -122,7 +122,7 @@ export function useReportData(reportType = 'daily') {
     }
 
     loadReport();
-  }, [selectedDate, reportType]);
+  }, [selectedDate, reportType, current]);
 
   return {
     report,
@@ -130,7 +130,7 @@ export function useReportData(reportType = 'daily') {
     selectedDate,
     setSelectedDate,
     loading,
-    error,              // ⬅️ kan nu: null | 404 | 'error'
+    error, // null | 404 | 'error'
     hasReport: !!report && !loading,
   };
 }

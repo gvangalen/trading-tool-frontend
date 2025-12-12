@@ -17,25 +17,18 @@ import {
 } from '@/lib/api/report';
 
 /**
- * ✅ Stabiele report hook
+ * ✅ Stabiele report hook (JS-versie)
+ * - Geen TS syntax
  * - Geen infinite loops
- * - 404 = geldige "nog geen rapport" status
- * - Scheidt "geen data" van "echte fout"
+ * - 404 = "nog geen rapport"
+ * - 'error' = echte fout
  */
 export function useReportData(reportType = 'daily') {
-  const [report, setReport] = useState<any | null>(null);
-  const [dates, setDates] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>('latest');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<null | 404 | 'error'>(null);
-
-  /**
-   * 🔑 Belangrijk:
-   * - null  = nog niet bepaald
-   * - false = er zijn GEEN rapporten → STOP met fetchen
-   * - true  = er zijn rapporten → normaal gedrag
-   */
-  const [hasAnyReports, setHasAnyReports] = useState<boolean | null>(null);
+  const [report, setReport] = useState(null);
+  const [dates, setDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('latest');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // null | 404 | 'error'
 
   const fetchFunctions = {
     daily: {
@@ -62,70 +55,39 @@ export function useReportData(reportType = 'daily') {
 
   const current = fetchFunctions[reportType];
 
-  /* =====================================================
-     📆 1️⃣ Datums ophalen (BEPALEND)
-  ===================================================== */
+  // ==========================
+  // 📆 Datums ophalen (1x per reportType)
+  // ==========================
   useEffect(() => {
     let cancelled = false;
 
     async function loadDates() {
-      setLoading(true);
-      setError(null);
-
       try {
         const data = await current.getDates();
+        if (cancelled) return;
 
-        if (!Array.isArray(data) || data.length === 0) {
-          if (!cancelled) {
-            setDates([]);
-            setHasAnyReports(false); // 🔥 STOP-SIGNAAL
-            setLoading(false);
-          }
-          return;
-        }
+        const sorted = Array.isArray(data)
+          ? data.sort((a, b) => (a < b ? 1 : -1))
+          : [];
 
-        const sorted = data.sort((a, b) => (a < b ? 1 : -1));
-
-        if (!cancelled) {
-          setDates(sorted);
-          setSelectedDate('latest');
-          setHasAnyReports(true);
-        }
-      } catch (err) {
-        // 🔥 404 of geen data = normale toestand
-        if (!cancelled) {
-          setDates([]);
-          setHasAnyReports(false);
-          setError(404);
-          setLoading(false);
-        }
+        setDates(sorted);
+        setSelectedDate('latest');
+      } catch {
+        setDates([]);
       }
     }
 
     loadDates();
-
     return () => {
       cancelled = true;
     };
   }, [reportType]);
 
-  /* =====================================================
-     📄 2️⃣ Rapport ophalen
-     👉 WORDT OVERGESLAGEN als er geen rapporten zijn
-  ===================================================== */
+  // ==========================
+  // 📄 Rapport ophalen
+  // ==========================
   useEffect(() => {
     let cancelled = false;
-
-    // ⛔ Nog niet bekend of er rapporten zijn
-    if (hasAnyReports === null) return;
-
-    // ⛔ Er zijn GEEN rapporten → STOP
-    if (hasAnyReports === false) {
-      setReport(null);
-      setError(404);
-      setLoading(false);
-      return;
-    }
 
     async function loadReport() {
       setLoading(true);
@@ -137,25 +99,21 @@ export function useReportData(reportType = 'daily') {
             ? await current.getLatest()
             : await current.getByDate(selectedDate);
 
-        if (
-          !data ||
-          typeof data !== 'object' ||
-          Object.keys(data).length === 0
-        ) {
-          if (!cancelled) {
-            setReport(null);
-            setError(404);
-          }
-          return;
-        }
+        if (cancelled) return;
 
-        if (!cancelled) {
+        const isEmpty =
+          !data || typeof data !== 'object' || Object.keys(data).length === 0;
+
+        if (isEmpty) {
+          setReport(null);
+          setError(404); // 👈 normaal: nog geen rapport
+        } else {
           setReport(data);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setReport(null);
-          setError(404);
+          setError(404); // backend geeft 404 → frontend rustig
         }
       } finally {
         if (!cancelled) {
@@ -165,15 +123,11 @@ export function useReportData(reportType = 'daily') {
     }
 
     loadReport();
-
     return () => {
       cancelled = true;
     };
-  }, [selectedDate, reportType, hasAnyReports]);
+  }, [selectedDate, reportType]);
 
-  /* =====================================================
-     ✅ API
-  ===================================================== */
   return {
     report,
     dates,
@@ -182,6 +136,5 @@ export function useReportData(reportType = 'daily') {
     loading,
     error, // null | 404 | 'error'
     hasReport: !!report && !loading,
-    hasAnyReports,
   };
 }

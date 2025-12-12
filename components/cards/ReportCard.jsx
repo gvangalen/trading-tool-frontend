@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { MessageSquare, ChevronRight } from "lucide-react";
 import CardWrapper from "@/components/ui/CardWrapper";
@@ -10,28 +10,16 @@ import AIInsightBlock from "@/components/ui/AIInsightBlock";
 export default function ReportCard() {
   const { report, loading, error } = useReportData("daily");
 
-  // ------------------------------------
-  // 1️⃣ Report moet een object zijn
-  // ------------------------------------
+  // ✅ Report moet object zijn
   const safeReport =
     report && typeof report === "object" && !Array.isArray(report)
       ? report
       : null;
 
-  // ------------------------------------
-  // 2️⃣ 404 / "nog geen rapport" detectie
-  // hook geeft soms: 404, "404", "Not Found"
-  // ------------------------------------
-  const is404 =
-    error === 404 ||
-    error === "404" ||
-    error === "Not Found" ||
-    error === "NotFound" ||
-    (error && `${error}`.toLowerCase().includes("not found"));
+  // ✅ 404 = eerste keer / nog geen rapport
+  const isFirstTime = error === 404;
 
-  // ------------------------------------
-  // 3️⃣ AI quote fallback
-  // ------------------------------------
+  // ✅ AI-quote fallback
   const quote =
     typeof safeReport?.ai_summary_short === "string"
       ? safeReport.ai_summary_short
@@ -45,15 +33,12 @@ export default function ReportCard() {
       icon={<MessageSquare className="w-4 h-4 text-[var(--primary)]" />}
     >
       <div className="flex flex-col gap-4 min-h-[220px]">
-        {/* ===================== */}
+
         {/* ⏳ LOADING */}
-        {/* ===================== */}
         {loading && <CardLoader text="Rapport laden…" />}
 
-        {/* ===================== */}
-        {/* 🟦 GEEN RAPPORT (404 / eerste dag) */}
-        {/* ===================== */}
-        {!loading && !safeReport && (is404 || !error) && (
+        {/* 🟦 EERSTE KEER (404) */}
+        {!loading && isFirstTime && (
           <div className="text-sm text-[var(--text-light)] leading-relaxed">
             ✨ Je eerste dagelijkse rapport wordt
             <span className="font-semibold"> morgen vroeg automatisch</span>{" "}
@@ -69,18 +54,14 @@ export default function ReportCard() {
           </div>
         )}
 
-        {/* ===================== */}
-        {/* 🔴 ECHTE ERROR (geen 404) */}
-        {/* ===================== */}
-        {!loading && !safeReport && error && !is404 && (
+        {/* 🔴 ECHTE ERROR */}
+        {!loading && error === 'error' && (
           <p className="text-sm text-red-500 italic">
             Rapport kon niet geladen worden.
           </p>
         )}
 
-        {/* ===================== */}
         {/* 🟢 RAPPORT AANWEZIG */}
-        {/* ===================== */}
         {!loading && safeReport && (
           <>
             <AIInsightBlock text={quote} variant="dashboard" />

@@ -17,16 +17,25 @@ import {
 } from '@/lib/api/report';
 
 /**
- * ✅ Volledig stabiele report hook
- * - Geeft 404 correct door
- * - Maakt onderscheid tussen "geen rapport" en "echte fout"
+ * ✅ Stabiele report hook
+ * - Geen infinite loops
+ * - 404 = geldige "nog geen rapport" status
+ * - Scheidt "geen data" van "echte fout"
  */
 export function useReportData(reportType = 'daily') {
-  const [report, setReport] = useState(null);
-  const [dates, setDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState('latest');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // null | 404 | 'error'
+  const [report, setReport] = useState<any | null>(null);
+  const [dates, setDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('latest');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<null | 404 | 'error'>(null);
+
+  /**
+   * 🔑 Belangrijk:
+   * - null  = nog niet bepaald
+   * - false = er zijn GEEN rapporten → STOP met fetchen
+   * - true  = er zijn rapporten → normaal gedrag
+   */
+  const [hasAnyReports, setHasAnyReports] = useState<boolean | null>(null);
 
   const fetchFunctions = {
     daily: {
@@ -53,77 +62,118 @@ export function useReportData(reportType = 'daily') {
 
   const current = fetchFunctions[reportType];
 
-  // ==========================
-  // 📆 Datums ophalen
-  // ==========================
+  /* =====================================================
+     📆 1️⃣ Datums ophalen (BEPALEND)
+  ===================================================== */
   useEffect(() => {
+    let cancelled = false;
+
     async function loadDates() {
+      setLoading(true);
+      setError(null);
+
       try {
         const data = await current.getDates();
-        const sorted = Array.isArray(data)
-          ? data.sort((a, b) => (a < b ? 1 : -1))
-          : [];
-        setDates(sorted);
-        setSelectedDate('latest');
+
+        if (!Array.isArray(data) || data.length === 0) {
+          if (!cancelled) {
+            setDates([]);
+            setHasAnyReports(false); // 🔥 STOP-SIGNAAL
+            setLoading(false);
+          }
+          return;
+        }
+
+        const sorted = data.sort((a, b) => (a < b ? 1 : -1));
+
+        if (!cancelled) {
+          setDates(sorted);
+          setSelectedDate('latest');
+          setHasAnyReports(true);
+        }
       } catch (err) {
-        console.warn(`⚠️ Geen datums (${reportType})`, err);
-        setDates([]);
+        // 🔥 404 of geen data = normale toestand
+        if (!cancelled) {
+          setDates([]);
+          setHasAnyReports(false);
+          setError(404);
+          setLoading(false);
+        }
       }
     }
 
     loadDates();
-  }, [reportType, current]);
 
-  // ==========================
-  // 📄 Rapport ophalen
-  // ==========================
+    return () => {
+      cancelled = true;
+    };
+  }, [reportType]);
+
+  /* =====================================================
+     📄 2️⃣ Rapport ophalen
+     👉 WORDT OVERGESLAGEN als er geen rapporten zijn
+  ===================================================== */
   useEffect(() => {
+    let cancelled = false;
+
+    // ⛔ Nog niet bekend of er rapporten zijn
+    if (hasAnyReports === null) return;
+
+    // ⛔ Er zijn GEEN rapporten → STOP
+    if (hasAnyReports === false) {
+      setReport(null);
+      setError(404);
+      setLoading(false);
+      return;
+    }
+
     async function loadReport() {
       setLoading(true);
       setError(null);
 
       try {
-        let data;
+        const data =
+          selectedDate === 'latest'
+            ? await current.getLatest()
+            : await current.getByDate(selectedDate);
 
-        if (selectedDate === 'latest') {
-          data = await current.getLatest();
-        } else {
-          data = await current.getByDate(selectedDate);
-        }
-
-        const isEmpty =
-          !data || typeof data !== 'object' || Object.keys(data).length === 0;
-
-        if (isEmpty) {
-          setReport(null);
-          setError(404); // ✅ expliciet: geen rapport
+        if (
+          !data ||
+          typeof data !== 'object' ||
+          Object.keys(data).length === 0
+        ) {
+          if (!cancelled) {
+            setReport(null);
+            setError(404);
+          }
           return;
         }
 
-        setReport(data);
+        if (!cancelled) {
+          setReport(data);
+        }
       } catch (err) {
-        const status =
-          err?.status ||
-          err?.response?.status ||
-          (typeof err === 'number' ? err : null);
-
-        if (status === 404) {
-          // ✅ NORMAAL: nog geen rapport
+        if (!cancelled) {
           setReport(null);
           setError(404);
-        } else {
-          console.error(`❌ Report error (${reportType})`, err);
-          setReport(null);
-          setError('error');
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadReport();
-  }, [selectedDate, reportType, current]);
 
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, reportType, hasAnyReports]);
+
+  /* =====================================================
+     ✅ API
+  ===================================================== */
   return {
     report,
     dates,
@@ -132,5 +182,6 @@ export function useReportData(reportType = 'daily') {
     loading,
     error, // null | 404 | 'error'
     hasReport: !!report && !loading,
+    hasAnyReports,
   };
 }

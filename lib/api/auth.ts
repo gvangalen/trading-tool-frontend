@@ -3,7 +3,7 @@
 import { API_BASE_URL } from "@/lib/config";
 
 /* =======================================================
-   📌 Local Storage Helpers (centrale opslag)
+   📌 Local Storage Helpers
 ======================================================= */
 
 const LOCAL_USER_KEY = "tt_current_user";
@@ -33,7 +33,7 @@ export function clearUserLocal() {
 }
 
 /* =======================================================
-   🆔 user_id helpers (blijft voor apiClient)
+   🆔 user_id helpers
 ======================================================= */
 
 export function getCurrentUserId(): number | null {
@@ -55,10 +55,7 @@ export function clearCurrentUserId() {
 }
 
 /* =======================================================
-   🌐 fetchAuth — altijd cookies meesturen
-   - GEEN Bearer headers
-   - Stuurt HttpOnly cookies mee via credentials: "include"
-   - Geeft direct JSON terug (of null)
+   🌐 fetchAuth — MET STATUS DOORGAVE (🔥 FIX)
 ======================================================= */
 
 async function fetchAuthInternal(
@@ -75,10 +72,20 @@ async function fetchAuthInternal(
   });
 
   if (!res.ok) {
-    // Voor gewone calls gooien we een error; login/refresh gebruiken eigen fetch
     const text = await res.text().catch(() => "");
-    console.error(`❌ fetchAuth ${path} failed:`, res.status, text);
-    throw new Error(`Auth request failed (${res.status})`);
+
+    const error: any = new Error("API request failed");
+    error.status = res.status;      // 🔥 ESSENTIEEL
+    error.body = text;
+    error.path = path;
+
+    console.error(
+      `❌ fetchAuth ${path} failed:`,
+      res.status,
+      text
+    );
+
+    throw error;
   }
 
   try {
@@ -91,7 +98,7 @@ async function fetchAuthInternal(
 export const fetchAuth = fetchAuthInternal;
 
 /* =======================================================
-   🔐 LOGIN (gebruikt eigen fetch, geen fetchAuth)
+   🔐 LOGIN
 ======================================================= */
 
 export async function apiLogin(email: string, password: string) {
@@ -99,9 +106,7 @@ export async function apiLogin(email: string, password: string) {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
@@ -116,9 +121,7 @@ export async function apiLogin(email: string, password: string) {
     const data = await res.json();
     const user = data.user || data;
 
-    // Backend zet cookies, wij bewaren alleen user in localStorage
     saveUserLocal(user);
-
     return { success: true, user };
   } catch (err) {
     console.error("❌ apiLogin error:", err);
@@ -135,9 +138,7 @@ export async function apiLogout() {
     await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     });
     clearUserLocal();
     return { success: true };
@@ -148,31 +149,23 @@ export async function apiLogout() {
 }
 
 /* =======================================================
-   🔁 REFRESH TOKEN
+   🔁 REFRESH
 ======================================================= */
 
 export async function apiRefresh(refreshToken?: string) {
-  // In jouw huidige setup doet de backend refresh via cookie,
-  // dus refreshToken in body is optioneel / niet nodig.
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : undefined,
+      headers: { "Content-Type": "application/json" },
+      body: refreshToken
+        ? JSON.stringify({ refresh_token: refreshToken })
+        : undefined,
     });
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      console.error("❌ apiRefresh failed:", res.status, body);
-      return { success: false };
-    }
+    if (!res.ok) return { success: false };
 
     const data = await res.json().catch(() => ({}));
-    // access_token wordt door backend NIET in cookie gezet in Bearer-mode,
-    // maar in jouw huidige cookie-setup gebruiken we dit niet meer actief.
     return { success: true, ...data };
   } catch (err) {
     console.error("❌ apiRefresh error:", err);
@@ -181,7 +174,7 @@ export async function apiRefresh(refreshToken?: string) {
 }
 
 /* =======================================================
-   👤 ME — synchroniseert backend → localStorage
+   👤 ME
 ======================================================= */
 
 export async function apiMe() {
@@ -189,9 +182,7 @@ export async function apiMe() {
     const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
       method: "GET",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     });
 
     if (!res.ok) {

@@ -1,17 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/config";
 import { useAuth } from "@/components/auth/AuthProvider";
 
-/**
- * useOnboarding — enhanced with:
- * ✅ automatic redirect to /onboarding/complete
- * ✅ step unlock logic (market → macro → technical → setup → strategy)
- */
 export function useOnboarding() {
-  const router = useRouter();
   const { isAuthenticated, fetchWithAuth } = useAuth();
 
   const [status, setStatus] = useState(null);
@@ -31,7 +24,9 @@ export function useOnboarding() {
     try {
       setLoading(true);
 
-      const res = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/status`);
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/api/onboarding/status`
+      );
 
       if (!res.ok) {
         console.error("❌ Failed to load onboarding status:", res.status);
@@ -41,26 +36,12 @@ export function useOnboarding() {
       const data = await res.json();
       setStatus(data);
 
-      // ======================================
-      // ⭐ AUTO-REDIRECT wanneer onboarding klaar is
-      // ======================================
-      const allDone =
-        data?.has_market &&
-        data?.has_macro &&
-        data?.has_technical &&
-        data?.has_setup &&
-        data?.has_strategy;
-
-      if (allDone) {
-        router.push("/onboarding/complete");
-      }
-
     } catch (err) {
       console.error("❌ Failed to load onboarding status:", err);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, fetchWithAuth, router]);
+  }, [isAuthenticated, fetchWithAuth]);
 
   useEffect(() => {
     fetchStatus();
@@ -116,9 +97,8 @@ export function useOnboarding() {
     !!status?.has_strategy;
 
   // ======================================
-  // 5️⃣ Stap-volgorde / unlock logic
+  // 5️⃣ Unlock logic
   // ======================================
-
   const allowedSteps = {
     market: true,
     macro: !!status?.has_market,
@@ -133,7 +113,7 @@ export function useOnboarding() {
     saving,
     authenticated: isAuthenticated,
     completed,
-    allowedSteps,      // ⭐ nieuw
+    allowedSteps,
     completeStep,
     finish,
     reset,

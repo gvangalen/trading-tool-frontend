@@ -19,8 +19,9 @@ export default function TechnicalPage() {
 
   const {
     technicalData,
-    addTechnicalIndicator,      // ⬅️ DIT MISSTE JE!
+    addTechnicalIndicator,
     removeTechnicalIndicator,
+    activeTechnicalIndicatorNames, // ✅ NIEUW
     loading: loadingIndicators,
     error,
   } = useTechnicalData(activeTab);
@@ -40,6 +41,9 @@ export default function TechnicalPage() {
       "Nog geen technische AI-inzichten beschikbaar. Voeg indicatoren toe of wacht op de eerste AI-run.",
   };
 
+  /* -----------------------------------------------------
+     🎨 Score kleur
+  ----------------------------------------------------- */
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
     if (isNaN(n)) return "text-[var(--text-light)]";
@@ -60,8 +64,10 @@ export default function TechnicalPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
+      {/* 🔥 Onboarding stap */}
       <OnboardingBanner step="technical" />
 
+      {/* Titel */}
       <div className="flex items-center gap-3">
         <TrendingUp size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -69,8 +75,10 @@ export default function TechnicalPage() {
         </h1>
       </div>
 
+      {/* AI Agent */}
       <AgentInsightPanel category="technical" />
 
+      {/* Totale score */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -114,11 +122,13 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* ⭐⭐⭐⭐⭐ FIX AANGEBRACHT: addTechnicalIndicator DOORGEGEVEN */}
-      <TechnicalIndicatorScoreView 
+      {/* ⭐ Indicator scorelogica (met duplicate bescherming) */}
+      <TechnicalIndicatorScoreView
         addTechnicalIndicator={addTechnicalIndicator}
+        activeTechnicalIndicatorNames={activeTechnicalIndicatorNames}
       />
 
+      {/* Tabs */}
       <TechnicalTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}

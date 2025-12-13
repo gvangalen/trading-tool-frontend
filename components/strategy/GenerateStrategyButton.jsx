@@ -1,22 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 import {
   generateStrategy,
   fetchTaskStatus,
   fetchStrategyBySetup,
-} from '@/lib/api/strategy';
+} from "@/lib/api/strategy";
+
+import { useModal } from "@/components/ui/ModalProvider";
 
 /* Lucide icons */
 import { Wand2, Loader2 } from "lucide-react";
 
 export default function GenerateStrategyButton({ setupId, onSuccess }) {
+  const { showSnackbar } = useModal();
+
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState("");
 
   // ======================================================
-  // 🔁 Poll Celery Task (elke 1.5 sec)
+  // 🔁 Poll Celery Task
   // ======================================================
   async function waitForTask(taskId) {
     return new Promise((resolve, reject) => {
@@ -24,14 +28,12 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
         try {
           const res = await fetchTaskStatus(taskId);
 
-          console.log('📡 Polling task status:', res);
-
-          if (!res || res?.state === 'FAILURE') {
+          if (!res || res?.state === "FAILURE") {
             clearInterval(interval);
-            reject('❌ Celery taak mislukt');
+            reject("Celery taak mislukt");
           }
 
-          if (res?.state === 'SUCCESS' || res?.result?.success) {
+          if (res?.state === "SUCCESS" || res?.result?.success) {
             clearInterval(interval);
             resolve(res);
           }
@@ -48,41 +50,36 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
   // ======================================================
   const handleGenerate = async () => {
     if (!setupId) {
-      setStatus('❌ Setup ID ontbreekt');
+      showSnackbar("Setup ontbreekt", "danger");
       return;
     }
 
     setLoading(true);
-    setStatus('⏳ Strategie wordt gestart...');
+    setStatus("🤖 AI is bezig met genereren...");
 
     try {
       const data = await generateStrategy(setupId, true);
 
       if (!data?.task_id) {
-        setStatus('❌ Ongeldige serverrespons');
-        setLoading(false);
-        return;
+        throw new Error("Ongeldige serverrespons");
       }
 
-      setStatus('🤖 AI is bezig met genereren...');
+      await waitForTask(data.task_id);
 
-      const done = await waitForTask(data.task_id);
-
-      setStatus('✨ Strategie gegenereerd!');
-
-      // Haal nieuwe strategy op
       const final = await fetchStrategyBySetup(setupId);
 
       if (onSuccess) onSuccess(final?.strategy || null);
 
-      setTimeout(() => setStatus(''), 2500);
+      showSnackbar("Strategie succesvol gegenereerd", "success");
+      setStatus("");
 
     } catch (err) {
-      console.error('❌ Strategie-generatie fout:', err);
-      setStatus('❌ Er ging iets mis');
+      console.error("❌ Strategie-generatie fout:", err);
+      showSnackbar("Strategie genereren mislukt", "danger");
+      setStatus("");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   // ======================================================
@@ -90,8 +87,6 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
   // ======================================================
   return (
     <div className="space-y-2">
-
-      {/* BUTTON */}
       <button
         onClick={handleGenerate}
         disabled={loading}
@@ -118,7 +113,6 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
         )}
       </button>
 
-      {/* STATUS MESSAGE */}
       {status && (
         <p className="text-xs text-gray-700 dark:text-gray-300 animate-fade-slide">
           {status}

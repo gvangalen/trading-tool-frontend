@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
-
 import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
-
 import { Coins, Plus } from "lucide-react";
+
+import { useModal } from "@/components/ui/ModalProvider";
 
 export default function MarketIndicatorScoreView({
   availableIndicators,
@@ -14,25 +13,25 @@ export default function MarketIndicatorScoreView({
   selectIndicator,
   addMarketIndicator,
 }) {
-  const [added, setAdded] = useState(false);
+  const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
-     ➕ Toevoegen
+     ➕ Toevoegen (via centrale snackbar)
   ------------------------------------------------------- */
   const handleAdd = async () => {
     if (!selectedIndicator?.name) return;
 
     try {
       await addMarketIndicator(selectedIndicator.name);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2500);
+      showSnackbar("Market-indicator toegevoegd", "success");
     } catch (err) {
       console.error("❌ Toevoegen mislukt:", err);
+      showSnackbar("Toevoegen van market-indicator mislukt", "danger");
     }
   };
 
   /* -------------------------------------------------------
-     Scorekleur op basis van globals.css
+     Scorekleur
   ------------------------------------------------------- */
   const scoreClass = (score) => {
     if (typeof score !== "number") return "text-[var(--text-light)]";
@@ -65,7 +64,7 @@ export default function MarketIndicatorScoreView({
       />
 
       {/* -------------------------------------------------------
-         📊 Scoreregels tabel
+         📊 Scoreregels
       ------------------------------------------------------- */}
       {selectedIndicator && scoreRules.length > 0 && (
         <div className="mt-6">
@@ -127,9 +126,6 @@ export default function MarketIndicatorScoreView({
         </div>
       )}
 
-      {/* -------------------------------------------------------
-         Placeholder
-      ------------------------------------------------------- */}
       {!selectedIndicator && (
         <p className="mt-4 text-sm text-[var(--text-light)] italic">
           Selecteer een indicator om de scoreregels te bekijken.
@@ -139,7 +135,7 @@ export default function MarketIndicatorScoreView({
       {/* -------------------------------------------------------
          ➕ Toevoegen knop
       ------------------------------------------------------- */}
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-5">
         <button
           onClick={handleAdd}
           disabled={!selectedIndicator}
@@ -149,7 +145,7 @@ export default function MarketIndicatorScoreView({
             bg-[var(--primary)]
             text-white
             font-medium
-            hover:bg-blue-700
+            hover:brightness-90
             disabled:opacity-40 disabled:cursor-not-allowed
             transition
           "
@@ -157,10 +153,6 @@ export default function MarketIndicatorScoreView({
           <Plus size={18} />
           Voeg toe aan market-analyse
         </button>
-
-        {added && (
-          <span className="text-green-600 text-sm">✔️ Succesvol toegevoegd</span>
-        )}
       </div>
     </CardWrapper>
   );

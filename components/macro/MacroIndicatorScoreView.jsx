@@ -13,7 +13,13 @@ import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 import { BarChart2, Plus } from "lucide-react";
 import { useModal } from "@/components/modal/ModalProvider";
 
-export default function MacroIndicatorScoreView({ addMacroIndicator }) {
+/* =========================================================
+   Macro Indicator Score View — DUPLICATE SAFE
+========================================================= */
+export default function MacroIndicatorScoreView({
+  addMacroIndicator,
+  activeMacroIndicatorNames = [], // 👈 NIEUW (net als Market)
+}) {
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
@@ -27,7 +33,7 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
     async function load() {
       try {
         const list = await getMacroIndicatorNames();
-        setAllIndicators(list || []);
+        setAllIndicators(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error("❌ macro indicators ophalen:", err);
         showSnackbar("Kon macro-indicatoren niet ophalen.", "danger");
@@ -49,7 +55,7 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
 
     try {
       const rules = await getScoreRulesForMacroIndicator(indicator.name);
-      setScoreRules(rules || []);
+      setScoreRules(Array.isArray(rules) ? rules : []);
     } catch (err) {
       console.error("❌ scoreregels ophalen:", err);
       showSnackbar("Kon scoreregels niet ophalen.", "danger");
@@ -57,13 +63,18 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
   };
 
   /* -------------------------------------------------------
-     ➕ Toevoegen (nu correct met live refresh)
+     ✅ Is indicator al toegevoegd?
+  ------------------------------------------------------- */
+  const isAlreadyAdded =
+    selected && activeMacroIndicatorNames.includes(selected.name);
+
+  /* -------------------------------------------------------
+     ➕ Toevoegen (duplicate safe)
   ------------------------------------------------------- */
   const handleAdd = async () => {
-    if (!selected) return;
+    if (!selected?.name || isAlreadyAdded) return;
 
     try {
-      // ⭐ Gebruik de hook-functie, NIET rechtstreeks macroDataAdd()
       await addMacroIndicator(selected.name);
 
       showSnackbar(
@@ -72,8 +83,27 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
       );
     } catch (err) {
       console.error("❌ Toevoegen mislukt:", err);
+
+      // Backend safety (optioneel)
+      if (err?.response?.status === 409) {
+        showSnackbar("Indicator is al toegevoegd.", "info");
+        return;
+      }
+
       showSnackbar("Toevoegen mislukt. Probeer opnieuw.", "danger");
     }
+  };
+
+  /* -------------------------------------------------------
+     🎨 Scorekleur helper
+  ------------------------------------------------------- */
+  const scoreClass = (score) => {
+    if (typeof score !== "number") return "text-[var(--text-light)]";
+    if (score >= 80) return "score-strong-buy";
+    if (score >= 60) return "score-buy";
+    if (score >= 40) return "score-neutral";
+    if (score >= 20) return "score-sell";
+    return "score-strong-sell";
   };
 
   return (
@@ -85,6 +115,9 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
         </div>
       }
     >
+      {/* -------------------------------------------------------
+         🔍 Indicator zoeken
+      ------------------------------------------------------- */}
       <UniversalSearchDropdown
         label="Zoek een macro-indicator"
         items={allIndicators}
@@ -93,6 +126,9 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
         placeholder="Typ een indicator zoals DXY, CPI, rente, BTC dominantie..."
       />
 
+      {/* -------------------------------------------------------
+         📊 Scoreregels
+      ------------------------------------------------------- */}
       {selected && scoreRules.length > 0 && (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-[var(--text-dark)] mb-3">
@@ -117,47 +153,36 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
               <tbody>
                 {[...scoreRules]
                   .sort((a, b) => a.range_min - b.range_min)
-                  .map((r, idx) => {
-                    const scoreClass =
-                      r.score >= 80
-                        ? "score-strong-buy"
-                        : r.score >= 60
-                        ? "score-buy"
-                        : r.score >= 40
-                        ? "score-neutral"
-                        : r.score >= 20
-                        ? "score-sell"
-                        : "score-strong-sell";
+                  .map((r, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition"
+                    >
+                      <td className="p-3">
+                        {r.range_min} – {r.range_max}
+                      </td>
 
-                    return (
-                      <tr
-                        key={idx}
-                        className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition"
+                      <td
+                        className={`p-3 text-center font-semibold ${scoreClass(
+                          r.score
+                        )}`}
                       >
-                        <td className="p-3">
-                          {r.range_min} – {r.range_max}
-                        </td>
+                        {r.score}
+                      </td>
 
-                        <td
-                          className={`p-3 text-center font-semibold ${scoreClass}`}
-                        >
-                          {r.score}
-                        </td>
+                      <td className="p-3 text-center italic text-[var(--text-light)]">
+                        {r.trend}
+                      </td>
 
-                        <td className="p-3 text-center italic text-[var(--text-light)]">
-                          {r.trend}
-                        </td>
+                      <td className="p-3 text-[var(--text-dark)]">
+                        {r.interpretation}
+                      </td>
 
-                        <td className="p-3 text-[var(--text-dark)]">
-                          {r.interpretation}
-                        </td>
-
-                        <td className="p-3 text-[var(--text-light)]">
-                          {r.action}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      <td className="p-3 text-[var(--text-light)]">
+                        {r.action}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -171,25 +196,27 @@ export default function MacroIndicatorScoreView({ addMacroIndicator }) {
       )}
 
       {/* -------------------------------------------------------
-         ➕ Toevoegen knop
+         ➕ Toevoegen knop (smart disabled)
       ------------------------------------------------------- */}
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-5">
         <button
           onClick={handleAdd}
-          disabled={!selected}
+          disabled={!selected || isAlreadyAdded}
           className="
             flex items-center gap-2
             px-4 py-2 rounded-lg
             bg-[var(--primary)]
             text-white
             font-medium
-            hover:bg-blue-700
+            hover:brightness-90
             disabled:opacity-40 disabled:cursor-not-allowed
             transition
           "
         >
           <Plus size={18} />
-          Toevoegen aan Macro-analyse
+          {isAlreadyAdded
+            ? "Indicator al toegevoegd"
+            : "Toevoegen aan Macro-analyse"}
         </button>
       </div>
     </CardWrapper>

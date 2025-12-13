@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useModal } from "@/components/ui/ModalProvider";
+
 import {
-  Info,
   Pencil,
   Target,
   Tag,
@@ -18,6 +19,8 @@ export default function StrategyFormManual({
   mode = "create",
   hideSubmit = false,
 }) {
+  const { showSnackbar } = useModal();
+
   /* ===========================================================
      FORM STATE
   =========================================================== */
@@ -38,10 +41,9 @@ export default function StrategyFormManual({
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   /* ===========================================================
-     FILTER: Alleen manual setups (en geen bestaande strategie)
+     FILTER: Alleen manual setups zonder bestaande strategie
   =========================================================== */
   const filteredSetups = useMemo(() => {
     return setups.filter((s) => {
@@ -68,7 +70,9 @@ export default function StrategyFormManual({
     const { name, value, type, checked } = e.target;
 
     if (name === "setup_id") {
-      const selected = filteredSetups.find((s) => String(s.id) === String(value));
+      const selected = filteredSetups.find(
+        (s) => String(s.id) === String(value)
+      );
 
       setForm((prev) => ({
         ...prev,
@@ -76,6 +80,7 @@ export default function StrategyFormManual({
         symbol: selected?.symbol || "",
         timeframe: selected?.timeframe || "",
       }));
+      setError("");
       return;
     }
 
@@ -85,7 +90,6 @@ export default function StrategyFormManual({
     }));
 
     setError("");
-    setSuccess(false);
   };
 
   /* ===========================================================
@@ -94,16 +98,19 @@ export default function StrategyFormManual({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess(false);
 
-    if (!form.setup_id) return setError("⚠️ Kies een setup.");
+    if (!form.setup_id) {
+      setError("⚠️ Kies een setup.");
+      return;
+    }
 
     const entry = parseFloat(form.entry);
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
 
     if ([entry, target, stop_loss].some((v) => Number.isNaN(v))) {
-      return setError("⚠️ Entry, target en stop-loss moeten geldige getallen zijn.");
+      setError("⚠️ Entry, target en stop-loss moeten geldige getallen zijn.");
+      return;
     }
 
     const tags =
@@ -134,7 +141,8 @@ export default function StrategyFormManual({
     try {
       setSaving(true);
       await onSubmit(payload);
-      setSuccess(true);
+
+      showSnackbar("Handmatige strategie opgeslagen", "success");
 
       if (mode === "create") {
         setForm({
@@ -149,10 +157,9 @@ export default function StrategyFormManual({
           favorite: false,
         });
       }
-
-      setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
       console.error("❌ Error saving manual strategy:", err);
+      showSnackbar("Opslaan van strategie mislukt", "danger");
       setError("❌ Opslaan mislukt.");
     } finally {
       setSaving(false);
@@ -163,7 +170,7 @@ export default function StrategyFormManual({
     saving || !form.setup_id || !form.entry || !form.target || !form.stop_loss;
 
   /* ===========================================================
-     UI — Fintech PRO 6.0 + btn-primary
+     UI
   =========================================================== */
   return (
     <form
@@ -176,20 +183,12 @@ export default function StrategyFormManual({
         border-gray-200 dark:border-gray-800
       "
     >
-      {/* Titel */}
       <h3 className="text-xl font-bold flex items-center gap-2 text-[var(--text-dark)]">
         <Pencil className="w-5 h-5 text-purple-600" />
         {mode === "edit"
           ? "Handmatige strategie bewerken"
           : "Nieuwe Handmatige Strategie"}
       </h3>
-
-      {/* Success */}
-      {success && (
-        <div className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border border-green-300 dark:border-green-800 px-4 py-2 rounded-xl text-sm">
-          Strategie opgeslagen!
-        </div>
-      )}
 
       {/* Setup-select */}
       <div>
@@ -201,12 +200,7 @@ export default function StrategyFormManual({
           value={form.setup_id}
           disabled={mode === "edit"}
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-gray-50 dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-            focus:ring-2 focus:ring-purple-500
-          "
+          className="w-full p-3 rounded-xl border bg-gray-50 dark:bg-[#111]"
         >
           <option value="">-- Kies een setup --</option>
           {filteredSetups.map((s) => (
@@ -215,35 +209,6 @@ export default function StrategyFormManual({
             </option>
           ))}
         </select>
-      </div>
-
-      {/* Symbol + Timeframe */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-1">Symbol</label>
-          <input
-            value={form.symbol}
-            readOnly
-            className="
-              w-full p-3 rounded-xl border
-              bg-gray-100 dark:bg-[#111]
-              border-gray-300 dark:border-gray-700
-            "
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold mb-1">Timeframe</label>
-          <input
-            value={form.timeframe}
-            readOnly
-            className="
-              w-full p-3 rounded-xl border
-              bg-gray-100 dark:bg-[#111]
-              border-gray-300 dark:border-gray-700
-            "
-          />
-        </div>
       </div>
 
       {/* Entry */}
@@ -256,11 +221,7 @@ export default function StrategyFormManual({
           type="number"
           value={form.entry}
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
+          className="w-full p-3 rounded-xl border"
         />
       </div>
 
@@ -269,20 +230,13 @@ export default function StrategyFormManual({
         <label className="block text-sm font-semibold mb-1">
           Target prijs (€)
         </label>
-        <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-gray-400" />
-          <input
-            name="target"
-            type="number"
-            value={form.target}
-            onChange={handleChange}
-            className="
-              w-full p-3 rounded-xl border
-              bg-white dark:bg-[#111]
-              border-gray-300 dark:border-gray-700
-            "
-          />
-        </div>
+        <input
+          name="target"
+          type="number"
+          value={form.target}
+          onChange={handleChange}
+          className="w-full p-3 rounded-xl border"
+        />
       </div>
 
       {/* Stop-loss */}
@@ -295,29 +249,7 @@ export default function StrategyFormManual({
           type="number"
           value={form.stop_loss}
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
-        />
-      </div>
-
-      {/* Uitleg */}
-      <div>
-        <label className="block text-sm font-semibold mb-1">
-          Uitleg / notities
-        </label>
-        <textarea
-          name="explanation"
-          rows={3}
-          value={form.explanation}
-          onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
+          className="w-full p-3 rounded-xl border"
         />
       </div>
 
@@ -331,17 +263,13 @@ export default function StrategyFormManual({
             type="text"
             value={form.tags}
             onChange={handleChange}
-            className="
-              w-full p-3 rounded-xl border
-              bg-white dark:bg-[#111]
-              border-gray-300 dark:border-gray-700
-            "
+            className="w-full p-3 rounded-xl border"
           />
         </div>
       </div>
 
       {/* Favoriet */}
-      <label className="flex items-center gap-3 text-sm font-medium mt-2">
+      <label className="flex items-center gap-3 text-sm font-medium">
         <input
           type="checkbox"
           name="favorite"
@@ -353,7 +281,7 @@ export default function StrategyFormManual({
             <Star className="w-4 h-4" /> Favoriet
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+          <span className="flex items-center gap-1 text-gray-600">
             <StarOff className="w-4 h-4" /> Geen favoriet
           </span>
         )}
@@ -375,7 +303,6 @@ export default function StrategyFormManual({
         </button>
       )}
 
-      {/* Modal submit */}
       {hideSubmit && (
         <button id="strategy-edit-submit" type="submit" className="hidden">
           Submit

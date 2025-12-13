@@ -28,7 +28,7 @@ export default function MarketDayTable({ data = [], onRemove }) {
   };
 
   /* -------------------------------------------------------
-     ❌ VERWIJDEREN — MET CONFIRM MODAL (zoals Macro)
+     ❌ VERWIJDEREN — CONFIRM MODAL (single source of truth)
   ------------------------------------------------------- */
   const handleDelete = (name) => {
     if (!name) return;
@@ -49,10 +49,7 @@ export default function MarketDayTable({ data = [], onRemove }) {
       tone: "danger",
       onConfirm: async () => {
         try {
-          await onRemove(name);
-
-          // optimistische update
-          setLocalData((prev) => prev.filter((i) => i.name !== name));
+          await onRemove(name); // 👈 parent regelt refresh
 
           showSnackbar("Market-indicator verwijderd", "success");
         } catch (err) {
@@ -101,7 +98,7 @@ export default function MarketDayTable({ data = [], onRemove }) {
             {item.interpretation || "Geen uitleg"}
           </td>
 
-          {/* ❌ DELETE KNOP */}
+          {/* ❌ DELETE */}
           <td className="p-2 text-center">
             <button
               onClick={() => handleDelete(item.name)}

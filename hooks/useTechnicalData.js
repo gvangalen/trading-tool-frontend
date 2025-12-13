@@ -15,6 +15,19 @@ import {
 
 import { getDailyScores } from "@/lib/api/scores";
 
+/* --------------------------------------------------------
+   Advies logica
+-------------------------------------------------------- */
+const getAdvies = (score) =>
+  score >= 75
+    ? "🟢 Bullish"
+    : score <= 25
+    ? "🔴 Bearish"
+    : "⚖️ Neutraal";
+
+/* ========================================================
+   MAIN HOOK — TECHNICAL (CONSISTENT MET MARKET & MACRO)
+======================================================== */
 export function useTechnicalData(activeTab = "Dag") {
   const [technicalData, setTechnicalData] = useState([]);
   const [avgScore, setAvgScore] = useState("N/A");
@@ -25,13 +38,23 @@ export function useTechnicalData(activeTab = "Dag") {
   const [indicatorNames, setIndicatorNames] = useState([]);
   const [scoreRules, setScoreRules] = useState([]);
 
+  /* --------------------------------------------------------
+     🔹 Afgeleide helpers (BELANGRIJK)
+  -------------------------------------------------------- */
+  const activeTechnicalIndicatorNames = technicalData.map(
+    (i) => i.name
+  );
+
+  /* --------------------------------------------------------
+     INIT
+  -------------------------------------------------------- */
   useEffect(() => {
     loadData();
     loadIndicatorNames();
   }, [activeTab]);
 
   /* ======================================================
-     LADEN VAN TECHNICAL DATA — FLAT LIST
+     LADEN VAN TECHNICAL DATA
   ====================================================== */
   async function loadData() {
     setLoading(true);
@@ -54,8 +77,6 @@ export function useTechnicalData(activeTab = "Dag") {
         score: item.score ?? null,
         action: item.advies ?? item.action ?? "–",
         interpretation: item.uitleg ?? item.interpretation ?? "–",
-
-        // 🔥 FIX — timestamp MOET een geldige date zijn
         timestamp: item.timestamp
           ? new Date(item.timestamp)
           : item.date
@@ -63,25 +84,18 @@ export function useTechnicalData(activeTab = "Dag") {
           : null,
       }));
 
-      // 📌 GEEN GROUPING MEER — tabellen doen dit
       setTechnicalData(normalized);
 
-      /* ======================================================
+      /* --------------------------------------------------
          DAGELIJKSE TECHNICAL SCORE
-      ====================================================== */
+      -------------------------------------------------- */
       const scores = await getDailyScores();
       const backendScore = scores?.technical_score ?? null;
 
       if (backendScore !== null) {
         const rounded = parseFloat(backendScore).toFixed(1);
         setAvgScore(rounded);
-        setAdvies(
-          backendScore >= 75
-            ? "🟢 Bullish"
-            : backendScore <= 25
-            ? "🔴 Bearish"
-            : "⚖️ Neutraal"
-        );
+        setAdvies(getAdvies(backendScore));
       } else {
         updateScore(normalized);
       }
@@ -97,12 +111,12 @@ export function useTechnicalData(activeTab = "Dag") {
   }
 
   /* ======================================================
-     INDICATOR LIST
+     INDICATOR NAMEN
   ====================================================== */
   async function loadIndicatorNames() {
     try {
       const list = await getIndicatorNames();
-      setIndicatorNames(list);
+      setIndicatorNames(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error("❌ Fout bij indicator-namen:", err);
     }
@@ -112,25 +126,33 @@ export function useTechnicalData(activeTab = "Dag") {
      SCOREREGELS
   ====================================================== */
   async function loadScoreRules(indicatorName) {
+    if (!indicatorName) return;
+
     try {
       const rules = await getScoreRulesForIndicator(indicatorName);
-      setScoreRules(rules);
+      setScoreRules(Array.isArray(rules) ? rules : []);
     } catch (err) {
       console.error("❌ Fout bij scoreregels:", err);
     }
   }
 
   /* ======================================================
-     INDICATOR TOEVOEGEN
+     ➕ INDICATOR TOEVOEGEN (DUPLICATE SAFE)
   ====================================================== */
   async function addTechnicalIndicator(indicatorName) {
-    const result = await technicalDataAdd(indicatorName);
+    if (!indicatorName) return;
+
+    // 🛑 Dubbele bescherming
+    if (activeTechnicalIndicatorNames.includes(indicatorName)) {
+      return;
+    }
+
+    await technicalDataAdd(indicatorName);
     await loadData();
-    return result;
   }
 
   /* ======================================================
-     INDICATOR VERWIJDEREN
+     ❌ INDICATOR VERWIJDEREN
   ====================================================== */
   async function removeTechnicalIndicator(indicatorName) {
     await deleteTechnicalIndicator(indicatorName);
@@ -138,7 +160,7 @@ export function useTechnicalData(activeTab = "Dag") {
   }
 
   /* ======================================================
-     MANUELE SCORE
+     FALLBACK SCORE BEREKENING
   ====================================================== */
   function updateScore(list) {
     const nums = list.map((i) => Number(i.score)).filter((v) => !isNaN(v));
@@ -146,12 +168,12 @@ export function useTechnicalData(activeTab = "Dag") {
 
     const avg = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1);
     setAvgScore(avg);
-
-    setAdvies(
-      avg >= 70 ? "🟢 Bullish" : avg <= 40 ? "🔴 Bearish" : "⚖️ Neutraal"
-    );
+    setAdvies(getAdvies(avg));
   }
 
+  /* ======================================================
+     EXPORT
+  ====================================================== */
   return {
     technicalData,
     avgScore,
@@ -165,5 +187,8 @@ export function useTechnicalData(activeTab = "Dag") {
 
     addTechnicalIndicator,
     removeTechnicalIndicator,
+
+    // 👇 ESSENTIEEL VOOR UI (zoals Market)
+    activeTechnicalIndicatorNames,
   };
 }

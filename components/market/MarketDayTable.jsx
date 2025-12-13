@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useModal } from "@/components/modal/ModalProvider";
+import { Trash2 } from "lucide-react";
 
 export default function MarketDayTable({ data = [], onRemove }) {
   const [localData, setLocalData] = useState([]);
-  const { showConfirm, showSnackbar } = useModal();
 
   useEffect(() => {
     setLocalData(Array.isArray(data) ? data : []);
@@ -28,36 +27,11 @@ export default function MarketDayTable({ data = [], onRemove }) {
   };
 
   /* -------------------------------------------------------
-     ❌ VERWIJDEREN — CONFIRM MODAL (single source of truth)
+     ❌ DELETE → alleen callback (zoals Macro & Technical)
   ------------------------------------------------------- */
   const handleDelete = (name) => {
-    if (!name) return;
-
-    showConfirm({
-      title: "Market-indicator verwijderen",
-      description: (
-        <p className="leading-relaxed">
-          Weet je zeker dat je <strong>{name}</strong> wilt verwijderen?
-          <br />
-          <span className="text-red-600 font-medium">
-            Dit kan niet ongedaan worden gemaakt.
-          </span>
-        </p>
-      ),
-      confirmText: "Verwijderen",
-      cancelText: "Annuleren",
-      tone: "danger",
-      onConfirm: async () => {
-        try {
-          await onRemove(name); // 👈 parent regelt refresh
-
-          showSnackbar("Market-indicator verwijderd", "success");
-        } catch (err) {
-          console.error("❌ Verwijderen mislukt:", err);
-          showSnackbar("Verwijderen mislukt", "danger");
-        }
-      },
-    });
+    if (!name || !onRemove) return;
+    onRemove(name); // 👉 confirm + snackbar zitten in hook
   };
 
   if (!localData || localData.length === 0) {
@@ -75,7 +49,10 @@ export default function MarketDayTable({ data = [], onRemove }) {
   return (
     <>
       {localData.map((item) => (
-        <tr key={item.name} className="border-t dark:border-gray-700">
+        <tr
+          key={item.name}
+          className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition"
+        >
           <td className="p-2 font-medium">{item.name}</td>
 
           <td className="p-2 text-center">
@@ -83,9 +60,7 @@ export default function MarketDayTable({ data = [], onRemove }) {
           </td>
 
           <td
-            className={`p-2 text-center font-bold ${getScoreColor(
-              item.score
-            )}`}
+            className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}
           >
             {item.score ?? "–"}
           </td>
@@ -102,9 +77,10 @@ export default function MarketDayTable({ data = [], onRemove }) {
           <td className="p-2 text-center">
             <button
               onClick={() => handleDelete(item.name)}
-              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              className="p-1.5 rounded bg-red-500 text-white hover:bg-red-600 transition"
+              title="Verwijder indicator"
             >
-              ❌
+              <Trash2 className="w-4 h-4" />
             </button>
           </td>
         </tr>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 import {
   fetchMarketData7d,
@@ -9,30 +9,28 @@ import {
   fetchForwardReturnsMonth,
   fetchForwardReturnsQuarter,
   fetchForwardReturnsYear,
-
   fetchMarketDayData,
   getMarketIndicatorNames,
   getScoreRulesForMarketIndicator,
   marketIndicatorAdd,
   marketIndicatorDelete,
   getUserMarketIndicators,
-} from '@/lib/api/market';
+} from "@/lib/api/market";
 
-import { getDailyScores } from '@/lib/api/scores';
+import { getDailyScores } from "@/lib/api/scores";
 
-
-// Advies logica
+/* --------------------------------------------------------
+   Advies logica
+-------------------------------------------------------- */
 const getAdvies = (score) =>
-  score >= 75 ? '🟢 Bullish'
-    : score <= 25 ? '🔴 Bearish'
-    : '⚖️ Neutraal';
+  score >= 75 ? "🟢 Bullish"
+    : score <= 25 ? "🔴 Bearish"
+    : "⚖️ Neutraal";
 
-
-// ====================================================================================
-// MAIN HOOK
-// ====================================================================================
+/* ========================================================
+   MAIN HOOK
+======================================================== */
 export function useMarketData() {
-
   const [sevenDayData, setSevenDayData] = useState([]);
   const [btcLive, setBtcLive] = useState(null);
 
@@ -43,38 +41,40 @@ export function useMarketData() {
     jaar: [],
   });
 
-  const [marketScore, setMarketScore] = useState('N/A');
-  const [advies, setAdviesState] = useState('⚖️ Neutraal');
+  const [marketScore, setMarketScore] = useState("N/A");
+  const [advies, setAdviesState] = useState("⚖️ Neutraal");
 
   const [marketDayData, setMarketDayData] = useState([]);
 
+  // 🔹 volledige records
   const [activeMarketIndicators, setActiveMarketIndicators] = useState([]);
+
+  // 🔹 afgeleide helper (BELANGRIJK)
+  const activeMarketIndicatorNames = activeMarketIndicators.map(i => i.name);
 
   const [availableIndicators, setAvailableIndicators] = useState([]);
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-
-  // INIT LOAD
+  /* --------------------------------------------------------
+     INIT
+  -------------------------------------------------------- */
   useEffect(() => {
     loadAll();
     const interval = setInterval(loadLiveBTC, 60000);
     return () => clearInterval(interval);
   }, []);
 
-
-  // ====================================================================================
-  // LOAD ALLES
-  // ====================================================================================
+  /* --------------------------------------------------------
+     LOAD ALLES
+  -------------------------------------------------------- */
   async function loadAll() {
     setLoading(true);
-
     try {
-      const history = await fetchMarketData7d();
-      setSevenDayData(history);
+      setSevenDayData(await fetchMarketData7d());
 
       const [week, maand, kwartaal, jaar] = await Promise.all([
         fetchForwardReturnsWeek(),
@@ -86,18 +86,12 @@ export function useMarketData() {
 
       const dailyScores = await getDailyScores();
       const score = dailyScores?.market?.score ?? 50;
-
       setMarketScore(score);
       setAdviesState(getAdvies(score));
 
-      const dayData = await fetchMarketDayData();
-      setMarketDayData(dayData || []);
-
-      const active = await getUserMarketIndicators();
-      setActiveMarketIndicators(active || []);
-
-      const names = await getMarketIndicatorNames();
-      setAvailableIndicators(names || []);
+      setMarketDayData(await fetchMarketDayData() || []);
+      setActiveMarketIndicators(await getUserMarketIndicators() || []);
+      setAvailableIndicators(await getMarketIndicatorNames() || []);
 
     } catch (err) {
       console.error("❌ loadAll error:", err);
@@ -107,80 +101,61 @@ export function useMarketData() {
     }
   }
 
-
-  // Live BTC
+  /* --------------------------------------------------------
+     LIVE BTC
+  -------------------------------------------------------- */
   async function loadLiveBTC() {
     try {
-      const live = await fetchLatestBTC();
-      setBtcLive(live);
-    } catch (err) {
-      console.error("❌ Live BTC error:", err);
+      setBtcLive(await fetchLatestBTC());
+    } catch {
       setBtcLive(null);
     }
   }
 
-
-  // ====================================================================================
-  // SCORE RULES VOOR INDICATOR
-  // ====================================================================================
+  /* --------------------------------------------------------
+     SCORE RULES
+  -------------------------------------------------------- */
   async function selectIndicator(indicatorObj) {
     if (!indicatorObj) return;
 
     setSelectedIndicator(indicatorObj);
-
-    try {
-      const rules = await getScoreRulesForMarketIndicator(indicatorObj.name);
-      setScoreRules(rules || []);
-    } catch (err) {
-      console.error("❌ scoreregels ophalen:", err);
-    }
+    setScoreRules(await getScoreRulesForMarketIndicator(indicatorObj.name) || []);
   }
 
-
-  // ====================================================================================
-  // ADD / DELETE INDICATORS
-  // ====================================================================================
-
-  // ➕ Toevoegen
+  /* --------------------------------------------------------
+     ADD / REMOVE
+  -------------------------------------------------------- */
   async function addMarket(indicatorName) {
-    try {
-      await marketIndicatorAdd(indicatorName);
-      await refreshActive();
-      await refreshDay();
-    } catch (err) {
-      console.error("❌ addMarket:", err);
+    if (activeMarketIndicatorNames.includes(indicatorName)) {
+      // dubbele bescherming
+      return;
     }
+
+    await marketIndicatorAdd(indicatorName);
+    await refreshActive();
+    await refreshDay();
   }
 
-  // ❌ Verwijderen — LET OP: ID GEBRUIKEN!
-  async function removeMarket(indicatorId) {
-    try {
-      await marketIndicatorDelete(indicatorId);
-      await refreshActive();
-      await refreshDay();
-    } catch (err) {
-      console.error("❌ removeMarket:", err);
-    }
+  async function removeMarket(indicatorName) {
+    await marketIndicatorDelete(indicatorName);
+    await refreshActive();
+    await refreshDay();
   }
 
-
-  // ====================================================================================
-  // REFRESH HELPERS
-  // ====================================================================================
+  /* --------------------------------------------------------
+     REFRESH
+  -------------------------------------------------------- */
   async function refreshDay() {
-    const dayData = await fetchMarketDayData();
-    setMarketDayData(dayData || []);
+    setMarketDayData(await fetchMarketDayData() || []);
   }
 
   async function refreshActive() {
-    const active = await getUserMarketIndicators();
-    setActiveMarketIndicators(active || []);
+    setActiveMarketIndicators(await getUserMarketIndicators() || []);
   }
 
-
-  // ====================================================================================
-  // EXPORT
-  // ====================================================================================
+  /* --------------------------------------------------------
+     EXPORT
+  -------------------------------------------------------- */
   return {
     loading,
     error,
@@ -193,7 +168,9 @@ export function useMarketData() {
     forwardReturns,
 
     marketDayData,
+
     activeMarketIndicators,
+    activeMarketIndicatorNames, // 👈 ESSENTIEEL VOOR UI
 
     addMarket,
     removeMarket,

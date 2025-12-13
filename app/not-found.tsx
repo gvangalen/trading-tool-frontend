@@ -1,46 +1,31 @@
-"use client";
-
-import Link from "next/link";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
-
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0b1220] to-[#020617] px-6">
-      <div className="max-w-md text-center">
-        
-        {/* Icon */}
-        <div className="mb-6 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
-            <AlertTriangle size={28} />
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0A0D12] flex flex-col items-center justify-center px-6 text-white">
+      {/* 404 */}
+      <h1 className="text-[140px] md:text-[200px] font-bold text-gray-700 leading-none tracking-tight select-none">
+        404
+      </h1>
 
-        {/* Titel */}
-        <h1 className="mb-3 text-3xl font-semibold tracking-tight text-white">
-          404 – Page not found
-        </h1>
-
-        {/* Subtekst */}
-        <p className="mb-8 text-sm leading-relaxed text-gray-400">
-          The page you’re looking for doesn’t exist or has been moved.
-          <br />
-          Market data is fine — this route isn’t.
+      {/* Card */}
+      <div className="mt-[-40px] bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-2xl max-w-md text-center shadow-xl">
+        <h2 className="text-2xl font-semibold mb-3">Oops… pagina niet gevonden</h2>
+        <p className="text-gray-300 text-sm mb-6">
+          Deze pagina bestaat niet (meer) in TradeLayer.  
+          Controleer de URL of keer terug naar het dashboard.
         </p>
 
-        {/* CTA */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600"
+        <a
+          href="/dashboard"
+          className="inline-block bg-blue-500 hover:bg-blue-600 transition px-6 py-2 rounded-lg text-sm font-medium"
         >
-          <ArrowLeft size={16} />
-          Back to dashboard
-        </Link>
-
-        {/* Footer hint */}
-        <p className="mt-8 text-xs text-gray-500">
-          Trade Layer · System route error
-        </p>
+          Terug naar dashboard
+        </a>
       </div>
+
+      {/* Subtext */}
+      <p className="mt-8 text-gray-500 text-xs">
+        TradeLayer — AI-Driven Trading Intelligence
+      </p>
     </div>
   );
 }

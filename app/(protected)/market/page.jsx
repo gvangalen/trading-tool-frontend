@@ -24,7 +24,7 @@ import MarketSevenDayTable from "@/components/market/MarketSevenDayTable";
 import MarketForwardReturnTabs from "@/components/market/MarketForwardReturnTabs";
 import MarketIndicatorScoreView from "@/components/market/MarketIndicatorScoreView";
 
-// ⭐ JOUW ECHTE ONBOARDING BANNER
+// ⭐ Onboarding
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function MarketPage() {
@@ -33,12 +33,17 @@ export default function MarketPage() {
     sevenDayData,
     forwardReturns,
     marketDayData,
+
     availableIndicators,
     selectedIndicator,
     scoreRules,
     selectIndicator,
+
     addMarket,
     removeMarket,
+
+    activeMarketIndicatorNames, // 👈 🔥 NIEUW (belangrijk)
+
     loading,
     error,
   } = useMarketData();
@@ -48,7 +53,6 @@ export default function MarketPage() {
   /* ---------------------------------------------------------
      SAFE FALLBACKS
   --------------------------------------------------------- */
-
   const safeMarketScore =
     typeof market?.score === "number" ? market.score : null;
 
@@ -57,9 +61,7 @@ export default function MarketPage() {
     ? marketDayData
     : [];
   const safeSevenDay = Array.isArray(sevenDayData) ? sevenDayData : [];
-  const safeForward = Array.isArray(forwardReturns)
-    ? forwardReturns
-    : [];
+  const safeForward = forwardReturns || {};
 
   /* ---------------------------------------------------------
      🎨 Scorekleur
@@ -67,7 +69,6 @@ export default function MarketPage() {
   const scoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
     if (isNaN(n)) return "text-gray-600";
-
     if (n >= 75) return "text-green-600";
     if (n <= 25) return "text-red-600";
     return "text-yellow-600";
@@ -86,12 +87,10 @@ export default function MarketPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ⭐⭐⭐ ONBOARDING BANNER – Stap 4 van 5 ⭐⭐⭐ */}
+      {/* ⭐ Onboarding */}
       <OnboardingBanner step="market" />
 
-      {/* ------------------------------------------------------ */}
       {/* 📌 Titel */}
-      {/* ------------------------------------------------------ */}
       <div className="flex items-center gap-3">
         <LineChart size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)]">
@@ -106,14 +105,10 @@ export default function MarketPage() {
         <p className="text-sm text-red-500">Fout: {error}</p>
       )}
 
-      {/* ------------------------------------------------------ */}
       {/* 🤖 AI Agent Analyse */}
-      {/* ------------------------------------------------------ */}
       <AgentInsightPanel category="market" />
 
-      {/* ------------------------------------------------------ */}
       {/* 📊 Markt Score */}
-      {/* ------------------------------------------------------ */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -149,9 +144,7 @@ export default function MarketPage() {
         </div>
       </CardWrapper>
 
-      {/* ------------------------------------------------------ */}
-      {/* 💹 Live BTC Data */}
-      {/* ------------------------------------------------------ */}
+      {/* 💹 Live BTC */}
       <MarketLiveCard
         price={safeLive.price ?? null}
         change24h={safeLive.change_24h ?? null}
@@ -159,20 +152,17 @@ export default function MarketPage() {
         timestamp={safeLive.timestamp ?? null}
       />
 
-      {/* ------------------------------------------------------ */}
       {/* ⚙️ Indicator Score View */}
-      {/* ------------------------------------------------------ */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators || []}
         selectedIndicator={selectedIndicator || null}
         scoreRules={scoreRules || []}
         selectIndicator={selectIndicator}
         addMarketIndicator={addMarket}
+        activeIndicators={activeMarketIndicatorNames} // 👈 🔥 FIX
       />
 
-      {/* ------------------------------------------------------ */}
       {/* 📅 Dagelijkse Market Analyse */}
-      {/* ------------------------------------------------------ */}
       <DayTable
         title="Dagelijkse Market Analyse"
         icon={<Activity className="w-5 h-5" />}
@@ -180,14 +170,10 @@ export default function MarketPage() {
         onRemove={removeMarket}
       />
 
-      {/* ------------------------------------------------------ */}
-      {/* 📆 7-Daagse Marktgeschiedenis */}
-      {/* ------------------------------------------------------ */}
+      {/* 📆 7-daagse geschiedenis */}
       <MarketSevenDayTable history={safeSevenDay} />
 
-      {/* ------------------------------------------------------ */}
-      {/* 🔮 Forward Returns Tabs */}
-      {/* ------------------------------------------------------ */}
+      {/* 🔮 Forward Returns */}
       <MarketForwardReturnTabs data={safeForward} />
     </div>
   );

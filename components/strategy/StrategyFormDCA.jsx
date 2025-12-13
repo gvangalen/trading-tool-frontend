@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSetupData } from "@/hooks/useSetupData";
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import {
   Coins,

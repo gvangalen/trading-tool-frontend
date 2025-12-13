@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchAuth } from "@/lib/api/auth";    // 🔥 BELANGRIJK!
-import { toast } from "react-hot-toast";
+import { fetchAuth } from "@/lib/api/auth";
+
+// ⭐ JULLIE STANDAARD
+import { useModal } from "@/components/ui/ModalProvider";
 
 // Lucide Icons
 import {
@@ -14,6 +16,8 @@ import {
 } from "lucide-react";
 
 export default function TopSetupsMini() {
+  const { showSnackbar } = useModal();
+
   const [topSetups, setTopSetups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendFilter, setTrendFilter] = useState("all");
@@ -34,7 +38,7 @@ export default function TopSetupsMini() {
 
       let data;
 
-      // ⭐ PROBEER EERST echte endpoint
+      // ⭐ Eerst top-endpoint proberen
       try {
         data = await fetchAuth(`/api/setups/top?limit=10`, { method: "GET" });
       } catch (err) {
@@ -57,7 +61,7 @@ export default function TopSetupsMini() {
       setLastUpdated(new Date());
     } catch (error) {
       console.error("❌ Fout bij laden setups:", error);
-      toast.error("Top-setups laden mislukt.");
+      showSnackbar("Top-setups laden mislukt", "danger");
       setTopSetups([]);
     } finally {
       setLoading(false);
@@ -109,7 +113,6 @@ export default function TopSetupsMini() {
   ------------------------------------------------------------- */
   return (
     <div className="space-y-4 text-sm">
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <h4 className="font-semibold text-[var(--text-dark)] flex items-center gap-2">
@@ -170,7 +173,7 @@ export default function TopSetupsMini() {
                     {setup.name}
                   </span>
                   <span className="ml-2 text-xs text-[var(--text-light)]">
-                    {setup.indicators?.split(',')[0] || "–"}
+                    {setup.indicators?.split(",")[0] || "–"}
                   </span>
                 </div>
               </div>

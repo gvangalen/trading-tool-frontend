@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function MarketDayTable({ data = [], onRemove }) {
   const [localData, setLocalData] = useState([]);
 
   useEffect(() => {
-    // Zorg dat we een kopie hebben met IDs
     setLocalData(Array.isArray(data) ? data : []);
   }, [data]);
 
@@ -26,18 +25,16 @@ export default function MarketDayTable({ data = [], onRemove }) {
       : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
-  // 🟦 DELETE NU MET ID ipv NAME
-  const handleDelete = async (id) => {
-    if (!id) return;
+  // ❌ DELETE OP BASIS VAN NAAM (CORRECT)
+  const handleDelete = async (name) => {
+    if (!name) return;
 
-    const item = localData.find((x) => x.id === id);
-    const label = item?.name || 'indicator';
-
-    if (!window.confirm(`Weet je zeker dat je "${label}" wilt verwijderen?`)) return;
+    if (!window.confirm(`Weet je zeker dat je "${name}" wilt verwijderen?`)) {
+      return;
+    }
 
     try {
-      await onRemove(id);
-      setLocalData(localData.filter((i) => i.id !== id));
+      await onRemove(name);
     } catch (err) {
       console.error('❌ Verwijderen mislukt:', err);
       alert('❌ Verwijderen mislukt.');
@@ -46,33 +43,41 @@ export default function MarketDayTable({ data = [], onRemove }) {
 
   if (!localData || localData.length === 0) {
     return (
-      <>
-        <tr>
-          <td colSpan={6} className="p-6 text-center text-gray-500">
-            ⚠️ Geen actieve market-indicatoren.<br />
-            ➕ Voeg er één toe in de ScoreView.
-          </td>
-        </tr>
-      </>
+      <tr>
+        <td colSpan={6} className="p-6 text-center text-gray-500">
+          ⚠️ Geen actieve market-indicatoren.<br />
+          ➕ Voeg er één toe in de ScoreView.
+        </td>
+      </tr>
     );
   }
 
   return (
     <>
       {localData.map((item) => (
-        <tr key={item.id} className="border-t dark:border-gray-700">
+        <tr key={item.name} className="border-t dark:border-gray-700">
           <td className="p-2 font-medium">{item.name}</td>
-          <td className="p-2 text-center">{formatValue(item.value)}</td>
+
+          <td className="p-2 text-center">
+            {formatValue(item.value)}
+          </td>
+
           <td className={`p-2 text-center font-bold ${getScoreColor(item.score)}`}>
             {item.score ?? '–'}
           </td>
-          <td className="p-2 text-center">{item.action || '–'}</td>
-          <td className="p-2">{item.interpretation || 'Geen uitleg'}</td>
 
-          {/* ❌ DELETE KNOP → werkt nu met ID */}
+          <td className="p-2 text-center">
+            {item.action || '–'}
+          </td>
+
+          <td className="p-2">
+            {item.interpretation || 'Geen uitleg'}
+          </td>
+
+          {/* ❌ DELETE KNOP → NAAM */}
           <td className="p-2 text-center">
             <button
-              onClick={() => handleDelete(item.id)}
+              onClick={() => handleDelete(item.name)}
               className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
             >
               ❌

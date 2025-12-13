@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useSetupData } from "@/hooks/useSetupData";
+import { useModal } from "@/components/ui/ModalProvider";
+
 import {
   Coins,
   Calendar,
@@ -22,6 +24,7 @@ export default function StrategyFormDCA({
   hideSubmit = false,
 }) {
   const { loadSetups } = useSetupData();
+  const { showSnackbar } = useModal();
 
   const [error, setError] = useState("");
 
@@ -122,6 +125,8 @@ export default function StrategyFormDCA({
     try {
       await onSubmit(payload);
 
+      showSnackbar("DCA-strategie succesvol opgeslagen", "success");
+
       if (mode === "create") {
         setForm({
           setup_id: "",
@@ -137,6 +142,8 @@ export default function StrategyFormDCA({
       }
     } catch (err) {
       console.error("❌ Fout bij opslaan DCA strategie:", err);
+
+      showSnackbar("Opslaan van DCA-strategie mislukt", "danger");
       setError("❌ Opslaan mislukt.");
     }
   };
@@ -144,7 +151,7 @@ export default function StrategyFormDCA({
   const valid = isFormValid();
 
   /* ==========================================================
-     UI — Fintech PRO 6.0 + btn-primary
+     UI
   ========================================================== */
   return (
     <form
@@ -158,7 +165,6 @@ export default function StrategyFormDCA({
         space-y-6
       "
     >
-      {/* Titel */}
       <h2 className="text-xl font-bold flex items-center gap-2 text-[var(--text-dark)]">
         <Wallet className="w-5 h-5 text-blue-600" />
         {mode === "edit" ? "DCA-strategie bewerken" : "Nieuwe DCA-strategie"}
@@ -208,11 +214,7 @@ export default function StrategyFormDCA({
           <input
             value={form.symbol}
             readOnly
-            className="
-              w-full p-3 rounded-xl border
-              bg-gray-100 dark:bg-[#111]
-              border-gray-300 dark:border-gray-700
-            "
+            className="w-full p-3 rounded-xl border bg-gray-100 dark:bg-[#111] border-gray-300 dark:border-gray-700"
           />
         </div>
 
@@ -224,11 +226,7 @@ export default function StrategyFormDCA({
           <input
             value={form.timeframe}
             readOnly
-            className="
-              w-full p-3 rounded-xl border
-              bg-gray-100 dark:bg-[#111]
-              border-gray-300 dark:border-gray-700
-            "
+            className="w-full p-3 rounded-xl border bg-gray-100 dark:bg-[#111] border-gray-300 dark:border-gray-700"
           />
         </div>
       </div>
@@ -245,11 +243,7 @@ export default function StrategyFormDCA({
           value={form.amount}
           min="1"
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
+          className="w-full p-3 rounded-xl border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-700"
         />
       </div>
 
@@ -263,11 +257,7 @@ export default function StrategyFormDCA({
           name="frequency"
           value={form.frequency}
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
+          className="w-full p-3 rounded-xl border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-700"
         >
           <option value="">-- Kies frequentie --</option>
           <option value="weekly">Wekelijks</option>
@@ -286,12 +276,7 @@ export default function StrategyFormDCA({
           rows={3}
           value={form.rules}
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
-          placeholder="Bijv. koop alleen bij F&G < 30"
+          className="w-full p-3 rounded-xl border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-700"
         />
       </div>
 
@@ -305,17 +290,12 @@ export default function StrategyFormDCA({
           name="tags"
           value={form.tags}
           onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-white dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-          "
-          placeholder="bijv. longterm, btc, dca"
+          className="w-full p-3 rounded-xl border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-700"
         />
       </div>
 
       {/* FAVORIET */}
-      <label className="flex items-center gap-3 text-sm font-medium mt-2">
+      <label className="flex items-center gap-3 text-sm font-medium">
         <input
           type="checkbox"
           name="favorite"
@@ -336,7 +316,7 @@ export default function StrategyFormDCA({
       {/* ERROR */}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {/* SUBMIT KNOP */}
+      {/* SUBMIT */}
       {!hideSubmit && mode === "create" && (
         <button
           type="submit"
@@ -349,7 +329,6 @@ export default function StrategyFormDCA({
         </button>
       )}
 
-      {/* Verborgen submit knop voor modal */}
       {hideSubmit && mode === "edit" && (
         <button id="strategy-edit-submit" type="submit" className="hidden">
           submit

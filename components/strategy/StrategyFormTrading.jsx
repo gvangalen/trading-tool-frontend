@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 export default function StrategyFormTrading({
   setups = [],

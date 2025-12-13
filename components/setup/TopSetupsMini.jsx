@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { fetchAuth } from "@/lib/api/auth";
 
 // ⭐ JULLIE STANDAARD
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 // Lucide Icons
 import {

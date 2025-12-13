@@ -8,7 +8,7 @@ import {
   fetchStrategyBySetup,
 } from "@/lib/api/strategy";
 
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 /* Lucide icons */
 import { Wand2, Loader2 } from "lucide-react";

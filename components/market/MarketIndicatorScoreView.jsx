@@ -7,35 +7,50 @@ import { Coins, Plus } from "lucide-react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 export default function MarketIndicatorScoreView({
-  availableIndicators,
+  availableIndicators = [],
   selectedIndicator,
-  scoreRules,
+  scoreRules = [],
   selectIndicator,
   addMarketIndicator,
+  activeIndicators = [], // 👈 NIEUW
 }) {
   const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
-     ➕ Toevoegen (via centrale snackbar)
+     ✅ Is indicator al toegevoegd?
+  ------------------------------------------------------- */
+  const isAlreadyAdded =
+    selectedIndicator &&
+    activeIndicators.includes(selectedIndicator.name);
+
+  /* -------------------------------------------------------
+     ➕ Toevoegen (met duplicate protection)
   ------------------------------------------------------- */
   const handleAdd = async () => {
     if (!selectedIndicator?.name) return;
+    if (isAlreadyAdded) return;
 
     try {
       await addMarketIndicator(selectedIndicator.name);
       showSnackbar("Market-indicator toegevoegd", "success");
     } catch (err) {
       console.error("❌ Toevoegen mislukt:", err);
+
+      // Backend safety (409)
+      if (err?.response?.status === 409) {
+        showSnackbar("Indicator is al toegevoegd", "info");
+        return;
+      }
+
       showSnackbar("Toevoegen van market-indicator mislukt", "danger");
     }
   };
 
   /* -------------------------------------------------------
-     Scorekleur
+     🎨 Scorekleur helper
   ------------------------------------------------------- */
   const scoreClass = (score) => {
     if (typeof score !== "number") return "text-[var(--text-light)]";
-
     if (score >= 80) return "score-strong-buy";
     if (score >= 60) return "score-buy";
     if (score >= 40) return "score-neutral";
@@ -133,12 +148,12 @@ export default function MarketIndicatorScoreView({
       )}
 
       {/* -------------------------------------------------------
-         ➕ Toevoegen knop
+         ➕ Toevoegen knop (smart disabled)
       ------------------------------------------------------- */}
       <div className="mt-5">
         <button
           onClick={handleAdd}
-          disabled={!selectedIndicator}
+          disabled={!selectedIndicator || isAlreadyAdded}
           className="
             flex items-center gap-2
             px-4 py-2 rounded-lg
@@ -151,7 +166,9 @@ export default function MarketIndicatorScoreView({
           "
         >
           <Plus size={18} />
-          Voeg toe aan market-analyse
+          {isAlreadyAdded
+            ? "Indicator al toegevoegd"
+            : "Voeg toe aan market-analyse"}
         </button>
       </div>
     </CardWrapper>

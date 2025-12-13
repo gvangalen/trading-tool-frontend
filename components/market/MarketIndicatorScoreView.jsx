@@ -4,7 +4,7 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 import { Coins, Plus } from "lucide-react";
 
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 export default function MarketIndicatorScoreView({
   availableIndicators,

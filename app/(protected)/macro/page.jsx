@@ -24,8 +24,9 @@ export default function MacroPage() {
   // ====== Macro data hook ======
   const {
     macroData,
-    addMacroIndicator,        // ⭐ JE WAS DEZE VERGETEN!
+    addMacroIndicator,
     removeMacroIndicator,
+    activeMacroIndicatorNames, // ✅ NIEUW (BELANGRIJK)
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
@@ -75,7 +76,6 @@ export default function MacroPage() {
   // -------------------------------------------------------
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
-
       {/* 🔥 Onboarding stap 3 */}
       <OnboardingBanner step="macro" />
 
@@ -134,8 +134,11 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
-      {/* Scorelogica viewer */}
-      <MacroIndicatorScoreView addMacroIndicator={addMacroIndicator} />
+      {/* ⚙️ Macro Indicator Score View (DUPLICATE SAFE) */}
+      <MacroIndicatorScoreView
+        addMacroIndicator={addMacroIndicator}
+        activeMacroIndicatorNames={activeMacroIndicatorNames}
+      />
 
       {/* Tabs met data */}
       <MacroTabs

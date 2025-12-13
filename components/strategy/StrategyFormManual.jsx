@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import {
   Pencil,

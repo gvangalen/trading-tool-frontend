@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import {
   fetchMarketData7d,
@@ -23,14 +24,18 @@ import { getDailyScores } from "@/lib/api/scores";
    Advies logica
 -------------------------------------------------------- */
 const getAdvies = (score) =>
-  score >= 75 ? "🟢 Bullish"
-    : score <= 25 ? "🔴 Bearish"
+  score >= 75
+    ? "🟢 Bullish"
+    : score <= 25
+    ? "🔴 Bearish"
     : "⚖️ Neutraal";
 
 /* ========================================================
    MAIN HOOK
 ======================================================== */
 export function useMarketData() {
+  const { showConfirm, showSnackbar } = useModal();
+
   const [sevenDayData, setSevenDayData] = useState([]);
   const [btcLive, setBtcLive] = useState(null);
 
@@ -49,8 +54,10 @@ export function useMarketData() {
   // 🔹 volledige records
   const [activeMarketIndicators, setActiveMarketIndicators] = useState([]);
 
-  // 🔹 afgeleide helper (BELANGRIJK)
-  const activeMarketIndicatorNames = activeMarketIndicators.map(i => i.name);
+  // 🔹 afgeleide helper
+  const activeMarketIndicatorNames = activeMarketIndicators.map(
+    (i) => i.name
+  );
 
   const [availableIndicators, setAvailableIndicators] = useState([]);
   const [selectedIndicator, setSelectedIndicator] = useState(null);
@@ -89,10 +96,9 @@ export function useMarketData() {
       setMarketScore(score);
       setAdviesState(getAdvies(score));
 
-      setMarketDayData(await fetchMarketDayData() || []);
-      setActiveMarketIndicators(await getUserMarketIndicators() || []);
-      setAvailableIndicators(await getMarketIndicatorNames() || []);
-
+      setMarketDayData((await fetchMarketDayData()) || []);
+      setActiveMarketIndicators((await getUserMarketIndicators()) || []);
+      setAvailableIndicators((await getMarketIndicatorNames()) || []);
     } catch (err) {
       console.error("❌ loadAll error:", err);
       setError("Kon market data niet laden.");
@@ -119,38 +125,78 @@ export function useMarketData() {
     if (!indicatorObj) return;
 
     setSelectedIndicator(indicatorObj);
-    setScoreRules(await getScoreRulesForMarketIndicator(indicatorObj.name) || []);
+    setScoreRules(
+      (await getScoreRulesForMarketIndicator(indicatorObj.name)) || []
+    );
   }
 
   /* --------------------------------------------------------
-     ADD / REMOVE
+     ➕ ADD
   -------------------------------------------------------- */
   async function addMarket(indicatorName) {
+    if (!indicatorName) return;
+
     if (activeMarketIndicatorNames.includes(indicatorName)) {
-      // dubbele bescherming
+      showSnackbar("Indicator is al toegevoegd", "info");
       return;
     }
 
-    await marketIndicatorAdd(indicatorName);
-    await refreshActive();
-    await refreshDay();
-  }
+    try {
+      await marketIndicatorAdd(indicatorName);
+      await refreshActive();
+      await refreshDay();
 
-  async function removeMarket(indicatorName) {
-    await marketIndicatorDelete(indicatorName);
-    await refreshActive();
-    await refreshDay();
+      showSnackbar("Market-indicator toegevoegd", "success");
+    } catch (err) {
+      console.error("❌ addMarket error:", err);
+      showSnackbar("Toevoegen mislukt", "danger");
+    }
   }
 
   /* --------------------------------------------------------
-     REFRESH
+     ❌ REMOVE — MET CONFIRM MODAL
+  -------------------------------------------------------- */
+  function removeMarket(indicatorName) {
+    if (!indicatorName) return;
+
+    showConfirm({
+      title: "Market-indicator verwijderen",
+      description: (
+        <p className="leading-relaxed">
+          Weet je zeker dat je <strong>{indicatorName}</strong> wilt verwijderen?
+          <br />
+          <span className="text-red-600 font-medium">
+            Dit kan niet ongedaan worden gemaakt.
+          </span>
+        </p>
+      ),
+      confirmText: "Verwijderen",
+      cancelText: "Annuleren",
+      tone: "danger",
+      onConfirm: async () => {
+        try {
+          await marketIndicatorDelete(indicatorName);
+          await refreshActive();
+          await refreshDay();
+
+          showSnackbar("Market-indicator verwijderd", "success");
+        } catch (err) {
+          console.error("❌ removeMarket error:", err);
+          showSnackbar("Verwijderen mislukt", "danger");
+        }
+      },
+    });
+  }
+
+  /* --------------------------------------------------------
+     REFRESH HELPERS
   -------------------------------------------------------- */
   async function refreshDay() {
-    setMarketDayData(await fetchMarketDayData() || []);
+    setMarketDayData((await fetchMarketDayData()) || []);
   }
 
   async function refreshActive() {
-    setActiveMarketIndicators(await getUserMarketIndicators() || []);
+    setActiveMarketIndicators((await getUserMarketIndicators()) || []);
   }
 
   /* --------------------------------------------------------
@@ -170,7 +216,7 @@ export function useMarketData() {
     marketDayData,
 
     activeMarketIndicators,
-    activeMarketIndicatorNames, // 👈 ESSENTIEEL VOOR UI
+    activeMarketIndicatorNames,
 
     addMarket,
     removeMarket,

@@ -12,15 +12,21 @@ import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 
 import { BarChart2, Plus } from "lucide-react";
 
-// ⭐ Jouw snackbar + modal systeem
+// ⭐ Snackbar / modal systeem
 import { useModal } from "@/components/modal/ModalProvider";
 
-export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
+/**
+ * @param {Function} addTechnicalIndicator
+ * @param {Array<string>} activeTechnicalIndicatorNames  👈 NIEUW (van hook)
+ */
+export default function TechnicalIndicatorScoreView({
+  addTechnicalIndicator,
+  activeTechnicalIndicatorNames = [],
+}) {
   const [allIndicators, setAllIndicators] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scoreRules, setScoreRules] = useState([]);
 
-  // ⭐ Snackbar functie uit eigen systeem
   const { showSnackbar } = useModal();
 
   /* -------------------------------------------------------
@@ -30,14 +36,10 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
     async function load() {
       try {
         const list = await getTechnicalIndicatorNames();
-        setAllIndicators(list || []);
+        setAllIndicators(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error("❌ technical indicators ophalen", err);
-
-        showSnackbar(
-          "Kon indicatorlijst niet ophalen.",
-          "danger"
-        );
+        showSnackbar("Kon indicatorlijst niet ophalen.", "danger");
       }
     }
     load();
@@ -56,26 +58,27 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
 
     try {
       const rules = await getScoreRulesForIndicator(indicator.name);
-      setScoreRules(rules || []);
+      setScoreRules(Array.isArray(rules) ? rules : []);
     } catch (err) {
       console.error("❌ scoreregels ophalen", err);
-
-      showSnackbar(
-        "Kon scoreregels niet ophalen.",
-        "danger"
-      );
+      showSnackbar("Kon scoreregels niet ophalen.", "danger");
     }
   };
 
   /* -------------------------------------------------------
-     ➕ Toevoegen
+     ✅ Is indicator al toegevoegd?
+  ------------------------------------------------------- */
+  const isAlreadyAdded =
+    selected &&
+    activeTechnicalIndicatorNames.includes(selected.name);
+
+  /* -------------------------------------------------------
+     ➕ Toevoegen (duplicate-safe)
   ------------------------------------------------------- */
   const handleAdd = async () => {
-    if (!selected) return;
+    if (!selected?.name || isAlreadyAdded) return;
 
     if (!addTechnicalIndicator) {
-      console.warn("⚠️ addTechnicalIndicator missing in parent");
-
       showSnackbar("Toevoegfunctie ontbreekt!", "danger");
       return;
     }
@@ -83,14 +86,12 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
     try {
       await addTechnicalIndicator(selected.name);
 
-      // ⭐ Gebruik snackbar i.p.v. simpele melding
       showSnackbar(
         `${selected.display_name || selected.name} toegevoegd aan technische analyse.`,
         "success"
       );
     } catch (err) {
       console.error("❌ Toevoegen mislukt", err);
-
       showSnackbar("Toevoegen mislukt. Probeer opnieuw.", "danger");
     }
   };
@@ -104,6 +105,9 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
         </div>
       }
     >
+      {/* -------------------------------------------------------
+         🔍 Zoeken
+      ------------------------------------------------------- */}
       <UniversalSearchDropdown
         label="Zoek een technische indicator"
         items={allIndicators}
@@ -113,7 +117,7 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
       />
 
       {/* -------------------------------------------------------
-         📊 TABEL MET SCOREREGELS
+         📊 Scoreregels
       ------------------------------------------------------- */}
       {selected && scoreRules.length > 0 && (
         <div className="mt-6">
@@ -137,7 +141,7 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
               </thead>
 
               <tbody>
-                {scoreRules
+                {[...scoreRules]
                   .sort((a, b) => Number(a.range_min) - Number(b.range_min))
                   .map((r, idx) => {
                     const scoreClass =
@@ -156,15 +160,21 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
                         key={idx}
                         className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition"
                       >
-                        <td className="p-3">{r.range_min} – {r.range_max}</td>
-                        <td className={`p-3 text-center font-semibold ${scoreClass}`}>
+                        <td className="p-3">
+                          {r.range_min} – {r.range_max}
+                        </td>
+                        <td
+                          className={`p-3 text-center font-semibold ${scoreClass}`}
+                        >
                           {r.score}
                         </td>
                         <td className="p-3 text-center italic text-[var(--text-light)]">
                           {r.trend}
                         </td>
                         <td className="p-3">{r.interpretation}</td>
-                        <td className="p-3 text-[var(--text-light)]">{r.action}</td>
+                        <td className="p-3 text-[var(--text-light)]">
+                          {r.action}
+                        </td>
                       </tr>
                     );
                   })}
@@ -181,25 +191,27 @@ export default function TechnicalIndicatorScoreView({ addTechnicalIndicator }) {
       )}
 
       {/* -------------------------------------------------------
-         ➕ KNOP
+         ➕ Toevoegen knop (smart disabled)
       ------------------------------------------------------- */}
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-5">
         <button
           onClick={handleAdd}
-          disabled={!selected}
+          disabled={!selected || isAlreadyAdded}
           className="
             flex items-center gap-2
             px-4 py-2 rounded-lg
             bg-[var(--primary)]
             text-white
             font-medium
-            hover:bg-blue-700
+            hover:brightness-90
             disabled:opacity-40 disabled:cursor-not-allowed
             transition
           "
         >
           <Plus size={18} />
-          Voeg toe aan technische analyse
+          {isAlreadyAdded
+            ? "Indicator al toegevoegd"
+            : "Voeg toe aan technische analyse"}
         </button>
       </div>
     </CardWrapper>

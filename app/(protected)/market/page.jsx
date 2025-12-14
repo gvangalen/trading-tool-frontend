@@ -2,10 +2,7 @@
 
 import {
   LineChart,
-  TrendingUp,
-  TrendingDown,
   Gauge,
-  Info,
   Activity,
 } from "lucide-react";
 
@@ -25,7 +22,7 @@ import MarketSevenDayTable from "@/components/market/MarketSevenDayTable";
 import MarketForwardReturnTabs from "@/components/market/MarketForwardReturnTabs";
 import MarketIndicatorScoreView from "@/components/market/MarketIndicatorScoreView";
 
-// ⭐ Onboarding
+// Onboarding
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function MarketPage() {
@@ -64,7 +61,7 @@ export default function MarketPage() {
   const safeForward = forwardReturns || {};
 
   /* ---------------------------------------------------------
-     🎨 Scorekleur
+     SCORE KLEUR
   --------------------------------------------------------- */
   const scoreColor = (score) => {
     const n = Number(score);
@@ -75,7 +72,7 @@ export default function MarketPage() {
   };
 
   /* ---------------------------------------------------------
-     📈 Advies tekst
+     ADVIES TEKST
   --------------------------------------------------------- */
   const adviesText =
     safeMarketScore >= 75
@@ -85,21 +82,21 @@ export default function MarketPage() {
       : "Neutraal";
 
   /* ---------------------------------------------------------
-     ❌ DELETE MET CONFIRM (FIX)
+     ❌ DELETE — IDENTIEK AAN MACRO
   --------------------------------------------------------- */
-  const handleRemoveMarket = (indicatorName) => {
-    if (!indicatorName) return;
+  const handleRemoveMarket = (name) => {
+    if (!name) return;
 
     openConfirm({
       title: "Market-indicator verwijderen",
-      description: `Weet je zeker dat je '${indicatorName}' wilt verwijderen?`,
-      tone: "danger",
+      description: `Weet je zeker dat je '${name}' wilt verwijderen?`,
       confirmText: "Verwijderen",
       cancelText: "Annuleren",
+      tone: "danger",
       onConfirm: async () => {
         try {
-          await removeMarket(indicatorName);
-          showSnackbar(`'${indicatorName}' verwijderd`, "success");
+          await removeMarket(name);
+          showSnackbar(`'${name}' verwijderd`, "success");
         } catch (err) {
           console.error("❌ Market delete failed:", err);
           showSnackbar("Verwijderen mislukt", "danger");
@@ -109,7 +106,7 @@ export default function MarketPage() {
   };
 
   return (
-    <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
+    <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12">
 
       <OnboardingBanner step="market" />
 
@@ -123,10 +120,15 @@ export default function MarketPage() {
       {loading && (
         <p className="text-sm text-[var(--text-light)]">Data laden…</p>
       )}
-      {error && <p className="text-sm text-red-500">Fout: {error}</p>}
+      {error && (
+        <p className="text-sm text-red-500">Fout: {error}</p>
+      )}
 
       <AgentInsightPanel category="market" />
 
+      {/* -----------------------------------------------------
+         MARKET SCORE
+      ----------------------------------------------------- */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -140,14 +142,15 @@ export default function MarketPage() {
             {safeMarketScore ?? "–"}
           </div>
 
-          <div className="flex items-center gap-2 text-lg">
-            <span className="font-semibold text-[var(--text-dark)]">
-              Advies: {adviesText}
-            </span>
+          <div className="text-lg font-semibold text-[var(--text-dark)]">
+            Advies: {adviesText}
           </div>
         </div>
       </CardWrapper>
 
+      {/* -----------------------------------------------------
+         LIVE MARKET
+      ----------------------------------------------------- */}
       <MarketLiveCard
         price={safeLive.price ?? null}
         change24h={safeLive.change_24h ?? null}
@@ -155,6 +158,9 @@ export default function MarketPage() {
         timestamp={safeLive.timestamp ?? null}
       />
 
+      {/* -----------------------------------------------------
+         INDICATOR SCORELOGICA
+      ----------------------------------------------------- */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators || []}
         selectedIndicator={selectedIndicator || null}
@@ -164,7 +170,9 @@ export default function MarketPage() {
         activeIndicators={activeMarketIndicatorNames || []}
       />
 
-      {/* ✅ HIER ZIT DE FIX */}
+      {/* -----------------------------------------------------
+         DAGTABEL — IDENTIEK AAN MACRO
+      ----------------------------------------------------- */}
       <DayTable
         title="Dagelijkse Market Analyse"
         icon={<Activity className="w-5 h-5" />}

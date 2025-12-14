@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useModal } from "@/components/modal/ModalProvider";
 
 import {
   fetchMarketData7d,
@@ -27,11 +26,9 @@ const getAdvies = (score) =>
   score >= 75 ? "🟢 Bullish" : score <= 25 ? "🔴 Bearish" : "⚖️ Neutraal";
 
 /* ========================================================
-   MAIN HOOK — MARKET (IDENTIEK AAN MACRO / TECHNICAL)
+   MAIN HOOK
 ======================================================== */
 export function useMarketData() {
-  const { openConfirm, showSnackbar } = useModal();
-
   const [sevenDayData, setSevenDayData] = useState([]);
   const [btcLive, setBtcLive] = useState(null);
 
@@ -48,12 +45,8 @@ export function useMarketData() {
   const [marketDayData, setMarketDayData] = useState([]);
   const [activeMarketIndicators, setActiveMarketIndicators] = useState([]);
 
-  // ✅ business-key lijst (name)
   const activeMarketIndicatorNames = useMemo(
-    () =>
-      (activeMarketIndicators || [])
-        .map((i) => i?.name)
-        .filter(Boolean),
+    () => (activeMarketIndicators || []).map((i) => i?.name).filter(Boolean),
     [activeMarketIndicators]
   );
 
@@ -74,7 +67,7 @@ export function useMarketData() {
   }, []);
 
   /* --------------------------------------------------------
-     LOAD ALL
+     LOAD ALLES
   -------------------------------------------------------- */
   async function loadAll() {
     setLoading(true);
@@ -131,23 +124,18 @@ export function useMarketData() {
     } catch (e) {
       console.error("❌ score rules error:", e);
       setScoreRules([]);
-      showSnackbar("Kon scoreregels niet ophalen", "danger");
     }
   }
 
   /* --------------------------------------------------------
-     REFRESH HELPERS (🔥 force reset)
+     REFRESH HELPERS
   -------------------------------------------------------- */
   async function refreshDay() {
-    const fresh = (await fetchMarketDayData()) || [];
-    setMarketDayData([]);       // 🔥 belangrijk
-    setMarketDayData(fresh);
+    setMarketDayData((await fetchMarketDayData()) || []);
   }
 
   async function refreshActive() {
-    const fresh = (await getUserMarketIndicators()) || [];
-    setActiveMarketIndicators([]);
-    setActiveMarketIndicators(fresh);
+    setActiveMarketIndicators((await getUserMarketIndicators()) || []);
   }
 
   /* --------------------------------------------------------
@@ -157,61 +145,48 @@ export function useMarketData() {
     if (!indicatorName) return;
 
     if (activeMarketIndicatorNames.includes(indicatorName)) {
-      showSnackbar("Indicator is al toegevoegd", "info");
+      // UI doet snackbar
       return;
     }
 
-    try {
-      await marketIndicatorAdd(indicatorName);
-      await refreshActive();
-      await refreshDay();
-      showSnackbar("Market-indicator toegevoegd", "success");
-    } catch (err) {
-      console.error("❌ addMarket error:", err);
-      showSnackbar("Toevoegen mislukt", "danger");
-    }
+    await marketIndicatorAdd(indicatorName);
+
+    // refresh
+    await refreshActive();
+    await refreshDay();
   }
 
   /* --------------------------------------------------------
-     ❌ DELETE — OP NAAM (IDENTIEK AAN MACRO)
+     ❌ REMOVE (zoals macro: GEEN MODAL HIER)
+     - doet echt delete
+     - update state direct (optimistic) + refresh
   -------------------------------------------------------- */
-  function removeMarket(indicatorName) {
+  async function removeMarket(indicatorName) {
     if (!indicatorName) return;
 
-    openConfirm({
-      title: "Market-indicator verwijderen",
-      description: (
-        <p className="leading-relaxed">
-          Weet je zeker dat je <strong>{indicatorName}</strong> wilt verwijderen?
-          <br />
-          <span className="text-red-600 font-medium">
-            Dit kan niet ongedaan worden gemaakt.
-          </span>
-        </p>
-      ),
-      confirmText: "Verwijderen",
-      cancelText: "Annuleren",
-      tone: "danger",
-      onConfirm: async () => {
-        try {
-          // ✅ encode → veilige route
-          await marketIndicatorDelete(
-            encodeURIComponent(indicatorName)
-          );
-          await refreshActive();
-          await refreshDay();
-          showSnackbar("Market-indicator verwijderd", "success");
-        } catch (err) {
-          console.error("❌ removeMarket error:", err);
-          showSnackbar("Verwijderen mislukt", "danger");
-        }
-      },
-    });
+    const normalized = String(indicatorName).trim().toLowerCase();
+
+    // 1) API delete
+    await marketIndicatorDelete(normalized);
+
+    // 2) Optimistic state update (direct uit UI halen)
+    setMarketDayData((prev) =>
+      (prev || []).filter(
+        (r) => String(r?.name || "").trim().toLowerCase() !== normalized
+      )
+    );
+
+    setActiveMarketIndicators((prev) =>
+      (prev || []).filter(
+        (r) => String(r?.name || "").trim().toLowerCase() !== normalized
+      )
+    );
+
+    // 3) Hard refresh (zekerheid)
+    await refreshActive();
+    await refreshDay();
   }
 
-  /* --------------------------------------------------------
-     EXPORT
-  -------------------------------------------------------- */
   return {
     loading,
     error,

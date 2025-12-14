@@ -12,6 +12,7 @@ import {
 // Hooks
 import { useMarketData } from "@/hooks/useMarketData";
 import { useScoresData } from "@/hooks/useScoresData";
+import { useModal } from "@/components/modal/ModalProvider";
 
 // Shared Components
 import CardWrapper from "@/components/ui/CardWrapper";
@@ -42,13 +43,14 @@ export default function MarketPage() {
     addMarket,
     removeMarket,
 
-    activeMarketIndicatorNames, // 👈 🔥 NIEUW (belangrijk)
+    activeMarketIndicatorNames,
 
     loading,
     error,
   } = useMarketData();
 
   const { market } = useScoresData();
+  const { openConfirm, showSnackbar } = useModal();
 
   /* ---------------------------------------------------------
      SAFE FALLBACKS
@@ -57,9 +59,7 @@ export default function MarketPage() {
     typeof market?.score === "number" ? market.score : null;
 
   const safeLive = btcLive || {};
-  const safeMarketDayData = Array.isArray(marketDayData)
-    ? marketDayData
-    : [];
+  const safeMarketDayData = Array.isArray(marketDayData) ? marketDayData : [];
   const safeSevenDay = Array.isArray(sevenDayData) ? sevenDayData : [];
   const safeForward = forwardReturns || {};
 
@@ -67,7 +67,7 @@ export default function MarketPage() {
      🎨 Scorekleur
   --------------------------------------------------------- */
   const scoreColor = (score) => {
-    const n = typeof score === "number" ? score : Number(score);
+    const n = Number(score);
     if (isNaN(n)) return "text-gray-600";
     if (n >= 75) return "text-green-600";
     if (n <= 25) return "text-red-600";
@@ -84,13 +84,35 @@ export default function MarketPage() {
       ? "Bearish"
       : "Neutraal";
 
+  /* ---------------------------------------------------------
+     ❌ DELETE MET CONFIRM (FIX)
+  --------------------------------------------------------- */
+  const handleRemoveMarket = (indicatorName) => {
+    if (!indicatorName) return;
+
+    openConfirm({
+      title: "Market-indicator verwijderen",
+      description: `Weet je zeker dat je '${indicatorName}' wilt verwijderen?`,
+      tone: "danger",
+      confirmText: "Verwijderen",
+      cancelText: "Annuleren",
+      onConfirm: async () => {
+        try {
+          await removeMarket(indicatorName);
+          showSnackbar(`'${indicatorName}' verwijderd`, "success");
+        } catch (err) {
+          console.error("❌ Market delete failed:", err);
+          showSnackbar("Verwijderen mislukt", "danger");
+        }
+      },
+    });
+  };
+
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ⭐ Onboarding */}
       <OnboardingBanner step="market" />
 
-      {/* 📌 Titel */}
       <div className="flex items-center gap-3">
         <LineChart size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)]">
@@ -101,14 +123,10 @@ export default function MarketPage() {
       {loading && (
         <p className="text-sm text-[var(--text-light)]">Data laden…</p>
       )}
-      {error && (
-        <p className="text-sm text-red-500">Fout: {error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">Fout: {error}</p>}
 
-      {/* 🤖 AI Agent Analyse */}
       <AgentInsightPanel category="market" />
 
-      {/* 📊 Markt Score */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -119,32 +137,17 @@ export default function MarketPage() {
           </div>
 
           <div className={`text-2xl font-bold ${scoreColor(safeMarketScore)}`}>
-            {loading
-              ? "…"
-              : safeMarketScore !== null
-              ? safeMarketScore.toFixed(1)
-              : "–"}
+            {safeMarketScore ?? "–"}
           </div>
 
           <div className="flex items-center gap-2 text-lg">
-            {adviesText === "Bullish" && (
-              <TrendingUp className="text-green-600" size={20} />
-            )}
-            {adviesText === "Bearish" && (
-              <TrendingDown className="text-red-600" size={20} />
-            )}
-            {adviesText === "Neutraal" && (
-              <Info className="text-yellow-600" size={20} />
-            )}
-
             <span className="font-semibold text-[var(--text-dark)]">
-              Advies: {loading ? "…" : adviesText}
+              Advies: {adviesText}
             </span>
           </div>
         </div>
       </CardWrapper>
 
-      {/* 💹 Live BTC */}
       <MarketLiveCard
         price={safeLive.price ?? null}
         change24h={safeLive.change_24h ?? null}
@@ -152,28 +155,24 @@ export default function MarketPage() {
         timestamp={safeLive.timestamp ?? null}
       />
 
-      {/* ⚙️ Indicator Score View */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators || []}
         selectedIndicator={selectedIndicator || null}
         scoreRules={scoreRules || []}
         selectIndicator={selectIndicator}
         addMarketIndicator={addMarket}
-        activeIndicators={activeMarketIndicatorNames} // 👈 🔥 FIX
+        activeIndicators={activeMarketIndicatorNames || []}
       />
 
-      {/* 📅 Dagelijkse Market Analyse */}
+      {/* ✅ HIER ZIT DE FIX */}
       <DayTable
         title="Dagelijkse Market Analyse"
         icon={<Activity className="w-5 h-5" />}
         data={safeMarketDayData}
-        onRemove={removeMarket}
+        onRemove={handleRemoveMarket}
       />
 
-      {/* 📆 7-daagse geschiedenis */}
       <MarketSevenDayTable history={safeSevenDay} />
-
-      {/* 🔮 Forward Returns */}
       <MarketForwardReturnTabs data={safeForward} />
     </div>
   );

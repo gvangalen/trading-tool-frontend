@@ -26,8 +26,10 @@ import { getDailyScores } from "@/lib/api/scores";
 const getAdvies = (score) =>
   score >= 75 ? "🟢 Bullish" : score <= 25 ? "🔴 Bearish" : "⚖️ Neutraal";
 
+/* ========================================================
+   MAIN HOOK — MARKET (IDENTIEK AAN MACRO / TECHNICAL)
+======================================================== */
 export function useMarketData() {
-  // ✅ let op: ModalProvider gebruikt bij jou openConfirm (niet showConfirm)
   const { openConfirm, showSnackbar } = useModal();
 
   const [sevenDayData, setSevenDayData] = useState([]);
@@ -46,8 +48,12 @@ export function useMarketData() {
   const [marketDayData, setMarketDayData] = useState([]);
   const [activeMarketIndicators, setActiveMarketIndicators] = useState([]);
 
+  // ✅ business-key lijst (name)
   const activeMarketIndicatorNames = useMemo(
-    () => (activeMarketIndicators || []).map((i) => i?.name).filter(Boolean),
+    () =>
+      (activeMarketIndicators || [])
+        .map((i) => i?.name)
+        .filter(Boolean),
     [activeMarketIndicators]
   );
 
@@ -58,15 +64,22 @@ export function useMarketData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  /* --------------------------------------------------------
+     INIT
+  -------------------------------------------------------- */
   useEffect(() => {
     loadAll();
     const interval = setInterval(loadLiveBTC, 60000);
     return () => clearInterval(interval);
   }, []);
 
+  /* --------------------------------------------------------
+     LOAD ALL
+  -------------------------------------------------------- */
   async function loadAll() {
     setLoading(true);
     setError("");
+
     try {
       setSevenDayData(await fetchMarketData7d());
 
@@ -94,6 +107,9 @@ export function useMarketData() {
     }
   }
 
+  /* --------------------------------------------------------
+     LIVE BTC
+  -------------------------------------------------------- */
   async function loadLiveBTC() {
     try {
       setBtcLive(await fetchLatestBTC());
@@ -102,6 +118,9 @@ export function useMarketData() {
     }
   }
 
+  /* --------------------------------------------------------
+     SCORE RULES
+  -------------------------------------------------------- */
   async function selectIndicator(indicatorObj) {
     if (!indicatorObj?.name) return;
 
@@ -116,14 +135,24 @@ export function useMarketData() {
     }
   }
 
+  /* --------------------------------------------------------
+     REFRESH HELPERS (🔥 force reset)
+  -------------------------------------------------------- */
   async function refreshDay() {
-    setMarketDayData((await fetchMarketDayData()) || []);
+    const fresh = (await fetchMarketDayData()) || [];
+    setMarketDayData([]);       // 🔥 belangrijk
+    setMarketDayData(fresh);
   }
 
   async function refreshActive() {
-    setActiveMarketIndicators((await getUserMarketIndicators()) || []);
+    const fresh = (await getUserMarketIndicators()) || [];
+    setActiveMarketIndicators([]);
+    setActiveMarketIndicators(fresh);
   }
 
+  /* --------------------------------------------------------
+     ➕ ADD
+  -------------------------------------------------------- */
   async function addMarket(indicatorName) {
     if (!indicatorName) return;
 
@@ -143,7 +172,9 @@ export function useMarketData() {
     }
   }
 
-  // ✅ IMPORTANT: removeMarket moet écht de delete uitvoeren, niet crashen
+  /* --------------------------------------------------------
+     ❌ DELETE — OP NAAM (IDENTIEK AAN MACRO)
+  -------------------------------------------------------- */
   function removeMarket(indicatorName) {
     if (!indicatorName) return;
 
@@ -163,8 +194,10 @@ export function useMarketData() {
       tone: "danger",
       onConfirm: async () => {
         try {
-          // ✅ encode + consistent name
-          await marketIndicatorDelete(indicatorName);
+          // ✅ encode → veilige route
+          await marketIndicatorDelete(
+            encodeURIComponent(indicatorName)
+          );
           await refreshActive();
           await refreshDay();
           showSnackbar("Market-indicator verwijderd", "success");
@@ -176,6 +209,9 @@ export function useMarketData() {
     });
   }
 
+  /* --------------------------------------------------------
+     EXPORT
+  -------------------------------------------------------- */
   return {
     loading,
     error,

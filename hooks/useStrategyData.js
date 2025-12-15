@@ -1,19 +1,23 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import {
   fetchStrategies,
   createStrategy,
   updateStrategy,
   deleteStrategy,
-  generateStrategy,          // ➜ start AI analyse task
+  analyzeStrategy,          // ✅ JUISTE ROUTE
   generateAllStrategies,
-  fetchStrategyBySetup,
   fetchTaskStatus,
 } from '@/lib/api/strategy';
 
 import { fetchSetups } from '@/lib/api/setups';
 
+
+// =====================================================================
+// 🧠 STRATEGY DATA HOOK
+// =====================================================================
 export function useStrategyData() {
   const [strategies, setStrategies] = useState([]);
   const [setups, setSetups] = useState([]);
@@ -34,13 +38,13 @@ export function useStrategyData() {
   const loadStrategies = useCallback(async (symbol = '', timeframe = '') => {
     setLoading(true);
     setError('');
+
     try {
       const data = await fetchStrategies(symbol, timeframe);
-      const filtered = Array.isArray(data) ? data.filter(Boolean) : [];
-      setStrategies(filtered);
+      setStrategies(Array.isArray(data) ? data.filter(Boolean) : []);
     } catch (err) {
       console.error('❌ loadStrategies fout:', err);
-      setError('❌ Fout bij laden strategieën.');
+      setError('Fout bij laden strategieën.');
       setStrategies([]);
     } finally {
       setLoading(false);
@@ -52,6 +56,7 @@ export function useStrategyData() {
   // =====================================================================
   const loadSetups = async (strategyType = '') => {
     setError('');
+
     try {
       const [setupData, strategyData] = await Promise.all([
         fetchSetups(strategyType),
@@ -63,7 +68,7 @@ export function useStrategyData() {
 
       const hasStrategy = {
         dca: new Set(),
-        ai: new Set(),
+        trading: new Set(),
         manual: new Set(),
       };
 
@@ -76,7 +81,7 @@ export function useStrategyData() {
       const enriched = setupsArray.map((s) => ({
         ...s,
         has_dca_strategy: hasStrategy.dca.has(s.id),
-        has_ai_strategy: hasStrategy.ai.has(s.id),
+        has_ai_strategy: hasStrategy.trading.has(s.id),
         has_manual_strategy: hasStrategy.manual.has(s.id),
       }));
 
@@ -128,25 +133,22 @@ export function useStrategyData() {
   }
 
   // =====================================================================
-  // 4) 🧠 AI ANALYSE / ADVIES (GEEN NIEUWE STRATEGY)
+  // 4) 🧠 AI STRATEGIE-ANALYSE (GEEN NIEUWE STRATEGY)
+  // Backend: POST /api/strategies/analyze
   // =====================================================================
-  async function generateStrategyForSetup(setupId) {
+  async function analyzeStrategies() {
     setSuccessMessage('');
     setError('');
 
     try {
-      // 1️⃣ Start AI analyse task
-      const res = await generateStrategy(setupId);
+      const res = await analyzeStrategy();
 
       if (!res?.task_id) {
-        setError('❌ AI taak niet gestart.');
+        setError('AI analyse niet gestart.');
         return;
       }
 
       const taskId = res.task_id;
-      console.log(`🧠 AI analyse gestart: ${taskId}`);
-
-      // 2️⃣ Poll task status
       let status = 'PENDING';
       let tries = 0;
 
@@ -154,20 +156,15 @@ export function useStrategyData() {
         await new Promise((r) => setTimeout(r, 2000));
         const result = await fetchTaskStatus(taskId);
         status = result?.state;
-        console.log(`⏳ Poll ${tries} — status: ${status}`);
         tries++;
       }
 
       if (status !== 'SUCCESS') {
-        setError('❌ AI analyse mislukt.');
+        setError('AI analyse mislukt.');
         return;
       }
 
-      // ✅ GEEN nieuwe strategy ophalen
-      // ✅ GEEN state-mutatie van strategies
-      // Analyse staat nu veilig in DB
-
-      setSuccessMessage('🧠 AI-advies bijgewerkt voor bestaande strategie');
+      setSuccessMessage('🧠 AI-strategieanalyse bijgewerkt');
 
     } catch (err) {
       console.error('❌ AI analyse fout:', err);
@@ -176,7 +173,7 @@ export function useStrategyData() {
   }
 
   // =====================================================================
-  // 5) BULK (optioneel)
+  // 5) BULK STRATEGY GENERATION (OPTIONEEL)
   // =====================================================================
   async function generateAll() {
     try {
@@ -209,7 +206,7 @@ export function useStrategyData() {
     removeStrategy,
     addStrategy,
 
-    generateStrategyForSetup,   // 🔘 knop gebruikt DEZE
+    analyzeStrategies,   // ✅ JUISTE KNOP
     generateAll,
   };
 }

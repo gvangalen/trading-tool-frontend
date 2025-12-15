@@ -19,18 +19,14 @@ import {
   Wand2,
   Star,
   StarOff,
-  Trash2,
+  Trash,
+  Pencil,
 } from "lucide-react";
 
-export default function StrategyCard({
-  strategy,
-  onRefresh,
-  onDelete,
-  onUpdate,
-}) {
+export default function StrategyCard({ strategy, onRefresh }) {
   if (!strategy) return null;
 
-  const { showSnackbar, confirm } = useModal();
+  const { openConfirm, showSnackbar } = useModal();
 
   const [loading, setLoading] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
@@ -52,81 +48,144 @@ export default function StrategyCard({
   const display = (v) => (v ? v : "-");
 
   /* =====================================================
-   * 🧠 AI ANALYSE (ASYNC → REFRESH)
+   * 🧠 AI ANALYSE
    * ===================================================== */
-  const handleAnalyze = async () => {
+  async function handleAnalyze() {
     try {
       setLoading(true);
-
       await analyzeStrategy(id);
 
-      showSnackbar("🧠 AI-uitleg bijgewerkt", "success");
-
-      setJustUpdated(true);
-      setTimeout(() => setJustUpdated(false), 2000);
-
-      onRefresh?.();
+      showSnackbar("AI-uitleg bijgewerkt!", "success");
+      flashUpdate();
+      onRefresh && onRefresh();
     } catch (err) {
-      console.error("❌ AI analyse fout:", err);
-      showSnackbar("AI analyse mislukt", "danger");
+      console.error(err);
+      showSnackbar("AI analyse mislukt.", "danger");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   /* =====================================================
    * ⭐ FAVORITE TOGGLE
    * ===================================================== */
-  const toggleFavorite = async () => {
+  async function toggleFavorite() {
     try {
       await updateStrategy(id, { favorite: !favorite });
-      onUpdate?.();
-      onRefresh?.();
+      onRefresh && onRefresh();
     } catch (err) {
-      console.error("❌ Favorite toggle fout:", err);
-      showSnackbar("Kon favoriet niet aanpassen", "danger");
+      console.error(err);
+      showSnackbar("Favoriet aanpassen mislukt.", "danger");
     }
-  };
+  }
+
+  /* =====================================================
+   * ✏️ EDIT STRATEGY — ZOALS SETUPS
+   * ===================================================== */
+  function openEditModal() {
+    openConfirm({
+      title: `Strategie bewerken – ${setup_name}`,
+      icon: <Pencil />,
+      tone: "primary",
+      confirmText: "Opslaan",
+      cancelText: "Annuleren",
+      description: (
+        <StrategyFormWrapper strategy={strategy} />
+      ),
+      onConfirm: async () => {
+        document
+          .querySelector("#strategy-edit-submit")
+          ?.click();
+      },
+    });
+  }
+
+  function StrategyFormWrapper({ strategy }) {
+    const StrategyForm =
+      require("@/components/strategy/StrategyForm").default;
+
+    return (
+      <div className="pt-4 space-y-6">
+        <StrategyForm
+          mode="edit"
+          initialData={strategy}
+          onSaved={() => {
+            showSnackbar("Strategie bijgewerkt!", "success");
+            onRefresh && onRefresh();
+          }}
+        />
+      </div>
+    );
+  }
 
   /* =====================================================
    * 🗑 DELETE STRATEGY
    * ===================================================== */
-  const handleDelete = async () => {
-    const ok = await confirm(
-      "Strategie verwijderen?",
-      "Deze actie kan niet ongedaan worden gemaakt."
-    );
+  function openDeleteModal() {
+    openConfirm({
+      title: "Strategie verwijderen",
+      description: (
+        <p className="leading-relaxed">
+          Weet je zeker dat je deze strategie wilt verwijderen?
+          <br />
+          <span className="text-red-600 font-medium">
+            Dit kan niet ongedaan worden gemaakt.
+          </span>
+        </p>
+      ),
+      icon: <Trash />,
+      tone: "danger",
+      confirmText: "Verwijderen",
+      cancelText: "Annuleren",
+      onConfirm: async () => {
+        try {
+          await deleteStrategy(id);
+          showSnackbar("Strategie verwijderd.", "success");
+          onRefresh && onRefresh();
+        } catch (err) {
+          console.error(err);
+          showSnackbar("Verwijderen mislukt.", "danger");
+        }
+      },
+    });
+  }
 
-    if (!ok) return;
-
-    try {
-      await deleteStrategy(id);
-      showSnackbar("Strategie verwijderd", "success");
-      onDelete?.();
-      onRefresh?.();
-    } catch (err) {
-      console.error("❌ Strategie verwijderen mislukt:", err);
-      showSnackbar("Verwijderen mislukt", "danger");
-    }
-  };
+  function flashUpdate() {
+    setJustUpdated(true);
+    setTimeout(() => setJustUpdated(false), 2000);
+  }
 
   /* =====================================================
-   * 🧱 RENDER
+   * UI
    * ===================================================== */
   return (
     <div
       className={`
-        border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
+        relative border rounded-xl p-6
+        bg-white dark:bg-gray-900 shadow-lg
         ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
       `}
     >
+      {/* AI overlay */}
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
           <AILoader text="AI analyse bezig…" />
         </div>
       )}
 
-      <h3 className="font-bold text-xl mb-2">{setup_name}</h3>
+      {/* Favorite */}
+      <button
+        onClick={toggleFavorite}
+        className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500 transition"
+      >
+        {favorite ? (
+          <Star size={20} className="text-yellow-500" />
+        ) : (
+          <StarOff size={20} />
+        )}
+      </button>
+
+      <h3 className="font-bold text-xl mb-1">{setup_name}</h3>
       <p className="text-sm text-gray-500 mb-4">
         {strategy_type} | {symbol} {timeframe}
       </p>
@@ -145,7 +204,6 @@ export default function StrategyCard({
         </div>
       )}
 
-      {/* 🧠 AI-UITLEG */}
       {ai_explanation && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
@@ -154,7 +212,7 @@ export default function StrategyCard({
         </div>
       )}
 
-      {/* ACTIONS */}
+      {/* Acties */}
       <div className="flex justify-between items-center mt-6">
         <div className="flex gap-4">
           <button
@@ -167,16 +225,20 @@ export default function StrategyCard({
           </button>
 
           <button
-            onClick={handleDelete}
-            className="flex items-center gap-2 text-red-600 hover:text-red-800 text-sm"
+            onClick={openEditModal}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
           >
-            <Trash2 className="w-4 h-4" />
-            Verwijder
+            <Pencil size={16} />
+            Bewerken
           </button>
         </div>
 
-        <button onClick={toggleFavorite}>
-          {favorite ? <Star /> : <StarOff className="text-gray-400" />}
+        <button
+          onClick={openDeleteModal}
+          className="flex items-center gap-2 text-red-600 hover:text-red-800 text-sm"
+        >
+          <Trash size={16} />
+          Verwijder
         </button>
       </div>
     </div>

@@ -7,16 +7,15 @@ import {
   createStrategy,
   updateStrategy,
   deleteStrategy,
-  analyzeStrategy,        // ✅ strategy-level
+  analyzeStrategy,        // ✅ strategy-level AI analyse
   generateAllStrategies,
-  fetchTaskStatus,
 } from '@/lib/api/strategy';
 
 import { fetchSetups } from '@/lib/api/setups';
 
 
 // =====================================================================
-// 🧠 STRATEGY DATA HOOK
+// 🧠 STRATEGY DATA HOOK (V1)
 // =====================================================================
 export function useStrategyData() {
   const [strategies, setStrategies] = useState([]);
@@ -133,8 +132,10 @@ export function useStrategyData() {
   }
 
   // =====================================================================
-  // 4) 🧠 AI STRATEGIE-ANALYSE (PER STRATEGIE)
+  // 4) 🧠 AI STRATEGIE-ANALYSE (V1 – zoals setup)
   // Backend: POST /api/strategies/analyze/{strategy_id}
+  // → AI schrijft strategy.data.ai_explanation
+  // → wij reloaden strategies
   // =====================================================================
   async function analyzeSingleStrategy(strategyId) {
     setSuccessMessage('');
@@ -146,31 +147,9 @@ export function useStrategyData() {
     }
 
     try {
-      const res = await analyzeStrategy(strategyId);
-
-      if (!res?.task_id) {
-        setError('AI analyse niet gestart.');
-        return;
-      }
-
-      const taskId = res.task_id;
-      let status = 'PENDING';
-      let tries = 0;
-
-      while (status !== 'SUCCESS' && tries < 30) {
-        await new Promise((r) => setTimeout(r, 2000));
-        const result = await fetchTaskStatus(taskId);
-        status = result?.state;
-        tries++;
-      }
-
-      if (status !== 'SUCCESS') {
-        setError('AI analyse mislukt.');
-        return;
-      }
-
-      setSuccessMessage('🧠 AI-analyse bijgewerkt');
-
+      await analyzeStrategy(strategyId);
+      await loadStrategies();
+      setSuccessMessage('🧠 AI-uitleg bijgewerkt');
     } catch (err) {
       console.error('❌ AI analyse fout:', err);
       setError('AI analyse mislukt.');
@@ -211,7 +190,7 @@ export function useStrategyData() {
     removeStrategy,
     addStrategy,
 
-    analyzeSingleStrategy,   // ✅ HIEROP KOPPELEN IN UI
+    analyzeSingleStrategy,   // ✅ koppel hierop in UI
     generateAll,
   };
 }

@@ -15,7 +15,12 @@ import StrategyTabs from "@/components/strategy/StrategyTabs";
 
 import { useSetupData } from "@/hooks/useSetupData";
 import { useStrategyData } from "@/hooks/useStrategyData";
-import { createStrategy } from "@/lib/api/strategy";
+
+import {
+  createStrategy,
+  updateStrategy,
+  deleteStrategy,
+} from "@/lib/api/strategy";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
@@ -47,7 +52,7 @@ export default function StrategyPage() {
   }, []);
 
   /* -------------------------------------------------- */
-  /* 🔁 REFRESH EVERYTHING (CENTRAAL) */
+  /* 🔁 CENTRALE REFRESH (ENIGE BRON) */
   /* -------------------------------------------------- */
   const refreshEverything = () => {
     loadStrategies();
@@ -56,7 +61,35 @@ export default function StrategyPage() {
   };
 
   /* -------------------------------------------------- */
-  /* SUBMIT NEW STRATEGY (HANDMATIG) */
+  /* 🗑 DELETE STRATEGY */
+  /* -------------------------------------------------- */
+  const handleDeleteStrategy = async (id) => {
+    try {
+      await deleteStrategy(id);
+      showSnackbar("Strategie verwijderd", "success");
+      refreshEverything();
+    } catch (err) {
+      console.error("❌ Verwijderen mislukt:", err);
+      showSnackbar("Strategie verwijderen mislukt", "danger");
+    }
+  };
+
+  /* -------------------------------------------------- */
+  /* ✏️ UPDATE STRATEGY */
+  /* -------------------------------------------------- */
+  const handleUpdateStrategy = async (id, data) => {
+    try {
+      await updateStrategy(id, data);
+      showSnackbar("Strategie bijgewerkt", "success");
+      refreshEverything();
+    } catch (err) {
+      console.error("❌ Update mislukt:", err);
+      showSnackbar("Strategie bijwerken mislukt", "danger");
+    }
+  };
+
+  /* -------------------------------------------------- */
+  /* ➕ CREATE STRATEGY (HANDMATIG) */
   /* -------------------------------------------------- */
   const handleStrategySubmit = async (strategy) => {
     try {
@@ -130,15 +163,13 @@ export default function StrategyPage() {
   }, [safeSetups, safeStrategies, refreshKey]);
 
   /* -------------------------------------------------- */
-  /* RENDER PAGE */
+  /* RENDER */
   /* -------------------------------------------------- */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ⭐ ONBOARDING */}
       <OnboardingBanner step="strategy" />
 
-      {/* Titel */}
       <div className="flex items-center gap-3 mb-2">
         <LineChart size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -152,7 +183,6 @@ export default function StrategyPage() {
         verbeteradviezen.
       </p>
 
-      {/* AI INSIGHT PANEL */}
       <AgentInsightPanel category="strategy" />
 
       {/* ===================== */}
@@ -167,15 +197,7 @@ export default function StrategyPage() {
         }
       >
         <div className="flex justify-between items-center mb-4">
-          {/* Zoekveld */}
-          <div
-            className="
-              flex items-center px-3 py-2
-              bg-[var(--bg-soft)] border border-[var(--border)]
-              rounded-lg gap-2
-              focus-within:ring-1 focus-within:ring-[var(--primary)]
-            "
-          >
+          <div className="flex items-center px-3 py-2 bg-[var(--bg-soft)] border border-[var(--border)] rounded-lg gap-2">
             <Search size={18} className="text-[var(--text-light)]" />
             <input
               type="text"
@@ -187,11 +209,12 @@ export default function StrategyPage() {
           </div>
         </div>
 
-        {/* 🔑 CRUCIAAL: strategies + onRefresh DOORGEVEN */}
         <StrategyList
           strategies={safeStrategies}
           searchTerm={search}
           onRefresh={refreshEverything}
+          onDelete={handleDeleteStrategy}
+          onUpdate={handleUpdateStrategy}
           key={refreshKey}
         />
       </CardWrapper>

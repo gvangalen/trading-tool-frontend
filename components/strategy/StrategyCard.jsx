@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
   updateStrategy,
   deleteStrategy,
-  generateStrategy,   // ➜ start AI analyse
+  analyzeStrategy,   // ✅ JUIST
   fetchTaskStatus,
 } from "@/lib/api/strategy";
 
@@ -32,14 +32,12 @@ export default function StrategyCard({ strategy, onUpdated }) {
   if (!strategy) return null;
 
   const { openConfirm, showSnackbar } = useModal();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [justUpdated, setJustUpdated] = useState(false);
 
   const {
     id,
-    setup_id,
     setup_name,
     symbol,
     timeframe,
@@ -55,25 +53,23 @@ export default function StrategyCard({ strategy, onUpdated }) {
   const display = (v) => (v ? v : "-");
 
   /* =====================================================
-     🧠 AI ANALYSE — GEEN STRATEGY INSERT
+     🧠 AI ANALYSE — GEEN INSERT
   ===================================================== */
-  const handleGenerate = async () => {
+  const handleAnalyze = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const res = await generateStrategy(setup_id);
+      const res = await analyzeStrategy(id); // ✅ strategy_id
 
       if (!res?.task_id) {
         throw new Error("Geen task_id ontvangen");
       }
 
-      const taskId = res.task_id;
       let tries = 0;
-
       while (tries < 40) {
         await new Promise((r) => setTimeout(r, 1500));
-        const status = await fetchTaskStatus(taskId);
+        const status = await fetchTaskStatus(res.task_id);
 
         if (!status) continue;
         if (status.state === "FAILURE") throw new Error("AI analyse mislukt");
@@ -83,8 +79,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
       }
 
       showSnackbar("🧠 AI-advies bijgewerkt", "success");
-
-      // optioneel: parent kan insights herladen
       onUpdated && onUpdated(id);
 
       setJustUpdated(true);
@@ -99,16 +93,10 @@ export default function StrategyCard({ strategy, onUpdated }) {
     }
   };
 
-  /* =====================================================
-     🎨 UI
-  ===================================================== */
   return (
-    <div
-      className={`
-        border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
-        ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
-      `}
-    >
+    <div className={`border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
+      ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}`}>
+
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
           <AILoader text="AI analyse bezig…" />
@@ -140,7 +128,7 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
       <div className="flex justify-between items-center mt-6">
         <button
-          onClick={handleGenerate}
+          onClick={handleAnalyze}
           disabled={loading}
           className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
         >

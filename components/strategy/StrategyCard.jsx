@@ -47,80 +47,62 @@ export default function StrategyCard({ strategy, onRefresh }) {
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
 
-  /* =====================================================
-   * 🧠 AI ANALYSE
-   * ===================================================== */
+  /* ================================
+     🧠 AI ANALYSE
+  ================================= */
   async function handleAnalyze() {
     try {
       setLoading(true);
       await analyzeStrategy(id);
 
-      showSnackbar("AI-uitleg bijgewerkt!", "success");
+      showSnackbar("AI-uitleg bijgewerkt", "success");
       flashUpdate();
-      onRefresh && onRefresh();
+      onRefresh?.();
     } catch (err) {
       console.error(err);
-      showSnackbar("AI analyse mislukt.", "danger");
+      showSnackbar("AI analyse mislukt", "danger");
     } finally {
       setLoading(false);
     }
   }
 
-  /* =====================================================
-   * ⭐ FAVORITE TOGGLE
-   * ===================================================== */
+  /* ================================
+     ⭐ FAVORITE
+  ================================= */
   async function toggleFavorite() {
     try {
-      await updateStrategy(id, { favorite: !favorite });
-      onRefresh && onRefresh();
+      await updateStrategy(id, {
+        ...strategy,
+        favorite: !favorite,
+      });
+      onRefresh?.();
     } catch (err) {
       console.error(err);
-      showSnackbar("Favoriet aanpassen mislukt.", "danger");
+      showSnackbar("Favoriet aanpassen mislukt", "danger");
     }
   }
 
-  /* =====================================================
-   * ✏️ EDIT STRATEGY — ZOALS SETUPS
-   * ===================================================== */
+  /* ================================
+     ✏️ EDIT (V1: simpel, safe)
+  ================================= */
   function openEditModal() {
     openConfirm({
-      title: `Strategie bewerken – ${setup_name}`,
-      icon: <Pencil />,
-      tone: "primary",
-      confirmText: "Opslaan",
-      cancelText: "Annuleren",
+      title: "Strategie bewerken",
       description: (
-        <StrategyFormWrapper strategy={strategy} />
+        <p className="text-sm">
+          Bewerken gebeurt in versie 2.<br />
+          Voor nu kun je deze strategie verwijderen en opnieuw aanmaken.
+        </p>
       ),
-      onConfirm: async () => {
-        document
-          .querySelector("#strategy-edit-submit")
-          ?.click();
-      },
+      tone: "primary",
+      confirmText: "Oké",
+      cancelText: "Sluiten",
     });
   }
 
-  function StrategyFormWrapper({ strategy }) {
-    const StrategyForm =
-      require("@/components/strategy/StrategyForm").default;
-
-    return (
-      <div className="pt-4 space-y-6">
-        <StrategyForm
-          mode="edit"
-          initialData={strategy}
-          onSaved={() => {
-            showSnackbar("Strategie bijgewerkt!", "success");
-            onRefresh && onRefresh();
-          }}
-        />
-      </div>
-    );
-  }
-
-  /* =====================================================
-   * 🗑 DELETE STRATEGY
-   * ===================================================== */
+  /* ================================
+     🗑 DELETE
+  ================================= */
   function openDeleteModal() {
     openConfirm({
       title: "Strategie verwijderen",
@@ -140,11 +122,11 @@ export default function StrategyCard({ strategy, onRefresh }) {
       onConfirm: async () => {
         try {
           await deleteStrategy(id);
-          showSnackbar("Strategie verwijderd.", "success");
-          onRefresh && onRefresh();
+          showSnackbar("Strategie verwijderd", "success");
+          onRefresh?.();
         } catch (err) {
           console.error(err);
-          showSnackbar("Verwijderen mislukt.", "danger");
+          showSnackbar("Verwijderen mislukt", "danger");
         }
       },
     });
@@ -155,9 +137,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     setTimeout(() => setJustUpdated(false), 2000);
   }
 
-  /* =====================================================
-   * UI
-   * ===================================================== */
+  /* ================================
+     UI
+  ================================= */
   return (
     <div
       className={`
@@ -176,7 +158,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
       {/* Favorite */}
       <button
         onClick={toggleFavorite}
-        className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500 transition"
+        className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500"
       >
         {favorite ? (
           <Star size={20} className="text-yellow-500" />
@@ -217,10 +199,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
         <div className="flex gap-4">
           <button
             onClick={handleAnalyze}
-            disabled={loading}
             className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
           >
-            <Wand2 className="w-4 h-4" />
+            <Wand2 size={16} />
             Analyseer (AI)
           </button>
 

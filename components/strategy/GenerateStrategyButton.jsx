@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import {
-  generateStrategy,     // ➜ start AI analyse
+  analyzeStrategy,      // ✅ JUIST
   fetchTaskStatus,
 } from "@/lib/api/strategy";
 
@@ -12,7 +12,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 /* Icons */
 import { Wand2, Loader2 } from "lucide-react";
 
-export default function GenerateStrategyButton({ setupId, onSuccess }) {
+export default function AnalyzeStrategyButton({ strategyId, onSuccess }) {
   const { showSnackbar } = useModal();
 
   const [loading, setLoading] = useState(false);
@@ -27,12 +27,12 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
         try {
           const res = await fetchTaskStatus(taskId);
 
-          if (!res || res?.state === "FAILURE") {
+          if (!res || res.state === "FAILURE") {
             clearInterval(interval);
             reject("AI analyse mislukt");
           }
 
-          if (res?.state === "SUCCESS") {
+          if (res.state === "SUCCESS") {
             clearInterval(interval);
             resolve(res);
           }
@@ -47,9 +47,9 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
   // ======================================================
   // 🧠 AI ANALYSE STARTEN (GEEN STRATEGY INSERT)
   // ======================================================
-  const handleGenerate = async () => {
-    if (!setupId) {
-      showSnackbar("Setup ontbreekt", "danger");
+  const handleAnalyze = async () => {
+    if (!strategyId) {
+      showSnackbar("Strategie ontbreekt", "danger");
       return;
     }
 
@@ -58,7 +58,7 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
 
     try {
       // 1️⃣ Start AI analyse
-      const data = await generateStrategy(setupId);
+      const data = await analyzeStrategy(strategyId);
 
       if (!data?.task_id) {
         throw new Error("Geen task_id ontvangen");
@@ -70,9 +70,7 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
       // 3️⃣ Klaar — analyse staat nu in DB
       showSnackbar("🧠 AI-advies bijgewerkt", "success");
 
-      if (onSuccess) {
-        onSuccess(); // optioneel: bijv. UI refresh trigger
-      }
+      if (onSuccess) onSuccess();
 
       setStatus("");
 
@@ -91,7 +89,7 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
   return (
     <div className="space-y-2">
       <button
-        onClick={handleGenerate}
+        onClick={handleAnalyze}
         disabled={loading}
         className="
           flex items-center gap-2
@@ -111,7 +109,7 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
         ) : (
           <>
             <Wand2 className="w-4 h-4" />
-            Analyseer Strategie (AI)
+            Analyseer strategie (AI)
           </>
         )}
       </button>

@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
-  updateStrategy,
-  deleteStrategy,
-  analyzeStrategy,
+  analyzeStrategy,          // POST /api/strategies/analyze/{strategy_id}
   fetchTaskStatus,
-  fetchStrategyAnalysis,   // ✅ BELANGRIJK
+  fetchStrategyAnalysis,    // GET  /api/ai/reflections/strategy?strategy_id=
 } from "@/lib/api/strategy";
 
 import AILoader from "@/components/ui/AILoader";
@@ -30,7 +28,7 @@ export default function StrategyCard({ strategy }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [analysis, setAnalysis] = useState(null); // ✅ NIEUW
+  const [analysis, setAnalysis] = useState(null);
   const [justUpdated, setJustUpdated] = useState(false);
 
   const {
@@ -48,32 +46,38 @@ export default function StrategyCard({ strategy }) {
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
 
-  /* =====================================================
-     🧠 AI ANALYSE (PERSISTENT)
-  ===================================================== */
+  // =====================================================
+  // 🧠 AI ANALYSE (PERSISTENT, STRATEGY-LEVEL)
+  // =====================================================
   const handleAnalyze = async () => {
     try {
       setLoading(true);
       setError("");
 
-      // 1️⃣ Start analyse
+      // 1️⃣ Start AI analyse
       const res = await analyzeStrategy(id);
-      if (!res?.task_id) throw new Error("Geen task_id");
+      if (!res?.task_id) {
+        throw new Error("Geen task_id ontvangen");
+      }
 
-      // 2️⃣ Poll task
+      // 2️⃣ Poll Celery task
       let tries = 0;
       while (tries < 30) {
         await new Promise((r) => setTimeout(r, 1500));
         const status = await fetchTaskStatus(res.task_id);
 
-        if (status?.state === "FAILURE") throw new Error("AI analyse mislukt");
-        if (status?.state === "SUCCESS") break;
+        if (status?.state === "FAILURE") {
+          throw new Error("AI analyse mislukt");
+        }
+        if (status?.state === "SUCCESS") {
+          break;
+        }
         tries++;
       }
 
-      // 3️⃣ Haal analyse OP uit DB
+      // 3️⃣ Haal analyse op uit ai_reflections
       const reflection = await fetchStrategyAnalysis(id);
-      setAnalysis(reflection?.content || null);
+      setAnalysis(reflection || null);
 
       showSnackbar("🧠 AI-advies bijgewerkt", "success");
       setJustUpdated(true);
@@ -90,8 +94,10 @@ export default function StrategyCard({ strategy }) {
 
   return (
     <div
-      className={`border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
-      ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}`}
+      className={`
+        border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
+        ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
+      `}
     >
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
@@ -106,18 +112,33 @@ export default function StrategyCard({ strategy }) {
 
       {!isDCA && (
         <div className="space-y-1 text-sm mb-4">
-          <div><ArrowRightLeft className="inline w-4 h-4" /> Entry: {display(entry)}</div>
-          <div><Target className="inline w-4 h-4" /> Targets: {targets.join(", ")}</div>
-          <div><ShieldAlert className="inline w-4 h-4" /> SL: {display(stop_loss)}</div>
+          <div>
+            <ArrowRightLeft className="inline w-4 h-4" /> Entry: {display(entry)}
+          </div>
+          <div>
+            <Target className="inline w-4 h-4" /> Targets: {targets.join(", ")}
+          </div>
+          <div>
+            <ShieldAlert className="inline w-4 h-4" /> SL: {display(stop_loss)}
+          </div>
         </div>
       )}
 
-      {/* 🧠 AI RESULTAAT */}
+      {/* 🧠 AI ANALYSE RESULTAAT */}
       {analysis && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
-          <strong>AI-analyse:</strong>
-          <p className="mt-1">{analysis.summary}</p>
+          <strong>AI-analyse</strong>
+
+          {analysis.comment && (
+            <p className="mt-2">{analysis.comment}</p>
+          )}
+
+          {analysis.recommendation && (
+            <p className="mt-2 font-medium">
+              Advies: {analysis.recommendation}
+            </p>
+          )}
         </div>
       )}
 

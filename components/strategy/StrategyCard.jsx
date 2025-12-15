@@ -47,9 +47,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
 
-  /* ================================
+  /* ---------------------------------------------------------
      🧠 AI ANALYSE
-  ================================= */
+  --------------------------------------------------------- */
   async function handleAnalyze() {
     try {
       setLoading(true);
@@ -66,9 +66,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   }
 
-  /* ================================
-     ⭐ FAVORITE
-  ================================= */
+  /* ---------------------------------------------------------
+     ⭐ FAVORIET TOGGLE
+  --------------------------------------------------------- */
   async function toggleFavorite() {
     try {
       await updateStrategy(id, {
@@ -82,27 +82,48 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   }
 
-  /* ================================
-     ✏️ EDIT (V1: simpel, safe)
-  ================================= */
+  /* ---------------------------------------------------------
+     ✏️ EDIT STRATEGY — ZELFDE PATROON ALS SETUP
+  --------------------------------------------------------- */
   function openEditModal() {
     openConfirm({
-      title: "Strategie bewerken",
-      description: (
-        <p className="text-sm">
-          Bewerken gebeurt in versie 2.<br />
-          Voor nu kun je deze strategie verwijderen en opnieuw aanmaken.
-        </p>
-      ),
+      title: `Strategie bewerken – ${setup_name}`,
+      icon: <Pencil />,
       tone: "primary",
-      confirmText: "Oké",
-      cancelText: "Sluiten",
+      confirmText: "Opslaan",
+      cancelText: "Annuleren",
+      description: (
+        <StrategyFormWrapper strategy={strategy} />
+      ),
+      onConfirm: () => {
+        document
+          .querySelector("#strategy-edit-submit")
+          ?.click();
+      },
     });
   }
 
-  /* ================================
-     🗑 DELETE
-  ================================= */
+  function StrategyFormWrapper({ strategy }) {
+    const StrategyForm =
+      require("@/components/strategy/StrategyForm").default;
+
+    return (
+      <div className="space-y-6 pt-4">
+        <StrategyForm
+          mode="edit"
+          initialData={strategy}
+          onSaved={() => {
+            onRefresh?.();
+            showSnackbar("Strategie bijgewerkt!", "success");
+          }}
+        />
+      </div>
+    );
+  }
+
+  /* ---------------------------------------------------------
+     🗑 DELETE STRATEGY
+  --------------------------------------------------------- */
   function openDeleteModal() {
     openConfirm({
       title: "Strategie verwijderen",
@@ -137,9 +158,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     setTimeout(() => setJustUpdated(false), 2000);
   }
 
-  /* ================================
+  /* ---------------------------------------------------------
      UI
-  ================================= */
+  --------------------------------------------------------- */
   return (
     <div
       className={`
@@ -155,7 +176,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
-      {/* Favorite */}
+      {/* Favoriet */}
       <button
         onClick={toggleFavorite}
         className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500"

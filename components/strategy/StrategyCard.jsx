@@ -6,8 +6,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 import {
   updateStrategy,
   deleteStrategy,
-  generateStrategy,
-  fetchStrategyBySetup,
+  generateStrategy,   // ➜ start AI analyse
   fetchTaskStatus,
 } from "@/lib/api/strategy";
 
@@ -36,330 +35,120 @@ export default function StrategyCard({ strategy, onUpdated }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [softWarning, setSoftWarning] = useState("");
   const [justUpdated, setJustUpdated] = useState(false);
 
-  useEffect(() => {
-    setError("");
-    setSoftWarning("");
-  }, [strategy]);
-
   const {
-    id = null,
-    setup_id = null,
-    setup_name = "",
-    symbol = "",
-    timeframe = "",
-    strategy_type = "",
-    entry = "",
+    id,
+    setup_id,
+    setup_name,
+    symbol,
+    timeframe,
+    strategy_type,
+    entry,
     targets = [],
-    stop_loss = "",
-    ai_explanation = "",
-    favorite = false,
-  } = strategy || {};
+    stop_loss,
+    ai_explanation,
+    favorite,
+  } = strategy;
 
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
 
-  /* ================================================================
-     🟪 EDIT STRATEGY — ModalProvider + snackbar
-  ================================================================ */
-  const handleSave = async (payload) => {
-    try {
-      await updateStrategy(strategy.id, payload);
-      onUpdated && onUpdated(strategy.id);
-
-      showSnackbar("Strategie bijgewerkt ✔", "success");
-    } catch (err) {
-      console.error("❌ Strategie opslaan mislukt:", err);
-      showSnackbar("Opslaan mislukt", "danger");
-    }
-  };
-
-  const openEditModal = () => {
-    const type = String(strategy.strategy_type).toLowerCase();
-
-    let form = null;
-
-    if (type === "trading") {
-      form = (
-        <StrategyFormTrading
-          mode="edit"
-          hideSubmit
-          initialData={strategy}
-          onSubmit={handleSave}
-        />
-      );
-    } else if (type === "dca") {
-      form = (
-        <StrategyFormDCA
-          mode="edit"
-          hideSubmit
-          initialData={strategy}
-          onSubmit={handleSave}
-        />
-      );
-    } else {
-      form = (
-        <StrategyFormManual
-          mode="edit"
-          hideSubmit
-          initialData={strategy}
-          onSubmit={handleSave}
-        />
-      );
-    }
-
-    openConfirm({
-      title: `Strategie bewerken – ${strategy.setup_name}`,
-      icon: <Pencil />,
-      tone: "primary",
-      confirmText: "Opslaan",
-      cancelText: "Annuleren",
-      description: <div className="space-y-6">{form}</div>,
-      onConfirm: async () => {
-        document.querySelector("#strategy-edit-submit")?.click();
-      },
-    });
-  };
-
-  /* ================================================================
-     🔥 DELETE — ModalProvider + Snackbar
-  ================================================================ */
-  const openDeleteModal = () => {
-    openConfirm({
-      title: "Strategie verwijderen",
-      icon: <Trash2 />,
-      tone: "danger",
-      confirmText: "Verwijderen",
-      cancelText: "Annuleren",
-      description: (
-        <p className="leading-relaxed">
-          Weet je zeker dat je deze strategie wilt verwijderen?
-          <br />
-          <span className="text-red-600 font-medium">
-            Dit kan niet ongedaan worden gemaakt.
-          </span>
-        </p>
-      ),
-      onConfirm: async () => {
-        try {
-          setLoading(true);
-          await deleteStrategy(id);
-
-          onUpdated && onUpdated(id);
-          showSnackbar("Strategie verwijderd", "success");
-        } catch (err) {
-          console.error("❌ Verwijderen mislukt:", err);
-          setError("Verwijderen mislukt.");
-          showSnackbar("Verwijderen mislukt", "danger");
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
-  };
-
-  /* ================================================================
-     🤖 AI GENERATE — Snackbar support
-  ================================================================ */
+  /* =====================================================
+     🧠 AI ANALYSE — GEEN STRATEGY INSERT
+  ===================================================== */
   const handleGenerate = async () => {
     try {
       setLoading(true);
       setError("");
-      setSoftWarning("");
 
-      const res = await generateStrategy(setup_id, true);
+      const res = await generateStrategy(setup_id);
 
       if (!res?.task_id) {
-        setError("❌ Ongeldige response van de server.");
-        showSnackbar("AI fout: ongeldige response", "danger");
-        setLoading(false);
-        return;
+        throw new Error("Geen task_id ontvangen");
       }
 
       const taskId = res.task_id;
-      let attempts = 0;
-      const maxAttempts = 40;
-      let status = null;
+      let tries = 0;
 
-      while (attempts < maxAttempts) {
+      while (tries < 40) {
         await new Promise((r) => setTimeout(r, 1500));
-        status = await fetchTaskStatus(taskId);
+        const status = await fetchTaskStatus(taskId);
 
-        if (!status || Object.keys(status).length === 0) {
-          attempts++;
-          continue;
-        }
+        if (!status) continue;
+        if (status.state === "FAILURE") throw new Error("AI analyse mislukt");
+        if (status.state === "SUCCESS") break;
 
-        if (status.state === "FAILURE") {
-          throw new Error("Celery task mislukt");
-        }
-
-        if (status.state === "SUCCESS" || status?.result?.success) {
-          break;
-        }
-
-        attempts++;
+        tries++;
       }
 
-      if (!status || status.state !== "SUCCESS") {
-        setSoftWarning("⚠️ AI duurde lang — data wordt opgehaald...");
-        showSnackbar("AI duurt lang…", "info");
-      }
+      showSnackbar("🧠 AI-advies bijgewerkt", "success");
 
-      const final = await fetchStrategyBySetup(setup_id);
-
-      if (!final?.strategy) {
-        throw new Error("Strategie opgehaald maar niet gevonden");
-      }
-
-      onUpdated && onUpdated(final.strategy);
-
-      showSnackbar("Strategie succesvol gegenereerd ✔", "success");
+      // optioneel: parent kan insights herladen
+      onUpdated && onUpdated(id);
 
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2500);
+
     } catch (err) {
-      console.error("❌ AI fout:", err);
-      setError("AI generatie mislukt.");
-      showSnackbar("AI generatie mislukt", "danger");
+      console.error("❌ AI analyse fout:", err);
+      setError("AI analyse mislukt.");
+      showSnackbar("AI analyse mislukt", "danger");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================================================================
+  /* =====================================================
      🎨 UI
-  ================================================================ */
+  ===================================================== */
   return (
     <div
       className={`
         border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
-        transition-all duration-300
-        ${justUpdated ? "ring-2 ring-green-500 ring-offset-2" : ""}
+        ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
       `}
     >
-      {/* AI LOADER */}
       {loading && (
-        <div
-          className="
-            absolute inset-0 z-20
-            bg-white/40 dark:bg-black/40 backdrop-blur-sm
-            flex items-center justify-center rounded-xl
-          "
-        >
-          <AILoader variant="dots" size="md" text="AI strategie genereren…" />
+        <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
+          <AILoader text="AI analyse bezig…" />
         </div>
       )}
 
-      {/* HEADER */}
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="font-bold text-xl text-[var(--text-dark)] dark:text-white">
-          {setup_name}
-        </h3>
-
-        <div className="flex gap-4">
-          <button
-            disabled={loading}
-            onClick={openEditModal}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            <Pencil className="w-5 h-5" />
-          </button>
-
-          <button
-            disabled={loading}
-            onClick={openDeleteModal}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* META INFO */}
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        <span className="uppercase font-medium">{strategy_type}</span> | {symbol}{" "}
-        {timeframe}
+      <h3 className="font-bold text-xl mb-2">{setup_name}</h3>
+      <p className="text-sm text-gray-500 mb-4">
+        {strategy_type} | {symbol} {timeframe}
       </p>
 
-      {/* ENTRY / TARGETS / SL */}
       {!isDCA && (
-        <div className="text-sm space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-            <ArrowRightLeft className="w-4 h-4 text-blue-500" />
-            <span>Entry: {display(entry)}</span>
-          </div>
-
-          <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-            <Target className="w-4 h-4 text-red-500" />
-            <span>
-              Targets: {Array.isArray(targets) ? targets.join(", ") : "-"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-            <ShieldAlert className="w-4 h-4 text-purple-500" />
-            <span>Stop-loss: {display(stop_loss)}</span>
-          </div>
+        <div className="space-y-1 text-sm mb-4">
+          <div><ArrowRightLeft className="inline w-4 h-4" /> Entry: {display(entry)}</div>
+          <div><Target className="inline w-4 h-4" /> Targets: {targets.join(", ")}</div>
+          <div><ShieldAlert className="inline w-4 h-4" /> SL: {display(stop_loss)}</div>
         </div>
       )}
 
-      {/* AI INSIGHT */}
       {ai_explanation && (
-        <div
-          className="
-            flex gap-3 p-4 rounded-xl
-            bg-purple-50 dark:bg-purple-900/20
-            border border-purple-200 dark:border-purple-700
-            text-sm text-purple-700 dark:text-purple-300
-            leading-relaxed mt-4
-          "
-        >
-          <Bot className="w-5 h-5 flex-shrink-0 mt-[2px]" />
-          <div>
-            <strong className="font-semibold">AI Insight:</strong>
-            <br />
-            {ai_explanation}
-          </div>
+        <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
+          <Bot className="inline w-4 h-4 mr-1" />
+          <strong>AI-advies:</strong>
+          <div>{ai_explanation}</div>
         </div>
       )}
 
-      {/* SOFT WARNING */}
-      {softWarning && (
-        <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-3">
-          {softWarning}
-        </p>
-      )}
+      {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
 
-      {/* ERROR */}
-      {error && (
-        <p className="text-red-600 text-sm mt-3">{error}</p>
-      )}
-
-      {/* FOOTER */}
       <div className="flex justify-between items-center mt-6">
         <button
-          disabled={loading}
           onClick={handleGenerate}
-          className="
-            flex items-center gap-2 text-sm
-            text-purple-600 hover:text-purple-800 underline
-            disabled:opacity-50
-          "
+          disabled={loading}
+          className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
         >
           <Wand2 className="w-4 h-4" />
-          Genereer strategie (AI)
+          Analyseer strategie (AI)
         </button>
 
-        <div className="text-yellow-500">
-          {favorite ? (
-            <Star className="w-5 h-5" />
-          ) : (
-            <StarOff className="w-5 h-5 text-gray-400" />
-          )}
-        </div>
+        {favorite ? <Star /> : <StarOff className="text-gray-400" />}
       </div>
     </div>
   );

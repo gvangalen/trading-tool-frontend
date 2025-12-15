@@ -6,7 +6,7 @@ import {
   createStrategy,
   updateStrategy,
   deleteStrategy,
-  generateStrategy,
+  generateStrategy,          // ➜ start AI analyse task
   generateAllStrategies,
   fetchStrategyBySetup,
   fetchTaskStatus,
@@ -29,14 +29,14 @@ export function useStrategyData() {
   }, []);
 
   // =====================================================================
-  // 1) Load ALL strategies
+  // 1) LOAD STRATEGIES
   // =====================================================================
   const loadStrategies = useCallback(async (symbol = '', timeframe = '') => {
     setLoading(true);
     setError('');
     try {
       const data = await fetchStrategies(symbol, timeframe);
-      const filtered = Array.isArray(data) ? data.filter((s) => s != null) : [];
+      const filtered = Array.isArray(data) ? data.filter(Boolean) : [];
       setStrategies(filtered);
     } catch (err) {
       console.error('❌ loadStrategies fout:', err);
@@ -48,7 +48,7 @@ export function useStrategyData() {
   }, []);
 
   // =====================================================================
-  // 2) Load setups with strategy flags
+  // 2) LOAD SETUPS + FLAGS
   // =====================================================================
   const loadSetups = async (strategyType = '') => {
     setError('');
@@ -69,39 +69,31 @@ export function useStrategyData() {
 
       for (const strat of strategiesArray) {
         if (strat.setup_id && strat.strategy_type) {
-          if (hasStrategy[strat.strategy_type]) {
-            hasStrategy[strat.strategy_type].add(strat.setup_id);
-          }
+          hasStrategy[strat.strategy_type]?.add(strat.setup_id);
         }
       }
 
-      const enrichedSetups = setupsArray.map((s) => ({
+      const enriched = setupsArray.map((s) => ({
         ...s,
         has_dca_strategy: hasStrategy.dca.has(s.id),
         has_ai_strategy: hasStrategy.ai.has(s.id),
         has_manual_strategy: hasStrategy.manual.has(s.id),
       }));
 
-      setSetups(enrichedSetups);
-      setDcaSetups(enrichedSetups.filter((s) => !s.has_dca_strategy));
-      setAiSetups(enrichedSetups.filter((s) => !s.has_ai_strategy));
-      setManualSetups(enrichedSetups.filter((s) => !s.has_manual_strategy));
+      setSetups(enriched);
+      setDcaSetups(enriched.filter((s) => !s.has_dca_strategy));
+      setAiSetups(enriched.filter((s) => !s.has_ai_strategy));
+      setManualSetups(enriched.filter((s) => !s.has_manual_strategy));
+
     } catch (err) {
       console.error('❌ loadSetups fout:', err);
+      setError('Fout bij laden setups.');
     }
   };
 
   // =====================================================================
-  // 3) SAVE / UPDATE / DELETE
+  // 3) CRUD
   // =====================================================================
-  function getRequiredFields(strategy) {
-    if (strategy.strategy_type === 'dca') {
-      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'amount', 'frequency'];
-    } else {
-      return ['setup_id', 'setup_name', 'symbol', 'timeframe', 'entry', 'targets', 'stop_loss'];
-    }
-  }
-
   async function saveStrategy(id, updatedData) {
     try {
       await updateStrategy(id, updatedData);
@@ -124,65 +116,67 @@ export function useStrategyData() {
     }
   }
 
+  async function addStrategy(strategyData) {
+    try {
+      await createStrategy(strategyData);
+      setSuccessMessage('Strategie toegevoegd.');
+      await loadStrategies();
+    } catch (err) {
+      console.error('❌ addStrategy fout:', err);
+      setError('Toevoegen mislukt.');
+    }
+  }
+
   // =====================================================================
-  // 4) AI STRATEGIE GENERATIE MET POLLING 🔥🔥🔥
+  // 4) 🧠 AI ANALYSE / ADVIES (GEEN NIEUWE STRATEGY)
   // =====================================================================
-  async function generateStrategyForSetup(setupId, overwrite = true) {
+  async function generateStrategyForSetup(setupId) {
     setSuccessMessage('');
     setError('');
 
     try {
-      // 1) Start Celery taak
-      const res = await generateStrategy(setupId, overwrite);
+      // 1️⃣ Start AI analyse task
+      const res = await generateStrategy(setupId);
 
       if (!res?.task_id) {
-        console.warn('⚠️ Geen task_id — directe response?');
-        await loadStrategies();
+        setError('❌ AI taak niet gestart.');
         return;
       }
 
       const taskId = res.task_id;
-      console.log(`📌 Celery task gestart: ${taskId}`);
+      console.log(`🧠 AI analyse gestart: ${taskId}`);
 
-      // 2) Poll elke 2 seconden tot klaar
+      // 2️⃣ Poll task status
       let status = 'PENDING';
       let tries = 0;
 
       while (status !== 'SUCCESS' && tries < 30) {
         await new Promise((r) => setTimeout(r, 2000));
         const result = await fetchTaskStatus(taskId);
-
         status = result?.state;
         console.log(`⏳ Poll ${tries} — status: ${status}`);
         tries++;
       }
 
       if (status !== 'SUCCESS') {
-        setError('❌ AI taak niet succesvol afgerond.');
+        setError('❌ AI analyse mislukt.');
         return;
       }
 
-      // 3) Haal de nieuwe / geüpdatete strategy op
-      const updated = await fetchStrategyBySetup(setupId);
+      // ✅ GEEN nieuwe strategy ophalen
+      // ✅ GEEN state-mutatie van strategies
+      // Analyse staat nu veilig in DB
 
-      if (updated?.strategy) {
-        // voeg toe of update in lijst
-        setStrategies((prev) => {
-          const other = prev.filter((s) => s.id !== updated.strategy.id);
-          return [...other, updated.strategy];
-        });
-      }
-
-      setSuccessMessage('✅ Strategie gegenereerd!');
+      setSuccessMessage('🧠 AI-advies bijgewerkt voor bestaande strategie');
 
     } catch (err) {
-      console.error('❌ generateStrategyForSetup fout:', err);
-      setError('Generatie mislukt.');
+      console.error('❌ AI analyse fout:', err);
+      setError('AI analyse mislukt.');
     }
   }
 
   // =====================================================================
-  // 5) BULK GENERATE
+  // 5) BULK (optioneel)
   // =====================================================================
   async function generateAll() {
     try {
@@ -195,16 +189,9 @@ export function useStrategyData() {
     }
   }
 
-  async function addStrategy(strategyData) {
-    try {
-      await createStrategy(strategyData);
-      setSuccessMessage('Strategie toegevoegd.');
-      await loadStrategies();
-    } catch (err) {
-      setError('Toevoegen mislukt.');
-    }
-  }
-
+  // =====================================================================
+  // RETURN
+  // =====================================================================
   return {
     strategies,
     setups,
@@ -214,12 +201,15 @@ export function useStrategyData() {
     loading,
     error,
     successMessage,
+
     loadStrategies,
     loadSetups,
+
     saveStrategy,
     removeStrategy,
-    generateStrategyForSetup,
-    generateAll,
     addStrategy,
+
+    generateStrategyForSetup,   // 🔘 knop gebruikt DEZE
+    generateAll,
   };
 }

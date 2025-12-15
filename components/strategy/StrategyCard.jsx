@@ -6,19 +6,14 @@ import { useModal } from "@/components/modal/ModalProvider";
 import {
   updateStrategy,
   deleteStrategy,
-  analyzeStrategy,   // ✅ JUIST
+  analyzeStrategy,
   fetchTaskStatus,
+  fetchStrategyAnalysis,   // ✅ BELANGRIJK
 } from "@/lib/api/strategy";
-
-import StrategyFormTrading from "@/components/strategy/StrategyFormTrading";
-import StrategyFormDCA from "@/components/strategy/StrategyFormDCA";
-import StrategyFormManual from "@/components/strategy/StrategyFormManual";
 
 import AILoader from "@/components/ui/AILoader";
 
 import {
-  Pencil,
-  Trash2,
   ArrowRightLeft,
   Target,
   ShieldAlert,
@@ -28,12 +23,14 @@ import {
   StarOff,
 } from "lucide-react";
 
-export default function StrategyCard({ strategy, onUpdated }) {
+export default function StrategyCard({ strategy }) {
   if (!strategy) return null;
 
-  const { openConfirm, showSnackbar } = useModal();
+  const { showSnackbar } = useModal();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [analysis, setAnalysis] = useState(null); // ✅ NIEUW
   const [justUpdated, setJustUpdated] = useState(false);
 
   const {
@@ -45,7 +42,6 @@ export default function StrategyCard({ strategy, onUpdated }) {
     entry,
     targets = [],
     stop_loss,
-    ai_explanation,
     favorite,
   } = strategy;
 
@@ -53,34 +49,33 @@ export default function StrategyCard({ strategy, onUpdated }) {
   const display = (v) => (v ? v : "-");
 
   /* =====================================================
-     🧠 AI ANALYSE — GEEN INSERT
+     🧠 AI ANALYSE (PERSISTENT)
   ===================================================== */
   const handleAnalyze = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const res = await analyzeStrategy(id); // ✅ strategy_id
+      // 1️⃣ Start analyse
+      const res = await analyzeStrategy(id);
+      if (!res?.task_id) throw new Error("Geen task_id");
 
-      if (!res?.task_id) {
-        throw new Error("Geen task_id ontvangen");
-      }
-
+      // 2️⃣ Poll task
       let tries = 0;
-      while (tries < 40) {
+      while (tries < 30) {
         await new Promise((r) => setTimeout(r, 1500));
         const status = await fetchTaskStatus(res.task_id);
 
-        if (!status) continue;
-        if (status.state === "FAILURE") throw new Error("AI analyse mislukt");
-        if (status.state === "SUCCESS") break;
-
+        if (status?.state === "FAILURE") throw new Error("AI analyse mislukt");
+        if (status?.state === "SUCCESS") break;
         tries++;
       }
 
-      showSnackbar("🧠 AI-advies bijgewerkt", "success");
-      onUpdated && onUpdated(id);
+      // 3️⃣ Haal analyse OP uit DB
+      const reflection = await fetchStrategyAnalysis(id);
+      setAnalysis(reflection?.content || null);
 
+      showSnackbar("🧠 AI-advies bijgewerkt", "success");
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2500);
 
@@ -94,9 +89,10 @@ export default function StrategyCard({ strategy, onUpdated }) {
   };
 
   return (
-    <div className={`border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
-      ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}`}>
-
+    <div
+      className={`border rounded-xl p-6 bg-white dark:bg-gray-900 shadow-lg relative
+      ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}`}
+    >
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
           <AILoader text="AI analyse bezig…" />
@@ -116,11 +112,12 @@ export default function StrategyCard({ strategy, onUpdated }) {
         </div>
       )}
 
-      {ai_explanation && (
+      {/* 🧠 AI RESULTAAT */}
+      {analysis && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
-          <strong>AI-advies:</strong>
-          <div>{ai_explanation}</div>
+          <strong>AI-analyse:</strong>
+          <p className="mt-1">{analysis.summary}</p>
         </div>
       )}
 

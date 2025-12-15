@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
-  analyzeStrategy,          // POST /api/strategies/analyze/{strategy_id}
-  fetchTaskStatus,
-  fetchStrategyAnalysis,    // GET  /api/ai/reflections/strategy?strategy_id=
+  analyzeStrategy, // POST /api/strategies/analyze/{strategy_id}
 } from "@/lib/api/strategy";
 
 import AILoader from "@/components/ui/AILoader";
@@ -21,14 +19,12 @@ import {
   StarOff,
 } from "lucide-react";
 
-export default function StrategyCard({ strategy }) {
+export default function StrategyCard({ strategy, onRefresh }) {
   if (!strategy) return null;
 
   const { showSnackbar } = useModal();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [analysis, setAnalysis] = useState(null);
   const [justUpdated, setJustUpdated] = useState(false);
 
   const {
@@ -41,51 +37,31 @@ export default function StrategyCard({ strategy }) {
     targets = [],
     stop_loss,
     favorite,
+    ai_explanation, // ✅ ENIGE bron voor AI-uitleg
   } = strategy;
 
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
 
   // =====================================================
-  // 🧠 AI ANALYSE (PERSISTENT, STRATEGY-LEVEL)
+  // 🧠 AI ANALYSE (V1 – zoals setup)
   // =====================================================
   const handleAnalyze = async () => {
     try {
       setLoading(true);
-      setError("");
 
-      // 1️⃣ Start AI analyse
-      const res = await analyzeStrategy(id);
-      if (!res?.task_id) {
-        throw new Error("Geen task_id ontvangen");
-      }
+      await analyzeStrategy(id);
 
-      // 2️⃣ Poll Celery task
-      let tries = 0;
-      while (tries < 30) {
-        await new Promise((r) => setTimeout(r, 1500));
-        const status = await fetchTaskStatus(res.task_id);
+      showSnackbar("🧠 AI-uitleg bijgewerkt", "success");
 
-        if (status?.state === "FAILURE") {
-          throw new Error("AI analyse mislukt");
-        }
-        if (status?.state === "SUCCESS") {
-          break;
-        }
-        tries++;
-      }
-
-      // 3️⃣ Haal analyse op uit ai_reflections
-      const reflection = await fetchStrategyAnalysis(id);
-      setAnalysis(reflection || null);
-
-      showSnackbar("🧠 AI-advies bijgewerkt", "success");
       setJustUpdated(true);
       setTimeout(() => setJustUpdated(false), 2500);
 
+      // Parent laat strategies opnieuw laden
+      if (onRefresh) onRefresh();
+
     } catch (err) {
       console.error("❌ AI analyse fout:", err);
-      setError("AI analyse mislukt.");
       showSnackbar("AI analyse mislukt", "danger");
     } finally {
       setLoading(false);
@@ -124,25 +100,14 @@ export default function StrategyCard({ strategy }) {
         </div>
       )}
 
-      {/* 🧠 AI ANALYSE RESULTAAT */}
-      {analysis && (
+      {/* 🧠 AI-UITLEG (DIRECT UIT STRATEGY) */}
+      {ai_explanation && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
-          <strong>AI-analyse</strong>
-
-          {analysis.comment && (
-            <p className="mt-2">{analysis.comment}</p>
-          )}
-
-          {analysis.recommendation && (
-            <p className="mt-2 font-medium">
-              Advies: {analysis.recommendation}
-            </p>
-          )}
+          <strong>AI-uitleg</strong>
+          <p className="mt-2">{ai_explanation}</p>
         </div>
       )}
-
-      {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
 
       <div className="flex justify-between items-center mt-6">
         <button

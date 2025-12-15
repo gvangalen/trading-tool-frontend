@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
-  analyzeStrategy, // POST /api/strategies/analyze/{strategy_id}
+  analyzeStrategy,
+  deleteStrategy,
+  updateStrategy,
 } from "@/lib/api/strategy";
 
 import AILoader from "@/components/ui/AILoader";
@@ -17,12 +19,18 @@ import {
   Wand2,
   Star,
   StarOff,
+  Trash2,
 } from "lucide-react";
 
-export default function StrategyCard({ strategy, onRefresh }) {
+export default function StrategyCard({
+  strategy,
+  onRefresh,
+  onDelete,
+  onUpdate,
+}) {
   if (!strategy) return null;
 
-  const { showSnackbar } = useModal();
+  const { showSnackbar, confirm } = useModal();
 
   const [loading, setLoading] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
@@ -37,15 +45,15 @@ export default function StrategyCard({ strategy, onRefresh }) {
     targets = [],
     stop_loss,
     favorite,
-    ai_explanation, // ✅ ENIGE bron voor AI-uitleg
+    ai_explanation,
   } = strategy;
 
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
 
-  // =====================================================
-  // 🧠 AI ANALYSE (V1 – zoals setup)
-  // =====================================================
+  /* =====================================================
+   * 🧠 AI ANALYSE (ASYNC → REFRESH)
+   * ===================================================== */
   const handleAnalyze = async () => {
     try {
       setLoading(true);
@@ -55,11 +63,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
       showSnackbar("🧠 AI-uitleg bijgewerkt", "success");
 
       setJustUpdated(true);
-      setTimeout(() => setJustUpdated(false), 2500);
+      setTimeout(() => setJustUpdated(false), 2000);
 
-      // Parent laat strategies opnieuw laden
-      if (onRefresh) onRefresh();
-
+      onRefresh?.();
     } catch (err) {
       console.error("❌ AI analyse fout:", err);
       showSnackbar("AI analyse mislukt", "danger");
@@ -68,6 +74,45 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   };
 
+  /* =====================================================
+   * ⭐ FAVORITE TOGGLE
+   * ===================================================== */
+  const toggleFavorite = async () => {
+    try {
+      await updateStrategy(id, { favorite: !favorite });
+      onUpdate?.();
+      onRefresh?.();
+    } catch (err) {
+      console.error("❌ Favorite toggle fout:", err);
+      showSnackbar("Kon favoriet niet aanpassen", "danger");
+    }
+  };
+
+  /* =====================================================
+   * 🗑 DELETE STRATEGY
+   * ===================================================== */
+  const handleDelete = async () => {
+    const ok = await confirm(
+      "Strategie verwijderen?",
+      "Deze actie kan niet ongedaan worden gemaakt."
+    );
+
+    if (!ok) return;
+
+    try {
+      await deleteStrategy(id);
+      showSnackbar("Strategie verwijderd", "success");
+      onDelete?.();
+      onRefresh?.();
+    } catch (err) {
+      console.error("❌ Strategie verwijderen mislukt:", err);
+      showSnackbar("Verwijderen mislukt", "danger");
+    }
+  };
+
+  /* =====================================================
+   * 🧱 RENDER
+   * ===================================================== */
   return (
     <div
       className={`
@@ -100,7 +145,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
-      {/* 🧠 AI-UITLEG (DIRECT UIT STRATEGY) */}
+      {/* 🧠 AI-UITLEG */}
       {ai_explanation && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
@@ -109,17 +154,30 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
+      {/* ACTIONS */}
       <div className="flex justify-between items-center mt-6">
-        <button
-          onClick={handleAnalyze}
-          disabled={loading}
-          className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
-        >
-          <Wand2 className="w-4 h-4" />
-          Analyseer strategie (AI)
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleAnalyze}
+            disabled={loading}
+            className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
+          >
+            <Wand2 className="w-4 h-4" />
+            Analyseer (AI)
+          </button>
 
-        {favorite ? <Star /> : <StarOff className="text-gray-400" />}
+          <button
+            onClick={handleDelete}
+            className="flex items-center gap-2 text-red-600 hover:text-red-800 text-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+            Verwijder
+          </button>
+        </div>
+
+        <button onClick={toggleFavorite}>
+          {favorite ? <Star /> : <StarOff className="text-gray-400" />}
+        </button>
       </div>
     </div>
   );

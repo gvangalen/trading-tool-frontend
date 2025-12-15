@@ -47,7 +47,7 @@ export default function StrategyPage() {
   }, []);
 
   /* -------------------------------------------------- */
-  /* REFRESH EVERYTHING */
+  /* 🔁 REFRESH EVERYTHING (KEY FUNCTIE VOOR AI-UPDATE) */
   /* -------------------------------------------------- */
   const refreshEverything = () => {
     loadStrategies();
@@ -146,7 +146,6 @@ export default function StrategyPage() {
         </h1>
       </div>
 
-      {/* ⬇️ HIER IS DE BELANGRIJKE TEKSTUPDATE */}
       <p className="text-[var(--text-light)] max-w-2xl">
         Bouw, beheer en optimaliseer je tradingstrategieën.
         De AI analyseert je bestaande strategieën en geeft gerichte
@@ -188,7 +187,12 @@ export default function StrategyPage() {
           </div>
         </div>
 
-        <StrategyList searchTerm={search} key={refreshKey} />
+        {/* 🔑 HIER: onRefresh DOORGEVEN */}
+        <StrategyList
+          searchTerm={search}
+          onRefresh={refreshEverything}
+          key={refreshKey}
+        />
       </CardWrapper>
 
       {/* ===================== */}
@@ -202,7 +206,6 @@ export default function StrategyPage() {
           </div>
         }
       >
-        {/* ⬇️ OOK HIER TEKST CORRECT GEMAAKT */}
         <p className="text-sm text-[var(--text-light)] mb-4">
           Selecteer een setup en voeg handmatig een strategie toe.
           De AI kan later helpen met analyse en optimalisatie.

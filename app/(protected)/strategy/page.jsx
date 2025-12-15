@@ -47,7 +47,7 @@ export default function StrategyPage() {
   }, []);
 
   /* -------------------------------------------------- */
-  /* 🔁 REFRESH EVERYTHING (KEY FUNCTIE VOOR AI-UPDATE) */
+  /* 🔁 REFRESH EVERYTHING (CENTRAAL) */
   /* -------------------------------------------------- */
   const refreshEverything = () => {
     loadStrategies();
@@ -187,8 +187,9 @@ export default function StrategyPage() {
           </div>
         </div>
 
-        {/* 🔑 HIER: onRefresh DOORGEVEN */}
+        {/* 🔑 CRUCIAAL: strategies + onRefresh DOORGEVEN */}
         <StrategyList
+          strategies={safeStrategies}
           searchTerm={search}
           onRefresh={refreshEverything}
           key={refreshKey}

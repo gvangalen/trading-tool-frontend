@@ -15,6 +15,7 @@ import StrategyTabs from "@/components/strategy/StrategyTabs";
 
 import { useSetupData } from "@/hooks/useSetupData";
 import { useStrategyData } from "@/hooks/useStrategyData";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 import {
   createStrategy,
@@ -30,6 +31,11 @@ import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function StrategyPage() {
   const { showSnackbar } = useModal();
+
+  // ===============================
+  // 🧭 ONBOARDING
+  // ===============================
+  const { status, completeStep } = useOnboarding();
 
   const [search, setSearch] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -50,6 +56,22 @@ export default function StrategyPage() {
     loadSetups();
     loadStrategies();
   }, []);
+
+  /* -------------------------------------------------- */
+  /* 🔥 ONBOARDING TRIGGER (DE BESLISSENDE STAP)
+     → zodra er minimaal 1 strategie bestaat
+  -------------------------------------------------- */
+  useEffect(() => {
+    if (
+      Array.isArray(safeStrategies) &&
+      safeStrategies.length > 0 &&
+      status &&
+      status.has_strategy === false
+    ) {
+      console.log("🧭 Onboarding: strategy step completed → pipeline mag starten");
+      completeStep("strategy");
+    }
+  }, [safeStrategies, status, completeStep]);
 
   /* -------------------------------------------------- */
   /* 🔁 CENTRALE REFRESH (ENIGE BRON) */
@@ -168,6 +190,7 @@ export default function StrategyPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
+      {/* ⭐ ONBOARDING */}
       <OnboardingBanner step="strategy" />
 
       <div className="flex items-center gap-3 mb-2">

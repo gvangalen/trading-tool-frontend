@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { TrendingUp, Brain, Activity } from "lucide-react";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useScoresData } from "@/hooks/useScoresData";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 import TechnicalTabs from "@/components/technical/TechnicalTabs";
 import TechnicalIndicatorScoreView from "@/components/technical/TechnicalIndicatorScoreView";
@@ -17,16 +18,37 @@ import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 export default function TechnicalPage() {
   const [activeTab, setActiveTab] = useState("Dag");
 
+  // ===============================
+  // 🧭 ONBOARDING
+  // ===============================
+  const { status, completeStep } = useOnboarding();
+
   const {
     technicalData,
     addTechnicalIndicator,
     removeTechnicalIndicator,
-    activeTechnicalIndicatorNames, // ✅ NIEUW
+    activeTechnicalIndicatorNames, // ✅ BELANGRIJK
     loading: loadingIndicators,
     error,
   } = useTechnicalData(activeTab);
 
   const { technical, loading: loadingScore } = useScoresData();
+
+  /* =====================================================
+     🔥 ONBOARDING TRIGGER
+     → zodra er minimaal 1 technische indicator bestaat
+  ===================================================== */
+  useEffect(() => {
+    if (
+      Array.isArray(activeTechnicalIndicatorNames) &&
+      activeTechnicalIndicatorNames.length > 0 &&
+      status &&
+      status.has_technical === false
+    ) {
+      console.log("🧭 Onboarding: technical step completed");
+      completeStep("technical");
+    }
+  }, [activeTechnicalIndicatorNames, status, completeStep]);
 
   /* =====================================================
      SAFE FALLBACK
@@ -61,10 +83,13 @@ export default function TechnicalPage() {
       ? "Negatief"
       : "Neutraal";
 
+  /* =====================================================
+     RENDER
+  ===================================================== */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* 🔥 Onboarding stap */}
+      {/* ⭐ ONBOARDING */}
       <OnboardingBanner step="technical" />
 
       {/* Titel */}
@@ -122,7 +147,7 @@ export default function TechnicalPage() {
         </div>
       </CardWrapper>
 
-      {/* ⭐ Indicator scorelogica (met duplicate bescherming) */}
+      {/* ⭐ Indicator scorelogica */}
       <TechnicalIndicatorScoreView
         addTechnicalIndicator={addTechnicalIndicator}
         activeTechnicalIndicatorNames={activeTechnicalIndicatorNames}

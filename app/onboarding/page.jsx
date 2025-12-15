@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { CheckCircle, Circle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -11,7 +11,7 @@ export default function OnboardingPage() {
     status,
     loading,
     saving,
-    completed,
+    onboardingComplete,
     allowedSteps,
   } = useOnboarding();
 
@@ -23,7 +23,7 @@ export default function OnboardingPage() {
     );
   }
 
-  /** ⭐ Nieuwe correcte volgorde */
+  /** ⭐ Correcte vaste volgorde */
   const steps = [
     {
       key: "market",
@@ -69,7 +69,6 @@ export default function OnboardingPage() {
 
   return (
     <div className="max-w-screen-md mx-auto py-12 px-6 space-y-8 animate-fade-slide">
-
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-[var(--text-dark)]">
           🚀 Onboarding
@@ -95,7 +94,7 @@ export default function OnboardingPage() {
         </div>
       </CardWrapper>
 
-      {completed && (
+      {onboardingComplete && (
         <CardWrapper>
           <div className="text-center py-4">
             <p className="mb-4 text-[var(--text-dark)] font-medium">
@@ -103,7 +102,13 @@ export default function OnboardingPage() {
             </p>
             <a
               href="/"
-              className="inline-flex items-center gap-2 bg-[var(--primary)] text-white px-6 py-3 rounded-lg shadow hover:bg-[var(--primary-strong)] transition"
+              className="
+                inline-flex items-center gap-2
+                bg-[var(--primary)] text-white px-6 py-3
+                rounded-lg shadow
+                hover:bg-[var(--primary-strong)]
+                transition
+              "
             >
               Naar dashboard
             </a>
@@ -114,22 +119,28 @@ export default function OnboardingPage() {
   );
 }
 
+/* =====================================================
+   🔹 StepRow (client-side navigation)
+===================================================== */
 function StepRow({ step, saving }) {
+  const router = useRouter();
+
   const isDone = !!step.done;
   const isUnlocked = !!step.unlocked;
 
   const handleClick = () => {
     if (isUnlocked) {
-      window.location.href = step.link;
+      router.push(step.link);
     }
   };
 
   return (
-    <div className={`
-      flex items-start gap-4 p-4 border rounded-lg shadow-sm
-      ${isUnlocked ? "bg-white" : "bg-gray-100 opacity-60"}
-    `}>
-      
+    <div
+      className={`
+        flex items-start gap-4 p-4 border rounded-lg shadow-sm
+        ${isUnlocked ? "bg-white" : "bg-gray-100 opacity-60"}
+      `}
+    >
       <div>
         {isDone ? (
           <CheckCircle className="w-6 h-6 text-green-500" />
@@ -153,9 +164,10 @@ function StepRow({ step, saving }) {
           onClick={handleClick}
           className={`
             px-4 py-2 rounded-lg text-sm border transition
-            ${isUnlocked
-              ? "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
-              : "border-gray-300 text-gray-400 cursor-not-allowed"
+            ${
+              isUnlocked
+                ? "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
+                : "border-gray-300 text-gray-400 cursor-not-allowed"
             }
           `}
         >

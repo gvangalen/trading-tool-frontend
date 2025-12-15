@@ -3,14 +3,13 @@
 import { useState } from "react";
 
 import {
-  generateStrategy,
+  generateStrategy,     // ➜ start AI analyse
   fetchTaskStatus,
-  fetchStrategyBySetup,
 } from "@/lib/api/strategy";
 
 import { useModal } from "@/components/modal/ModalProvider";
 
-/* Lucide icons */
+/* Icons */
 import { Wand2, Loader2 } from "lucide-react";
 
 export default function GenerateStrategyButton({ setupId, onSuccess }) {
@@ -30,10 +29,10 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
 
           if (!res || res?.state === "FAILURE") {
             clearInterval(interval);
-            reject("Celery taak mislukt");
+            reject("AI analyse mislukt");
           }
 
-          if (res?.state === "SUCCESS" || res?.result?.success) {
+          if (res?.state === "SUCCESS") {
             clearInterval(interval);
             resolve(res);
           }
@@ -46,7 +45,7 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
   }
 
   // ======================================================
-  // 🚀 AI Strategie genereren
+  // 🧠 AI ANALYSE STARTEN (GEEN STRATEGY INSERT)
   // ======================================================
   const handleGenerate = async () => {
     if (!setupId) {
@@ -55,27 +54,31 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
     }
 
     setLoading(true);
-    setStatus("🤖 AI is bezig met genereren...");
+    setStatus("🧠 AI analyseert je strategie...");
 
     try {
-      const data = await generateStrategy(setupId, true);
+      // 1️⃣ Start AI analyse
+      const data = await generateStrategy(setupId);
 
       if (!data?.task_id) {
-        throw new Error("Ongeldige serverrespons");
+        throw new Error("Geen task_id ontvangen");
       }
 
+      // 2️⃣ Wacht tot klaar
       await waitForTask(data.task_id);
 
-      const final = await fetchStrategyBySetup(setupId);
+      // 3️⃣ Klaar — analyse staat nu in DB
+      showSnackbar("🧠 AI-advies bijgewerkt", "success");
 
-      if (onSuccess) onSuccess(final?.strategy || null);
+      if (onSuccess) {
+        onSuccess(); // optioneel: bijv. UI refresh trigger
+      }
 
-      showSnackbar("Strategie succesvol gegenereerd", "success");
       setStatus("");
 
     } catch (err) {
-      console.error("❌ Strategie-generatie fout:", err);
-      showSnackbar("Strategie genereren mislukt", "danger");
+      console.error("❌ AI analyse fout:", err);
+      showSnackbar("AI analyse mislukt", "danger");
       setStatus("");
     } finally {
       setLoading(false);
@@ -103,18 +106,18 @@ export default function GenerateStrategyButton({ setupId, onSuccess }) {
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Bezig…
+            AI bezig…
           </>
         ) : (
           <>
             <Wand2 className="w-4 h-4" />
-            Genereer Strategie (AI)
+            Analyseer Strategie (AI)
           </>
         )}
       </button>
 
       {status && (
-        <p className="text-xs text-gray-700 dark:text-gray-300 animate-fade-slide">
+        <p className="text-xs text-gray-700 dark:text-gray-300">
           {status}
         </p>
       )}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import {
   LineChart,
   Gauge,
@@ -10,6 +12,7 @@ import {
 import { useMarketData } from "@/hooks/useMarketData";
 import { useScoresData } from "@/hooks/useScoresData";
 import { useModal } from "@/components/modal/ModalProvider";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 // Shared Components
 import CardWrapper from "@/components/ui/CardWrapper";
@@ -26,6 +29,14 @@ import MarketIndicatorScoreView from "@/components/market/MarketIndicatorScoreVi
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function MarketPage() {
+  // ===============================
+  // 🧭 ONBOARDING
+  // ===============================
+  const { status, completeStep } = useOnboarding();
+
+  // ===============================
+  // 📊 MARKET DATA
+  // ===============================
   const {
     btcLive,
     sevenDayData,
@@ -48,6 +59,20 @@ export default function MarketPage() {
 
   const { market } = useScoresData();
   const { openConfirm, showSnackbar } = useModal();
+
+  // ===============================
+  // 🔥 ONBOARDING TRIGGER (DE FIX)
+  // ===============================
+  useEffect(() => {
+    if (
+      activeMarketIndicatorNames?.length > 0 &&
+      status &&
+      status.has_market === false
+    ) {
+      console.log("🧭 Onboarding: market step completed");
+      completeStep("market");
+    }
+  }, [activeMarketIndicatorNames, status, completeStep]);
 
   /* ---------------------------------------------------------
      SAFE FALLBACKS
@@ -105,9 +130,13 @@ export default function MarketPage() {
     });
   };
 
+  // ===============================
+  // 🧱 RENDER
+  // ===============================
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12">
 
+      {/* 🔥 Onboarding banner */}
       <OnboardingBanner step="market" />
 
       <div className="flex items-center gap-3">
@@ -171,7 +200,7 @@ export default function MarketPage() {
       />
 
       {/* -----------------------------------------------------
-         DAGTABEL — IDENTIEK AAN MACRO
+         DAGTABEL
       ----------------------------------------------------- */}
       <DayTable
         title="Dagelijkse Market Analyse"

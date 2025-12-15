@@ -14,6 +14,7 @@ import SetupForm from "@/components/setup/SetupForm";
 import SetupList from "@/components/setup/SetupList";
 
 import { useSetupData } from "@/hooks/useSetupData";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 // ⭐ Onboarding component
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
@@ -25,6 +26,14 @@ export default function SetupPage() {
   const [search, setSearch] = useState("");
   const { showSnackbar } = useModal();
 
+  // ===============================
+  // 🧭 ONBOARDING
+  // ===============================
+  const { status, completeStep } = useOnboarding();
+
+  // ===============================
+  // ⚙️ SETUP DATA
+  // ===============================
   const {
     setups,
     loading,
@@ -42,6 +51,22 @@ export default function SetupPage() {
   }, []);
 
   /* =====================================================
+     🔥 ONBOARDING TRIGGER (DE FIX)
+     → zodra er minimaal 1 setup bestaat
+  ===================================================== */
+  useEffect(() => {
+    if (
+      Array.isArray(setups) &&
+      setups.length > 0 &&
+      status &&
+      status.has_setup === false
+    ) {
+      console.log("🧭 Onboarding: setup step completed");
+      completeStep("setup");
+    }
+  }, [setups, status, completeStep]);
+
+  /* =====================================================
      REFRESH (zonder snackbar!)
      → snackbar komt vanuit SetupForm of SetupList
   ===================================================== */
@@ -57,14 +82,10 @@ export default function SetupPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* -------------------------------------------------- */}
       {/* ⭐ ONBOARDING BANNER */}
-      {/* -------------------------------------------------- */}
       <OnboardingBanner step="setup" />
 
-      {/* -------------------------------------------------- */}
       {/* Titel */}
-      {/* -------------------------------------------------- */}
       <div className="flex items-center gap-3 mb-2">
         <Settings size={28} className="text-[var(--primary)]" />
         <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
@@ -73,13 +94,11 @@ export default function SetupPage() {
       </div>
 
       <p className="text-[var(--text-light)] max-w-2xl">
-        Beheer al je trading-setups. De AI valideert deze dagelijks op basis van 
+        Beheer al je trading-setups. De AI valideert deze dagelijks op basis van
         macro-, technische- en marktdata.
       </p>
 
-      {/* -------------------------------------------------- */}
       {/* AI Panel */}
-      {/* -------------------------------------------------- */}
       <AgentInsightPanel category="setup" />
 
       {/* -------------------------------------------------- */}
@@ -98,7 +117,7 @@ export default function SetupPage() {
         <div className="flex justify-between items-center mb-4">
           <div
             className="
-              flex items-center px-3 py-2 
+              flex items-center px-3 py-2
               bg-[var(--bg-soft)] border border-[var(--border)]
               rounded-lg gap-2
               focus-within:ring-1 focus-within:ring-[var(--primary)]
@@ -120,9 +139,9 @@ export default function SetupPage() {
           loading={loading}
           error={error}
           searchTerm={search}
-          saveSetup={saveSetup}       // Snackbar komt vanuit component
-          removeSetup={removeSetup}   // Snackbar komt vanuit component
-          reload={reloadSetups}       // Geen snackbar hier → perfect
+          saveSetup={saveSetup}       // Snackbar vanuit component
+          removeSetup={removeSetup}   // Snackbar vanuit component
+          reload={reloadSetups}       // Geen snackbar hier
         />
       </CardWrapper>
 
@@ -141,7 +160,7 @@ export default function SetupPage() {
           Vul alle details in om een nieuwe trading-setup toe te voegen.
         </p>
 
-        {/* 👇 Snackbar komt vanuit SetupForm → niet hier */}
+        {/* Snackbar komt vanuit SetupForm */}
         <SetupForm onSaved={reloadSetups} />
       </CardWrapper>
     </div>

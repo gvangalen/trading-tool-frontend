@@ -7,7 +7,7 @@ import {
   createStrategy,
   updateStrategy,
   deleteStrategy,
-  analyzeStrategy,          // ✅ JUISTE ROUTE
+  analyzeStrategy,        // ✅ strategy-level
   generateAllStrategies,
   fetchTaskStatus,
 } from '@/lib/api/strategy';
@@ -54,13 +54,13 @@ export function useStrategyData() {
   // =====================================================================
   // 2) LOAD SETUPS + FLAGS
   // =====================================================================
-  const loadSetups = async (strategyType = '') => {
+  const loadSetups = async () => {
     setError('');
 
     try {
       const [setupData, strategyData] = await Promise.all([
-        fetchSetups(strategyType),
-        fetchStrategies(strategyType),
+        fetchSetups(),
+        fetchStrategies(),
       ]);
 
       const setupsArray = Array.isArray(setupData) ? setupData : [];
@@ -133,15 +133,20 @@ export function useStrategyData() {
   }
 
   // =====================================================================
-  // 4) 🧠 AI STRATEGIE-ANALYSE (GEEN NIEUWE STRATEGY)
-  // Backend: POST /api/strategies/analyze
+  // 4) 🧠 AI STRATEGIE-ANALYSE (PER STRATEGIE)
+  // Backend: POST /api/strategies/analyze/{strategy_id}
   // =====================================================================
-  async function analyzeStrategies() {
+  async function analyzeSingleStrategy(strategyId) {
     setSuccessMessage('');
     setError('');
 
+    if (!strategyId) {
+      setError('Geen strategie geselecteerd.');
+      return;
+    }
+
     try {
-      const res = await analyzeStrategy();
+      const res = await analyzeStrategy(strategyId);
 
       if (!res?.task_id) {
         setError('AI analyse niet gestart.');
@@ -164,7 +169,7 @@ export function useStrategyData() {
         return;
       }
 
-      setSuccessMessage('🧠 AI-strategieanalyse bijgewerkt');
+      setSuccessMessage('🧠 AI-analyse bijgewerkt');
 
     } catch (err) {
       console.error('❌ AI analyse fout:', err);
@@ -206,7 +211,7 @@ export function useStrategyData() {
     removeStrategy,
     addStrategy,
 
-    analyzeStrategies,   // ✅ JUISTE KNOP
+    analyzeSingleStrategy,   // ✅ HIEROP KOPPELEN IN UI
     generateAll,
   };
 }

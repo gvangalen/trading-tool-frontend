@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { API_BASE_URL } from "@/lib/config";
-import { useAuth } from "@/components/auth/AuthProvider";
+
+import {
+  getOnboardingStatus,
+  completeOnboardingStep,
+  finishOnboarding,
+  resetOnboarding,
+} from "@/lib/api/onboarding";
 
 /**
  * =====================================================
- * 🧭 useOnboarding
- * - Volledige onboarding state
- * - Pipeline-aware (Celery)
- * - Dashboard-safe
+ * 🧭 useOnboarding (OFFICIËLE VERSIE)
+ * - Praat ALLEEN met lib/api/onboarding
+ * - Pipeline-aware
+ * - Consistent met Macro / Market / Technical
  * =====================================================
  */
 export function useOnboarding() {
-  const { isAuthenticated, fetchWithAuth } = useAuth();
-
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,25 +27,11 @@ export function useOnboarding() {
   // 1️⃣ Status ophalen
   // =====================================================
   const fetchStatus = useCallback(async () => {
-    if (!isAuthenticated) {
-      setStatus(null);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      const res = await fetchWithAuth(
-        `${API_BASE_URL}/api/onboarding/status`
-      );
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await getOnboardingStatus();
       setStatus(data);
 
     } catch (err) {
@@ -51,57 +40,65 @@ export function useOnboarding() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, fetchWithAuth]);
+  }, []);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
 
   // =====================================================
-  // 2️⃣ POST helper
+  // 2️⃣ Acties
   // =====================================================
-  const postStep = useCallback(
-    async (url: string, body?: Record<string, any>) => {
-      if (!isAuthenticated) return;
+  const completeStep = async (step) => {
+    try {
+      setSaving(true);
+      setError(null);
 
-      try {
-        setSaving(true);
-        setError(null);
+      await completeOnboardingStep(step);
+      await fetchStatus();
 
-        const res = await fetchWithAuth(`${API_BASE_URL}${url}`, {
-          method: "POST",
-          body: body ? JSON.stringify(body) : undefined,
-        });
+    } catch (err) {
+      console.error(`❌ Complete step failed (${step}):`, err);
+      setError("Stap kon niet worden voltooid.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-        if (!res.ok) {
-          throw new Error(`POST ${url} failed`);
-        }
+  const finish = async () => {
+    try {
+      setSaving(true);
+      setError(null);
 
-        await fetchStatus();
-      } catch (err) {
-        console.error("❌ Onboarding POST error:", url, err);
-        setError("Actie kon niet worden uitgevoerd.");
-      } finally {
-        setSaving(false);
-      }
-    },
-    [isAuthenticated, fetchWithAuth, fetchStatus]
-  );
+      await finishOnboarding();
+      await fetchStatus();
+
+    } catch (err) {
+      console.error("❌ Finish onboarding failed:", err);
+      setError("Onboarding afronden mislukt.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reset = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      await resetOnboarding();
+      await fetchStatus();
+
+    } catch (err) {
+      console.error("❌ Reset onboarding failed:", err);
+      setError("Onboarding reset mislukt.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // =====================================================
-  // 3️⃣ Acties
-  // =====================================================
-  const completeStep = (step: string) =>
-    postStep("/api/onboarding/complete_step", { step });
-
-  const finish = () =>
-    postStep("/api/onboarding/finish");
-
-  const reset = () =>
-    postStep("/api/onboarding/reset");
-
-  // =====================================================
-  // 4️⃣ Stap-status
+  // 3️⃣ Stap-status
   // =====================================================
   const stepStatus = useMemo(() => {
     if (!status) return null;
@@ -116,34 +113,23 @@ export function useOnboarding() {
   }, [status]);
 
   // =====================================================
-  // 5️⃣ Onboarding voltooid?
+  // 4️⃣ Onboarding & pipeline status
   // =====================================================
   const onboardingComplete = useMemo(() => {
     if (!stepStatus) return false;
     return Object.values(stepStatus).every(Boolean);
   }, [stepStatus]);
 
-  // =====================================================
-  // 6️⃣ Pipeline status (🔥 BELANGRIJK)
-  // =====================================================
   const pipelineStarted = !!status?.pipeline_started;
 
-  /**
-   * Dashboard is pas "ready" als:
-   * - onboarding voltooid
-   * - pipeline gestart
-   */
-  const dashboardReady =
-    onboardingComplete && pipelineStarted;
-
-  /**
-   * Onboarding klaar maar AI nog bezig
-   */
   const pipelineRunning =
     onboardingComplete && !pipelineStarted;
 
+  const dashboardReady =
+    onboardingComplete && pipelineStarted;
+
   // =====================================================
-  // 7️⃣ Unlock logic (volgorde afdwingen)
+  // 5️⃣ Unlock logic (volgorde)
   // =====================================================
   const allowedSteps = {
     market: true,
@@ -154,31 +140,23 @@ export function useOnboarding() {
   };
 
   // =====================================================
-  // 8️⃣ Exposed API
+  // 6️⃣ Export
   // =====================================================
   return {
-    // raw
     status,
     stepStatus,
 
-    // loading states
     loading,
     saving,
     error,
 
-    // auth
-    authenticated: isAuthenticated,
-
-    // onboarding states
     onboardingComplete,
     pipelineStarted,
     pipelineRunning,
     dashboardReady,
 
-    // flow control
     allowedSteps,
 
-    // actions
     completeStep,
     finish,
     reset,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// 🔥 Onboarding banner
+// 🔥 Onboarding
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 // Hooks
 import { useMacroData } from "@/hooks/useMacroData";
@@ -21,22 +22,48 @@ import { Globe, Brain, Activity } from "lucide-react";
 export default function MacroPage() {
   const [activeTab, setActiveTab] = useState("Dag");
 
-  // ====== Macro data hook ======
+  // ===============================
+  // 🧭 ONBOARDING HOOK
+  // ===============================
+  const {
+    status,
+    completeStep,
+  } = useOnboarding();
+
+  // ===============================
+  // 📊 MACRO DATA
+  // ===============================
   const {
     macroData,
     addMacroIndicator,
     removeMacroIndicator,
-    activeMacroIndicatorNames, // ✅ NIEUW (BELANGRIJK)
+    activeMacroIndicatorNames,
     loading: loadingIndicators,
     error,
   } = useMacroData(activeTab);
 
-  // ====== Score engine hook ======
+  // ===============================
+  // 📈 SCORE DATA
+  // ===============================
   const { macro, loading: loadingScore } = useScoresData();
 
-  // -------------------------------------------------------
-  // 🛡️ SAFE FALLBACK OBJECT
-  // -------------------------------------------------------
+  // ===============================
+  // 🔥 ONBOARDING TRIGGER (DE ESSENTIËLE FIX)
+  // ===============================
+  useEffect(() => {
+    if (
+      activeMacroIndicatorNames?.length > 0 &&
+      status &&
+      status.has_macro === false
+    ) {
+      console.log("🧭 Onboarding: macro step completed");
+      completeStep("macro");
+    }
+  }, [activeMacroIndicatorNames, status, completeStep]);
+
+  // ===============================
+  // 🛡️ SAFE FALLBACK
+  // ===============================
   const safeMacro = {
     score: macro?.score ?? null,
     trend: macro?.trend ?? "Onbekend",
@@ -47,9 +74,9 @@ export default function MacroPage() {
       "Nog geen macro-inzichten beschikbaar. Voeg indicatoren toe of wacht op de eerste AI-run.",
   };
 
-  // -------------------------------------------------------
-  // 🎨 Score kleur
-  // -------------------------------------------------------
+  // ===============================
+  // 🎨 SCORE KLEUR
+  // ===============================
   const getScoreColor = (score) => {
     const n = typeof score === "number" ? score : Number(score);
     if (isNaN(n)) return "text-[var(--text-light)]";
@@ -61,9 +88,9 @@ export default function MacroPage() {
     return "score-strong-sell";
   };
 
-  // -------------------------------------------------------
-  // 📉 Advies
-  // -------------------------------------------------------
+  // ===============================
+  // 📉 ADVIES
+  // ===============================
   const adviesText =
     (safeMacro.score ?? 0) >= 75
       ? "Positief"
@@ -71,12 +98,13 @@ export default function MacroPage() {
       ? "Negatief"
       : "Neutraal";
 
-  // -------------------------------------------------------
-  // PAGE RENDER
-  // -------------------------------------------------------
+  // ===============================
+  // 🧱 RENDER
+  // ===============================
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
-      {/* 🔥 Onboarding stap 3 */}
+
+      {/* 🔥 Onboarding Banner */}
       <OnboardingBanner step="macro" />
 
       {/* Titel */}
@@ -134,13 +162,13 @@ export default function MacroPage() {
         </div>
       </CardWrapper>
 
-      {/* ⚙️ Macro Indicator Score View (DUPLICATE SAFE) */}
+      {/* Macro Indicator Selector */}
       <MacroIndicatorScoreView
         addMacroIndicator={addMacroIndicator}
         activeMacroIndicatorNames={activeMacroIndicatorNames}
       />
 
-      {/* Tabs met data */}
+      {/* Tabs */}
       <MacroTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}

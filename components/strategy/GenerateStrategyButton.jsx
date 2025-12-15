@@ -1,18 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import {
-  analyzeStrategy,      // ✅ JUIST
+  analyzeStrategy,      // POST /api/strategies/analyze
   fetchTaskStatus,
 } from "@/lib/api/strategy";
-
-import { useModal } from "@/components/modal/ModalProvider";
 
 /* Icons */
 import { Wand2, Loader2 } from "lucide-react";
 
-export default function AnalyzeStrategyButton({ strategyId, onSuccess }) {
+export default function AnalyzeStrategyButton({ onSuccess }) {
   const { showSnackbar } = useModal();
 
   const [loading, setLoading] = useState(false);
@@ -27,9 +26,11 @@ export default function AnalyzeStrategyButton({ strategyId, onSuccess }) {
         try {
           const res = await fetchTaskStatus(taskId);
 
-          if (!res || res.state === "FAILURE") {
+          if (!res) return;
+
+          if (res.state === "FAILURE") {
             clearInterval(interval);
-            reject("AI analyse mislukt");
+            reject(new Error("AI analyse mislukt"));
           }
 
           if (res.state === "SUCCESS") {
@@ -45,34 +46,28 @@ export default function AnalyzeStrategyButton({ strategyId, onSuccess }) {
   }
 
   // ======================================================
-  // 🧠 AI ANALYSE STARTEN (GEEN STRATEGY INSERT)
+  // 🧠 START STRATEGY ANALYSE (USER-LEVEL)
   // ======================================================
   const handleAnalyze = async () => {
-    if (!strategyId) {
-      showSnackbar("Strategie ontbreekt", "danger");
-      return;
-    }
-
     setLoading(true);
-    setStatus("🧠 AI analyseert je strategie...");
+    setStatus("🧠 AI analyseert je strategieën...");
 
     try {
       // 1️⃣ Start AI analyse
-      const data = await analyzeStrategy(strategyId);
+      const res = await analyzeStrategy();
 
-      if (!data?.task_id) {
+      if (!res?.task_id) {
         throw new Error("Geen task_id ontvangen");
       }
 
-      // 2️⃣ Wacht tot klaar
-      await waitForTask(data.task_id);
+      // 2️⃣ Wacht tot Celery klaar is
+      await waitForTask(res.task_id);
 
-      // 3️⃣ Klaar — analyse staat nu in DB
-      showSnackbar("🧠 AI-advies bijgewerkt", "success");
-
-      if (onSuccess) onSuccess();
-
+      showSnackbar("🧠 AI-strategieanalyse bijgewerkt", "success");
       setStatus("");
+
+      // 3️⃣ Parent laten refreshen (optioneel)
+      if (onSuccess) onSuccess();
 
     } catch (err) {
       console.error("❌ AI analyse fout:", err);
@@ -109,7 +104,7 @@ export default function AnalyzeStrategyButton({ strategyId, onSuccess }) {
         ) : (
           <>
             <Wand2 className="w-4 h-4" />
-            Analyseer strategie (AI)
+            Analyseer strategieën (AI)
           </>
         )}
       </button>

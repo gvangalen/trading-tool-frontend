@@ -1,33 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useStrategyData } from '@/hooks/useStrategyData';
 import StrategyCard from '@/components/strategy/StrategyCard';
-import { useModal } from "@/components/modal/ModalProvider";
 
-export default function StrategyList({ searchTerm = '' }) {
-  const { strategies, loadStrategies } = useStrategyData();
-  const { showSnackbar } = useModal(); // ✅ Nieuwe snackbar
-  const [initialized, setInitialized] = useState(false);
-
-  // ---------------------------------------------------------
-  // 🔄 Load strategies bij eerste render
-  // ---------------------------------------------------------
-  useEffect(() => {
-    loadStrategies()
-      .catch((err) =>
-        console.error('❌ Fout bij laden strategieën:', err)
-      )
-      .finally(() => setInitialized(true));
-  }, []); // ← géén dependencies → voorkomt loops
-
-  // ---------------------------------------------------------
-  // ♻️ Reload na update/delete (via StrategyCard)
-  // ---------------------------------------------------------
-  const handleUpdated = async () => {
-    await loadStrategies();
-    showSnackbar("Strategie bijgewerkt!", "success"); // ✅ Snack i.p.v. toast
-  };
+export default function StrategyList({
+  strategies = [],
+  searchTerm = '',
+  onRefresh,
+}) {
 
   // ---------------------------------------------------------
   // 🔍 Zoeken / filteren
@@ -56,8 +35,7 @@ export default function StrategyList({ searchTerm = '' }) {
   return (
     <div className="space-y-6">
 
-      {/* Geen resultaten */}
-      {initialized && sortedStrategies.length === 0 ? (
+      {sortedStrategies.length === 0 ? (
         <div className="text-center text-gray-500 pt-6">
           📭 Geen strategieën gevonden
         </div>
@@ -66,12 +44,10 @@ export default function StrategyList({ searchTerm = '' }) {
           <StrategyCard
             key={s.id}
             strategy={s}
-            onUpdated={handleUpdated}
+            onRefresh={onRefresh}
           />
         ))
       )}
-
-      {/* ❗ Geen toast meer! Nieuwe snackbar wordt via ModalProvider getoond */}
     </div>
   );
 }

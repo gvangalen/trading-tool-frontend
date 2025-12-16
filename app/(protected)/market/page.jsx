@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import {
   LineChart,
@@ -33,6 +33,7 @@ export default function MarketPage() {
   // 🧭 ONBOARDING
   // ===============================
   const { status, completeStep } = useOnboarding();
+  const marketCompletedRef = useRef(false);
 
   // ===============================
   // 📊 MARKET DATA
@@ -61,22 +62,8 @@ export default function MarketPage() {
   const { openConfirm, showSnackbar } = useModal();
 
   // ===============================
-  // 🔥 ONBOARDING TRIGGER (DE FIX)
+  // 🛡️ SAFE FALLBACKS
   // ===============================
-  useEffect(() => {
-    if (
-      activeMarketIndicatorNames?.length > 0 &&
-      status &&
-      status.has_market === false
-    ) {
-      console.log("🧭 Onboarding: market step completed");
-      completeStep("market");
-    }
-  }, [activeMarketIndicatorNames, status, completeStep]);
-
-  /* ---------------------------------------------------------
-     SAFE FALLBACKS
-  --------------------------------------------------------- */
   const safeMarketScore =
     typeof market?.score === "number" ? market.score : null;
 
@@ -85,9 +72,46 @@ export default function MarketPage() {
   const safeSevenDay = Array.isArray(sevenDayData) ? sevenDayData : [];
   const safeForward = forwardReturns || {};
 
-  /* ---------------------------------------------------------
-     SCORE KLEUR
-  --------------------------------------------------------- */
+  // ===============================
+  // 🔥 ONBOARDING TRIGGER (CORRECT)
+  // ===============================
+  useEffect(() => {
+    if (!status) return;
+    if (status.has_market) return;
+    if (marketCompletedRef.current) return;
+
+    const hasLiveData =
+      safeLive?.price != null &&
+      safeLive?.timestamp != null;
+
+    const hasHistoricalData =
+      safeMarketDayData.length > 0 ||
+      safeSevenDay.length > 0;
+
+    const hasRealMarketData = hasLiveData || hasHistoricalData;
+
+    console.log("[Onboarding][Market]", {
+      hasLiveData,
+      hasHistoricalData,
+      hasRealMarketData,
+    });
+
+    if (!hasRealMarketData) return;
+
+    marketCompletedRef.current = true;
+    console.log("🧭 Onboarding: market step completed (REAL data)");
+    completeStep("market");
+  }, [
+    status,
+    safeLive,
+    safeMarketDayData,
+    safeSevenDay,
+    completeStep,
+  ]);
+
+  // ===============================
+  // 🎨 SCORE KLEUR
+  // ===============================
   const scoreColor = (score) => {
     const n = Number(score);
     if (isNaN(n)) return "text-gray-600";
@@ -96,9 +120,6 @@ export default function MarketPage() {
     return "text-yellow-600";
   };
 
-  /* ---------------------------------------------------------
-     ADVIES TEKST
-  --------------------------------------------------------- */
   const adviesText =
     safeMarketScore >= 75
       ? "Bullish"
@@ -106,9 +127,9 @@ export default function MarketPage() {
       ? "Bearish"
       : "Neutraal";
 
-  /* ---------------------------------------------------------
-     ❌ DELETE — IDENTIEK AAN MACRO
-  --------------------------------------------------------- */
+  // ===============================
+  // 🗑 DELETE MARKET INDICATOR
+  // ===============================
   const handleRemoveMarket = (name) => {
     if (!name) return;
 
@@ -155,9 +176,7 @@ export default function MarketPage() {
 
       <AgentInsightPanel category="market" />
 
-      {/* -----------------------------------------------------
-         MARKET SCORE
-      ----------------------------------------------------- */}
+      {/* ---------------- MARKET SCORE ---------------- */}
       <CardWrapper>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -177,9 +196,7 @@ export default function MarketPage() {
         </div>
       </CardWrapper>
 
-      {/* -----------------------------------------------------
-         LIVE MARKET
-      ----------------------------------------------------- */}
+      {/* ---------------- LIVE MARKET ---------------- */}
       <MarketLiveCard
         price={safeLive.price ?? null}
         change24h={safeLive.change_24h ?? null}
@@ -187,9 +204,7 @@ export default function MarketPage() {
         timestamp={safeLive.timestamp ?? null}
       />
 
-      {/* -----------------------------------------------------
-         INDICATOR SCORELOGICA
-      ----------------------------------------------------- */}
+      {/* ---------------- INDICATOR LOGICA ---------------- */}
       <MarketIndicatorScoreView
         availableIndicators={availableIndicators || []}
         selectedIndicator={selectedIndicator || null}
@@ -199,9 +214,7 @@ export default function MarketPage() {
         activeIndicators={activeMarketIndicatorNames || []}
       />
 
-      {/* -----------------------------------------------------
-         DAGTABEL
-      ----------------------------------------------------- */}
+      {/* ---------------- DAGTABEL ---------------- */}
       <DayTable
         title="Dagelijkse Market Analyse"
         icon={<Activity className="w-5 h-5" />}

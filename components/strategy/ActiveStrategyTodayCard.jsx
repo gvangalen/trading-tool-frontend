@@ -1,29 +1,11 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { useEffect, useState } from "react";
 import { Target, Shield, TrendingUp } from "lucide-react";
+import { useActiveStrategyToday } from "@/hooks/useAgentData";
 
 export default function ActiveStrategyTodayCard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSnapshot = async () => {
-      try {
-        const res = await fetch("/api/strategy/active-today");
-        if (!res.ok) throw new Error("Geen actieve strategie");
-        const json = await res.json();
-        setData(json);
-      } catch (e) {
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSnapshot();
-  }, []);
+  const { strategy, loading } = useActiveStrategyToday();
 
   if (loading) {
     return (
@@ -35,7 +17,7 @@ export default function ActiveStrategyTodayCard() {
     );
   }
 
-  if (!data) {
+  if (!strategy) {
     return (
       <CardWrapper>
         <p className="text-sm text-[var(--text-light)]">
@@ -54,7 +36,7 @@ export default function ActiveStrategyTodayCard() {
     stop_loss,
     adjustment_reason,
     confidence_score,
-  } = data;
+  } = strategy;
 
   return (
     <CardWrapper>
@@ -80,18 +62,20 @@ export default function ActiveStrategyTodayCard() {
       </div>
 
       {/* Targets */}
-      <div className="mb-3">
-        <p className="text-sm text-[var(--text-dark)] font-medium mb-1">
-          Targets
-        </p>
-        <ul className="ml-4 space-y-1">
-          {targets?.split(",").map((t, i) => (
-            <li key={i} className="text-sm text-[var(--text-dark)]">
-              • {t.trim()}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {targets && (
+        <div className="mb-3">
+          <p className="text-sm font-medium text-[var(--text-dark)] mb-1">
+            Targets
+          </p>
+          <ul className="ml-4 space-y-1">
+            {targets.split(",").map((t, i) => (
+              <li key={i} className="text-sm text-[var(--text-dark)]">
+                • {t.trim()}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Stop loss */}
       <div className="flex items-center gap-2 mb-4">
@@ -103,13 +87,13 @@ export default function ActiveStrategyTodayCard() {
 
       {/* Adjustment reason */}
       {adjustment_reason && (
-        <p className="text-sm text-[var(--text-dark)] mb-3">
+        <p className="text-sm text-[var(--text-dark)] mb-2">
           <strong>Aanpassing:</strong> {adjustment_reason}
         </p>
       )}
 
       {/* Confidence */}
-      {confidence_score !== null && (
+      {confidence_score !== null && confidence_score !== undefined && (
         <p className="text-xs text-[var(--text-light)]">
           Confidence score:{" "}
           <strong className="text-[var(--text-dark)]">

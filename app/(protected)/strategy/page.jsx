@@ -12,6 +12,7 @@ import {
 
 import StrategyList from "@/components/strategy/StrategyList";
 import StrategyTabs from "@/components/strategy/StrategyTabs";
+import ActiveStrategyTodayCard from "@/components/strategy/ActiveStrategyTodayCard";
 
 import { useSetupData } from "@/hooks/useSetupData";
 import { useStrategyData } from "@/hooks/useStrategyData";
@@ -58,8 +59,7 @@ export default function StrategyPage() {
   }, []);
 
   /* -------------------------------------------------- */
-  /* 🔥 ONBOARDING TRIGGER (DE BESLISSENDE STAP)
-     → zodra er minimaal 1 strategie bestaat
+  /* 🔥 ONBOARDING TRIGGER
   -------------------------------------------------- */
   useEffect(() => {
     if (
@@ -68,13 +68,12 @@ export default function StrategyPage() {
       status &&
       status.has_strategy === false
     ) {
-      console.log("🧭 Onboarding: strategy step completed → pipeline mag starten");
       completeStep("strategy");
     }
   }, [safeStrategies, status, completeStep]);
 
   /* -------------------------------------------------- */
-  /* 🔁 CENTRALE REFRESH (ENIGE BRON) */
+  /* 🔁 CENTRALE REFRESH */
   /* -------------------------------------------------- */
   const refreshEverything = () => {
     loadStrategies();
@@ -90,8 +89,7 @@ export default function StrategyPage() {
       await deleteStrategy(id);
       showSnackbar("Strategie verwijderd", "success");
       refreshEverything();
-    } catch (err) {
-      console.error("❌ Verwijderen mislukt:", err);
+    } catch {
       showSnackbar("Strategie verwijderen mislukt", "danger");
     }
   };
@@ -104,14 +102,13 @@ export default function StrategyPage() {
       await updateStrategy(id, data);
       showSnackbar("Strategie bijgewerkt", "success");
       refreshEverything();
-    } catch (err) {
-      console.error("❌ Update mislukt:", err);
+    } catch {
       showSnackbar("Strategie bijwerken mislukt", "danger");
     }
   };
 
   /* -------------------------------------------------- */
-  /* ➕ CREATE STRATEGY (HANDMATIG) */
+  /* ➕ CREATE STRATEGY */
   /* -------------------------------------------------- */
   const handleStrategySubmit = async (strategy) => {
     try {
@@ -124,32 +121,23 @@ export default function StrategyPage() {
         return;
       }
 
-      const payload = {
+      await createStrategy({
         ...strategy,
         setup_id: setup.id,
         setup_name: setup.name,
         symbol: setup.symbol,
         timeframe: setup.timeframe,
-        explanation: strategy.explanation || strategy.rules || "",
-        entry: strategy.entry ?? null,
-        targets: strategy.targets || [],
-        stop_loss: strategy.stop_loss ?? null,
-        favorite: strategy.favorite ?? false,
-        tags: strategy.tags || [],
-      };
+      });
 
-      await createStrategy(payload);
-
-      showSnackbar("Strategie succesvol opgeslagen ✔", "success");
+      showSnackbar("Strategie opgeslagen ✔", "success");
       refreshEverything();
-    } catch (err) {
-      console.error("❌ Strategie opslaan mislukt:", err);
+    } catch {
       showSnackbar("Strategie opslaan mislukt.", "danger");
     }
   };
 
   /* -------------------------------------------------- */
-  /* FILTER LOGIC — setups zonder strategie */
+  /* FILTERS */
   /* -------------------------------------------------- */
   const setupsWithoutTrading = useMemo(() => {
     return safeSetups.filter(
@@ -157,7 +145,7 @@ export default function StrategyPage() {
         !safeStrategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String((strat.strategy_type || "").toLowerCase()) === "trading"
+            String(strat.strategy_type).toLowerCase() === "trading"
         )
     );
   }, [safeSetups, safeStrategies, refreshKey]);
@@ -168,7 +156,7 @@ export default function StrategyPage() {
         !safeStrategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String((strat.strategy_type || "").toLowerCase()) === "dca"
+            String(strat.strategy_type).toLowerCase() === "dca"
         )
     );
   }, [safeSetups, safeStrategies, refreshKey]);
@@ -179,7 +167,7 @@ export default function StrategyPage() {
         !safeStrategies.some(
           (strat) =>
             String(strat.setup_id) === String(s.id) &&
-            String((strat.strategy_type || "").toLowerCase()) === "manual"
+            String(strat.strategy_type).toLowerCase() === "manual"
         )
     );
   }, [safeSetups, safeStrategies, refreshKey]);
@@ -190,23 +178,24 @@ export default function StrategyPage() {
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
-      {/* ⭐ ONBOARDING */}
       <OnboardingBanner step="strategy" />
 
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3">
         <LineChart size={28} className="text-[var(--primary)]" />
-        <h1 className="text-3xl font-bold text-[var(--text-dark)] tracking-tight">
+        <h1 className="text-3xl font-bold text-[var(--text-dark)]">
           Strategieën
         </h1>
       </div>
 
       <p className="text-[var(--text-light)] max-w-2xl">
-        Bouw, beheer en optimaliseer je tradingstrategieën.
-        De AI analyseert je bestaande strategieën en geeft gerichte
-        verbeteradviezen.
+        De AI analyseert je strategieën én geeft je vandaag een concreet plan.
       </p>
 
-      <AgentInsightPanel category="strategy" />
+      {/* ✅ INSIGHT + ACTIE NAAST ELKAAR */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <AgentInsightPanel category="strategy" />
+        <ActiveStrategyTodayCard />
+      </div>
 
       {/* ===================== */}
       {/* BESTAANDE STRATEGIEËN */}
@@ -219,17 +208,15 @@ export default function StrategyPage() {
           </div>
         }
       >
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center px-3 py-2 bg-[var(--bg-soft)] border border-[var(--border)] rounded-lg gap-2">
-            <Search size={18} className="text-[var(--text-light)]" />
-            <input
-              type="text"
-              placeholder="Zoek op asset of tag…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent outline-none text-sm w-48"
-            />
-          </div>
+        <div className="flex items-center mb-4 gap-2">
+          <Search size={18} className="text-[var(--text-light)]" />
+          <input
+            type="text"
+            placeholder="Zoek op asset of tag…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-transparent outline-none text-sm"
+          />
         </div>
 
         <StrategyList
@@ -253,11 +240,6 @@ export default function StrategyPage() {
           </div>
         }
       >
-        <p className="text-sm text-[var(--text-light)] mb-4">
-          Selecteer een setup en voeg handmatig een strategie toe.
-          De AI kan later helpen met analyse en optimalisatie.
-        </p>
-
         <StrategyTabs
           key={refreshKey}
           onSubmit={handleStrategySubmit}

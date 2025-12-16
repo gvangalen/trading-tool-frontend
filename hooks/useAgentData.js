@@ -15,6 +15,13 @@ import {
   fetchStrategyReflections,
 } from "@/lib/api/agents";
 
+import { fetchActiveStrategyToday } from "@/lib/api/strategy";
+
+/* ======================================================
+   🧠 INSIGHTS + REFLECTIES (BESTAAND)
+   → Wordt gebruikt door AgentInsightPanel
+====================================================== */
+
 const insightMap = {
   macro: fetchMacroInsight,
   market: fetchMarketInsight,
@@ -77,6 +84,40 @@ export function useAgentData(category) {
   return {
     insight,
     reflections,
+    loading,
+  };
+}
+
+/* ======================================================
+   🎯 ACTIEVE STRATEGIE VANDAAG (NIEUW)
+   → Voor de nieuwe Strategy Today Card
+====================================================== */
+
+export function useActiveStrategyToday() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetchActiveStrategyToday();
+
+        // Geen actieve strategie vandaag = null
+        setData(res || null);
+      } catch (e) {
+        console.error("❌ [useActiveStrategyToday] Fout:", e);
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  return {
+    strategy: data,
     loading,
   };
 }

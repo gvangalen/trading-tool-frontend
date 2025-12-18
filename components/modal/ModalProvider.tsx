@@ -44,7 +44,9 @@ const ModalContext = createContext<ModalContextValue | null>(null);
 
 export function useModal(): ModalContextValue {
   const ctx = useContext(ModalContext);
-  if (!ctx) throw new Error("❌ useModal moet binnen ModalProvider gebruikt worden");
+  if (!ctx) {
+    throw new Error("❌ useModal moet binnen ModalProvider gebruikt worden");
+  }
   return ctx;
 }
 
@@ -110,17 +112,14 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     <ModalContext.Provider value={{ openConfirm, close, showSnackbar }}>
       {children}
 
-      {/* Modal Window */}
       <ModalRoot modal={modal} busy={busy} setBusy={setBusy} onClose={close} />
-
-      {/* Snackbar */}
       <Snackbar snackbar={snackbar} />
     </ModalContext.Provider>
   );
 }
 
 /* ===========================================================
-   MODAL ROOT — UI
+   MODAL ROOT — UI (SCROLL SAFE)
 =========================================================== */
 
 function ModalRoot({
@@ -190,7 +189,8 @@ function ModalRoot({
 
   return (
     <div className="fixed inset-0 z-[210] bg-black/55 backdrop-blur-sm flex items-center justify-center px-4 animate-fade-in">
-      <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl shadow-2xl p-6 sm:p-7 animate-fade-slide relative">
+      <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl shadow-2xl animate-fade-slide flex flex-col max-h-[85vh] relative">
+
         {/* Close */}
         <button
           onClick={onClose}
@@ -199,8 +199,8 @@ function ModalRoot({
           <X className="w-4 h-4" />
         </button>
 
-        {/* Title */}
-        <div className="flex items-center gap-3 mb-4">
+        {/* HEADER */}
+        <div className="px-6 pt-6 pb-4 border-b flex items-center gap-3">
           {icon && (
             <div className={`rounded-full p-2 ${toneClasses.iconBg}`}>
               <div className={toneClasses.iconText}>{icon}</div>
@@ -209,15 +209,15 @@ function ModalRoot({
           <h2 className="text-xl font-semibold">{title}</h2>
         </div>
 
-        {/* Description */}
+        {/* SCROLLABLE CONTENT */}
         {description && (
-          <div className="text-sm text-gray-700 dark:text-gray-200 mb-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
             {description}
           </div>
         )}
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3">
+        {/* FOOTER (ALTIJD ZICHTBAAR) */}
+        <div className="border-t px-6 py-4 flex justify-end gap-3 bg-[var(--card-bg)] sticky bottom-0">
           <button
             onClick={onClose}
             disabled={busy}

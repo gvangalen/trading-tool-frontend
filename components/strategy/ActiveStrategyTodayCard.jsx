@@ -1,8 +1,9 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { Target, Shield, TrendingUp } from "lucide-react";
+import { Target, Shield, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useActiveStrategyToday } from "@/hooks/useAgentData";
+import { useMarketPrice } from "@/hooks/useMarketPrice"; // 👈 bestaande/live prijs hook
 
 export default function ActiveStrategyTodayCard() {
   const { strategy, loading } = useActiveStrategyToday();
@@ -36,9 +37,22 @@ export default function ActiveStrategyTodayCard() {
     stop_loss,
     adjustment_reason,
     confidence_score,
+    started_at, // 👈 als dit er is (optioneel)
   } = strategy;
 
+  const { price: currentPrice } = useMarketPrice(symbol);
+
   const isDCA = entry === null || entry === undefined;
+
+  // 🔑 Referentieprijs
+  const referencePrice = isDCA ? currentPrice : entry;
+
+  const priceDiff =
+    currentPrice && referencePrice
+      ? ((currentPrice - referencePrice) / referencePrice) * 100
+      : null;
+
+  const isPositive = priceDiff !== null && priceDiff >= 0;
 
   return (
     <CardWrapper>
@@ -56,27 +70,50 @@ export default function ActiveStrategyTodayCard() {
       </p>
 
       {/* Entry / Startprijs */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         <Target className="w-4 h-4 text-blue-500" />
         <span className="text-sm text-[var(--text-dark)]">
           {isDCA ? (
             <>
-              <strong>Startprijs (referentie):</strong> Huidige marktprijs
+              <strong>Startprijs (referentie):</strong>{" "}
+              {referencePrice?.toLocaleString() ?? "—"}
             </>
           ) : (
             <>
-              <strong>Entry:</strong> {entry}
+              <strong>Entry:</strong> {entry?.toLocaleString()}
             </>
           )}
         </span>
       </div>
 
-      {/* Extra uitleg bij DCA */}
+      {/* DCA uitleg */}
       {isDCA && (
         <p className="text-xs text-[var(--text-light)] mb-3">
           DCA-strategie actief. Er is geen vast instapmoment — deze prijs dient als
-          referentie voor het lopende accumulatieplan.
+          referentie voor performance sinds activatie.
         </p>
+      )}
+
+      {/* Live prijs + performance */}
+      {currentPrice && referencePrice && (
+        <div className="flex items-center gap-2 mb-4 text-sm">
+          {isPositive ? (
+            <ArrowUpRight className="w-4 h-4 text-green-600" />
+          ) : (
+            <ArrowDownRight className="w-4 h-4 text-red-600" />
+          )}
+          <span className="text-[var(--text-dark)]">
+            <strong>Huidige prijs:</strong>{" "}
+            {currentPrice.toLocaleString()}{" "}
+            <span
+              className={
+                isPositive ? "text-green-600 ml-1" : "text-red-600 ml-1"
+              }
+            >
+              ({priceDiff.toFixed(2)}%)
+            </span>
+          </span>
+        </div>
       )}
 
       {/* Targets */}
@@ -96,10 +133,10 @@ export default function ActiveStrategyTodayCard() {
       )}
 
       {/* Stop loss */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <Shield className="w-4 h-4 text-red-500" />
         <span className="text-sm text-[var(--text-dark)]">
-          <strong>Stop-loss:</strong> {stop_loss}
+          <strong>Stop-loss:</strong> {stop_loss?.toLocaleString()}
         </span>
       </div>
 

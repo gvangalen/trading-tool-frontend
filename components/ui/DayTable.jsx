@@ -1,12 +1,14 @@
 "use client";
 
 import { Info, Trash2 } from "lucide-react";
+import dayjs from "dayjs";
 
 /**
- * 📅 DayTable — PRO 2.6 (Matcht Market Table Styling)
- * - Altijd tabel + header
- * - Header heeft soft background zoals Market
- * - Lege fallback-rij bij 0 items
+ * 📅 DayTable — PRO 2.7
+ * - Zelfde stijl als Market / Week tables
+ * - Duidelijke datumlabel (vandaag / datum)
+ * - Gebaseerd op timestamp in data
+ * - Fallback bij lege data
  */
 export default function DayTable({
   title = null,
@@ -15,8 +17,21 @@ export default function DayTable({
   onRemove = null,
 }) {
   const hasRemove = typeof onRemove === "function";
-
   const safeData = Array.isArray(data) ? data : [];
+
+  /* ---------------- DATE LABEL ---------------- */
+  const getDayLabel = () => {
+    if (!safeData.length) return "Vandaag";
+
+    const ts =
+      safeData[0]?.timestamp ||
+      safeData[0]?.created_at ||
+      safeData[0]?.date;
+
+    if (!ts) return "Vandaag";
+
+    return dayjs(ts).format("DD MMM YYYY");
+  };
 
   /* ---------------- HEADER ---------------- */
   const renderHeader = () => (
@@ -29,7 +44,6 @@ export default function DayTable({
         <th className="px-4 py-3 text-center font-semibold">Score</th>
         <th className="px-4 py-3 text-center font-semibold">Advies</th>
         <th className="px-4 py-3 text-left font-semibold">Uitleg</th>
-
         {hasRemove && (
           <th className="px-4 py-3 text-center font-semibold">Actie</th>
         )}
@@ -41,8 +55,13 @@ export default function DayTable({
     <div className="bg-white border border-[var(--card-border)] rounded-xl shadow-sm overflow-hidden">
       {/* Titelbalk */}
       {title && (
-        <div className="px-4 py-3 bg-[var(--bg-soft)] border-b font-semibold text-[var(--text-dark)] flex items-center gap-2">
-          {icon} {title}
+        <div className="px-4 py-3 bg-[var(--bg-soft)] border-b font-semibold text-[var(--text-dark)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {icon} {title}
+          </div>
+          <div className="text-xs italic text-[var(--text-light)]">
+            📅 Dag — {getDayLabel()}
+          </div>
         </div>
       )}
 
@@ -50,7 +69,7 @@ export default function DayTable({
         {renderHeader()}
 
         <tbody>
-          {/* Fallback row when empty */}
+          {/* Fallback */}
           {safeData.length === 0 && (
             <tr className="border-t border-[var(--card-border)]">
               <td
@@ -62,7 +81,7 @@ export default function DayTable({
             </tr>
           )}
 
-          {/* Normal rows */}
+          {/* Rows */}
           {safeData.map((item, idx) => (
             <DayRow key={idx} item={item} onRemove={onRemove} />
           ))}
@@ -77,13 +96,11 @@ export default function DayTable({
 ===================================================== */
 function DayRow({ item, onRemove }) {
   const { name, indicator, value = "–", score, action, interpretation } = item;
-
   const displayName = name || indicator || "–";
 
   const getScoreColor = (num) => {
     const n = Number(num);
     if (isNaN(n)) return "text-[var(--text-light)]";
-
     if (n >= 80) return "score-strong-buy";
     if (n >= 60) return "score-buy";
     if (n >= 40) return "score-neutral";

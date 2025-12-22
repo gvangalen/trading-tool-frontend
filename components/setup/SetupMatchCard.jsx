@@ -2,8 +2,11 @@
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import { CheckCircle2, Layers } from "lucide-react";
-import { useSetupData } from "@/hooks/useSetupData";
+import { useDailySetupScores } from "@/hooks/useDailySetupScores";
 
+/* -------------------------------------------------------
+   Kleine helper voor score visualisatie
+------------------------------------------------------- */
 function ScoreBar({ score }) {
   const pct = Math.max(0, Math.min(100, Number(score) || 0));
 
@@ -21,9 +24,15 @@ function ScoreBar({ score }) {
   );
 }
 
+/* =======================================================
+   Setup Match Card
+======================================================= */
 export default function SetupMatchCard() {
-  const { dailySetups, loading } = useSetupData();
+  const { dailySetups, loading } = useDailySetupScores();
 
+  /* -------------------------------
+     Loading
+  ------------------------------- */
   if (loading) {
     return (
       <CardWrapper>
@@ -34,6 +43,9 @@ export default function SetupMatchCard() {
     );
   }
 
+  /* -------------------------------
+     Geen data
+  ------------------------------- */
   if (!dailySetups || dailySetups.length === 0) {
     return (
       <CardWrapper>
@@ -44,6 +56,9 @@ export default function SetupMatchCard() {
     );
   }
 
+  /* -------------------------------
+     Sorteren & selecteren
+  ------------------------------- */
   const sorted = [...dailySetups].sort(
     (a, b) => (b.score || 0) - (a.score || 0)
   );
@@ -53,7 +68,9 @@ export default function SetupMatchCard() {
 
   return (
     <CardWrapper>
-      {/* Header */}
+      {/* ============================
+          Header
+      ============================ */}
       <div className="flex items-center gap-2 mb-4">
         <Layers className="w-5 h-5 text-[var(--primary)]" />
         <h2 className="text-lg font-semibold text-[var(--text-dark)]">
@@ -61,7 +78,9 @@ export default function SetupMatchCard() {
         </h2>
       </div>
 
-      {/* Beste setup */}
+      {/* ============================
+          Beste setup
+      ============================ */}
       <div className="mb-4 p-3 rounded-lg bg-[var(--card-soft)] border">
         <div className="flex items-center gap-2 mb-1">
           <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -85,7 +104,9 @@ export default function SetupMatchCard() {
         </div>
       </div>
 
-      {/* Top setups vergelijking */}
+      {/* ============================
+          Vergelijking
+      ============================ */}
       <div>
         <p className="text-sm font-medium text-[var(--text-dark)] mb-2">
           Vergelijking (top setups)
@@ -108,7 +129,9 @@ export default function SetupMatchCard() {
         </div>
       </div>
 
-      {/* Uitleg (rule-based, geen AI) */}
+      {/* ============================
+          Uitleg
+      ============================ */}
       <div className="mt-4 text-xs text-[var(--text-light)]">
         De beste setup wordt bepaald op basis van de huidige macro-, markt-
         en technische scores. De hoogste relatieve score wint, ook als

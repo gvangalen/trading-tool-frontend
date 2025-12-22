@@ -38,6 +38,8 @@ export default function ActiveStrategyTodayCard() {
     confidence_score,
   } = strategy;
 
+  const isDCA = entry === null || entry === undefined;
+
   return (
     <CardWrapper>
       {/* Header */}
@@ -53,13 +55,29 @@ export default function ActiveStrategyTodayCard() {
         {setup_name} · {symbol} · {timeframe}
       </p>
 
-      {/* Entry */}
+      {/* Entry / Startprijs */}
       <div className="flex items-center gap-2 mb-3">
         <Target className="w-4 h-4 text-blue-500" />
         <span className="text-sm text-[var(--text-dark)]">
-          <strong>Entry:</strong> {entry}
+          {isDCA ? (
+            <>
+              <strong>Startprijs (referentie):</strong> Huidige marktprijs
+            </>
+          ) : (
+            <>
+              <strong>Entry:</strong> {entry}
+            </>
+          )}
         </span>
       </div>
+
+      {/* Extra uitleg bij DCA */}
+      {isDCA && (
+        <p className="text-xs text-[var(--text-light)] mb-3">
+          DCA-strategie actief. Er is geen vast instapmoment — deze prijs dient als
+          referentie voor het lopende accumulatieplan.
+        </p>
+      )}
 
       {/* Targets */}
       {targets && (

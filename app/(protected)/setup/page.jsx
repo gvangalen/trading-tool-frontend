@@ -12,6 +12,7 @@ import {
 
 import SetupForm from "@/components/setup/SetupForm";
 import SetupList from "@/components/setup/SetupList";
+import SetupMatchCard from "@/components/setup/SetupMatchCard"; // ✅ NIEUW
 
 import { useSetupData } from "@/hooks/useSetupData";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -51,7 +52,7 @@ export default function SetupPage() {
   }, []);
 
   /* =====================================================
-     🔥 ONBOARDING TRIGGER (DE FIX)
+     🔥 ONBOARDING TRIGGER
      → zodra er minimaal 1 setup bestaat
   ===================================================== */
   useEffect(() => {
@@ -68,7 +69,6 @@ export default function SetupPage() {
 
   /* =====================================================
      REFRESH (zonder snackbar!)
-     → snackbar komt vanuit SetupForm of SetupList
   ===================================================== */
   const reloadSetups = async () => {
     await loadSetups();
@@ -81,7 +81,6 @@ export default function SetupPage() {
   ===================================================== */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
-
       {/* ⭐ ONBOARDING BANNER */}
       <OnboardingBanner step="setup" />
 
@@ -98,8 +97,13 @@ export default function SetupPage() {
         macro-, technische- en marktdata.
       </p>
 
-      {/* AI Panel */}
-      <AgentInsightPanel category="setup" />
+      {/* -------------------------------------------------- */}
+      {/* AI INSIGHT + SETUP MATCH */}
+      {/* -------------------------------------------------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AgentInsightPanel category="setup" />
+        <SetupMatchCard />
+      </div>
 
       {/* -------------------------------------------------- */}
       {/* Setup lijst */}
@@ -112,7 +116,6 @@ export default function SetupPage() {
           </div>
         }
       >
-
         {/* Zoekveld */}
         <div className="flex justify-between items-center mb-4">
           <div
@@ -139,9 +142,9 @@ export default function SetupPage() {
           loading={loading}
           error={error}
           searchTerm={search}
-          saveSetup={saveSetup}       // Snackbar vanuit component
-          removeSetup={removeSetup}   // Snackbar vanuit component
-          reload={reloadSetups}       // Geen snackbar hier
+          saveSetup={saveSetup}
+          removeSetup={removeSetup}
+          reload={reloadSetups}
         />
       </CardWrapper>
 
@@ -160,7 +163,6 @@ export default function SetupPage() {
           Vul alle details in om een nieuwe trading-setup toe te voegen.
         </p>
 
-        {/* Snackbar komt vanuit SetupForm */}
         <SetupForm onSaved={reloadSetups} />
       </CardWrapper>
     </div>

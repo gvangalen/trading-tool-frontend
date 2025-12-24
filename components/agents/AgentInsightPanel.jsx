@@ -27,7 +27,28 @@ export default function AgentInsightPanel({ category }) {
     );
   }
 
-  const { score, trend, bias, risk, summary, top_signals } = insight;
+  const {
+    score,
+    trend,
+    bias,
+    risk,
+    summary,
+    top_signals,
+    created_at,
+    updated_at,
+  } = insight;
+
+  // 🕒 Laatste update bepalen
+  const lastUpdateRaw = updated_at || created_at;
+  const lastUpdate = lastUpdateRaw
+    ? new Date(lastUpdateRaw).toLocaleString("nl-NL", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   const trendIcon =
     trend === "bullish" ? (
@@ -38,7 +59,7 @@ export default function AgentInsightPanel({ category }) {
       <Minus className="text-yellow-500" />
     );
 
-  // ⭐ Normaliseer alle bullets
+  // ⭐ Normaliseer bullets
   const normalizeBullet = (item) => {
     if (!item) return "";
     if (typeof item === "string") return item;
@@ -57,11 +78,20 @@ export default function AgentInsightPanel({ category }) {
   return (
     <CardWrapper>
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <Brain className="w-5 h-5 text-[var(--text-dark)]" />
-        <h2 className="text-lg font-semibold text-[var(--text-dark)]">
-          AI {category.charAt(0).toUpperCase() + category.slice(1)} Analyse
-        </h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Brain className="w-5 h-5 text-[var(--text-dark)]" />
+          <h2 className="text-lg font-semibold text-[var(--text-dark)]">
+            AI {category.charAt(0).toUpperCase() + category.slice(1)} Analyse
+          </h2>
+        </div>
+
+        {/* 🕒 Laatste update */}
+        {lastUpdate && (
+          <span className="text-xs text-[var(--text-light)]">
+            Laatste update: {lastUpdate}
+          </span>
+        )}
       </div>
 
       {/* Trend + Bias + Risk */}
@@ -123,7 +153,6 @@ export default function AgentInsightPanel({ category }) {
                 className="p-4 rounded-xl border border-[var(--card-border)]
                            bg-[var(--bg-soft)] shadow-sm"
               >
-                {/* Titel + score */}
                 <div className="flex justify-between mb-2">
                   <span className="font-medium text-[var(--text-dark)] capitalize">
                     {r.indicator}
@@ -134,12 +163,10 @@ export default function AgentInsightPanel({ category }) {
                   </span>
                 </div>
 
-                {/* Comment */}
                 <p className="text-sm text-[var(--text-dark)] mb-1">
                   {r.comment}
                 </p>
 
-                {/* Recommendation */}
                 {r.recommendation && (
                   <p className="text-xs text-[var(--text-light)] italic">
                     {r.recommendation}

@@ -2,9 +2,21 @@
 
 import { Bot } from "lucide-react";
 
+function formatDateTime(dateString) {
+  const d = new Date(dateString);
+  return d.toLocaleString("nl-NL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function AIInsightBlock({
   text,
-  variant = "dashboard", // default nieuwe variant
+  updatedAt,              // 👈 NIEUW
+  variant = "dashboard",
 }) {
   if (!text) return null;
 
@@ -21,12 +33,20 @@ export default function AIInsightBlock({
   return (
     <div className="w-full">
       <div className={styles[variant] || styles.dashboard}>
+
+        {/* ✅ Laatste update */}
+        {updatedAt && (
+          <div className="mb-1 text-[10px] text-[var(--text-muted)]">
+            Laatste update: {formatDateTime(updatedAt)}
+          </div>
+        )}
+
         <div className="flex items-start gap-2">
           <Bot className="w-4 h-4 mt-[2px] text-[var(--primary)] opacity-70" />
           <p className="line-clamp-3 pr-2">{text}</p>
         </div>
 
-        {/* Fade overlay for clamped text */}
+        {/* Fade overlay */}
         <div
           className="
             pointer-events-none

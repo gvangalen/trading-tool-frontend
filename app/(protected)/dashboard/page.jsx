@@ -32,13 +32,14 @@ export default function DashboardPage() {
 
   // --------------------------------------------------------
   // 📡 DATA HOOKS
+  // 🔒 FIX: expliciet "Dag" om race condition te voorkomen
   // --------------------------------------------------------
   const {
     technicalData,
-    handleRemove,
+    removeTechnicalIndicator: handleRemove,
     loading: technicalLoading,
     error: technicalError,
-  } = useTechnicalData();
+  } = useTechnicalData("Dag");
 
   const {
     macroData,
@@ -90,7 +91,7 @@ export default function DashboardPage() {
           {/* GAUGES */}
           <DashboardGauges />
 
-          {/* MARKET (CARD) */}
+          {/* MARKET */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">

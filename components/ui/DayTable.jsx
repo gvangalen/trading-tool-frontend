@@ -4,11 +4,10 @@ import { Info, Trash2 } from "lucide-react";
 import dayjs from "dayjs";
 
 /**
- * 📅 DayTable — PRO 2.7
- * - Zelfde stijl als Market / Week tables
- * - Duidelijke datumlabel (vandaag / datum)
- * - Gebaseerd op timestamp in data
- * - Fallback bij lege data
+ * 📅 DayTable — PRO 2.7 (FIXED)
+ * - Correcte value-rendering voor market indicators
+ * - Percentage formatting voor volume & change_24h
+ * - Score-logic blijft backend-driven
  */
 export default function DayTable({
   title = null,
@@ -95,9 +94,25 @@ export default function DayTable({
    ROW COMPONENT
 ===================================================== */
 function DayRow({ item, onRemove }) {
-  const { name, indicator, value = "–", score, action, interpretation } = item;
+  const { name, indicator, value, score, action, interpretation } = item;
   const displayName = name || indicator || "–";
 
+  /* ---------------- VALUE FORMATTER ---------------- */
+  const formatValue = (name, value) => {
+    if (value === null || value === undefined) return "–";
+
+    const num = Number(value);
+    if (isNaN(num)) return value;
+
+    // Market indicators met percentage-waarde
+    if (name === "volume" || name === "change_24h") {
+      return `${num.toFixed(2)}%`;
+    }
+
+    return num.toLocaleString();
+  };
+
+  /* ---------------- SCORE COLOR ---------------- */
   const getScoreColor = (num) => {
     const n = Number(num);
     if (isNaN(n)) return "text-[var(--text-light)]";
@@ -117,9 +132,13 @@ function DayRow({ item, onRemove }) {
         </div>
       </td>
 
-      <td className="px-4 py-3 text-center">{value}</td>
+      <td className="px-4 py-3 text-center">
+        {formatValue(displayName, value)}
+      </td>
 
-      <td className={`px-4 py-3 text-center font-semibold ${getScoreColor(score)}`}>
+      <td
+        className={`px-4 py-3 text-center font-semibold ${getScoreColor(score)}`}
+      >
         {score ?? "–"}
       </td>
 

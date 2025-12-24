@@ -100,11 +100,50 @@ export function useActiveStrategyToday() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      try {
-        const res = await fetchActiveStrategyToday();
 
-        // Geen actieve strategie vandaag = null
-        setData(res || null);
+      try {
+        // ==================================================
+        // 1️⃣ Probeer normale actieve strategie (snapshot)
+        // ==================================================
+        const active = await fetchActiveStrategyToday();
+
+        if (active) {
+          setData(active);
+          return;
+        }
+
+        // ==================================================
+        // 2️⃣ Fallback → DCA strategy via AI insight
+        // ==================================================
+        const strategyInsight = await fetchStrategyInsight();
+
+        if (!strategyInsight) {
+          setData(null);
+          return;
+        }
+
+        /**
+         * We bouwen hier bewust een "strategy today" object
+         * zonder entry → UI herkent dit als DCA
+         */
+        const dcaStrategyToday = {
+          setup_name: strategyInsight.setup_name || "DCA",
+          symbol: strategyInsight.symbol || "BTC",
+          timeframe: strategyInsight.timeframe || "1D",
+
+          entry: null,          // 🔑 DCA → referentieprijs in UI
+          targets: null,
+          stop_loss: null,
+
+          adjustment_reason:
+            strategyInsight.summary ||
+            "DCA-strategie actief. Vandaag afgestemd op marktcondities.",
+
+          confidence_score: strategyInsight.avg_score ?? null,
+        };
+
+        setData(dcaStrategyToday);
+
       } catch (e) {
         console.error("❌ [useActiveStrategyToday] Fout:", e);
         setData(null);

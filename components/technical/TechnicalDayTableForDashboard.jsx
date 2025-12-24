@@ -14,29 +14,28 @@ export default function TechnicalDayTableForDashboard({
     return <SkeletonTable rows={5} columns={5} />;
   }
 
-  // ❌ Error niet meer tonen aan gebruiker, alleen loggen
+  // ❌ Error alleen loggen
   if (error) {
     console.error("Technische data fout op dashboard:", error);
   }
 
-  // Data normaliseren
+  // ✅ data komt AL genormaliseerd uit useTechnicalData
   const safeData = Array.isArray(data) ? data : [];
 
   const formatted = safeData.map((item) => ({
-    name: item.indicator || item.name || "–",
-    value: item.value ?? item.waarde ?? "–",
+    name: item.name ?? "–",
+    value: item.value ?? "–",
     score: item.score ?? null,
-    action: item.advice ?? item.advies ?? "–",
-    interpretation: item.uitleg ?? item.explanation ?? "–",
+    action: item.action ?? "–",
+    interpretation: item.interpretation ?? "–",
   }));
 
-  // 👉 Altijd DayTable tonen — ook als formatted.length === 0
   return (
     <DayTable
       title="Technische Analyse"
       icon={<TrendingUp className="w-5 h-5 text-[var(--primary)]" />}
       data={formatted}
-      onRemove={null}
+      onRemove={null} // dashboard = read-only
     />
   );
 }

@@ -8,6 +8,20 @@ import CardWrapper from "@/components/ui/CardWrapper";
 // Icons
 import { Globe2, LineChart, DollarSign, Settings2 } from "lucide-react";
 
+/* =====================================================
+   VASTE DASHBOARD TEKSTEN (GEEN AI)
+===================================================== */
+const DASHBOARD_TEXT = {
+  Macro:
+    "Macro-indicatoren geven inzicht in het bredere economische klimaat en de algemene risicobereidheid.",
+  Technical:
+    "Technische indicatoren tonen trend, momentum en marktstructuur op basis van prijsdata.",
+  Market:
+    "Marketdata weerspiegelt recente prijsbewegingen, volume en korte termijn dynamiek.",
+  Setup:
+    "Actieve setups worden geselecteerd op basis van de huidige macro-, market- en technische score.",
+};
+
 export default function DashboardGauges() {
   const { macro, technical, market, setup } = useScoresData();
 
@@ -16,29 +30,21 @@ export default function DashboardGauges() {
       title: "Macro",
       icon: <Globe2 className="w-4 h-4" />,
       data: macro,
-      emptyText:
-        "Nog geen macrodata beschikbaar. Voeg macro-indicatoren toe op de Macro-pagina.",
     },
     {
       title: "Technical",
       icon: <LineChart className="w-4 h-4" />,
       data: technical,
-      emptyText:
-        "Nog geen technische analyse beschikbaar. Voeg indicatoren toe op de Technisch-pagina.",
     },
     {
       title: "Market",
       icon: <DollarSign className="w-4 h-4" />,
       data: market,
-      emptyText:
-        "Nog geen marktdata beschikbaar. Market data wordt automatisch opgehaald.",
     },
     {
       title: "Setup",
       icon: <Settings2 className="w-4 h-4" />,
       data: setup,
-      emptyText:
-        "Geen actieve setups gevonden. Maak een setup aan op de Setup-pagina.",
       showTopSetups: true,
     },
   ];
@@ -51,7 +57,6 @@ export default function DashboardGauges() {
           title={g.title}
           icon={g.icon}
           data={g.data}
-          emptyText={g.emptyText}
           showTopSetups={g.showTopSetups}
         />
       ))}
@@ -63,45 +68,21 @@ export default function DashboardGauges() {
    SINGLE GAUGE CARD
 ===================================================== */
 
-function GaugeCard({
-  title,
-  icon,
-  data,
-  emptyText,
-  showTopSetups = false,
-}) {
-  const score = data?.score;
-  const hasValidScore = typeof score === "number";
-
-  const numericScore = hasValidScore ? score : 0;
-  const displayScore = Math.round(numericScore);
-
-  // Backend explanation (optioneel)
-  const rawExplanation =
-    data?.explanation || data?.uitleg || data?.interpretation || "";
-
-  const cleanedExplanation = String(rawExplanation).trim();
-
-  // 🔥 DEFINITIEVE LOGICA
-  let displayExplanation;
-
-  if (!hasValidScore) {
-    // Alleen als er ECHT geen score is
-    displayExplanation = emptyText;
-  } else if (cleanedExplanation) {
-    displayExplanation = cleanedExplanation;
-  } else {
-    displayExplanation =
-      "Analyse gebaseerd op actuele score en indicatoren.";
-  }
+function GaugeCard({ title, icon, data, showTopSetups = false }) {
+  const score = typeof data?.score === "number" ? data.score : 0;
+  const displayScore = Math.round(score);
 
   const topContributors = Array.isArray(data?.top_contributors)
     ? data.top_contributors
     : [];
 
   const hasSetups =
+    showTopSetups &&
     Array.isArray(data?.top_contributors) &&
     data.top_contributors.length > 0;
+
+  // 👉 ALTIJD vaste dashboardtekst
+  const displayExplanation = DASHBOARD_TEXT[title];
 
   return (
     <CardWrapper>
@@ -125,7 +106,7 @@ function GaugeCard({
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        <GaugeChart value={numericScore} displayValue={displayScore} />
+        <GaugeChart value={score} displayValue={displayScore} />
       </div>
 
       {/* CONTRIBUTORS */}
@@ -134,7 +115,6 @@ function GaugeCard({
           <p className="text-[11px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-1">
             Top bijdragen
           </p>
-
           <div className="space-y-1">
             {topContributors.map((c, i) => (
               <div
@@ -151,8 +131,8 @@ function GaugeCard({
         </div>
       )}
 
-      {/* TOP SETUPS (alleen indien aanwezig) */}
-      {showTopSetups && hasSetups && (
+      {/* TOP SETUPS */}
+      {hasSetups && (
         <div className="mt-4">
           <TopSetupsMini />
         </div>

@@ -9,18 +9,43 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import { Globe2, LineChart, DollarSign, Settings2 } from "lucide-react";
 
 /* =====================================================
-   VASTE DASHBOARD TEKSTEN (GEEN AI)
+   SCORE → TEKST (DE ENIGE WAARHEID)
 ===================================================== */
-const DASHBOARD_TEXT = {
-  Macro:
-    "Macro-indicatoren geven inzicht in het bredere economische klimaat en de algemene risicobereidheid.",
-  Technical:
-    "Technische indicatoren tonen trend, momentum en marktstructuur op basis van prijsdata.",
-  Market:
-    "Marketdata weerspiegelt recente prijsbewegingen, volume en korte termijn dynamiek.",
-  Setup:
-    "Actieve setups worden geselecteerd op basis van de huidige macro-, market- en technische score.",
+
+const SCORE_TEXT = {
+  Macro: (score: number) => {
+    if (score >= 75)
+      return "Macro-omgeving is duidelijk ondersteunend voor risico-assets.";
+    if (score < 40)
+      return "Macro-omgeving is ongunstig en verhoogt neerwaarts risico.";
+    return "Macro-omgeving is neutraal en geeft geen duidelijke richting.";
+  },
+  Technical: (score: number) => {
+    if (score >= 75)
+      return "Technische structuur is sterk en ondersteunt hogere prijzen.";
+    if (score < 40)
+      return "Technische structuur is zwak en vraagt om voorzichtigheid.";
+    return "Technische signalen zijn gemengd zonder duidelijke trend.";
+  },
+  Market: (score: number) => {
+    if (score >= 75)
+      return "Marktdynamiek is positief met ondersteunend momentum.";
+    if (score < 40)
+      return "Marktdynamiek is zwak en mist overtuiging.";
+    return "Marktdynamiek is zijwaarts en afwachtend.";
+  },
+  Setup: (score: number) => {
+    if (score >= 75)
+      return "Meerdere setups zijn actief en kansrijk.";
+    if (score < 40)
+      return "Weinig of geen setups voldoen aan de voorwaarden.";
+    return "Beperkt aantal setups actief, selectief handelen.";
+  },
 };
+
+/* =====================================================
+   DASHBOARD GAUGES
+===================================================== */
 
 export default function DashboardGauges() {
   const { macro, technical, market, setup } = useScoresData();
@@ -30,21 +55,29 @@ export default function DashboardGauges() {
       title: "Macro",
       icon: <Globe2 className="w-4 h-4" />,
       data: macro,
+      emptyText:
+        "Nog geen macrodata beschikbaar. Voeg macro-indicatoren toe op de Macro-pagina.",
     },
     {
       title: "Technical",
       icon: <LineChart className="w-4 h-4" />,
       data: technical,
+      emptyText:
+        "Nog geen technische analyse beschikbaar. Voeg indicatoren toe op de Technisch-pagina.",
     },
     {
       title: "Market",
       icon: <DollarSign className="w-4 h-4" />,
       data: market,
+      emptyText:
+        "Nog geen marktdata beschikbaar. Market data wordt automatisch opgehaald.",
     },
     {
       title: "Setup",
       icon: <Settings2 className="w-4 h-4" />,
       data: setup,
+      emptyText:
+        "Geen actieve setups gevonden. Maak een setup aan op de Setup-pagina.",
       showTopSetups: true,
     },
   ];
@@ -57,6 +90,7 @@ export default function DashboardGauges() {
           title={g.title}
           icon={g.icon}
           data={g.data}
+          emptyText={g.emptyText}
           showTopSetups={g.showTopSetups}
         />
       ))}
@@ -68,9 +102,30 @@ export default function DashboardGauges() {
    SINGLE GAUGE CARD
 ===================================================== */
 
-function GaugeCard({ title, icon, data, showTopSetups = false }) {
-  const score = typeof data?.score === "number" ? data.score : 0;
-  const displayScore = Math.round(score);
+function GaugeCard({
+  title,
+  icon,
+  data,
+  emptyText,
+  showTopSetups = false,
+}: {
+  title: "Macro" | "Technical" | "Market" | "Setup";
+  icon: React.ReactNode;
+  data: any;
+  emptyText: string;
+  showTopSetups?: boolean;
+}) {
+  const score =
+    typeof data?.score === "number" ? data.score : null;
+
+  const numericScore = score ?? 0;
+  const displayScore = Math.round(numericScore);
+
+  // 🔒 DEFINITIEVE TEKSTLOGICA
+  const displayExplanation =
+    score === null
+      ? emptyText
+      : SCORE_TEXT[title](score);
 
   const topContributors = Array.isArray(data?.top_contributors)
     ? data.top_contributors
@@ -78,11 +133,8 @@ function GaugeCard({ title, icon, data, showTopSetups = false }) {
 
   const hasSetups =
     showTopSetups &&
-    Array.isArray(data?.top_contributors) &&
-    data.top_contributors.length > 0;
-
-  // 👉 ALTIJD vaste dashboardtekst
-  const displayExplanation = DASHBOARD_TEXT[title];
+    Array.isArray(topContributors) &&
+    topContributors.length > 0;
 
   return (
     <CardWrapper>
@@ -106,7 +158,7 @@ function GaugeCard({ title, icon, data, showTopSetups = false }) {
 
       {/* GAUGE */}
       <div className="flex flex-col items-center justify-center mt-1 mb-2">
-        <GaugeChart value={score} displayValue={displayScore} />
+        <GaugeChart value={numericScore} displayValue={displayScore} />
       </div>
 
       {/* CONTRIBUTORS */}
@@ -115,8 +167,9 @@ function GaugeCard({ title, icon, data, showTopSetups = false }) {
           <p className="text-[11px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-1">
             Top bijdragen
           </p>
+
           <div className="space-y-1">
-            {topContributors.map((c, i) => (
+            {topContributors.map((c: string, i: number) => (
               <div
                 key={i}
                 className="

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useScoresData } from "@/hooks/useScoresData";
 import GaugeChart from "@/components/ui/GaugeChart";
 import TopSetupsMini from "@/components/setup/TopSetupsMini";
@@ -13,28 +14,28 @@ import { Globe2, LineChart, DollarSign, Settings2 } from "lucide-react";
 ===================================================== */
 
 const SCORE_TEXT = {
-  Macro: (score: number) => {
+  Macro: (score) => {
     if (score >= 75)
       return "Macro-omgeving is duidelijk ondersteunend voor risico-assets.";
     if (score < 40)
       return "Macro-omgeving is ongunstig en verhoogt neerwaarts risico.";
     return "Macro-omgeving is neutraal en geeft geen duidelijke richting.";
   },
-  Technical: (score: number) => {
+  Technical: (score) => {
     if (score >= 75)
       return "Technische structuur is sterk en ondersteunt hogere prijzen.";
     if (score < 40)
       return "Technische structuur is zwak en vraagt om voorzichtigheid.";
     return "Technische signalen zijn gemengd zonder duidelijke trend.";
   },
-  Market: (score: number) => {
+  Market: (score) => {
     if (score >= 75)
       return "Marktdynamiek is positief met ondersteunend momentum.";
     if (score < 40)
       return "Marktdynamiek is zwak en mist overtuiging.";
     return "Marktdynamiek is zijwaarts en afwachtend.";
   },
-  Setup: (score: number) => {
+  Setup: (score) => {
     if (score >= 75)
       return "Meerdere setups zijn actief en kansrijk.";
     if (score < 40)
@@ -102,39 +103,21 @@ export default function DashboardGauges() {
    SINGLE GAUGE CARD
 ===================================================== */
 
-function GaugeCard({
-  title,
-  icon,
-  data,
-  emptyText,
-  showTopSetups = false,
-}: {
-  title: "Macro" | "Technical" | "Market" | "Setup";
-  icon: React.ReactNode;
-  data: any;
-  emptyText: string;
-  showTopSetups?: boolean;
-}) {
-  const score =
-    typeof data?.score === "number" ? data.score : null;
+function GaugeCard({ title, icon, data, emptyText, showTopSetups = false }) {
+  const score = typeof data?.score === "number" ? data.score : null;
 
   const numericScore = score ?? 0;
   const displayScore = Math.round(numericScore);
 
-  // 🔒 DEFINITIEVE TEKSTLOGICA
+  // 🔒 DEFINITIEVE TEKSTLOGICA (score → tekst)
   const displayExplanation =
-    score === null
-      ? emptyText
-      : SCORE_TEXT[title](score);
+    score === null ? emptyText : (SCORE_TEXT[title] ? SCORE_TEXT[title](score) : emptyText);
 
   const topContributors = Array.isArray(data?.top_contributors)
     ? data.top_contributors
     : [];
 
-  const hasSetups =
-    showTopSetups &&
-    Array.isArray(topContributors) &&
-    topContributors.length > 0;
+  const hasSetups = showTopSetups && topContributors.length > 0;
 
   return (
     <CardWrapper>
@@ -169,7 +152,7 @@ function GaugeCard({
           </p>
 
           <div className="space-y-1">
-            {topContributors.map((c: string, i: number) => (
+            {topContributors.map((c, i) => (
               <div
                 key={i}
                 className="

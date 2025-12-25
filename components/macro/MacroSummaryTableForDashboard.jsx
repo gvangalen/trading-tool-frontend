@@ -19,15 +19,17 @@ export default function MacroSummaryTableForDashboard({
     console.error("Macro data fout op dashboard:", error);
   }
 
-  // ✅ Data komt AL genormaliseerd uit useMacroData
+  // ✅ Data defensief maken
   const safeData = Array.isArray(data) ? data : [];
 
+  // 🔥 DEFINITIEVE NORMALISATIE (BELANGRIJK)
   const formatted = safeData.map((item) => ({
-    name: item.name ?? "–",
-    value: item.value ?? "–",
+    indicator: item.indicator || item.name || "–", // ✅ DIT WAS DE FIX
+    value: item.value ?? null,
     score: item.score ?? null,
     action: item.action ?? "–",
     interpretation: item.interpretation ?? "–",
+    timestamp: item.timestamp,
   }));
 
   return (

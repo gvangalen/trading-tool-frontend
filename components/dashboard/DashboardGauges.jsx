@@ -71,31 +71,34 @@ function GaugeCard({
   showTopSetups = false,
 }) {
   const score = data?.score;
-  const hasScore = typeof score === "number" && score > 0;
+  const hasValidScore = typeof score === "number";
 
-  const numericScore = hasScore ? score : 0;
+  const numericScore = hasValidScore ? score : 0;
   const displayScore = Math.round(numericScore);
 
-  // Backend explanation
+  // Backend explanation (optioneel)
   const rawExplanation =
     data?.explanation || data?.uitleg || data?.interpretation || "";
 
   const cleanedExplanation = String(rawExplanation).trim();
 
-  const isGenericExplanation =
-    cleanedExplanation === "" ||
-    cleanedExplanation.toLowerCase().startsWith("geen uitleg");
+  // 🔥 DEFINITIEVE LOGICA
+  let displayExplanation;
 
-  // Final text shown under meter
-  const displayExplanation = isGenericExplanation
-    ? emptyText
-    : cleanedExplanation;
+  if (!hasValidScore) {
+    // Alleen als er ECHT geen score is
+    displayExplanation = emptyText;
+  } else if (cleanedExplanation) {
+    displayExplanation = cleanedExplanation;
+  } else {
+    displayExplanation =
+      "Analyse gebaseerd op actuele score en indicatoren.";
+  }
 
   const topContributors = Array.isArray(data?.top_contributors)
     ? data.top_contributors
     : [];
 
-  // Prevent duplicate setup fallback message
   const hasSetups =
     Array.isArray(data?.top_contributors) &&
     data.top_contributors.length > 0;
@@ -148,7 +151,7 @@ function GaugeCard({
         </div>
       )}
 
-      {/* ONLY show setups if there ARE setups */}
+      {/* TOP SETUPS (alleen indien aanwezig) */}
       {showTopSetups && hasSetups && (
         <div className="mt-4">
           <TopSetupsMini />

@@ -24,10 +24,13 @@ export default function TechnicalDayTableForDashboard({
 
   const formatted = safeData.map((item) => ({
     name: item.name ?? "–",
-    value: item.value ?? "–",
+    value: item.value ?? null,
     score: item.score ?? null,
     action: item.action ?? "–",
     interpretation: item.interpretation ?? "–",
+
+    // 🔥 DIT WAS DE FIX
+    timestamp: item.timestamp ?? null,
   }));
 
   return (

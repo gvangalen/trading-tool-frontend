@@ -6,24 +6,27 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import AILoader from "@/components/ui/AILoader";
 
 export default function AuthGuard({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const router = useRouter();
 
-  // voorkomt dubbele redirects
   const redirected = useRef(false);
 
   useEffect(() => {
     if (redirected.current) return;
 
-    // ⛔ niet ingelogd nadat loading klaar is
+    // ⛔ Alleen redirecten als loading klaar is én geen user
     if (!loading && !isAuthenticated) {
       redirected.current = true;
-      router.replace("/login"); // replace = betere UX
+      router.replace("/login");
     }
   }, [loading, isAuthenticated, router]);
 
-  // nog aan het laden of redirect voorbereiden
-  if (loading || (!isAuthenticated && !redirected.current)) {
+  /*
+    ✅ BELANGRIJK:
+    - Als we AL een user hebben → content direct tonen
+    - Alleen loader tonen als we nog GEEN user hebben
+  */
+  if (!user && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <AILoader text="Aan het laden…" />
@@ -31,6 +34,9 @@ export default function AuthGuard({ children }) {
     );
   }
 
-  // gebruiker is ingelogd → content tonen
+  if (!isAuthenticated && !redirected.current) {
+    return null;
+  }
+
   return <>{children}</>;
 }

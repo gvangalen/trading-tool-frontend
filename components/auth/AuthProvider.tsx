@@ -7,6 +7,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import { API_BASE_URL } from "@/lib/config";
 import {
@@ -15,11 +16,11 @@ import {
   clearUserLocal,
 } from "@/lib/api/user";
 
+/* ===========================================================
+   CONTEXT
+=========================================================== */
 const AuthContext = createContext<any>(null);
 
-/* ===========================================================
-   Hook
-=========================================================== */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
@@ -27,10 +28,10 @@ export function useAuth() {
 }
 
 /* ===========================================================
-   fetchWithAuth — stuurt cookies mee
+   fetchWithAuth — cookies + JSON
 =========================================================== */
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  return await fetch(url, {
+  return fetch(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -44,16 +45,16 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   const [user, setUser] = useState<any>(loadUserLocal());
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     1) SESSION LADEN — met veilige delay (100ms)
+     1️⃣ SESSION LADEN (/me)
   ------------------------------------------------------- */
   const loadSession = useCallback(async () => {
     try {
-      await new Promise((r) => setTimeout(r, 100)); // race fix
-
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
       if (res.ok) {
@@ -78,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadSession]);
 
   /* -------------------------------------------------------
-     2) TOKEN REFRESH
+     2️⃣ TOKEN REFRESH (ongewijzigd)
   ------------------------------------------------------- */
   useEffect(() => {
     const intv = setInterval(async () => {
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /* -------------------------------------------------------
-     3) LOGIN — GEEN redirect! middleware bepaalt flow
+     3️⃣ LOGIN — SNEL & ZONDER RELOAD
   ------------------------------------------------------- */
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -111,26 +112,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       const u = data.user;
 
+      // ✅ state direct updaten
       setUser(u);
       saveUserLocal(u);
 
-      // wacht even zodat cookies 100% zijn ingesteld
-      await new Promise((r) => setTimeout(r, 150));
-
-      // 👉 middleware stuurt nu automatisch naar /onboarding of /dashboard
-      window.location.href = "/";
+      // ✅ routing via Next (middleware beslist eindroute)
+      router.replace("/");
 
       return { success: true };
     } catch (err) {
       console.error("❌ Login fout:", err);
       return { success: false, message: "Serverfout" };
     }
-  }, []);
+  }, [router]);
 
   /* -------------------------------------------------------
-     4) LOGOUT
+     4️⃣ LOGOUT — DIRECT UI, DAN SERVER
   ------------------------------------------------------- */
   const logout = useCallback(async () => {
+    // 🔥 UI eerst → instant
+    setUser(null);
+    clearUserLocal();
+
+    // server call mag async
     try {
       await fetchWithAuth(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
@@ -139,14 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("❌ Logout fout:", err);
     }
 
-    setUser(null);
-    clearUserLocal();
-
-    window.location.href = "/login";
-  }, []);
+    router.replace("/login");
+  }, [router]);
 
   /* -------------------------------------------------------
-     CONTEXT OUTPUT
+     CONTEXT VALUE
   ------------------------------------------------------- */
   const value = {
     user,
@@ -158,5 +159,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     reload: loadSession,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

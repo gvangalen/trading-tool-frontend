@@ -47,14 +47,20 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  const [user, setUser] = useState<any>(loadUserLocal());
-  const [loading, setLoading] = useState(true);
+  // 🔥 optimistic user: direct uit localStorage
+  const [user, setUser] = useState<any>(() => loadUserLocal());
+  const [loading, setLoading] = useState<boolean>(true);
 
   /* -------------------------------------------------------
-     1️⃣ SESSION LADEN (/me)
+     1️⃣ SESSION LADEN (/me) — OPTIMISTIC
   ------------------------------------------------------- */
   const loadSession = useCallback(async () => {
     try {
+      // ✅ Als we al een user hebben → UI niet blokkeren
+      if (user) {
+        setLoading(false);
+      }
+
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
 
       if (res.ok) {
@@ -72,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadSession();
@@ -96,41 +102,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /* -------------------------------------------------------
-     3️⃣ LOGIN — SNEL & ZONDER RELOAD
+     3️⃣ LOGIN — SNEL & ZONDER HARDE RELOAD
   ------------------------------------------------------- */
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/login`, {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
 
-      if (!res.ok) {
-        return { success: false, message: "Ongeldige inloggegevens" };
+        if (!res.ok) {
+          return { success: false, message: "Ongeldige inloggegevens" };
+        }
+
+        const data = await res.json();
+        const u = data.user;
+
+        // ✅ direct state + localStorage
+        setUser(u);
+        saveUserLocal(u);
+
+        // ✅ middleware beslist of onboarding/dashboard
+        router.replace("/");
+
+        return { success: true };
+      } catch (err) {
+        console.error("❌ Login fout:", err);
+        return { success: false, message: "Serverfout" };
       }
-
-      const data = await res.json();
-      const u = data.user;
-
-      // ✅ state direct updaten
-      setUser(u);
-      saveUserLocal(u);
-
-      // ✅ routing via Next (middleware beslist eindroute)
-      router.replace("/");
-
-      return { success: true };
-    } catch (err) {
-      console.error("❌ Login fout:", err);
-      return { success: false, message: "Serverfout" };
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   /* -------------------------------------------------------
-     4️⃣ LOGOUT — DIRECT UI, DAN SERVER
+     4️⃣ LOGOUT — DIRECT UI, SERVER ASYNC
   ------------------------------------------------------- */
   const logout = useCallback(async () => {
-    // 🔥 UI eerst → instant
+    // 🔥 direct UI reset
     setUser(null);
     clearUserLocal();
 

@@ -6,15 +6,11 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
-import { useRouter } from "next/navigation";
 
 import { API_BASE_URL } from "@/lib/config";
-import {
-  saveUserLocal,
-  loadUserLocal,
-  clearUserLocal,
-} from "@/lib/api/user";
+import { saveUserLocal, loadUserLocal, clearUserLocal } from "@/lib/api/user";
 
 /* ===========================================================
    CONTEXT
@@ -28,7 +24,7 @@ export function useAuth() {
 }
 
 /* ===========================================================
-   fetchWithAuth — cookies + JSON
+   fetchWithAuth
 =========================================================== */
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return fetch(url, {
@@ -45,23 +41,33 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const initialUser = loadUserLocal();
 
-  // 🔥 optimistic user: direct uit localStorage
-  const [user, setUser] = useState<any>(() => loadUserLocal());
+  const [user, setUser] = useState<any>(initialUser);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // 🔒 voorkomt /me spam & race conditions
+  const sessionInFlight = useRef(false);
+  const didInit = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
   /* -------------------------------------------------------
-     1️⃣ SESSION LADEN (/me) — OPTIMISTIC
+     SESSION CHECK (/me)
   ------------------------------------------------------- */
   const loadSession = useCallback(async () => {
-    try {
-      // ✅ Als we al een user hebben → UI niet blokkeren
-      if (user) {
-        setLoading(false);
-      }
+    if (sessionInFlight.current) return;
+    sessionInFlight.current = true;
 
-      const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/me`);
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+      });
 
       if (res.ok) {
         const u = await res.json();
@@ -71,21 +77,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         clearUserLocal();
       }
-    } catch (err) {
-      console.error("❌ Session load error:", err);
-      setUser(null);
-      clearUserLocal();
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        console.error("❌ Session load error:", err);
+      }
+      // ⚠️ bij netwerkfout: laat local user staan → geen hang
     } finally {
+      sessionInFlight.current = false;
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
+  // init 1x
   useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
     loadSession();
+
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
   }, [loadSession]);
 
   /* -------------------------------------------------------
-     2️⃣ TOKEN REFRESH (ongewijzigd)
+     TOKEN REFRESH
   ------------------------------------------------------- */
   useEffect(() => {
     const intv = setInterval(async () => {
@@ -93,8 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchWithAuth(`${API_BASE_URL}/api/auth/refresh`, {
           method: "POST",
         });
-      } catch (err) {
-        console.error("❌ Refresh fout:", err);
+      } catch {
+        /* stil */
       }
     }, 50 * 60 * 1000);
 
@@ -102,58 +117,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /* -------------------------------------------------------
-     3️⃣ LOGIN — SNEL & ZONDER HARDE RELOAD
+     LOGIN
   ------------------------------------------------------- */
-  const login = useCallback(
-    async (email: string, password: string) => {
-      try {
-        const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/login`, {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        });
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
 
-        if (!res.ok) {
-          return { success: false, message: "Ongeldige inloggegevens" };
-        }
-
-        const data = await res.json();
-        const u = data.user;
-
-        // ✅ direct state + localStorage
-        setUser(u);
-        saveUserLocal(u);
-
-        // ✅ middleware beslist of onboarding/dashboard
-        router.replace("/");
-
-        return { success: true };
-      } catch (err) {
-        console.error("❌ Login fout:", err);
-        return { success: false, message: "Serverfout" };
+      if (!res.ok) {
+        return { success: false, message: "Ongeldige inloggegevens" };
       }
-    },
-    [router]
-  );
+
+      const data = await res.json();
+      const u = data.user;
+
+      setUser(u);
+      saveUserLocal(u);
+
+      return { success: true };
+    } catch (err) {
+      console.error("❌ Login fout:", err);
+      return { success: false, message: "Serverfout" };
+    }
+  }, []);
 
   /* -------------------------------------------------------
-     4️⃣ LOGOUT — DIRECT UI, SERVER ASYNC
+     LOGOUT
   ------------------------------------------------------- */
   const logout = useCallback(async () => {
-    // 🔥 direct UI reset
     setUser(null);
     clearUserLocal();
 
-    // server call mag async
     try {
       await fetchWithAuth(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
       });
-    } catch (err) {
-      console.error("❌ Logout fout:", err);
-    }
+    } catch {}
 
-    router.replace("/login");
-  }, [router]);
+  }, []);
 
   /* -------------------------------------------------------
      CONTEXT VALUE
@@ -168,9 +171,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     reload: loadSession,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

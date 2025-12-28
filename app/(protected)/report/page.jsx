@@ -117,6 +117,7 @@ export default function ReportPage() {
           ? await current.getLatest()
           : await current.getByDate(date);
 
+      // ✅ fallback: als "latest" leeg is maar we hebben history → pak eerste datum
       if ((!data || Object.keys(data).length === 0) && dateList?.length > 0) {
         const fallback = dateList[0];
         const fallbackData = await current.getByDate(fallback);
@@ -125,6 +126,7 @@ export default function ReportPage() {
         return;
       }
 
+      // ✅ autogen: als er echt niks is → start generatie
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
         await current.generate();
         setError(
@@ -169,16 +171,12 @@ export default function ReportPage() {
     }
   };
 
-  // ✅ backward compat: als backend nog btc_summary terugstuurt
-  const executiveSummary =
-    report?.executive_summary || report?.btc_summary || '';
+  // ✅ Nieuw schema: direct uit DB
+  const executiveSummary = report?.executive_summary || '';
 
   return (
     <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8 bg-[var(--bg)] text-[var(--text-dark)] animate-fade-slide">
-
-      {/* ----------------------------------------------------- */}
       {/* HEADER */}
-      {/* ----------------------------------------------------- */}
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
@@ -202,15 +200,12 @@ export default function ReportPage() {
         )}
       </header>
 
-      {/* ----------------------------------------------------- */}
       {/* TABS + FILTER BAR */}
-      {/* ----------------------------------------------------- */}
       <CardWrapper>
         <div className="space-y-5">
           <ReportTabs selected={reportType} onChange={setReportType} />
 
           <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-soft)] border border-[var(--border)] px-4 py-3 rounded-2xl">
-
             {/* Date select */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-[var(--text-light)] flex items-center gap-1">
@@ -280,28 +275,21 @@ export default function ReportPage() {
         </div>
       )}
 
-      {/* ----------------------------------------------------- */}
       {/* DUMMY REPORT */}
-      {/* ----------------------------------------------------- */}
       {noRealData && <DummyReportNew />}
 
-      {/* ----------------------------------------------------- */}
       {/* REAL REPORT */}
-      {/* ----------------------------------------------------- */}
       {!loading && report && Object.keys(report).length > 0 && (
         <ReportContainer>
-          {/* Top full-width card */}
           <ReportCard
             icon={<Brain size={18} />}
             title="Executive Summary"
-            content={executiveSummary}
+            content={executiveSummary || '–'}
             full
             color="blue"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Market snapshot card (data) */}
             <ReportCard
               icon={<TrendingUp size={18} />}
               title="Market Snapshot"
@@ -313,14 +301,14 @@ export default function ReportPage() {
             <ReportCard
               icon={<Globe size={18} />}
               title="Macro Context"
-              content={report.macro_summary || '–'}
+              content={report.macro_context || '–'}
               color="gray"
             />
 
             <ReportCard
               icon={<ListChecks size={18} />}
               title="Setup Validatie"
-              content={report.setup_validation || report.setup_checklist || '–'}
+              content={report.setup_validation || '–'}
               pre
               color="green"
             />
@@ -328,7 +316,7 @@ export default function ReportPage() {
             <ReportCard
               icon={<Target size={18} />}
               title="Strategie Implicatie"
-              content={report.strategy_implication || report.recommendations || '–'}
+              content={report.strategy_implication || '–'}
               pre
               color="red"
             />
@@ -356,19 +344,18 @@ export default function ReportPage() {
 }
 
 /* ---------------------------------------------------
-   Helpers (UI formatting)
+   Helpers (new DB schema)
 --------------------------------------------------- */
-function formatMarketSnapshot(report) {
-  const m = report?.market_data || {};
-  const price = m?.price ?? '–';
-  const ch24 = m?.change_24h ?? '–';
-  const vol = m?.volume ?? '–';
 
-  const scores = report?.scores || {};
-  const macro = scores?.macro_score ?? '–';
-  const tech = scores?.technical_score ?? '–';
-  const market = scores?.market_score ?? '–';
-  const setup = scores?.setup_score ?? '–';
+function formatMarketSnapshot(report) {
+  const price = report?.price ?? '–';
+  const ch24 = report?.change_24h ?? '–';
+  const vol = report?.volume ?? '–';
+
+  const macro = report?.macro_score ?? '–';
+  const tech = report?.technical_score ?? '–';
+  const market = report?.market_score ?? '–';
+  const setup = report?.setup_score ?? '–';
 
   return `Prijs: $${price}
 24h: ${ch24}%
@@ -382,13 +369,13 @@ Setup: ${setup}`;
 }
 
 function formatIndicatorHighlights(report) {
-  const inds = report?.market_indicator_scores || [];
-  if (!Array.isArray(inds) || inds.length === 0) {
-    return 'Geen indicator-scores gevonden voor vandaag.';
-  }
+  const inds = report?.indicator_highlights;
 
-  const top = inds.slice(0, 5);
-  return top
+  if (!inds) return 'Geen indicator-highlights gevonden.';
+  if (!Array.isArray(inds) || inds.length === 0) return 'Geen indicator-highlights gevonden.';
+
+  return inds
+    .slice(0, 5)
     .map((i) => {
       const name = i?.indicator ?? '–';
       const score = i?.score ?? '–';
@@ -399,67 +386,19 @@ function formatIndicatorHighlights(report) {
 }
 
 /* ---------------------------------------------------
-   Dummy report (nieuwe structuur)
+   Dummy report (new structure)
 --------------------------------------------------- */
+
 function DummyReportNew() {
   return (
     <ReportContainer>
       <ReportCard
         icon={<Brain size={18} />}
         title="Executive Summary"
-        content={`BTC consolideert. Macro neutraal. Setup-score onder threshold → geen agressieve entries.\n\nBESLISSING VANDAAG: OBSERVEREN\nCONFIDENCE: MIDDEL`}
+        content={`Nog geen rapport gevonden.\n\nBESLISSING VANDAAG: OBSERVEREN\nCONFIDENCE: LAAG`}
         full
         color="blue"
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ReportCard
-          icon={<TrendingUp size={18} />}
-          title="Market Snapshot"
-          content={`Prijs: $–\n24h: –%\nVolume: –\n\nScores:\nMacro: –\nTechnical: –\nMarket: –\nSetup: –`}
-          pre
-          color="blue"
-        />
-
-        <ReportCard
-          icon={<Globe size={18} />}
-          title="Macro Context"
-          content={`Trend: –\nBias: –\nRisico: –\n\nMACRO-IMPACT: NEUTRAAL`}
-          color="gray"
-        />
-
-        <ReportCard
-          icon={<ListChecks size={18} />}
-          title="Setup Validatie"
-          content={`SETUP-STATUS: CONDITIONAL\nRELEVANTIE: KOMENDE_DAGEN`}
-          pre
-          color="green"
-        />
-
-        <ReportCard
-          icon={<Target size={18} />}
-          title="Strategie Implicatie"
-          content={`STRATEGIE-STATUS: WACHT_OP_TRIGGER`}
-          pre
-          color="red"
-        />
-
-        <ReportCard
-          icon={<Activity size={18} />}
-          title="Indicator Highlights"
-          content={`- price: score – → –\n- volume: score – → –\n- change_24h: score – → –`}
-          pre
-          color="gray"
-        />
-
-        <ReportCard
-          icon={<Forward size={18} />}
-          title="Vooruitblik"
-          content={`Bullish: –\nBearish: –\nConsolidatie: –`}
-          pre
-          color="gray"
-        />
-      </div>
     </ReportContainer>
   );
 }

@@ -38,9 +38,7 @@ import {
   Globe,
   ListChecks,
   Target,
-  Search,
   TrendingUp,
-  CheckCircle,
   Forward,
   FileText,
   CalendarRange,
@@ -48,6 +46,7 @@ import {
   RefreshCw,
   AlertTriangle,
   Loader2,
+  Activity,
 } from 'lucide-react';
 
 const REPORT_TYPES = {
@@ -145,6 +144,7 @@ export default function ReportPage() {
 
   useEffect(() => {
     loadData('latest');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportType]);
 
   const handleGenerate = async () => {
@@ -169,6 +169,10 @@ export default function ReportPage() {
     }
   };
 
+  // ✅ backward compat: als backend nog btc_summary terugstuurt
+  const executiveSummary =
+    report?.executive_summary || report?.btc_summary || '';
+
   return (
     <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8 bg-[var(--bg)] text-[var(--text-dark)] animate-fade-slide">
 
@@ -185,7 +189,9 @@ export default function ReportPage() {
               Rapportage ({fallbackLabel})
             </h1>
           </div>
-          <p className="text-sm text-[var(--text-light)]">AI-gegenereerde markt- en tradingrapporten.</p>
+          <p className="text-sm text-[var(--text-light)]">
+            AI-gegenereerde markt- en tradingrapporten.
+          </p>
         </div>
 
         {report?.report_date && (
@@ -238,7 +244,11 @@ export default function ReportPage() {
                 }
               `}
             >
-              {pdfLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {pdfLoading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Download size={14} />
+              )}
               {pdfLoading ? 'Downloaden…' : 'Download PDF'}
             </button>
 
@@ -273,7 +283,7 @@ export default function ReportPage() {
       {/* ----------------------------------------------------- */}
       {/* DUMMY REPORT */}
       {/* ----------------------------------------------------- */}
-      {noRealData && <DummyReport />}
+      {noRealData && <DummyReportNew />}
 
       {/* ----------------------------------------------------- */}
       {/* REAL REPORT */}
@@ -283,64 +293,58 @@ export default function ReportPage() {
           {/* Top full-width card */}
           <ReportCard
             icon={<Brain size={18} />}
-            title="Samenvatting BTC"
-            content={report.btc_summary}
+            title="Executive Summary"
+            content={executiveSummary}
             full
             color="blue"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+            {/* Market snapshot card (data) */}
+            <ReportCard
+              icon={<TrendingUp size={18} />}
+              title="Market Snapshot"
+              content={formatMarketSnapshot(report)}
+              pre
+              color="blue"
+            />
+
             <ReportCard
               icon={<Globe size={18} />}
-              title="Macro Samenvatting"
-              content={report.macro_summary}
+              title="Macro Context"
+              content={report.macro_summary || '–'}
               color="gray"
             />
 
             <ReportCard
               icon={<ListChecks size={18} />}
-              title="Setup Checklist"
-              content={report.setup_checklist}
+              title="Setup Validatie"
+              content={report.setup_validation || report.setup_checklist || '–'}
               pre
               color="green"
             />
 
             <ReportCard
               icon={<Target size={18} />}
-              title="Dagelijkse Prioriteiten"
-              content={report.priorities}
-              pre
-              color="yellow"
-            />
-
-            <ReportCard
-              icon={<Search size={18} />}
-              title="Wyckoff Analyse"
-              content={report.wyckoff_analysis}
-              pre
-              color="blue"
-            />
-
-            <ReportCard
-              icon={<TrendingUp size={18} />}
-              title="Aanbevelingen"
-              content={report.recommendations}
+              title="Strategie Implicatie"
+              content={report.strategy_implication || report.recommendations || '–'}
               pre
               color="red"
             />
 
             <ReportCard
-              icon={<CheckCircle size={18} />}
-              title="Conclusie"
-              content={report.conclusion}
-              color="green"
+              icon={<Activity size={18} />}
+              title="Indicator Highlights"
+              content={formatIndicatorHighlights(report)}
+              pre
+              color="gray"
             />
 
             <ReportCard
               icon={<Forward size={18} />}
               title="Vooruitblik"
-              content={report.outlook}
+              content={report.outlook || '–'}
               pre
               color="gray"
             />
@@ -352,70 +356,106 @@ export default function ReportPage() {
 }
 
 /* ---------------------------------------------------
-   DUMMY REPORT (icon versie)
+   Helpers (UI formatting)
 --------------------------------------------------- */
-function DummyReport() {
+function formatMarketSnapshot(report) {
+  const m = report?.market_data || {};
+  const price = m?.price ?? '–';
+  const ch24 = m?.change_24h ?? '–';
+  const vol = m?.volume ?? '–';
+
+  const scores = report?.scores || {};
+  const macro = scores?.macro_score ?? '–';
+  const tech = scores?.technical_score ?? '–';
+  const market = scores?.market_score ?? '–';
+  const setup = scores?.setup_score ?? '–';
+
+  return `Prijs: $${price}
+24h: ${ch24}%
+Volume: ${vol}
+
+Scores:
+Macro: ${macro}
+Technical: ${tech}
+Market: ${market}
+Setup: ${setup}`;
+}
+
+function formatIndicatorHighlights(report) {
+  const inds = report?.market_indicator_scores || [];
+  if (!Array.isArray(inds) || inds.length === 0) {
+    return 'Geen indicator-scores gevonden voor vandaag.';
+  }
+
+  const top = inds.slice(0, 5);
+  return top
+    .map((i) => {
+      const name = i?.indicator ?? '–';
+      const score = i?.score ?? '–';
+      const interp = i?.interpretation ?? '–';
+      return `- ${name}: score ${score} → ${interp}`;
+    })
+    .join('\n');
+}
+
+/* ---------------------------------------------------
+   Dummy report (nieuwe structuur)
+--------------------------------------------------- */
+function DummyReportNew() {
   return (
     <ReportContainer>
       <ReportCard
         icon={<Brain size={18} />}
-        title="Samenvatting BTC"
-        content="Bitcoin consolideert na een eerdere uitbraak. RSI neutraal."
+        title="Executive Summary"
+        content={`BTC consolideert. Macro neutraal. Setup-score onder threshold → geen agressieve entries.\n\nBESLISSING VANDAAG: OBSERVEREN\nCONFIDENCE: MIDDEL`}
         full
         color="blue"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ReportCard
+          icon={<TrendingUp size={18} />}
+          title="Market Snapshot"
+          content={`Prijs: $–\n24h: –%\nVolume: –\n\nScores:\nMacro: –\nTechnical: –\nMarket: –\nSetup: –`}
+          pre
+          color="blue"
+        />
+
+        <ReportCard
           icon={<Globe size={18} />}
-          title="Macro Samenvatting"
-          content="DXY stijgt licht. F&G = Neutral."
+          title="Macro Context"
+          content={`Trend: –\nBias: –\nRisico: –\n\nMACRO-IMPACT: NEUTRAAL`}
           color="gray"
         />
 
         <ReportCard
           icon={<ListChecks size={18} />}
-          title="Setup Checklist"
-          content={`RSI boven 50.\nVolume laag.\n200MA support sterk.`}
+          title="Setup Validatie"
+          content={`SETUP-STATUS: CONDITIONAL\nRELEVANTIE: KOMENDE_DAGEN`}
           pre
           color="green"
         />
 
         <ReportCard
           icon={<Target size={18} />}
-          title="Dagelijkse Prioriteiten"
-          content={`1. Breakout monitoren\n2. Volume spikes volgen\n3. Setup 'Swing-BTC-Juni' valideren`}
-          pre
-          color="yellow"
-        />
-
-        <ReportCard
-          icon={<Search size={18} />}
-          title="Wyckoff Analyse"
-          content="BTC in Phase D. Mogelijke LPS-test."
-          pre
-          color="blue"
-        />
-
-        <ReportCard
-          icon={<TrendingUp size={18} />}
-          title="Aanbevelingen"
-          content="Accumuleren bij dips. Alert op breakout."
+          title="Strategie Implicatie"
+          content={`STRATEGIE-STATUS: WACHT_OP_TRIGGER`}
           pre
           color="red"
         />
 
         <ReportCard
-          icon={<CheckCircle size={18} />}
-          title="Conclusie"
-          content="BTC blijft sterk."
-          color="green"
+          icon={<Activity size={18} />}
+          title="Indicator Highlights"
+          content={`- price: score – → –\n- volume: score – → –\n- change_24h: score – → –`}
+          pre
+          color="gray"
         />
 
         <ReportCard
           icon={<Forward size={18} />}
           title="Vooruitblik"
-          content="Mogelijke beweging richting €74k."
+          content={`Bullish: –\nBearish: –\nConsolidatie: –`}
           pre
           color="gray"
         />

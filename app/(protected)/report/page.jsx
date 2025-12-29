@@ -32,6 +32,7 @@ import ReportCard from '@/components/report/ReportCard';
 import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
+import AILoader from '@/components/ui/AILoader';
 
 import {
   Brain,
@@ -58,6 +59,12 @@ const REPORT_TYPES = {
 
 const AUTO_GENERATE_IF_EMPTY = true;
 
+// polling settings
+const POLL_INTERVAL_MS = 4000;
+const POLL_MAX_ATTEMPTS = 20; // ~80s
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const [report, setReport] = useState(null);
@@ -67,8 +74,12 @@ export default function ReportPage() {
   const [error, setError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
 
+  // ✅ new: generation UX (no manual refresh)
+  const [generating, setGenerating] = useState(false);
+  const [generateInfo, setGenerateInfo] = useState('');
+
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
-  const noRealData = !loading && (!report || Object.keys(report).length === 0);
+  const noRealData = !loading && !generating && (!report || Object.keys(report).length === 0);
 
   const reportFns = {
     daily: {
@@ -103,9 +114,45 @@ export default function ReportPage() {
 
   const current = reportFns[reportType];
 
+  const pollUntilReportExists = async ({ preferDate = 'latest' } = {}) => {
+    for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
+      try {
+        const dateList = await current.getDates();
+        setDates(dateList || []);
+
+        // if user wants a specific date, try that first
+        if (preferDate && preferDate !== 'latest') {
+          const byDate = await current.getByDate(preferDate);
+          if (byDate && Object.keys(byDate).length > 0) return { data: byDate, dateList };
+        }
+
+        // else try latest
+        const latest = await current.getLatest();
+        if (latest && Object.keys(latest).length > 0) return { data: latest, dateList };
+
+        // fallback: if latest empty but history exists, take first available date
+        if ((!latest || Object.keys(latest).length === 0) && dateList?.length > 0) {
+          const fallback = dateList[0];
+          const fallbackData = await current.getByDate(fallback);
+          if (fallbackData && Object.keys(fallbackData).length > 0) {
+            return { data: fallbackData, dateList, forcedDate: fallback };
+          }
+        }
+      } catch (e) {
+        // swallow polling errors; final failure handled after loop
+        console.error(e);
+      }
+
+      await sleep(POLL_INTERVAL_MS);
+    }
+
+    return { data: null, dateList: [] };
+  };
+
   const loadData = async (date = selectedDate) => {
     setLoading(true);
     setError('');
+    setGenerateInfo('');
     setReport(null);
 
     try {
@@ -126,12 +173,34 @@ export default function ReportPage() {
         return;
       }
 
-      // ✅ autogen: als er echt niks is → start generatie
+      // ✅ autogen (NEW UX): start generatie + AI loader + polling → auto show report
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
-        await current.generate();
-        setError(
-          `Er was nog geen ${fallbackLabel.toLowerCase()}rapport. Generatie gestart — ververs over 1 minuut.`
+        setGenerating(true);
+        setGenerateInfo(
+          `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig met genereren…`
         );
+
+        try {
+          await current.generate();
+        } catch (e) {
+          console.error(e);
+          setError('Rapport genereren mislukt.');
+          setGenerating(false);
+          setLoading(false);
+          return;
+        }
+
+        const res = await pollUntilReportExists({ preferDate: date });
+        if (res?.forcedDate) setSelectedDate(res.forcedDate);
+
+        if (res?.data && Object.keys(res.data).length > 0) {
+          setReport(res.data);
+          setGenerateInfo('');
+        } else {
+          setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
+        }
+
+        setGenerating(false);
         return;
       }
 
@@ -150,11 +219,27 @@ export default function ReportPage() {
   }, [reportType]);
 
   const handleGenerate = async () => {
+    setError('');
+    setGenerateInfo(`AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`);
+    setGenerating(true);
+
     try {
       await current.generate();
-      alert('Rapport wordt gegenereerd. Ververs de pagina over een minuut.');
-    } catch {
-      alert('Rapport genereren mislukt.');
+
+      const res = await pollUntilReportExists({ preferDate: selectedDate });
+      if (res?.forcedDate) setSelectedDate(res.forcedDate);
+
+      if (res?.data && Object.keys(res.data).length > 0) {
+        setReport(res.data);
+        setGenerateInfo('');
+      } else {
+        setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
+      }
+    } catch (e) {
+      console.error(e);
+      setError('Rapport genereren mislukt.');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -216,6 +301,7 @@ export default function ReportPage() {
                 className="px-3 py-2 text-xs md:text-sm rounded-xl bg-[var(--bg)] border border-[var(--border)]"
                 value={selectedDate}
                 onChange={(e) => loadData(e.target.value)}
+                disabled={generating}
               >
                 <option value="latest">Laatste</option>
                 {dates.map((d) => (
@@ -229,13 +315,15 @@ export default function ReportPage() {
             {/* PDF BTN */}
             <button
               onClick={handleDownload}
-              disabled={pdfLoading}
+              disabled={pdfLoading || generating}
               className={`
                 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-medium shadow-sm
                 ${
                   pdfLoading
                     ? 'bg-gray-300 text-gray-600'
-                    : 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]'
+                    : generating
+                      ? 'bg-gray-300 text-gray-600'
+                      : 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]'
                 }
               `}
             >
@@ -250,14 +338,29 @@ export default function ReportPage() {
             {/* Generate BTN */}
             <button
               onClick={handleGenerate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm border border-[var(--border)] hover:bg-[var(--primary-light)]"
+              disabled={generating}
+              className={`
+                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm border border-[var(--border)]
+                ${generating ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[var(--primary-light)]'}
+              `}
             >
-              <RefreshCw size={14} />
-              Genereer rapport
+              {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              {generating ? 'Genereren…' : 'Genereer rapport'}
             </button>
           </div>
         </div>
       </CardWrapper>
+
+      {/* AI GENERATING LOADER */}
+      {generating && (
+        <CardWrapper>
+          <AILoader
+            size="md"
+            variant="dots"
+            text={generateInfo || 'AI is bezig…'}
+          />
+        </CardWrapper>
+      )}
 
       {/* Error */}
       {error && (
@@ -268,7 +371,7 @@ export default function ReportPage() {
       )}
 
       {/* Loading */}
-      {loading && (
+      {loading && !generating && (
         <div className="flex items-center gap-2 text-sm text-[var(--text-light)]">
           <Loader2 size={16} className="animate-spin" />
           Rapport laden…
@@ -279,7 +382,7 @@ export default function ReportPage() {
       {noRealData && <DummyReportNew />}
 
       {/* REAL REPORT */}
-      {!loading && report && Object.keys(report).length > 0 && (
+      {!loading && !generating && report && Object.keys(report).length > 0 && (
         <ReportContainer>
           <ReportCard
             icon={<Brain size={18} />}

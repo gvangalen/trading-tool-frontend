@@ -1,52 +1,43 @@
-import { CheckCircle, XCircle } from "lucide-react";
+"use client";
 
-export default function BotOrderPreview({
-  order,
-  onMarkExecuted,
-  onSkip,
-}) {
+import CardWrapper from "@/components/ui/CardWrapper";
+import { ShoppingCart } from "lucide-react";
+
+export default function BotOrderPreview({ order, onMarkExecuted, onSkip }) {
   if (!order) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow p-6">
-      <h3 className="font-semibold mb-4">Order Preview</h3>
-
+    <CardWrapper
+      title="Order Preview"
+      icon={<ShoppingCart className="icon" />}
+    >
       <div className="grid md:grid-cols-4 gap-4 text-sm">
         <div>
-          <p className="text-gray-500">Symbol</p>
-          <p className="font-medium">{order.symbol}</p>
+          <div className="text-[var(--text-muted)]">Symbol</div>
+          <div className="font-medium">{order.symbol}</div>
         </div>
         <div>
-          <p className="text-gray-500">Side</p>
-          <p className="font-medium">{order.action}</p>
+          <div className="text-[var(--text-muted)]">Side</div>
+          <div className="font-medium">{order.action}</div>
         </div>
         <div>
-          <p className="text-gray-500">Amount</p>
-          <p className="font-medium">€{order.amount}</p>
+          <div className="text-[var(--text-muted)]">Amount</div>
+          <div className="font-medium">€{order.amount}</div>
         </div>
         <div>
-          <p className="text-gray-500">Status</p>
-          <p className="font-medium">{order.status}</p>
+          <div className="text-[var(--text-muted)]">Status</div>
+          <div className="font-medium">{order.status}</div>
         </div>
       </div>
 
-      <div className="flex gap-4 mt-6">
-        <button
-          onClick={onMarkExecuted}
-          className="flex items-center gap-2 px-4 py-2 rounded bg-green-600 text-white"
-        >
-          <CheckCircle className="w-4 h-4" />
-          Mark Executed
+      <div className="flex gap-3 mt-6">
+        <button onClick={onMarkExecuted} className="btn-primary">
+          Mark executed
         </button>
-
-        <button
-          onClick={onSkip}
-          className="flex items-center gap-2 px-4 py-2 rounded bg-gray-200"
-        >
-          <XCircle className="w-4 h-4" />
-          Skip Today
+        <button onClick={onSkip} className="btn-secondary">
+          Skip today
         </button>
       </div>
-    </div>
+    </CardWrapper>
   );
 }

@@ -15,6 +15,7 @@ import {
   FileText,
   Settings,
   Sun,
+  Bot, // ✅ NIEUW
 } from "lucide-react";
 
 export default function NavBar() {
@@ -27,6 +28,10 @@ export default function NavBar() {
     { href: "/technical", label: "Technisch", icon: <LineChart size={18} /> },
     { href: "/setup", label: "Setups", icon: <Layers size={18} /> },
     { href: "/strategy", label: "Strategieën", icon: <BarChart3 size={18} /> },
+
+    // 🤖 NIEUW: Trading Bots
+    { href: "/bot", label: "Bots", icon: <Bot size={18} /> },
+
     { href: "/report", label: "Rapporten", icon: <FileText size={18} /> },
   ];
 
@@ -123,9 +128,11 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10
-          ${active
-            ? "text-[var(--sidebar-text)]"
-            : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"}
+          ${
+            active
+              ? "text-[var(--sidebar-text)]"
+              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
+          }
         `}
       >
         {icon}
@@ -134,9 +141,11 @@ function SidebarItem({ href, icon, active, children }) {
       <span
         className={`
           relative z-10
-          ${active
-            ? "text-[var(--sidebar-text)] font-semibold"
-            : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"}
+          ${
+            active
+              ? "text-[var(--sidebar-text)] font-semibold"
+              : "text-[var(--sidebar-text-muted)] group-hover:text-[var(--sidebar-text)]"
+          }
         `}
       >
         {children}

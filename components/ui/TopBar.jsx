@@ -31,6 +31,7 @@ export default function TopBar() {
     "/technical": "Technische Indicatoren",
     "/setup": "Setups",
     "/strategy": "Strategieën",
+    "/bot": "Trading Bots", // 🤖 NIEUW
     "/report": "Rapporten",
   };
 
@@ -46,7 +47,7 @@ export default function TopBar() {
         text-[var(--topbar-text)]
       "
     >
-      {/* LEFT SIDE — Titel */}
+      {/* LEFT — Pagina titel */}
       <div className="flex items-center gap-4 min-w-[200px]">
         <h1 className="text-xl md:text-[1.35rem] font-semibold tracking-tight whitespace-nowrap">
           {title}

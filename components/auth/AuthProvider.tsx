@@ -32,16 +32,20 @@ export function useAuth() {
 /* ===========================================================
    fetchWithAuth
 =========================================================== */
-async function fetchWithAuth(url, options = {}) {
+async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
   return fetch(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(options.headers ?? {}),
     },
     ...options,
   });
 }
+
 
 /* ===========================================================
    AUTH PROVIDER

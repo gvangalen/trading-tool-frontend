@@ -1,11 +1,13 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { Brain } from "lucide-react";
+import { Brain, Loader2 } from "lucide-react";
 
-export default function BotDecisionCard({ decision }) {
-  if (!decision) return null;
-
+export default function BotDecisionCard({
+  decision,
+  loading = false,
+  onGenerate,
+}) {
   const actionClass = {
     BUY: "score-buy",
     HOLD: "score-neutral",
@@ -18,35 +20,83 @@ export default function BotDecisionCard({ decision }) {
       title="Bot Decision Today"
       icon={<Brain className="icon" />}
     >
-      <div className="grid md:grid-cols-3 gap-6">
-        <div>
-          <div className="text-sm text-[var(--text-muted)]">Action</div>
-          <div className={`text-3xl font-semibold ${actionClass[decision.action]}`}>
-            {decision.action}
-          </div>
+      {/* ===================== */}
+      {/* LOADING STATE */}
+      {/* ===================== */}
+      {loading && (
+        <div className="flex items-center gap-3 text-[var(--text-muted)]">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Beslissing ophalen…</span>
         </div>
+      )}
 
-        <div>
-          <div className="text-sm text-[var(--text-muted)]">Amount</div>
-          <div className="text-3xl font-semibold">
-            €{decision.amount}
-          </div>
+      {/* ===================== */}
+      {/* EMPTY STATE */}
+      {/* ===================== */}
+      {!loading && !decision && (
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            Er is vandaag nog geen bot-beslissing gegenereerd.
+          </p>
+
+          {onGenerate && (
+            <button
+              onClick={onGenerate}
+              className="btn-primary"
+            >
+              Genereer beslissing
+            </button>
+          )}
         </div>
+      )}
 
-        <div>
-          <div className="text-sm text-[var(--text-muted)]">Confidence</div>
-          <div className="text-3xl font-semibold">
-            {decision.confidence}
+      {/* ===================== */}
+      {/* DECISION CONTENT */}
+      {/* ===================== */}
+      {!loading && decision && (
+        <>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div>
+              <div className="text-sm text-[var(--text-muted)]">
+                Action
+              </div>
+              <div
+                className={`text-3xl font-semibold ${
+                  actionClass[decision.action] ||
+                  "text-[var(--text-dark)]"
+                }`}
+              >
+                {decision.action}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-[var(--text-muted)]">
+                Amount
+              </div>
+              <div className="text-3xl font-semibold">
+                €{decision.amount_eur ?? decision.amount ?? 0}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-[var(--text-muted)]">
+                Confidence
+              </div>
+              <div className="text-3xl font-semibold">
+                {decision.confidence}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {decision.reasons?.length > 0 && (
-        <ul className="mt-6 space-y-1 text-sm">
-          {decision.reasons.map((r, i) => (
-            <li key={i}>• {r}</li>
-          ))}
-        </ul>
+          {decision.reasons?.length > 0 && (
+            <ul className="mt-6 space-y-1 text-sm">
+              {decision.reasons.map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </CardWrapper>
   );

@@ -17,21 +17,21 @@ import CardWrapper from "@/components/ui/CardWrapper";
 
 export default function BotPage() {
   /* =====================================================
-     🧠 DATA (via centrale hook)
+     🧠 DATA (centrale hook)
   ===================================================== */
   const {
-    configs,
-    today,
-    history,
+    configs = [],
+    today = null,
+    history = [],
     loading,
     runBotToday,
     executeBot,
     skipBot,
   } = useBotData();
 
-  const decision = today?.decisions?.[0] || null;
-  const order = today?.orders?.[0] || null;
-  const activeBot = configs?.[0] || null;
+  const decision = today?.decisions?.[0] ?? null;
+  const order = today?.orders?.[0] ?? null;
+  const activeBot = configs?.[0] ?? null;
 
   /* =====================================================
      🧠 PAGE
@@ -39,7 +39,7 @@ export default function BotPage() {
   return (
     <div className="space-y-8 animate-fade-slide">
       {/* ================================================= */}
-      {/* 🧠 PAGE TITLE (belangrijk voor spacing topbar) */}
+      {/* 🧠 PAGE TITLE (spacing t.o.v. topbar) */}
       {/* ================================================= */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
@@ -49,7 +49,7 @@ export default function BotPage() {
       </div>
 
       {/* ================================================= */}
-      {/* 🤖 BOT DECISION TODAY */}
+      {/* 🤖 BOT DECISION TODAY (ALTIJD ZICHTBAAR) */}
       {/* ================================================= */}
       <BotDecisionCard
         decision={decision}
@@ -71,6 +71,9 @@ export default function BotPage() {
             disabled
             className="input opacity-70 cursor-not-allowed"
           >
+            {configs.length === 0 && (
+              <option>Geen bots beschikbaar</option>
+            )}
             {configs.map((bot) => (
               <option key={bot.id} value={bot.name}>
                 {bot.name}
@@ -115,17 +118,27 @@ export default function BotPage() {
       </div>
 
       {/* ================================================= */}
-      {/* 📊 SCORES */}
+      {/* 📊 SCORES (ALTIJD ZICHTBAAR) */}
       {/* ================================================= */}
-      <BotScores scores={decision?.scores} loading={loading.today} />
+      <BotScores
+        scores={decision?.scores || {
+          macro: null,
+          market: null,
+          technical: null,
+          setup: null,
+        }}
+        loading={loading.today}
+      />
 
       {/* ================================================= */}
-      {/* 📐 RULES */}
+      {/* 📐 RULES (ALTIJD ZICHTBAAR) */}
       {/* ================================================= */}
-      <BotRules rules={activeBot?.rules} />
+      <BotRules
+        rules={activeBot?.rules || []}
+      />
 
       {/* ================================================= */}
-      {/* 🧾 ORDER PREVIEW */}
+      {/* 🧾 ORDER PREVIEW (ALTIJD ZICHTBAAR) */}
       {/* ================================================= */}
       <BotOrderPreview
         order={order}
@@ -148,7 +161,7 @@ export default function BotPage() {
       />
 
       {/* ================================================= */}
-      {/* 📜 HISTORY */}
+      {/* 📜 HISTORY (ALTIJD ZICHTBAAR) */}
       {/* ================================================= */}
       <BotHistoryTable
         history={history}

@@ -1,7 +1,8 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { Clock, Loader2 } from "lucide-react";
+import CardLoader from "@/components/ui/CardLoader";
+import { Clock } from "lucide-react";
 
 export default function BotHistoryTable({
   history = [],
@@ -16,10 +17,7 @@ export default function BotHistoryTable({
       {/* LOADING STATE */}
       {/* ===================== */}
       {loading && (
-        <div className="flex items-center gap-3 text-[var(--text-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Geschiedenis laden…</span>
-        </div>
+        <CardLoader text="Geschiedenis laden…" />
       )}
 
       {/* ===================== */}

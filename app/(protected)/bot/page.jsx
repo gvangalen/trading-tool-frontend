@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import {
   Brain,
   SlidersHorizontal,
+  Bot as BotIcon,
 } from "lucide-react";
+
+import useBotData from "@/hooks/useBotData";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotScores from "@/components/bot/BotScores";
@@ -14,73 +16,46 @@ import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import CardWrapper from "@/components/ui/CardWrapper";
 
 export default function BotPage() {
-  // --------------------------------------------------
-  // 🔧 MOCK DATA (later via API)
-  // --------------------------------------------------
-  const todayDecision = {
-    date: "2025-12-29",
-    action: "BUY",
-    amount: 125,
-    confidence: "High",
-    reasons: [
-      "Market score oversold (32)",
-      "Smart DCA setup actief",
-      "Macro neutraal",
-      "RSI weekly < 40",
-    ],
-  };
+  /* =====================================================
+     🧠 DATA (via centrale hook)
+  ===================================================== */
+  const {
+    configs,
+    today,
+    history,
+    loading,
+    runBotToday,
+    executeBot,
+    skipBot,
+  } = useBotData();
 
-  const scores = {
-    macro: 55,
-    market: 32,
-    technical: 45,
-    setup: 80,
-  };
+  const decision = today?.decisions?.[0] || null;
+  const order = today?.orders?.[0] || null;
+  const activeBot = configs?.[0] || null;
 
-  const botRules = [
-    { rule: "Market < 35", action: "BUY €150" },
-    { rule: "Market 35–55", action: "BUY €125" },
-    { rule: "Market 55–75", action: "BUY €100" },
-    { rule: "Market > 75", action: "HOLD" },
-    { rule: "Setup score < 40", action: "NO BUY" },
-  ];
-
-  const history = [
-    {
-      date: "2025-12-28",
-      action: "BUY",
-      amount: 100,
-      confidence: "Medium",
-      executed: true,
-    },
-    {
-      date: "2025-12-27",
-      action: "HOLD",
-      amount: 0,
-      confidence: "Low",
-      executed: false,
-    },
-  ];
-
-  const orderPreview = {
-    symbol: "BTC",
-    action: todayDecision.action,
-    amount: todayDecision.amount,
-    status: "planned",
-  };
-
-  const [botMode, setBotMode] = useState("manual");
-  const [selectedBot, setSelectedBot] = useState("DCA Bot");
-
-  // --------------------------------------------------
-  // 🧠 PAGE
-  // --------------------------------------------------
+  /* =====================================================
+     🧠 PAGE
+  ===================================================== */
   return (
     <div className="space-y-8 animate-fade-slide">
       {/* ================================================= */}
-      {/* 🧠 BOT DECISION */}
+      {/* 🧠 PAGE TITLE (belangrijk voor spacing topbar) */}
       {/* ================================================= */}
-      <BotDecisionCard decision={todayDecision} />
+      <div className="flex items-center gap-3">
+        <BotIcon className="w-6 h-6 text-[var(--accent)]" />
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Trading Bots
+        </h1>
+      </div>
+
+      {/* ================================================= */}
+      {/* 🤖 BOT DECISION TODAY */}
+      {/* ================================================= */}
+      <BotDecisionCard
+        decision={decision}
+        loading={loading.today}
+        onGenerate={() => runBotToday()}
+      />
 
       {/* ================================================= */}
       {/* 🤖 BOT CONFIG */}
@@ -92,14 +67,20 @@ export default function BotPage() {
           icon={<Brain className="icon" />}
         >
           <select
-            value={selectedBot}
-            onChange={(e) => setSelectedBot(e.target.value)}
-            className="input"
+            value={activeBot?.name || ""}
+            disabled
+            className="input opacity-70 cursor-not-allowed"
           >
-            <option>DCA Bot</option>
-            <option>Swing Bot</option>
-            <option disabled>Scalp Bot (coming soon)</option>
+            {configs.map((bot) => (
+              <option key={bot.id} value={bot.name}>
+                {bot.name}
+              </option>
+            ))}
           </select>
+
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Meerdere bots volgen later.
+          </p>
         </CardWrapper>
 
         {/* Mode */}
@@ -116,9 +97,9 @@ export default function BotPage() {
               <button
                 key={m.id}
                 disabled={m.disabled}
-                onClick={() => setBotMode(m.id)}
-                className={`btn-secondary
-                  ${botMode === m.id ? "btn-primary" : ""}
+                className={`
+                  btn-secondary
+                  ${m.id === activeBot?.mode ? "btn-primary" : ""}
                   ${m.disabled ? "opacity-40 cursor-not-allowed" : ""}
                 `}
               >
@@ -136,26 +117,43 @@ export default function BotPage() {
       {/* ================================================= */}
       {/* 📊 SCORES */}
       {/* ================================================= */}
-      <BotScores scores={scores} />
+      <BotScores scores={decision?.scores} loading={loading.today} />
 
       {/* ================================================= */}
       {/* 📐 RULES */}
       {/* ================================================= */}
-      <BotRules rules={botRules} />
+      <BotRules rules={activeBot?.rules} />
 
       {/* ================================================= */}
       {/* 🧾 ORDER PREVIEW */}
       {/* ================================================= */}
       <BotOrderPreview
-        order={orderPreview}
-        onMarkExecuted={() => console.log("mark executed")}
-        onSkip={() => console.log("skip today")}
+        order={order}
+        loading={loading.action}
+        onMarkExecuted={() =>
+          executeBot({
+            bot_id: decision?.bot_id,
+            report_date: today?.date,
+            symbol: order?.symbol,
+            side: order?.side,
+            amount_eur: order?.amount_eur,
+          })
+        }
+        onSkip={() =>
+          skipBot({
+            bot_id: decision?.bot_id,
+            report_date: today?.date,
+          })
+        }
       />
 
       {/* ================================================= */}
       {/* 📜 HISTORY */}
       {/* ================================================= */}
-      <BotHistoryTable history={history} />
+      <BotHistoryTable
+        history={history}
+        loading={loading.history}
+      />
     </div>
   );
 }

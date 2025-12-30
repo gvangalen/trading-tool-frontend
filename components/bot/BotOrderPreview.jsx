@@ -1,7 +1,8 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { ShoppingCart, Loader2 } from "lucide-react";
+import CardLoader from "@/components/ui/CardLoader";
+import { ShoppingCart } from "lucide-react";
 
 export default function BotOrderPreview({
   order = null,
@@ -18,10 +19,7 @@ export default function BotOrderPreview({
       {/* LOADING */}
       {/* ===================== */}
       {loading && (
-        <div className="flex items-center gap-3 text-[var(--text-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Order laden…</span>
-        </div>
+        <CardLoader text="Order laden…" />
       )}
 
       {/* ===================== */}

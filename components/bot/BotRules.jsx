@@ -1,12 +1,15 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { SlidersHorizontal, Loader2 } from "lucide-react";
+import CardLoader from "@/components/ui/CardLoader";
+import { SlidersHorizontal } from "lucide-react";
 
 export default function BotRules({
   rules = [],
   loading = false,
 }) {
+  const hasRules = Array.isArray(rules) && rules.length > 0;
+
   return (
     <CardWrapper
       title="Bot Rules"
@@ -16,16 +19,13 @@ export default function BotRules({
       {/* LOADING */}
       {/* ===================== */}
       {loading && (
-        <div className="flex items-center gap-3 text-[var(--text-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Rules laden…</span>
-        </div>
+        <CardLoader text="Rules laden…" />
       )}
 
       {/* ===================== */}
       {/* EMPTY STATE */}
       {/* ===================== */}
-      {!loading && (!rules || rules.length === 0) && (
+      {!loading && !hasRules && (
         <p className="text-sm text-[var(--text-muted)]">
           Geen regels geconfigureerd voor deze bot.
         </p>
@@ -34,10 +34,10 @@ export default function BotRules({
       {/* ===================== */}
       {/* RULES */}
       {/* ===================== */}
-      {!loading && rules && rules.length > 0 && (
+      {!loading && hasRules && (
         <div className="space-y-3 text-sm">
           {rules.map((r, i) => {
-            // Support verschillende structuren
+            // Ondersteun meerdere rule-structuren
             const ruleText =
               typeof r === "string"
                 ? r
@@ -51,9 +51,14 @@ export default function BotRules({
             return (
               <div
                 key={i}
-                className="flex justify-between items-center border-b border-[var(--border)] pb-2 last:border-0"
+                className="
+                  flex justify-between items-center
+                  border-b border-[var(--border)]
+                  pb-2 last:border-0
+                "
               >
                 <span>{ruleText}</span>
+
                 {actionText && (
                   <span className="font-medium">
                     {actionText}

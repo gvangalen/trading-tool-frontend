@@ -1,7 +1,8 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { BarChart3, Loader2 } from "lucide-react";
+import CardLoader from "@/components/ui/CardLoader";
+import { BarChart3 } from "lucide-react";
 
 export default function BotScores({
   scores = {},
@@ -19,10 +20,7 @@ export default function BotScores({
       {/* LOADING */}
       {/* ===================== */}
       {loading && (
-        <div className="flex items-center gap-3 text-[var(--text-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Scores laden…</span>
-        </div>
+        <CardLoader text="Scores laden…" />
       )}
 
       {/* ===================== */}

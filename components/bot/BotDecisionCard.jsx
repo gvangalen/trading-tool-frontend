@@ -1,10 +1,11 @@
 "use client";
 
 import CardWrapper from "@/components/ui/CardWrapper";
-import { Brain, Loader2 } from "lucide-react";
+import CardLoader from "@/components/ui/CardLoader";
+import { Brain } from "lucide-react";
 
 export default function BotDecisionCard({
-  decision,
+  decision = null,
   loading = false,
   onGenerate,
 }) {
@@ -24,10 +25,7 @@ export default function BotDecisionCard({
       {/* LOADING STATE */}
       {/* ===================== */}
       {loading && (
-        <div className="flex items-center gap-3 text-[var(--text-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Beslissing ophalen…</span>
-        </div>
+        <CardLoader text="Beslissing ophalen…" />
       )}
 
       {/* ===================== */}

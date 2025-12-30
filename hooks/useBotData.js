@@ -11,7 +11,7 @@ import {
   generateBotToday,
   markBotExecuted,
   skipBotToday,
-} from "@/api/botApi";
+} from "@lib/api/botApi";
 
 /**
  * useBotData

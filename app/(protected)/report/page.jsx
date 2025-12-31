@@ -65,6 +65,34 @@ const POLL_MAX_ATTEMPTS = 20; // ~80s
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* ---------------------------------------------------
+   ✅ JSONB helpers (NEW)
+   - DB velden zijn nu jsonb → kunnen object/array zijn
+--------------------------------------------------- */
+function renderJson(value) {
+  if (value === null || value === undefined) return '–';
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function parseJsonMaybe(value) {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'object') return value;
+  return null;
+}
+
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const [report, setReport] = useState(null);
@@ -79,7 +107,8 @@ export default function ReportPage() {
   const [generateInfo, setGenerateInfo] = useState('');
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
-  const noRealData = !loading && !generating && (!report || Object.keys(report).length === 0);
+  const noRealData =
+    !loading && !generating && (!report || Object.keys(report).length === 0);
 
   const reportFns = {
     daily: {
@@ -112,7 +141,8 @@ export default function ReportPage() {
     },
   };
 
-  const current = reportFns[reportType];
+  // ✅ defensive fallback (no crash)
+  const current = reportFns[reportType] || reportFns.daily;
 
   const pollUntilReportExists = async ({ preferDate = 'latest' } = {}) => {
     for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
@@ -123,15 +153,20 @@ export default function ReportPage() {
         // if user wants a specific date, try that first
         if (preferDate && preferDate !== 'latest') {
           const byDate = await current.getByDate(preferDate);
-          if (byDate && Object.keys(byDate).length > 0) return { data: byDate, dateList };
+          if (byDate && Object.keys(byDate).length > 0)
+            return { data: byDate, dateList };
         }
 
         // else try latest
         const latest = await current.getLatest();
-        if (latest && Object.keys(latest).length > 0) return { data: latest, dateList };
+        if (latest && Object.keys(latest).length > 0)
+          return { data: latest, dateList };
 
         // fallback: if latest empty but history exists, take first available date
-        if ((!latest || Object.keys(latest).length === 0) && dateList?.length > 0) {
+        if (
+          (!latest || Object.keys(latest).length === 0) &&
+          dateList?.length > 0
+        ) {
           const fallback = dateList[0];
           const fallbackData = await current.getByDate(fallback);
           if (fallbackData && Object.keys(fallbackData).length > 0) {
@@ -155,6 +190,9 @@ export default function ReportPage() {
     setGenerateInfo('');
     setReport(null);
 
+    // ✅ IMPORTANT: keep selectedDate in sync with what we load
+    setSelectedDate(date || 'latest');
+
     try {
       const dateList = await current.getDates();
       setDates(dateList || []);
@@ -165,7 +203,11 @@ export default function ReportPage() {
           : await current.getByDate(date);
 
       // ✅ fallback: als "latest" leeg is maar we hebben history → pak eerste datum
-      if ((!data || Object.keys(data).length === 0) && dateList?.length > 0) {
+      if (
+        (!data || Object.keys(data).length === 0) &&
+        dateList?.length > 0 &&
+        (date === 'latest' || !date)
+      ) {
         const fallback = dateList[0];
         const fallbackData = await current.getByDate(fallback);
         setSelectedDate(fallback);
@@ -220,7 +262,9 @@ export default function ReportPage() {
 
   const handleGenerate = async () => {
     setError('');
-    setGenerateInfo(`AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`);
+    setGenerateInfo(
+      `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
+    );
     setGenerating(true);
 
     try {
@@ -246,7 +290,13 @@ export default function ReportPage() {
   const handleDownload = async () => {
     try {
       setPdfLoading(true);
-      const date = selectedDate === 'latest' ? dates[0] : selectedDate;
+
+      // ✅ safe date pick: latest => first available date in history
+      const date =
+        selectedDate === 'latest'
+          ? dates?.[0] || report?.report_date
+          : selectedDate;
+
       if (!date) return;
       await current.pdf(date);
     } catch {
@@ -256,8 +306,8 @@ export default function ReportPage() {
     }
   };
 
-  // ✅ Nieuw schema: direct uit DB
-  const executiveSummary = report?.executive_summary || '';
+  // ✅ Nieuw schema: direct uit DB (jsonb-friendly)
+  const executiveSummary = renderJson(report?.executive_summary || '');
 
   return (
     <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8 bg-[var(--bg)] text-[var(--text-dark)] animate-fade-slide">
@@ -344,7 +394,11 @@ export default function ReportPage() {
                 ${generating ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[var(--primary-light)]'}
               `}
             >
-              {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              {generating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <RefreshCw size={14} />
+              )}
               {generating ? 'Genereren…' : 'Genereer rapport'}
             </button>
           </div>
@@ -404,14 +458,15 @@ export default function ReportPage() {
             <ReportCard
               icon={<Globe size={18} />}
               title="Macro Context"
-              content={report.macro_context || '–'}
+              content={renderJson(report.macro_context) || '–'}
+              pre
               color="gray"
             />
 
             <ReportCard
               icon={<ListChecks size={18} />}
               title="Setup Validatie"
-              content={report.setup_validation || '–'}
+              content={renderJson(report.setup_validation) || '–'}
               pre
               color="green"
             />
@@ -419,7 +474,7 @@ export default function ReportPage() {
             <ReportCard
               icon={<Target size={18} />}
               title="Strategie Implicatie"
-              content={report.strategy_implication || '–'}
+              content={renderJson(report.strategy_implication) || '–'}
               pre
               color="red"
             />
@@ -435,7 +490,7 @@ export default function ReportPage() {
             <ReportCard
               icon={<Forward size={18} />}
               title="Vooruitblik"
-              content={report.outlook || '–'}
+              content={renderJson(report.outlook) || '–'}
               pre
               color="gray"
             />
@@ -472,17 +527,20 @@ Setup: ${setup}`;
 }
 
 function formatIndicatorHighlights(report) {
-  const inds = report?.indicator_highlights;
+  // jsonb kan al array zijn, of stringified json (legacy)
+  const raw = report?.indicator_highlights;
 
+  const inds = parseJsonMaybe(raw);
   if (!inds) return 'Geen indicator-highlights gevonden.';
-  if (!Array.isArray(inds) || inds.length === 0) return 'Geen indicator-highlights gevonden.';
+  if (!Array.isArray(inds) || inds.length === 0)
+    return 'Geen indicator-highlights gevonden.';
 
   return inds
     .slice(0, 5)
     .map((i) => {
-      const name = i?.indicator ?? '–';
+      const name = i?.indicator ?? i?.name ?? '–';
       const score = i?.score ?? '–';
-      const interp = i?.interpretation ?? '–';
+      const interp = i?.interpretation ?? i?.advies ?? '–';
       return `- ${name}: score ${score} → ${interp}`;
     })
     .join('\n');

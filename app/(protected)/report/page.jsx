@@ -160,60 +160,55 @@ export default function ReportPage() {
      - Zet report meteen in state (geen refresh nodig)
   --------------------------------------------------- */
   const pollUntilReportExists = async ({ preferDate = 'latest' } = {}) => {
-    for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-      try {
-        // 1) haal history opnieuw
-        const rawDates = await current.getDates();
-        const dateList = sortDatesDesc(rawDates || []);
-        setDates(dateList);
+  for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
+    try {
+      // 1️⃣ History ophalen en sorteren (nieuwste eerst)
+      const rawDates = await current.getDates();
+      const dateList = sortDatesDesc(rawDates || []);
+      setDates(dateList);
 
-        // 2) als user expliciet een datum wil → check die eerst
-        if (preferDate && preferDate !== 'latest') {
-          try {
-            const byDate = await current.getByDate(preferDate);
-            if (byDate && Object.keys(byDate).length > 0) {
-              return { data: byDate, dateList, forcedDate: preferDate };
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        // 3) als history bestaat: pak de nieuwste datum en haal die expliciet op
-        //    (dit is betrouwbaarder dan “latest” tijdens inserts / timing)
-        if (dateList.length > 0) {
-          const newest = dateList[0];
-          try {
-            const newestData = await current.getByDate(newest);
-            if (newestData && Object.keys(newestData).length > 0) {
-              return { data: newestData, dateList, forcedDate: newest };
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        // 4) fallback: latest endpoint (kan ook)
+      // 2️⃣ Als user een specifieke datum wil → eerst die checken
+      if (preferDate && preferDate !== 'latest') {
         try {
-          const latest = await current.getLatest();
-          if (latest && Object.keys(latest).length > 0) {
-            // als report_date bestaat, zet die als selectedDate zodat UI sync is
-            const forcedDate = latest?.report_date || null;
-            return { data: latest, dateList, forcedDate };
+          const byDate = await current.getByDate(preferDate);
+          if (byDate && Object.keys(byDate).length > 0) {
+            return { data: byDate, dateList, forcedDate: preferDate };
           }
-        } catch {
-          // ignore
-        }
-      } catch (e) {
-        console.error(e);
+        } catch {}
       }
 
-      // status text blijft zichtbaar
-      await sleep(POLL_INTERVAL_MS);
+      // 3️⃣ Betrouwbaarste check: nieuwste datum expliciet ophalen
+      if (dateList.length > 0) {
+        const newest = dateList[0];
+        try {
+          const newestData = await current.getByDate(newest);
+          if (newestData && Object.keys(newestData).length > 0) {
+            return { data: newestData, dateList, forcedDate: newest };
+          }
+        } catch {}
+      }
+
+      // 4️⃣ Fallback: latest endpoint
+      try {
+        const latest = await current.getLatest();
+        if (latest && Object.keys(latest).length > 0) {
+          return {
+            data: latest,
+            dateList,
+            forcedDate: latest?.report_date || null,
+          };
+        }
+      } catch {}
+    } catch (e) {
+      console.error(e);
     }
 
-    return { data: null, dateList: [] };
-  };
+    // ⏳ Loader blijft zichtbaar
+    await sleep(POLL_INTERVAL_MS);
+  }
+
+  return { data: null, dateList: [] };
+};
 
   const loadData = async (date = selectedDate) => {
     setLoading(true);
@@ -312,36 +307,43 @@ export default function ReportPage() {
   }, [reportType]);
 
   const handleGenerate = async () => {
-    setError('');
-    setGenerateInfo(
-      `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
-    );
-    setGenerating(true);
+  setError('');
+  setGenerateInfo(
+    `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
+  );
 
-    try {
-      await current.generate();
+  // 🔥 Loader START
+  setGenerating(true);
 
-      // ✅ Cruciaal: poll totdat report echt in DB staat en haal newest expliciet op
-      const res = await pollUntilReportExists({ preferDate: selectedDate });
+  try {
+    // 1️⃣ Start Celery task (ASYNC)
+    await current.generate();
 
-      if (res?.forcedDate && res.forcedDate !== 'latest') {
-        setSelectedDate(res.forcedDate);
-      }
+    // 2️⃣ Blijf pollen tot rapport ECHT bestaat
+    const res = await pollUntilReportExists({
+      preferDate: selectedDate,
+    });
 
-      if (res?.data && Object.keys(res.data).length > 0) {
-        setReport(res.data);
-        setGenerateInfo('');
-      } else {
-        setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
-      }
-    } catch (e) {
-      console.error(e);
-      setError('Rapport genereren mislukt.');
-    } finally {
-      // ✅ Loader blijft aan tot we hier zijn (dus tot na polling)
-      setGenerating(false);
+    // 3️⃣ UI synchroniseren met echte datum
+    if (res?.forcedDate && res.forcedDate !== 'latest') {
+      setSelectedDate(res.forcedDate);
     }
-  };
+
+    // 4️⃣ Rapport DIRECT tonen (geen refresh nodig)
+    if (res?.data && Object.keys(res.data).length > 0) {
+      setReport(res.data);
+      setGenerateInfo('');
+    } else {
+      setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
+    }
+  } catch (e) {
+    console.error(e);
+    setError('Rapport genereren mislukt.');
+  } finally {
+    // 🔥 Loader stopt PAS HIER (na polling)
+    setGenerating(false);
+  }
+};
 
   const handleDownload = async () => {
     try {

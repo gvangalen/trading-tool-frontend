@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   // DAILY
   fetchDailyReportLatest,
@@ -59,15 +59,15 @@ const REPORT_TYPES = {
 
 const AUTO_GENERATE_IF_EMPTY = true;
 
-// polling settings
+// ✅ Polling: langer wachten zodat UI niet “flasht” en je niet hoeft te refreshen
 const POLL_INTERVAL_MS = 4000;
-const POLL_MAX_ATTEMPTS = 20; // ~80s
+const POLL_MAX_ATTEMPTS = 60; // ~240s
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------------------------------------------------
-   ✅ JSONB helpers (NEW)
-   - DB velden zijn nu jsonb → kunnen object/array zijn
+   ✅ JSONB helpers
+   - DB velden zijn jsonb → kunnen object/array zijn
 --------------------------------------------------- */
 function renderJson(value) {
   if (value === null || value === undefined) return '–';
@@ -93,6 +93,12 @@ function parseJsonMaybe(value) {
   return null;
 }
 
+// ✅ kleine helper: sorteer datums desc (nieuwste eerst)
+function sortDatesDesc(list) {
+  if (!Array.isArray(list)) return [];
+  return [...list].sort((a, b) => (a < b ? 1 : -1));
+}
+
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const [report, setReport] = useState(null);
@@ -102,7 +108,7 @@ export default function ReportPage() {
   const [error, setError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  // ✅ new: generation UX (no manual refresh)
+  // ✅ Generation UX
   const [generating, setGenerating] = useState(false);
   const [generateInfo, setGenerateInfo] = useState('');
 
@@ -110,74 +116,99 @@ export default function ReportPage() {
   const noRealData =
     !loading && !generating && (!report || Object.keys(report).length === 0);
 
-  const reportFns = {
-    daily: {
-      getLatest: fetchDailyReportLatest,
-      getByDate: fetchDailyReportByDate,
-      getDates: fetchDailyReportDates,
-      generate: generateDailyReport,
-      pdf: fetchDailyReportPDF,
-    },
-    weekly: {
-      getLatest: fetchWeeklyReportLatest,
-      getByDate: fetchWeeklyReportByDate,
-      getDates: fetchWeeklyReportDates,
-      generate: generateWeeklyReport,
-      pdf: fetchWeeklyReportPDF,
-    },
-    monthly: {
-      getLatest: fetchMonthlyReportLatest,
-      getByDate: fetchMonthlyReportByDate,
-      getDates: fetchMonthlyReportDates,
-      generate: generateMonthlyReport,
-      pdf: fetchMonthlyReportPDF,
-    },
-    quarterly: {
-      getLatest: fetchQuarterlyReportLatest,
-      getByDate: fetchQuarterlyReportByDate,
-      getDates: fetchQuarterlyReportDates,
-      generate: generateQuarterlyReport,
-      pdf: fetchQuarterlyReportPDF,
-    },
-  };
+  const reportFns = useMemo(
+    () => ({
+      daily: {
+        getLatest: fetchDailyReportLatest,
+        getByDate: fetchDailyReportByDate,
+        getDates: fetchDailyReportDates,
+        generate: generateDailyReport,
+        pdf: fetchDailyReportPDF,
+      },
+      weekly: {
+        getLatest: fetchWeeklyReportLatest,
+        getByDate: fetchWeeklyReportByDate,
+        getDates: fetchWeeklyReportDates,
+        generate: generateWeeklyReport,
+        pdf: fetchWeeklyReportPDF,
+      },
+      monthly: {
+        getLatest: fetchMonthlyReportLatest,
+        getByDate: fetchMonthlyReportByDate,
+        getDates: fetchMonthlyReportDates,
+        generate: generateMonthlyReport,
+        pdf: fetchMonthlyReportPDF,
+      },
+      quarterly: {
+        getLatest: fetchQuarterlyReportLatest,
+        getByDate: fetchQuarterlyReportByDate,
+        getDates: fetchQuarterlyReportDates,
+        generate: generateQuarterlyReport,
+        pdf: fetchQuarterlyReportPDF,
+      },
+    }),
+    []
+  );
 
   // ✅ defensive fallback (no crash)
   const current = reportFns[reportType] || reportFns.daily;
 
+  /* ---------------------------------------------------
+     ✅ Key fix:
+     - Na generatie: blijf pollen tot er echt data is
+     - Zet selectedDate automatisch naar de “nieuwste” datum
+     - Zet report meteen in state (geen refresh nodig)
+  --------------------------------------------------- */
   const pollUntilReportExists = async ({ preferDate = 'latest' } = {}) => {
     for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
       try {
-        const dateList = await current.getDates();
-        setDates(dateList || []);
+        // 1) haal history opnieuw
+        const rawDates = await current.getDates();
+        const dateList = sortDatesDesc(rawDates || []);
+        setDates(dateList);
 
-        // if user wants a specific date, try that first
+        // 2) als user expliciet een datum wil → check die eerst
         if (preferDate && preferDate !== 'latest') {
-          const byDate = await current.getByDate(preferDate);
-          if (byDate && Object.keys(byDate).length > 0)
-            return { data: byDate, dateList };
-        }
-
-        // else try latest
-        const latest = await current.getLatest();
-        if (latest && Object.keys(latest).length > 0)
-          return { data: latest, dateList };
-
-        // fallback: if latest empty but history exists, take first available date
-        if (
-          (!latest || Object.keys(latest).length === 0) &&
-          dateList?.length > 0
-        ) {
-          const fallback = dateList[0];
-          const fallbackData = await current.getByDate(fallback);
-          if (fallbackData && Object.keys(fallbackData).length > 0) {
-            return { data: fallbackData, dateList, forcedDate: fallback };
+          try {
+            const byDate = await current.getByDate(preferDate);
+            if (byDate && Object.keys(byDate).length > 0) {
+              return { data: byDate, dateList, forcedDate: preferDate };
+            }
+          } catch {
+            // ignore
           }
         }
+
+        // 3) als history bestaat: pak de nieuwste datum en haal die expliciet op
+        //    (dit is betrouwbaarder dan “latest” tijdens inserts / timing)
+        if (dateList.length > 0) {
+          const newest = dateList[0];
+          try {
+            const newestData = await current.getByDate(newest);
+            if (newestData && Object.keys(newestData).length > 0) {
+              return { data: newestData, dateList, forcedDate: newest };
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        // 4) fallback: latest endpoint (kan ook)
+        try {
+          const latest = await current.getLatest();
+          if (latest && Object.keys(latest).length > 0) {
+            // als report_date bestaat, zet die als selectedDate zodat UI sync is
+            const forcedDate = latest?.report_date || null;
+            return { data: latest, dateList, forcedDate };
+          }
+        } catch {
+          // ignore
+        }
       } catch (e) {
-        // swallow polling errors; final failure handled after loop
         console.error(e);
       }
 
+      // status text blijft zichtbaar
       await sleep(POLL_INTERVAL_MS);
     }
 
@@ -190,32 +221,33 @@ export default function ReportPage() {
     setGenerateInfo('');
     setReport(null);
 
-    // ✅ IMPORTANT: keep selectedDate in sync with what we load
+    // ✅ keep selectedDate in sync
     setSelectedDate(date || 'latest');
 
     try {
-      const dateList = await current.getDates();
-      setDates(dateList || []);
+      const rawDates = await current.getDates();
+      const dateList = sortDatesDesc(rawDates || []);
+      setDates(dateList);
 
       let data =
         date === 'latest' || !date
           ? await current.getLatest()
           : await current.getByDate(date);
 
-      // ✅ fallback: als "latest" leeg is maar we hebben history → pak eerste datum
+      // ✅ fallback: "latest" leeg maar history heeft items → pak newest expliciet
       if (
         (!data || Object.keys(data).length === 0) &&
-        dateList?.length > 0 &&
+        dateList.length > 0 &&
         (date === 'latest' || !date)
       ) {
-        const fallback = dateList[0];
-        const fallbackData = await current.getByDate(fallback);
-        setSelectedDate(fallback);
-        setReport(fallbackData || null);
+        const newest = dateList[0];
+        const newestData = await current.getByDate(newest);
+        setSelectedDate(newest);
+        setReport(newestData || null);
         return;
       }
 
-      // ✅ autogen (NEW UX): start generatie + AI loader + polling → auto show report
+      // ✅ autogen: start generatie + loader + polling (blijft aan tot report echt bestaat)
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
         setGenerating(true);
         setGenerateInfo(
@@ -228,12 +260,14 @@ export default function ReportPage() {
           console.error(e);
           setError('Rapport genereren mislukt.');
           setGenerating(false);
-          setLoading(false);
           return;
         }
 
         const res = await pollUntilReportExists({ preferDate: date });
-        if (res?.forcedDate) setSelectedDate(res.forcedDate);
+
+        if (res?.forcedDate && res.forcedDate !== 'latest') {
+          setSelectedDate(res.forcedDate);
+        }
 
         if (res?.data && Object.keys(res.data).length > 0) {
           setReport(res.data);
@@ -246,7 +280,14 @@ export default function ReportPage() {
         return;
       }
 
+      // ✅ normale load
       setReport(data || null);
+
+      // ✅ als we “latest” laden maar report_date bestaat → UI syncen
+      if ((date === 'latest' || !date) && data?.report_date) {
+        setSelectedDate('latest'); // dropdown blijft “latest”
+        // (we laten dropdown op latest staan, maar report is al zichtbaar)
+      }
     } catch (err) {
       console.error(err);
       setError('Rapport kon niet geladen worden.');
@@ -255,8 +296,18 @@ export default function ReportPage() {
     }
   };
 
+  // init/load on reportType change
   useEffect(() => {
-    loadData('latest');
+    let cancelled = false;
+
+    (async () => {
+      if (cancelled) return;
+      await loadData('latest');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportType]);
 
@@ -270,8 +321,12 @@ export default function ReportPage() {
     try {
       await current.generate();
 
+      // ✅ Cruciaal: poll totdat report echt in DB staat en haal newest expliciet op
       const res = await pollUntilReportExists({ preferDate: selectedDate });
-      if (res?.forcedDate) setSelectedDate(res.forcedDate);
+
+      if (res?.forcedDate && res.forcedDate !== 'latest') {
+        setSelectedDate(res.forcedDate);
+      }
 
       if (res?.data && Object.keys(res.data).length > 0) {
         setReport(res.data);
@@ -283,6 +338,7 @@ export default function ReportPage() {
       console.error(e);
       setError('Rapport genereren mislukt.');
     } finally {
+      // ✅ Loader blijft aan tot we hier zijn (dus tot na polling)
       setGenerating(false);
     }
   };
@@ -291,7 +347,7 @@ export default function ReportPage() {
     try {
       setPdfLoading(true);
 
-      // ✅ safe date pick: latest => first available date in history
+      // ✅ safe date pick
       const date =
         selectedDate === 'latest'
           ? dates?.[0] || report?.report_date
@@ -369,11 +425,9 @@ export default function ReportPage() {
               className={`
                 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-medium shadow-sm
                 ${
-                  pdfLoading
+                  pdfLoading || generating
                     ? 'bg-gray-300 text-gray-600'
-                    : generating
-                      ? 'bg-gray-300 text-gray-600'
-                      : 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]'
+                    : 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]'
                 }
               `}
             >

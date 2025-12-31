@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   // DAILY
   fetchDailyReportLatest,
@@ -99,6 +99,47 @@ function sortDatesDesc(list) {
   return [...list].sort((a, b) => (a < b ? 1 : -1));
 }
 
+/* ---------------------------------------------------
+   ✅ Signature helpers (BELANGRIJK)
+   We pollen niet “bestaat er een report?”, maar:
+   “is het report ECHT veranderd?”
+--------------------------------------------------- */
+function safeStableStringify(obj) {
+  try {
+    if (obj === null || obj === undefined) return '';
+    if (typeof obj === 'string') return obj;
+    return JSON.stringify(obj);
+  } catch {
+    return String(obj);
+  }
+}
+
+function getReportSignature(report) {
+  if (!report) return '';
+
+  // als je backend ooit updated_at/created_at toevoegt -> meteen top
+  if (report.updated_at) return String(report.updated_at);
+  if (report.created_at) return String(report.created_at);
+
+  // fallback: inhoudelijke signature
+  return safeStableStringify({
+    report_date: report.report_date,
+    price: report.price,
+    change_24h: report.change_24h,
+    volume: report.volume,
+    macro_score: report.macro_score,
+    technical_score: report.technical_score,
+    market_score: report.market_score,
+    setup_score: report.setup_score,
+    executive_summary: report.executive_summary,
+    macro_context: report.macro_context,
+    setup_validation: report.setup_validation,
+    strategy_implication: report.strategy_implication,
+    outlook: report.outlook,
+    indicator_highlights: report.indicator_highlights,
+  });
+}
+
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
   const [report, setReport] = useState(null);
@@ -111,6 +152,9 @@ export default function ReportPage() {
   // ✅ Generation UX
   const [generating, setGenerating] = useState(false);
   const [generateInfo, setGenerateInfo] = useState('');
+
+  // ✅ voorkomen dat oude async callbacks state updaten na switch
+  const pollTokenRef = useRef(0);
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
   const noRealData =
@@ -154,61 +198,70 @@ export default function ReportPage() {
   const current = reportFns[reportType] || reportFns.daily;
 
   /* ---------------------------------------------------
-     ✅ Key fix:
-     - Na generatie: blijf pollen tot er echt data is
-     - Zet selectedDate automatisch naar de “nieuwste” datum
-     - Zet report meteen in state (geen refresh nodig)
+     ✅ Key fix (ECHT):
+     - Na generatie: poll tot report ECHT is gewijzigd
+     - dus niet: “bestaat er data”
+     - maar: “signature != vorige signature”
   --------------------------------------------------- */
-  const pollUntilReportExists = async ({ preferDate = 'latest' } = {}) => {
-  for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-    try {
-      // 1️⃣ History ophalen en sorteren (nieuwste eerst)
-      const rawDates = await current.getDates();
-      const dateList = sortDatesDesc(rawDates || []);
-      setDates(dateList);
+  const pollUntilReportChanges = async ({
+    preferDate = 'latest',
+    previousSignature = '',
+  } = {}) => {
+    const myToken = ++pollTokenRef.current;
 
-      // 2️⃣ Als user een specifieke datum wil → eerst die checken
-      if (preferDate && preferDate !== 'latest') {
-        try {
-          const byDate = await current.getByDate(preferDate);
-          if (byDate && Object.keys(byDate).length > 0) {
-            return { data: byDate, dateList, forcedDate: preferDate };
-          }
-        } catch {}
-      }
+    for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
+      // als er ondertussen een nieuw poll is gestart, stop deze
+      if (pollTokenRef.current !== myToken) return { data: null, dateList: [] };
 
-      // 3️⃣ Betrouwbaarste check: nieuwste datum expliciet ophalen
-      if (dateList.length > 0) {
-        const newest = dateList[0];
-        try {
-          const newestData = await current.getByDate(newest);
-          if (newestData && Object.keys(newestData).length > 0) {
-            return { data: newestData, dateList, forcedDate: newest };
-          }
-        } catch {}
-      }
-
-      // 4️⃣ Fallback: latest endpoint
       try {
-        const latest = await current.getLatest();
-        if (latest && Object.keys(latest).length > 0) {
-          return {
-            data: latest,
-            dateList,
-            forcedDate: latest?.report_date || null,
-          };
+        const rawDates = await current.getDates();
+        const dateList = sortDatesDesc(rawDates || []);
+        setDates(dateList);
+
+        // 1) als user expliciet een datum wil → check die
+        if (preferDate && preferDate !== 'latest') {
+          try {
+            const byDate = await current.getByDate(preferDate);
+            const sig = getReportSignature(byDate);
+            if (byDate && Object.keys(byDate).length > 0 && sig !== previousSignature) {
+              return { data: byDate, dateList, forcedDate: preferDate };
+            }
+          } catch {}
         }
-      } catch {}
-    } catch (e) {
-      console.error(e);
+
+        // 2) pak altijd nieuwste datum en check die expliciet
+        if (dateList.length > 0) {
+          const newest = dateList[0];
+          try {
+            const newestData = await current.getByDate(newest);
+            const sig = getReportSignature(newestData);
+            if (newestData && Object.keys(newestData).length > 0 && sig !== previousSignature) {
+              return { data: newestData, dateList, forcedDate: newest };
+            }
+          } catch {}
+        }
+
+        // 3) fallback: latest endpoint
+        try {
+          const latest = await current.getLatest();
+          const sig = getReportSignature(latest);
+          if (latest && Object.keys(latest).length > 0 && sig !== previousSignature) {
+            return {
+              data: latest,
+              dateList,
+              forcedDate: latest?.report_date || null,
+            };
+          }
+        } catch {}
+      } catch (e) {
+        console.error(e);
+      }
+
+      await sleep(POLL_INTERVAL_MS);
     }
 
-    // ⏳ Loader blijft zichtbaar
-    await sleep(POLL_INTERVAL_MS);
-  }
-
-  return { data: null, dateList: [] };
-};
+    return { data: null, dateList: [] };
+  };
 
   const loadData = async (date = selectedDate) => {
     setLoading(true);
@@ -216,7 +269,6 @@ export default function ReportPage() {
     setGenerateInfo('');
     setReport(null);
 
-    // ✅ keep selectedDate in sync
     setSelectedDate(date || 'latest');
 
     try {
@@ -242,12 +294,14 @@ export default function ReportPage() {
         return;
       }
 
-      // ✅ autogen: start generatie + loader + polling (blijft aan tot report echt bestaat)
+      // ✅ autogen als leeg
       if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
         setGenerating(true);
         setGenerateInfo(
           `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig met genereren…`
         );
+
+        const prevSig = getReportSignature(data);
 
         try {
           await current.generate();
@@ -258,7 +312,7 @@ export default function ReportPage() {
           return;
         }
 
-        const res = await pollUntilReportExists({ preferDate: date });
+        const res = await pollUntilReportChanges({ preferDate: date, previousSignature: prevSig });
 
         if (res?.forcedDate && res.forcedDate !== 'latest') {
           setSelectedDate(res.forcedDate);
@@ -275,13 +329,10 @@ export default function ReportPage() {
         return;
       }
 
-      // ✅ normale load
       setReport(data || null);
 
-      // ✅ als we “latest” laden maar report_date bestaat → UI syncen
       if ((date === 'latest' || !date) && data?.report_date) {
-        setSelectedDate('latest'); // dropdown blijft “latest”
-        // (we laten dropdown op latest staan, maar report is al zichtbaar)
+        setSelectedDate('latest');
       }
     } catch (err) {
       console.error(err);
@@ -297,59 +348,59 @@ export default function ReportPage() {
 
     (async () => {
       if (cancelled) return;
+      // kill eventuele oude poll
+      pollTokenRef.current++;
       await loadData('latest');
     })();
 
     return () => {
       cancelled = true;
+      pollTokenRef.current++;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportType]);
 
   const handleGenerate = async () => {
-  setError('');
-  setGenerateInfo(
-    `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
-  );
+    setError('');
+    setGenerateInfo(
+      `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
+    );
+    setGenerating(true);
 
-  // 🔥 Loader START
-  setGenerating(true);
+    // 🔥 baseline signature (zodat “bestaat al” niet meteen true is)
+    const previousSignature = getReportSignature(report);
 
-  try {
-    // 1️⃣ Start Celery task (ASYNC)
-    await current.generate();
+    try {
+      await current.generate();
 
-    // 2️⃣ Blijf pollen tot rapport ECHT bestaat
-    const res = await pollUntilReportExists({
-      preferDate: selectedDate,
-    });
+      // poll totdat report ECHT anders is
+      const res = await pollUntilReportChanges({
+        preferDate: selectedDate,
+        previousSignature,
+      });
 
-    // 3️⃣ UI synchroniseren met echte datum
-    if (res?.forcedDate && res.forcedDate !== 'latest') {
-      setSelectedDate(res.forcedDate);
+      if (res?.forcedDate && res.forcedDate !== 'latest') {
+        setSelectedDate(res.forcedDate);
+      }
+
+      if (res?.data && Object.keys(res.data).length > 0) {
+        setReport(res.data);
+        setGenerateInfo('');
+      } else {
+        setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
+      }
+    } catch (e) {
+      console.error(e);
+      setError('Rapport genereren mislukt.');
+    } finally {
+      setGenerating(false);
     }
-
-    // 4️⃣ Rapport DIRECT tonen (geen refresh nodig)
-    if (res?.data && Object.keys(res.data).length > 0) {
-      setReport(res.data);
-      setGenerateInfo('');
-    } else {
-      setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
-    }
-  } catch (e) {
-    console.error(e);
-    setError('Rapport genereren mislukt.');
-  } finally {
-    // 🔥 Loader stopt PAS HIER (na polling)
-    setGenerating(false);
-  }
-};
+  };
 
   const handleDownload = async () => {
     try {
       setPdfLoading(true);
 
-      // ✅ safe date pick
       const date =
         selectedDate === 'latest'
           ? dates?.[0] || report?.report_date
@@ -364,7 +415,6 @@ export default function ReportPage() {
     }
   };
 
-  // ✅ Nieuw schema: direct uit DB (jsonb-friendly)
   const executiveSummary = renderJson(report?.executive_summary || '');
 
   return (
@@ -583,7 +633,6 @@ Setup: ${setup}`;
 }
 
 function formatIndicatorHighlights(report) {
-  // jsonb kan al array zijn, of stringified json (legacy)
   const raw = report?.indicator_highlights;
 
   const inds = parseJsonMaybe(raw);
@@ -601,10 +650,6 @@ function formatIndicatorHighlights(report) {
     })
     .join('\n');
 }
-
-/* ---------------------------------------------------
-   Dummy report (new structure)
---------------------------------------------------- */
 
 function DummyReportNew() {
   return (

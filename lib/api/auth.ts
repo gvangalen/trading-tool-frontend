@@ -55,18 +55,38 @@ export function clearCurrentUserId() {
 }
 
 /* =======================================================
-   🌐 fetchAuth — MET STATUS DOORGAVE (🔥 FIX)
+   🌐 fetchAuth — NO CACHE + STATUS DOORGAVE (🔥 FIX)
 ======================================================= */
+
+function withCacheBust(path: string) {
+  // voorkomt dat je URL’s dubbel kapot gaan (als er al ? in zit)
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}_=${Date.now()}`;
+}
 
 async function fetchAuthInternal(
   path: string,
   options: RequestInit = {}
 ): Promise<any> {
+  // ✅ default no-store (maar laat caller override toe)
+  const cacheMode = (options as any)?.cache ?? "no-store";
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     credentials: "include",
+
+    // 🔥 BELANGRIJK: voorkom cached responses (root cause van jouw issue)
+    cache: cacheMode as RequestCache,
+
     headers: {
+      // JSON default
       "Content-Type": "application/json",
+
+      // 🔥 Extra harde no-cache headers (helpt bij proxies / sommige setups)
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+
       ...(options.headers || {}),
     },
   });
@@ -75,27 +95,30 @@ async function fetchAuthInternal(
     const text = await res.text().catch(() => "");
 
     const error: any = new Error("API request failed");
-    error.status = res.status;      // 🔥 ESSENTIEEL
+    error.status = res.status; // ✅ jij had deze al: goed
     error.body = text;
     error.path = path;
 
-    console.error(
-      `❌ fetchAuth ${path} failed:`,
-      res.status,
-      text
-    );
-
+    console.error(`❌ fetchAuth ${path} failed:`, res.status, text);
     throw error;
   }
 
-  try {
-    return await res.json();
-  } catch {
-    return null;
+  // ✅ JSON veilig parsen, maar als het geen JSON is: return response object
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
   }
+
+  // bv. PDF endpoints / file downloads
+  return res;
 }
 
 export const fetchAuth = fetchAuthInternal;
+
 
 /* =======================================================
    🔐 LOGIN

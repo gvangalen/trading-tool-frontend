@@ -6,7 +6,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 import {
   analyzeStrategy,
   deleteStrategy,
-  updateStrategy,
+  toggleFavoriteStrategy,
 } from "@/lib/api/strategy";
 
 import AILoader from "@/components/ui/AILoader";
@@ -33,16 +33,26 @@ export default function StrategyCard({ strategy, onRefresh }) {
 
   const {
     id,
-    setup_name,
     symbol,
     timeframe,
     strategy_type,
     entry,
-    targets = [],
     stop_loss,
     favorite,
     ai_explanation,
   } = strategy;
+
+  const setupName =
+    strategy.setup_name ||
+    strategy.setupName ||
+    strategy.setup?.name ||
+    "Strategie";
+
+  const targets = Array.isArray(strategy.targets)
+    ? strategy.targets
+    : strategy.target
+    ? [strategy.target]
+    : [];
 
   const isDCA = strategy_type === "dca";
   const display = (v) => (v ? v : "-");
@@ -67,14 +77,11 @@ export default function StrategyCard({ strategy, onRefresh }) {
   }
 
   /* ---------------------------------------------------------
-     ⭐ FAVORIET TOGGLE
+     ⭐ FAVORIET TOGGLE (CORRECTE ENDPOINT)
   --------------------------------------------------------- */
   async function toggleFavorite() {
     try {
-      await updateStrategy(id, {
-        ...strategy,
-        favorite: !favorite,
-      });
+      await toggleFavoriteStrategy(id);
       onRefresh?.();
     } catch (err) {
       console.error(err);
@@ -83,22 +90,18 @@ export default function StrategyCard({ strategy, onRefresh }) {
   }
 
   /* ---------------------------------------------------------
-     ✏️ EDIT STRATEGY — ZELFDE PATROON ALS SETUP
+     ✏️ EDIT STRATEGY
   --------------------------------------------------------- */
   function openEditModal() {
     openConfirm({
-      title: `Strategie bewerken – ${setup_name}`,
+      title: `Strategie bewerken – ${setupName}`,
       icon: <Pencil />,
       tone: "primary",
       confirmText: "Opslaan",
       cancelText: "Annuleren",
-      description: (
-        <StrategyFormWrapper strategy={strategy} />
-      ),
+      description: <StrategyFormWrapper strategy={strategy} />,
       onConfirm: () => {
-        document
-          .querySelector("#strategy-edit-submit")
-          ?.click();
+        document.querySelector("#strategy-edit-submit")?.click();
       },
     });
   }
@@ -169,14 +172,12 @@ export default function StrategyCard({ strategy, onRefresh }) {
         ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
       `}
     >
-      {/* AI overlay */}
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
           <AILoader text="AI analyse bezig…" />
         </div>
       )}
 
-      {/* Favoriet */}
       <button
         onClick={toggleFavorite}
         className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500"
@@ -188,7 +189,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
         )}
       </button>
 
-      <h3 className="font-bold text-xl mb-1">{setup_name}</h3>
+      <h3 className="font-bold text-xl mb-1">{setupName}</h3>
       <p className="text-sm text-gray-500 mb-4">
         {strategy_type} | {symbol} {timeframe}
       </p>
@@ -199,10 +200,12 @@ export default function StrategyCard({ strategy, onRefresh }) {
             <ArrowRightLeft className="inline w-4 h-4" /> Entry: {display(entry)}
           </div>
           <div>
-            <Target className="inline w-4 h-4" /> Targets: {targets.join(", ")}
+            <Target className="inline w-4 h-4" /> Targets:{" "}
+            {targets.length ? targets.join(", ") : "-"}
           </div>
           <div>
-            <ShieldAlert className="inline w-4 h-4" /> SL: {display(stop_loss)}
+            <ShieldAlert className="inline w-4 h-4" /> SL:{" "}
+            {display(stop_loss)}
           </div>
         </div>
       )}
@@ -211,11 +214,10 @@ export default function StrategyCard({ strategy, onRefresh }) {
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
           <strong>AI-uitleg</strong>
-          <p className="mt-2">{ai_explanation}</p>
+          <p className="mt-2 whitespace-pre-line">{ai_explanation}</p>
         </div>
       )}
 
-      {/* Acties */}
       <div className="flex justify-between items-center mt-6">
         <div className="flex gap-4">
           <button

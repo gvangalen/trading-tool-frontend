@@ -21,6 +21,10 @@ import {
   StarOff,
   Trash,
   Pencil,
+  Clock,
+  Euro,
+  Tags,
+  Activity,
 } from "lucide-react";
 
 export default function StrategyCard({ strategy, onRefresh }) {
@@ -31,6 +35,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
   const [loading, setLoading] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
 
+  /* ==========================================================
+     DATA (DEFENSIEF – BACKWARD COMPATIBLE)
+  ========================================================== */
   const {
     id,
     symbol,
@@ -38,8 +45,12 @@ export default function StrategyCard({ strategy, onRefresh }) {
     strategy_type,
     entry,
     stop_loss,
-    favorite,
+    amount,
+    frequency,
+    risk_profile,
+    explanation,
     ai_explanation,
+    favorite,
   } = strategy;
 
   const setupName =
@@ -54,17 +65,22 @@ export default function StrategyCard({ strategy, onRefresh }) {
     ? [strategy.target]
     : [];
 
-  const isDCA = strategy_type === "dca";
-  const display = (v) => (v ? v : "-");
+  const tags = Array.isArray(strategy.tags)
+    ? strategy.tags
+    : typeof strategy.tags === "string"
+    ? strategy.tags.split(",").map((t) => t.trim())
+    : [];
 
-  /* ---------------------------------------------------------
+  const isDCA = strategy_type === "dca";
+  const display = (v) => (v !== undefined && v !== null && v !== "" ? v : "-");
+
+  /* ==========================================================
      🧠 AI ANALYSE
-  --------------------------------------------------------- */
+  ========================================================== */
   async function handleAnalyze() {
     try {
       setLoading(true);
       await analyzeStrategy(id);
-
       showSnackbar("AI-uitleg bijgewerkt", "success");
       flashUpdate();
       onRefresh?.();
@@ -76,9 +92,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   }
 
-  /* ---------------------------------------------------------
+  /* ==========================================================
      ⭐ FAVORIET TOGGLE (CORRECTE ENDPOINT)
-  --------------------------------------------------------- */
+  ========================================================== */
   async function toggleFavorite() {
     try {
       await toggleFavoriteStrategy(id);
@@ -89,9 +105,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   }
 
-  /* ---------------------------------------------------------
+  /* ==========================================================
      ✏️ EDIT STRATEGY
-  --------------------------------------------------------- */
+  ========================================================== */
   function openEditModal() {
     openConfirm({
       title: `Strategie bewerken – ${setupName}`,
@@ -124,9 +140,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     );
   }
 
-  /* ---------------------------------------------------------
+  /* ==========================================================
      🗑 DELETE STRATEGY
-  --------------------------------------------------------- */
+  ========================================================== */
   function openDeleteModal() {
     openConfirm({
       title: "Strategie verwijderen",
@@ -161,9 +177,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     setTimeout(() => setJustUpdated(false), 2000);
   }
 
-  /* ---------------------------------------------------------
+  /* ==========================================================
      UI
-  --------------------------------------------------------- */
+  ========================================================== */
   return (
     <div
       className={`
@@ -172,12 +188,14 @@ export default function StrategyCard({ strategy, onRefresh }) {
         ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
       `}
     >
+      {/* AI overlay */}
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
           <AILoader text="AI analyse bezig…" />
         </div>
       )}
 
+      {/* Favoriet */}
       <button
         onClick={toggleFavorite}
         className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500"
@@ -189,15 +207,36 @@ export default function StrategyCard({ strategy, onRefresh }) {
         )}
       </button>
 
+      {/* Header */}
       <h3 className="font-bold text-xl mb-1">{setupName}</h3>
       <p className="text-sm text-gray-500 mb-4">
         {strategy_type} | {symbol} {timeframe}
       </p>
 
+      {/* ================= DCA INFO ================= */}
+      {isDCA && (
+        <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+          <div className="flex items-center gap-2">
+            <Euro size={14} /> Bedrag: €{display(amount)}
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock size={14} /> Frequentie: {display(frequency)}
+          </div>
+          <div className="flex items-center gap-2">
+            <Activity size={14} /> Risico: {display(risk_profile)}
+          </div>
+          <div className="flex items-center gap-2">
+            <Tags size={14} /> Tags: {tags.length ? tags.join(", ") : "-"}
+          </div>
+        </div>
+      )}
+
+      {/* ================= TRADING INFO ================= */}
       {!isDCA && (
         <div className="space-y-1 text-sm mb-4">
           <div>
-            <ArrowRightLeft className="inline w-4 h-4" /> Entry: {display(entry)}
+            <ArrowRightLeft className="inline w-4 h-4" /> Entry:{" "}
+            {display(entry)}
           </div>
           <div>
             <Target className="inline w-4 h-4" /> Targets:{" "}
@@ -210,6 +249,14 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
+      {/* Handmatige uitleg */}
+      {explanation && (
+        <div className="text-sm text-gray-600 mb-3">
+          <strong>Uitleg:</strong> {explanation}
+        </div>
+      )}
+
+      {/* AI uitleg */}
       {ai_explanation && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
@@ -218,6 +265,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
+      {/* Acties */}
       <div className="flex justify-between items-center mt-6">
         <div className="flex gap-4">
           <button

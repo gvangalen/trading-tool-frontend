@@ -16,6 +16,7 @@
   --primary-light: #4B6BFF;
   --primary-strong: #1536CC;
   --primary-soft: #e7ecff;
+  --primary-dark: var(--primary-strong);
 
   /* Background */
   --bg: #F7F9FC;

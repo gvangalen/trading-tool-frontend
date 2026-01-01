@@ -242,7 +242,6 @@ export default function ReportPage() {
 
     try {
       await current.generate();
-
       const updated = await pollUntilGeneratedAtChanges();
 
       if (updated) {
@@ -346,6 +345,48 @@ export default function ReportPage() {
             content={executiveSummary}
             full
           />
+
+          <ReportCard
+            icon={<TrendingUp />}
+            title="Market Snapshot"
+            content={formatMarketSnapshot(report)}
+            pre
+          />
+
+          <ReportCard
+            icon={<Globe />}
+            title="Macro Context"
+            content={renderJson(report.macro_context)}
+            pre
+          />
+
+          <ReportCard
+            icon={<ListChecks />}
+            title="Setup Validatie"
+            content={renderJson(report.setup_validation)}
+            pre
+          />
+
+          <ReportCard
+            icon={<Target />}
+            title="Strategie Implicatie"
+            content={renderJson(report.strategy_implication)}
+            pre
+          />
+
+          <ReportCard
+            icon={<Activity />}
+            title="Indicator Highlights"
+            content={formatIndicatorHighlights(report)}
+            pre
+          />
+
+          <ReportCard
+            icon={<Forward />}
+            title="Vooruitblik"
+            content={renderJson(report.outlook)}
+            pre
+          />
         </ReportContainer>
       )}
     </div>
@@ -355,6 +396,34 @@ export default function ReportPage() {
 /* =====================================================
    HELPERS
 ===================================================== */
+
+function formatMarketSnapshot(report) {
+  return `Prijs: ${report?.price ?? '–'}
+24h: ${report?.change_24h ?? '–'}%
+Volume: ${report?.volume ?? '–'}
+
+Scores:
+Macro: ${report?.macro_score ?? '–'}
+Technical: ${report?.technical_score ?? '–'}
+Market: ${report?.market_score ?? '–'}
+Setup: ${report?.setup_score ?? '–'}`;
+}
+
+function formatIndicatorHighlights(report) {
+  const inds = parseJsonMaybe(report?.indicator_highlights);
+  if (!inds || !Array.isArray(inds) || inds.length === 0)
+    return 'Geen indicator-highlights gevonden.';
+
+  return inds
+    .slice(0, 5)
+    .map(
+      (i) =>
+        `- ${i.indicator || i.name}: score ${i.score ?? '–'} → ${
+          i.interpretation || i.advies || '–'
+        }`
+    )
+    .join('\n');
+}
 
 function DummyReportNew() {
   return (

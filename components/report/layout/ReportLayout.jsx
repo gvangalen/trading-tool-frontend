@@ -1,8 +1,10 @@
 'use client';
 
-import ReportSectionMarket from './sections/ReportSectionMarket';
-import ReportSectionAnalysis from './sections/ReportSectionAnalysis';
-import ReportSectionStrategy from './sections/ReportSectionStrategy';
+'use client';
+
+import ReportSectionMarket from '@/components/report/sections/ReportSectionMarket';
+import ReportSectionAnalysis from '@/components/report/sections/ReportSectionAnalysis';
+import ReportSectionStrategy from '@/components/report/sections/ReportSectionStrategy';
 
 /*
 =====================================================

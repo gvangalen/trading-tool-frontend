@@ -2,41 +2,21 @@ import ReportCard from '../ReportCard';
 import { Activity } from 'lucide-react';
 
 /* =====================================================
-   HELPERS – block-eigen score normalisatie
+   HELPERS – exact oud report gedrag
 ===================================================== */
 
 function normalizeScore(value) {
   if (value === null || value === undefined) return '–';
 
-  // string → laten staan (bijv. "N/A")
-  if (typeof value === 'string') return value;
-
-  // number → afronden
   if (typeof value === 'number') {
     return Math.round(value);
   }
 
-  return '–';
-}
-
-function extractScores(props) {
-  // 1️⃣ voorkeur: hele report meegegeven
-  if (props.report && typeof props.report === 'object') {
-    return {
-      macro: props.report.macro_score,
-      technical: props.report.technical_score,
-      market: props.report.market_score,
-      setup: props.report.setup_score,
-    };
+  if (typeof value === 'string') {
+    return value;
   }
 
-  // 2️⃣ fallback: losse props (oude manier blijft werken)
-  return {
-    macro: props.macro,
-    technical: props.technical,
-    market: props.market,
-    setup: props.setup,
-  };
+  return '–';
 }
 
 /* =====================================================
@@ -56,15 +36,22 @@ function ScoreItem({ label, value }) {
    BLOCK
 ===================================================== */
 
-export default function ScoreBarBlock(props) {
-  const { macro, technical, market, setup } = extractScores(props);
+export default function ScoreBarBlock({ report }) {
+  if (!report) return null;
 
-  // niets renderen als alles leeg is
+  const {
+    macro_score,
+    technical_score,
+    market_score,
+    setup_score,
+  } = report;
+
+  // niets renderen als alles ontbreekt
   if (
-    macro === undefined &&
-    technical === undefined &&
-    market === undefined &&
-    setup === undefined
+    macro_score === undefined &&
+    technical_score === undefined &&
+    market_score === undefined &&
+    setup_score === undefined
   ) {
     return null;
   }
@@ -76,10 +63,10 @@ export default function ScoreBarBlock(props) {
       color="gray"
     >
       <div className="space-y-2">
-        <ScoreItem label="Macro" value={macro} />
-        <ScoreItem label="Technical" value={technical} />
-        <ScoreItem label="Market" value={market} />
-        <ScoreItem label="Setup" value={setup} />
+        <ScoreItem label="Macro" value={macro_score} />
+        <ScoreItem label="Technical" value={technical_score} />
+        <ScoreItem label="Market" value={market_score} />
+        <ScoreItem label="Setup" value={setup_score} />
       </div>
     </ReportCard>
   );

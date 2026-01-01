@@ -16,21 +16,24 @@ export default function ReportSectionAnalysis({ report }) {
       {/* MACRO CONTEXT — waarom deze marktomgeving? */}
       <NarrativeBlock
         title="Macro Context"
-        text={report.macro_context}
+        field="macro_context"
+        report={report}
         color="gray"
       />
 
       {/* SETUP VALIDATIE — wat zegt dit over setups? */}
       <NarrativeBlock
         title="Setup Validatie"
-        text={report.setup_validation}
+        field="setup_validation"
+        report={report}
         color="green"
       />
 
       {/* INDICATOR HIGHLIGHTS — bewijs uit data */}
       <DataListBlock
+        report={report}
         title="Indicator Highlights"
-        items={report.indicator_highlights}
+        color="gray"
       />
     </div>
   );

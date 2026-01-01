@@ -25,8 +25,8 @@ import {
 } from '@/lib/api/report';
 
 import ReportTabs from '@/components/report/ReportTabs';
-import ReportContainer from '@/components/report/ReportContainer';
-import ReportLayout from '@/components/report/ReportLayout';
+import ReportContainer from '@/components/report/layout/ReportContainer';
+import ReportLayout from '@/components/report/layout/ReportLayout';
 
 import ReportSectionMarket from '@/components/report/sections/ReportSectionMarket';
 import ReportSectionAnalysis from '@/components/report/sections/ReportSectionAnalysis';

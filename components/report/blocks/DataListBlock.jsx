@@ -2,51 +2,41 @@ import ReportCard from '../ReportCard';
 import { ListChecks } from 'lucide-react';
 
 /* =====================================================
-   HELPERS – lokaal, block-eigen
+   HELPERS – exact uit oud report gehaald
 ===================================================== */
 
-function normalizeItems(items) {
-  if (!items) return [];
-
-  // Al correct: array van strings
-  if (Array.isArray(items) && items.every((i) => typeof i === 'string')) {
-    return items;
-  }
-
-  // Array van objects (bijv. indicator_highlights, setups, etc.)
-  if (Array.isArray(items)) {
-    return items
-      .map((i) => {
-        if (typeof i === 'string') return i;
-
-        if (typeof i === 'object' && i !== null) {
-          const name = i.indicator || i.name || i.label || 'Item';
-          const score =
-            i.score !== undefined && i.score !== null
-              ? ` (score ${i.score})`
-              : '';
-          const interp =
-            i.interpretation || i.advies || i.action || '';
-
-          return `${name}${score}${interp ? ` → ${interp}` : ''}`;
-        }
-
-        return null;
-      })
-      .filter(Boolean);
-  }
-
-  // JSON string uit DB
-  if (typeof items === 'string') {
+function parseJsonMaybe(value) {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'object') return value;
+  if (typeof value === 'string') {
     try {
-      const parsed = JSON.parse(items);
-      return normalizeItems(parsed);
+      return JSON.parse(value);
     } catch {
-      return [items];
+      return null;
     }
   }
+  return null;
+}
 
-  return [];
+function formatIndicatorHighlights(report) {
+  const raw = report?.indicator_highlights;
+  const inds = parseJsonMaybe(raw);
+
+  if (!inds || !Array.isArray(inds) || inds.length === 0) {
+    return 'Geen indicator-highlights gevonden.';
+  }
+
+  return inds
+    .slice(0, 8)
+    .map((i) => {
+      const name = i?.indicator ?? i?.name ?? '–';
+      const score = i?.score ?? '–';
+      const interp =
+        i?.interpretation ?? i?.advies ?? i?.action ?? '–';
+      return `- ${name}: score ${score} → ${interp}`;
+    })
+    .join('\n');
 }
 
 /* =====================================================
@@ -54,25 +44,23 @@ function normalizeItems(items) {
 ===================================================== */
 
 export default function DataListBlock({
-  title,
-  items,
-  emptyText = 'Geen data beschikbaar.',
-  icon = <ListChecks size={18} />,
+  report,
+  title = 'Indicator Highlights',
   color = 'gray',
 }) {
-  const normalized = normalizeItems(items);
+  if (!report) return null;
 
-  if (!normalized || normalized.length === 0) {
-    return (
-      <ReportCard icon={icon} title={title} color={color}>
-        {emptyText}
-      </ReportCard>
-    );
-  }
+  const content = formatIndicatorHighlights(report);
+  if (!content) return null;
 
   return (
-    <ReportCard icon={icon} title={title} pre color={color}>
-      {normalized.map((i) => `- ${i}`).join('\n')}
+    <ReportCard
+      icon={<ListChecks size={18} />}
+      title={title}
+      pre
+      color={color}
+    >
+      {content}
     </ReportCard>
   );
 }

@@ -50,6 +50,10 @@ import {
   Activity,
 } from 'lucide-react';
 
+/* =====================================================
+   CONFIG
+===================================================== */
+
 const REPORT_TYPES = {
   daily: 'Dag',
   weekly: 'Week',
@@ -58,17 +62,15 @@ const REPORT_TYPES = {
 };
 
 const AUTO_GENERATE_IF_EMPTY = true;
-
-// ✅ Polling: langer wachten zodat UI niet “flasht” en je niet hoeft te refreshen
 const POLL_INTERVAL_MS = 4000;
-const POLL_MAX_ATTEMPTS = 60; // ~240s
+const POLL_MAX_ATTEMPTS = 60;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* ---------------------------------------------------
-   ✅ JSONB helpers
-   - DB velden zijn jsonb → kunnen object/array zijn
---------------------------------------------------- */
+/* =====================================================
+   JSON HELPERS
+===================================================== */
+
 function renderJson(value) {
   if (value === null || value === undefined) return '–';
   if (typeof value === 'string') return value;
@@ -80,8 +82,9 @@ function renderJson(value) {
 }
 
 function parseJsonMaybe(value) {
-  if (value === null || value === undefined) return null;
+  if (!value) return null;
   if (Array.isArray(value)) return value;
+  if (typeof value === 'object') return value;
   if (typeof value === 'string') {
     try {
       return JSON.parse(value);
@@ -89,56 +92,17 @@ function parseJsonMaybe(value) {
       return null;
     }
   }
-  if (typeof value === 'object') return value;
   return null;
 }
 
-// ✅ kleine helper: sorteer datums desc (nieuwste eerst)
 function sortDatesDesc(list) {
   if (!Array.isArray(list)) return [];
   return [...list].sort((a, b) => (a < b ? 1 : -1));
 }
 
-/* ---------------------------------------------------
-   ✅ Signature helpers (BELANGRIJK)
-   We pollen niet “bestaat er een report?”, maar:
-   “is het report ECHT veranderd?”
---------------------------------------------------- */
-function safeStableStringify(obj) {
-  try {
-    if (obj === null || obj === undefined) return '';
-    if (typeof obj === 'string') return obj;
-    return JSON.stringify(obj);
-  } catch {
-    return String(obj);
-  }
-}
-
-function getReportSignature(report) {
-  if (!report) return '';
-
-  // als je backend ooit updated_at/created_at toevoegt -> meteen top
-  if (report.updated_at) return String(report.updated_at);
-  if (report.created_at) return String(report.created_at);
-
-  // fallback: inhoudelijke signature
-  return safeStableStringify({
-    report_date: report.report_date,
-    price: report.price,
-    change_24h: report.change_24h,
-    volume: report.volume,
-    macro_score: report.macro_score,
-    technical_score: report.technical_score,
-    market_score: report.market_score,
-    setup_score: report.setup_score,
-    executive_summary: report.executive_summary,
-    macro_context: report.macro_context,
-    setup_validation: report.setup_validation,
-    strategy_implication: report.strategy_implication,
-    outlook: report.outlook,
-    indicator_highlights: report.indicator_highlights,
-  });
-}
+/* =====================================================
+   PAGE
+===================================================== */
 
 export default function ReportPage() {
   const [reportType, setReportType] = useState('daily');
@@ -146,17 +110,16 @@ export default function ReportPage() {
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('latest');
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [generateInfo, setGenerateInfo] = useState('');
   const [error, setError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  // ✅ Generation UX
-  const [generating, setGenerating] = useState(false);
-  const [generateInfo, setGenerateInfo] = useState('');
-
-  // ✅ voorkomen dat oude async callbacks state updaten na switch
   const pollTokenRef = useRef(0);
+  const lastGeneratedAtRef = useRef(null);
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
+
   const noRealData =
     !loading && !generating && (!report || Object.keys(report).length === 0);
 
@@ -194,472 +157,213 @@ export default function ReportPage() {
     []
   );
 
-  // ✅ defensive fallback (no crash)
-  const current = reportFns[reportType] || reportFns.daily;
+  const current = reportFns[reportType];
 
-  /* ---------------------------------------------------
-     ✅ Key fix (ECHT):
-     - Na generatie: poll tot report ECHT is gewijzigd
-     - dus niet: “bestaat er data”
-     - maar: “signature != vorige signature”
-  --------------------------------------------------- */
-  const pollUntilReportChanges = async ({
-    preferDate = 'latest',
-    previousSignature = '',
-  } = {}) => {
+  /* =====================================================
+     🔥 POLLING OP generated_at (DE FIX)
+  ===================================================== */
+
+  const pollUntilGeneratedAtChanges = async () => {
     const myToken = ++pollTokenRef.current;
 
     for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-      // als er ondertussen een nieuw poll is gestart, stop deze
-      if (pollTokenRef.current !== myToken) return { data: null, dateList: [] };
+      if (pollTokenRef.current !== myToken) return null;
 
       try {
-        const rawDates = await current.getDates();
-        const dateList = sortDatesDesc(rawDates || []);
-        setDates(dateList);
-
-        // 1) als user expliciet een datum wil → check die
-        if (preferDate && preferDate !== 'latest') {
-          try {
-            const byDate = await current.getByDate(preferDate);
-            const sig = getReportSignature(byDate);
-            if (byDate && Object.keys(byDate).length > 0 && sig !== previousSignature) {
-              return { data: byDate, dateList, forcedDate: preferDate };
-            }
-          } catch {}
+        const latest = await current.getLatest();
+        if (
+          latest?.generated_at &&
+          latest.generated_at !== lastGeneratedAtRef.current
+        ) {
+          return latest;
         }
-
-        // 2) pak altijd nieuwste datum en check die expliciet
-        if (dateList.length > 0) {
-          const newest = dateList[0];
-          try {
-            const newestData = await current.getByDate(newest);
-            const sig = getReportSignature(newestData);
-            if (newestData && Object.keys(newestData).length > 0 && sig !== previousSignature) {
-              return { data: newestData, dateList, forcedDate: newest };
-            }
-          } catch {}
-        }
-
-        // 3) fallback: latest endpoint
-        try {
-          const latest = await current.getLatest();
-          const sig = getReportSignature(latest);
-          if (latest && Object.keys(latest).length > 0 && sig !== previousSignature) {
-            return {
-              data: latest,
-              dateList,
-              forcedDate: latest?.report_date || null,
-            };
-          }
-        } catch {}
-      } catch (e) {
-        console.error(e);
-      }
+      } catch {}
 
       await sleep(POLL_INTERVAL_MS);
     }
 
-    return { data: null, dateList: [] };
+    return null;
   };
 
-  const loadData = async (date = selectedDate) => {
+  /* =====================================================
+     LOAD
+  ===================================================== */
+
+  const loadData = async (date = 'latest') => {
     setLoading(true);
     setError('');
-    setGenerateInfo('');
-    setReport(null);
-
-    setSelectedDate(date || 'latest');
 
     try {
       const rawDates = await current.getDates();
-      const dateList = sortDatesDesc(rawDates || []);
-      setDates(dateList);
+      const sorted = sortDatesDesc(rawDates || []);
+      setDates(sorted);
 
       let data =
-        date === 'latest' || !date
+        date === 'latest'
           ? await current.getLatest()
           : await current.getByDate(date);
 
-      // ✅ fallback: "latest" leeg maar history heeft items → pak newest expliciet
-      if (
-        (!data || Object.keys(data).length === 0) &&
-        dateList.length > 0 &&
-        (date === 'latest' || !date)
-      ) {
-        const newest = dateList[0];
-        const newestData = await current.getByDate(newest);
-        setSelectedDate(newest);
-        setReport(newestData || null);
-        return;
+      if (!data && sorted.length > 0 && date === 'latest') {
+        data = await current.getByDate(sorted[0]);
+        setSelectedDate(sorted[0]);
       }
 
-      // ✅ autogen als leeg
-      if ((!data || Object.keys(data).length === 0) && AUTO_GENERATE_IF_EMPTY) {
-        setGenerating(true);
-        setGenerateInfo(
-          `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig met genereren…`
-        );
-
-        const prevSig = getReportSignature(data);
-
-        try {
-          await current.generate();
-        } catch (e) {
-          console.error(e);
-          setError('Rapport genereren mislukt.');
-          setGenerating(false);
-          return;
-        }
-
-        const res = await pollUntilReportChanges({ preferDate: date, previousSignature: prevSig });
-
-        if (res?.forcedDate && res.forcedDate !== 'latest') {
-          setSelectedDate(res.forcedDate);
-        }
-
-        if (res?.data && Object.keys(res.data).length > 0) {
-          setReport(res.data);
-          setGenerateInfo('');
-        } else {
-          setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
-        }
-
-        setGenerating(false);
+      if (!data && AUTO_GENERATE_IF_EMPTY) {
+        await handleGenerate();
         return;
       }
 
       setReport(data || null);
-
-      if ((date === 'latest' || !date) && data?.report_date) {
-        setSelectedDate('latest');
-      }
-    } catch (err) {
-      console.error(err);
+      lastGeneratedAtRef.current = data?.generated_at || null;
+    } catch {
       setError('Rapport kon niet geladen worden.');
     } finally {
       setLoading(false);
     }
   };
 
-  // init/load on reportType change
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      if (cancelled) return;
-      // kill eventuele oude poll
-      pollTokenRef.current++;
-      await loadData('latest');
-    })();
-
-    return () => {
-      cancelled = true;
-      pollTokenRef.current++;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    pollTokenRef.current++;
+    loadData('latest');
   }, [reportType]);
+
+  /* =====================================================
+     GENERATE
+  ===================================================== */
 
   const handleGenerate = async () => {
     setError('');
+    setGenerating(true);
     setGenerateInfo(
       `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
     );
-    setGenerating(true);
 
-    // 🔥 baseline signature (zodat “bestaat al” niet meteen true is)
-    const previousSignature = getReportSignature(report);
+    lastGeneratedAtRef.current = report?.generated_at || null;
 
     try {
       await current.generate();
 
-      // poll totdat report ECHT anders is
-      const res = await pollUntilReportChanges({
-        preferDate: selectedDate,
-        previousSignature,
-      });
+      const updated = await pollUntilGeneratedAtChanges();
 
-      if (res?.forcedDate && res.forcedDate !== 'latest') {
-        setSelectedDate(res.forcedDate);
-      }
-
-      if (res?.data && Object.keys(res.data).length > 0) {
-        setReport(res.data);
-        setGenerateInfo('');
+      if (updated) {
+        setReport(updated);
+        lastGeneratedAtRef.current = updated.generated_at;
       } else {
-        setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
+        setError('Rapport is niet op tijd beschikbaar gekomen.');
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       setError('Rapport genereren mislukt.');
     } finally {
       setGenerating(false);
     }
   };
 
+  /* =====================================================
+     DOWNLOAD
+  ===================================================== */
+
   const handleDownload = async () => {
     try {
       setPdfLoading(true);
-
       const date =
         selectedDate === 'latest'
           ? dates?.[0] || report?.report_date
           : selectedDate;
-
       if (!date) return;
       await current.pdf(date);
-    } catch {
-      alert('Download mislukt.');
     } finally {
       setPdfLoading(false);
     }
   };
 
-  const executiveSummary = renderJson(report?.executive_summary || '');
+  /* =====================================================
+     RENDER
+  ===================================================== */
+
+  const executiveSummary = renderJson(report?.executive_summary);
 
   return (
-    <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8 bg-[var(--bg)] text-[var(--text-dark)] animate-fade-slide">
+    <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
       {/* HEADER */}
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center bg-[var(--primary-light)] text-[var(--primary)] rounded-xl">
-              <FileText size={20} />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-              Rapportage ({fallbackLabel})
-            </h1>
-          </div>
-          <p className="text-sm text-[var(--text-light)]">
-            AI-gegenereerde markt- en tradingrapporten.
-          </p>
+      <header className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <FileText />
+          <h1 className="text-2xl font-semibold">
+            Rapportage ({fallbackLabel})
+          </h1>
         </div>
-
         {report?.report_date && (
-          <div className="text-xs bg-[var(--bg-soft)] border border-[var(--border)] px-3 py-1 rounded-full inline-flex items-center gap-2">
-            <CalendarRange size={14} />
+          <span className="text-xs opacity-70">
             {report.report_date}
-          </div>
+          </span>
         )}
       </header>
 
-      {/* TABS + FILTER BAR */}
       <CardWrapper>
-        <div className="space-y-5">
-          <ReportTabs selected={reportType} onChange={setReportType} />
-
-          <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-soft)] border border-[var(--border)] px-4 py-3 rounded-2xl">
-            {/* Date select */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-[var(--text-light)] flex items-center gap-1">
-                <CalendarRange size={14} /> Selecteer:
-              </span>
-
-              <select
-                className="px-3 py-2 text-xs md:text-sm rounded-xl bg-[var(--bg)] border border-[var(--border)]"
-                value={selectedDate}
-                onChange={(e) => loadData(e.target.value)}
-                disabled={generating}
-              >
-                <option value="latest">Laatste</option>
-                {dates.map((d) => (
-                  <option key={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex-1" />
-
-            {/* PDF BTN */}
-            <button
-              onClick={handleDownload}
-              disabled={pdfLoading || generating}
-              className={`
-                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-medium shadow-sm
-                ${
-                  pdfLoading || generating
-                    ? 'bg-gray-300 text-gray-600'
-                    : 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]'
-                }
-              `}
-            >
-              {pdfLoading ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Download size={14} />
-              )}
-              {pdfLoading ? 'Downloaden…' : 'Download PDF'}
-            </button>
-
-            {/* Generate BTN */}
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className={`
-                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm border border-[var(--border)]
-                ${generating ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[var(--primary-light)]'}
-              `}
-            >
-              {generating ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <RefreshCw size={14} />
-              )}
-              {generating ? 'Genereren…' : 'Genereer rapport'}
-            </button>
-          </div>
-        </div>
+        <ReportTabs selected={reportType} onChange={setReportType} />
       </CardWrapper>
 
-      {/* AI GENERATING LOADER */}
+      <CardWrapper className="flex flex-wrap gap-3">
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="px-4 py-2 rounded-xl border flex items-center gap-2"
+        >
+          {generating ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+          Genereer rapport
+        </button>
+
+        <button
+          onClick={handleDownload}
+          disabled={pdfLoading}
+          className="px-4 py-2 rounded-xl bg-black text-white flex items-center gap-2"
+        >
+          <Download />
+          {pdfLoading ? 'Downloaden…' : 'Download PDF'}
+        </button>
+      </CardWrapper>
+
       {generating && (
         <CardWrapper>
-          <AILoader
-            size="md"
-            variant="dots"
-            text={generateInfo || 'AI is bezig…'}
-          />
+          <AILoader text={generateInfo} />
         </CardWrapper>
       )}
 
-      {/* Error */}
       {error && (
-        <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-xl text-sm">
-          <AlertTriangle size={16} />
-          <p>{error}</p>
+        <div className="bg-yellow-100 p-4 rounded-xl text-sm flex gap-2">
+          <AlertTriangle />
+          {error}
         </div>
       )}
 
-      {/* Loading */}
-      {loading && !generating && (
-        <div className="flex items-center gap-2 text-sm text-[var(--text-light)]">
-          <Loader2 size={16} className="animate-spin" />
-          Rapport laden…
-        </div>
-      )}
-
-      {/* DUMMY REPORT */}
       {noRealData && <DummyReportNew />}
 
-      {/* REAL REPORT */}
-      {!loading && !generating && report && Object.keys(report).length > 0 && (
+      {!loading && report && (
         <ReportContainer>
           <ReportCard
-            icon={<Brain size={18} />}
+            icon={<Brain />}
             title="Executive Summary"
-            content={executiveSummary || '–'}
+            content={executiveSummary}
             full
-            color="blue"
           />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ReportCard
-              icon={<TrendingUp size={18} />}
-              title="Market Snapshot"
-              content={formatMarketSnapshot(report)}
-              pre
-              color="blue"
-            />
-
-            <ReportCard
-              icon={<Globe size={18} />}
-              title="Macro Context"
-              content={renderJson(report.macro_context) || '–'}
-              pre
-              color="gray"
-            />
-
-            <ReportCard
-              icon={<ListChecks size={18} />}
-              title="Setup Validatie"
-              content={renderJson(report.setup_validation) || '–'}
-              pre
-              color="green"
-            />
-
-            <ReportCard
-              icon={<Target size={18} />}
-              title="Strategie Implicatie"
-              content={renderJson(report.strategy_implication) || '–'}
-              pre
-              color="red"
-            />
-
-            <ReportCard
-              icon={<Activity size={18} />}
-              title="Indicator Highlights"
-              content={formatIndicatorHighlights(report)}
-              pre
-              color="gray"
-            />
-
-            <ReportCard
-              icon={<Forward size={18} />}
-              title="Vooruitblik"
-              content={renderJson(report.outlook) || '–'}
-              pre
-              color="gray"
-            />
-          </div>
         </ReportContainer>
       )}
     </div>
   );
 }
 
-/* ---------------------------------------------------
-   Helpers (new DB schema)
---------------------------------------------------- */
-
-function formatMarketSnapshot(report) {
-  const price = report?.price ?? '–';
-  const ch24 = report?.change_24h ?? '–';
-  const vol = report?.volume ?? '–';
-
-  const macro = report?.macro_score ?? '–';
-  const tech = report?.technical_score ?? '–';
-  const market = report?.market_score ?? '–';
-  const setup = report?.setup_score ?? '–';
-
-  return `Prijs: $${price}
-24h: ${ch24}%
-Volume: ${vol}
-
-Scores:
-Macro: ${macro}
-Technical: ${tech}
-Market: ${market}
-Setup: ${setup}`;
-}
-
-function formatIndicatorHighlights(report) {
-  const raw = report?.indicator_highlights;
-
-  const inds = parseJsonMaybe(raw);
-  if (!inds) return 'Geen indicator-highlights gevonden.';
-  if (!Array.isArray(inds) || inds.length === 0)
-    return 'Geen indicator-highlights gevonden.';
-
-  return inds
-    .slice(0, 5)
-    .map((i) => {
-      const name = i?.indicator ?? i?.name ?? '–';
-      const score = i?.score ?? '–';
-      const interp = i?.interpretation ?? i?.advies ?? '–';
-      return `- ${name}: score ${score} → ${interp}`;
-    })
-    .join('\n');
-}
+/* =====================================================
+   HELPERS
+===================================================== */
 
 function DummyReportNew() {
   return (
     <ReportContainer>
       <ReportCard
-        icon={<Brain size={18} />}
+        icon={<Brain />}
         title="Executive Summary"
         content={`Nog geen rapport gevonden.\n\nBESLISSING VANDAAG: OBSERVEREN\nCONFIDENCE: LAAG`}
         full
-        color="blue"
       />
     </ReportContainer>
   );

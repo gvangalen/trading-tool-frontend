@@ -407,40 +407,51 @@ export default function ReportPage() {
   }, [reportType]);
 
   /* =====================================================
-     GENERATE
-     - keep existing report visible
-     - show loader card
+   GENERATE
+   - keep existing report visible
+   - show loader card
 ===================================================== */
 
-  const handleGenerate = async (fromAuto = false, preferDate = 'latest') => {
-    setError('');
-    setGenerating(true);
-    setGenerateInfo(
-      fromAuto
-        ? `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig met genereren…`
-        : `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
-    );
+const handleGenerate = async (fromAuto = false, preferDate = 'latest') => {
+  setError('');
+  setGenerating(true);
+  setGenerateInfo(
+    fromAuto
+      ? `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig met genereren…`
+      : `AI is bezig met het genereren van het ${fallbackLabel.toLowerCase()}rapport…`
+  );
 
-    // baseline signature
-    lastSignatureRef.current = getReportSignature(report);
+  // baseline signature (voor polling-vergelijking)
+  lastSignatureRef.current = getReportSignature(report);
 
-    try {
-      await current.generate();
+  try {
+    // start backend generatie (Celery)
+    await current.generate();
 
-      const res = await pollUntilReportChanges(preferDate || selectedDate);
+    // wacht tot rapport echt verandert
+    const res = await pollUntilReportChanges(preferDate || selectedDate);
 
-            if (res?.data && Object.keys(res.data).length > 0) {
-        setReport(res.data);
-        lastSignatureRef.current = getReportSignature(res.data);
-        setGenerateInfo('');
+    if (res?.forcedDate && res.forcedDate !== 'latest') {
+      setSelectedDate(res.forcedDate);
+    }
 
-        showSnackbar(
-          `${fallbackLabel}rapport is gereed`,
-          'success'
-        );
-      } else {
-        setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
-      }
+    if (res?.data && Object.keys(res.data).length > 0) {
+      setReport(res.data);
+      lastSignatureRef.current = getReportSignature(res.data);
+      setGenerateInfo('');
+
+      // ✅ SNACKBAR: rapport klaar
+      showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
+    } else {
+      setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
+    }
+  } catch (e) {
+    console.error(e);
+    setError('Rapport genereren mislukt.');
+  } finally {
+    setGenerating(false);
+  }
+};
 
   /* =====================================================
      DOWNLOAD PDF

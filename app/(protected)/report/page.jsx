@@ -33,7 +33,7 @@ import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 import AILoader from '@/components/ui/AILoader';
-import { useModal } from '@/components/ui/ModalProvider';
+import { useModal } from '@/components/modal/ModalProvider';
 
 import {
   Brain,

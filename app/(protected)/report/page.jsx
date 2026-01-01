@@ -343,8 +343,8 @@ export default function ReportPage() {
 
       {!loading && report && (
         <ReportContainer>
-        <ReportLayout report={report} />
-      </ReportContainer>
+          <ReportLayout report={report} />
+        </ReportContainer>
       )}
     </div>
   );

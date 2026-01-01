@@ -33,6 +33,7 @@ import ReportContainer from '@/components/report/ReportContainer';
 import ReportTabs from '@/components/report/ReportTabs';
 import CardWrapper from '@/components/ui/CardWrapper';
 import AILoader from '@/components/ui/AILoader';
+import { useModal } from '@/components/ui/ModalProvider';
 
 import {
   Brain,
@@ -210,6 +211,8 @@ function DummyReportNew() {
 ===================================================== */
 
 export default function ReportPage() {
+  const { showSnackbar } = useModal();
+
   const [reportType, setReportType] = useState('daily');
   const [report, setReport] = useState(null);
 
@@ -426,24 +429,18 @@ export default function ReportPage() {
 
       const res = await pollUntilReportChanges(preferDate || selectedDate);
 
-      if (res?.forcedDate && res.forcedDate !== 'latest') {
-        setSelectedDate(res.forcedDate);
-      }
-
-      if (res?.data && Object.keys(res.data).length > 0) {
+            if (res?.data && Object.keys(res.data).length > 0) {
         setReport(res.data);
         lastSignatureRef.current = getReportSignature(res.data);
         setGenerateInfo('');
+
+        showSnackbar(
+          `${fallbackLabel}rapport is gereed`,
+          'success'
+        );
       } else {
         setError('Rapport wordt nog verwerkt. Probeer het later opnieuw.');
       }
-    } catch (e) {
-      console.error(e);
-      setError('Rapport genereren mislukt.');
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   /* =====================================================
      DOWNLOAD PDF

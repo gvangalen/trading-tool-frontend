@@ -13,11 +13,29 @@ function formatValue(v, suffix = '') {
 function buildSnapshotLines(report) {
   if (!report) return [];
 
-  return [
-    `Prijs: $${formatValue(report.price)}`,
-    `24h: ${formatValue(report.change_24h, '%')}`,
-    `Volume: ${formatValue(report.volume)}`,
-  ];
+  const lines = [];
+
+  // 🔹 Marktdata (exact zoals oude report)
+  lines.push(`Prijs: $${formatValue(report.price)}`);
+  lines.push(`24h: ${formatValue(report.change_24h, '%')}`);
+  lines.push(`Volume: ${formatValue(report.volume)}`);
+
+  // 🔹 Scores (zat vroeger óók in snapshot)
+  if (
+    report.macro_score !== undefined ||
+    report.technical_score !== undefined ||
+    report.market_score !== undefined ||
+    report.setup_score !== undefined
+  ) {
+    lines.push(''); // lege regel
+    lines.push('Scores:');
+    lines.push(`Macro: ${formatValue(report.macro_score)}`);
+    lines.push(`Technical: ${formatValue(report.technical_score)}`);
+    lines.push(`Market: ${formatValue(report.market_score)}`);
+    lines.push(`Setup: ${formatValue(report.setup_score)}`);
+  }
+
+  return lines;
 }
 
 /* =====================================================
@@ -33,7 +51,7 @@ export default function MarketSnapshotBlock({
 
   const lines = buildSnapshotLines(report);
 
-  if (!lines || lines.length === 0) return null;
+  if (!lines.length) return null;
 
   return (
     <ReportCard

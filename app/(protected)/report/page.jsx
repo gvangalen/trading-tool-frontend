@@ -343,12 +343,8 @@ export default function ReportPage() {
 
       {!loading && report && (
         <ReportContainer>
-          <ReportLayout>
-            <ReportSectionMarket report={report} />
-            <ReportSectionAnalysis report={report} />
-            <ReportSectionStrategy report={report} />
-          </ReportLayout>
-        </ReportContainer>
+        <ReportLayout report={report} />
+      </ReportContainer>
       )}
     </div>
   );

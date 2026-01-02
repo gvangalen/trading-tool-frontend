@@ -28,10 +28,6 @@ import ReportTabs from '@/components/report/ReportTabs';
 import ReportContainer from '@/components/report/layout/ReportContainer';
 import ReportLayout from '@/components/report/layout/ReportLayout';
 
-import ReportSectionMarket from '@/components/report/sections/ReportSectionMarket';
-import ReportSectionAnalysis from '@/components/report/sections/ReportSectionAnalysis';
-import ReportSectionStrategy from '@/components/report/sections/ReportSectionStrategy';
-
 import CardWrapper from '@/components/ui/CardWrapper';
 import AILoader from '@/components/ui/AILoader';
 import { useModal } from '@/components/modal/ModalProvider';
@@ -142,58 +138,20 @@ export default function ReportPage() {
   const current = reportFns[reportType];
 
   /* =====================================================
-     POLLING
-===================================================== */
-
-  const pollUntilReportChanges = async (preferDate = 'latest') => {
-    const myToken = ++pollTokenRef.current;
-    const previousSignature = lastSignatureRef.current;
-
-    for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-      if (pollTokenRef.current !== myToken) return null;
-
-      const rawDates = await current.getDates();
-      const sorted = sortDatesDesc(rawDates || []);
-      setDates(sorted);
-
-      const dateToCheck =
-        preferDate !== 'latest'
-          ? preferDate
-          : sorted[0];
-
-      if (!dateToCheck) continue;
-
-      const data = await current.getByDate(dateToCheck);
-      const sig = getReportSignature(data);
-
-      if (sig && sig !== previousSignature) {
-        return { data, forcedDate: dateToCheck };
-      }
-
-      await sleep(POLL_INTERVAL_MS);
-    }
-
-    return null;
-  };
-
-  /* =====================================================
      LOAD
 ===================================================== */
 
   const loadData = async (date = 'latest') => {
-    const token = ++loadTokenRef.current;
     setLoading(true);
     setError('');
     setSelectedDate(date);
 
     try {
       const rawDates = await current.getDates();
-      if (loadTokenRef.current !== token) return;
-
       const sorted = sortDatesDesc(rawDates || []);
       setDates(sorted);
 
-      let data =
+      const data =
         date === 'latest'
           ? await current.getLatest()
           : await current.getByDate(date);
@@ -208,13 +166,11 @@ export default function ReportPage() {
     } catch {
       setError('Rapport kon niet geladen worden.');
     } finally {
-      if (loadTokenRef.current === token) setLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    pollTokenRef.current++;
-    loadTokenRef.current++;
     loadData('latest');
   }, [reportType]);
 
@@ -230,19 +186,11 @@ export default function ReportPage() {
         : `AI genereert het ${fallbackLabel.toLowerCase()}rapport…`
     );
 
-    lastSignatureRef.current = getReportSignature(report);
-
     try {
       await current.generate();
-      const res = await pollUntilReportChanges(preferDate);
-
-      if (res?.data) {
-        setReport(res.data);
-        setSelectedDate(res.forcedDate);
-        showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
-      } else {
-        setError('Rapport wordt nog verwerkt.');
-      }
+      await sleep(POLL_INTERVAL_MS);
+      await loadData(preferDate);
+      showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
     } catch {
       setError('Rapport genereren mislukt.');
     } finally {
@@ -317,12 +265,41 @@ export default function ReportPage() {
 
             <div className="flex-1" />
 
-            <button onClick={handleDownload} disabled={pdfLoading}>
-              {pdfLoading ? <Loader2 className="animate-spin" /> : <Download />}
+            {/* PDF BUTTON */}
+            <button
+              onClick={handleDownload}
+              disabled={pdfLoading}
+              className="
+                inline-flex items-center gap-2
+                px-4 py-2 rounded-lg
+                border text-sm font-medium
+                bg-white hover:bg-gray-50
+                disabled:opacity-50
+              "
+            >
+              {pdfLoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              PDF
             </button>
 
-            <button onClick={() => handleGenerate(false, selectedDate)}>
-              <RefreshCw /> Genereer
+            {/* GENERATE BUTTON */}
+            <button
+              onClick={() => handleGenerate(false, selectedDate)}
+              disabled={generating}
+              className="
+                inline-flex items-center gap-2
+                px-4 py-2 rounded-lg
+                text-sm font-semibold
+                bg-blue-600 hover:bg-blue-700
+                text-white
+                disabled:opacity-50
+              "
+            >
+              <RefreshCw size={16} />
+              Genereer rapport
             </button>
           </div>
         </div>

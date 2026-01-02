@@ -1,22 +1,22 @@
-import ReportCard from '../ReportCard';
-import { Activity } from 'lucide-react';
+import ReportCard from "../ReportCard";
+import { Activity } from "lucide-react";
 
 /* =====================================================
    HELPERS – exact oud report gedrag
 ===================================================== */
 
 function normalizeScore(value) {
-  if (value === null || value === undefined) return '–';
+  if (value === null || value === undefined) return "–";
 
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Math.round(value);
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value;
   }
 
-  return '–';
+  return "–";
 }
 
 /* =====================================================
@@ -34,10 +34,12 @@ function ScoreItem({ label, value }) {
 
 /* =====================================================
    BLOCK
+   - UI via children
+   - Data komt 1-op-1 uit report (DB)
 ===================================================== */
 
 export default function ScoreBarBlock({ report }) {
-  if (!report) return null;
+  if (!report || typeof report !== "object") return null;
 
   const {
     macro_score,
@@ -46,7 +48,7 @@ export default function ScoreBarBlock({ report }) {
     setup_score,
   } = report;
 
-  // niets renderen als alles ontbreekt
+  // 🔒 niets renderen als ALLES ontbreekt
   if (
     macro_score === undefined &&
     technical_score === undefined &&
@@ -62,6 +64,7 @@ export default function ScoreBarBlock({ report }) {
       title="Scores"
       color="gray"
     >
+      {/* 👇 UI → children (NOOIT via content) */}
       <div className="space-y-2">
         <ScoreItem label="Macro" value={macro_score} />
         <ScoreItem label="Technical" value={technical_score} />

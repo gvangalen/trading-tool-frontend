@@ -16,13 +16,10 @@ function cn(...classes) {
 function formatContent(value) {
   if (value === null || value === undefined) return "–";
 
-  // String → direct
   if (typeof value === "string") return value;
 
-  // Array → bullets / regels
   if (Array.isArray(value)) {
     if (value.length === 0) return "–";
-
     return value
       .map((item) => {
         if (typeof item === "string") return `- ${item}`;
@@ -33,7 +30,6 @@ function formatContent(value) {
       .join("\n");
   }
 
-  // Object → menselijk maken (jsonb / AI output)
   if (typeof value === "object") {
     if (value.text) return value.text;
 
@@ -43,7 +39,6 @@ function formatContent(value) {
         .join("\n\n");
     }
 
-    // Fallback → pretty JSON
     try {
       return JSON.stringify(value, null, 2);
     } catch {
@@ -55,7 +50,11 @@ function formatContent(value) {
 }
 
 /* =====================================================
-   REPORT CARD
+   REPORT CARD — DOCUMENT STYLE
+   - GEEN borders
+   - GEEN kleuren
+   - GEEN card-gevoel
+   - Alleen spacing + typografie
 ===================================================== */
 
 export default function ReportCard({
@@ -64,32 +63,8 @@ export default function ReportCard({
   children,
   icon = null,
   pre = false,
-  color = "default",
   full = false,
 }) {
-  // 🎨 Kleurenpalet 2.5
-  const colors = {
-    default:
-      "bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--text-dark)]",
-    blue:
-      "bg-blue-50/60 dark:bg-blue-900/40 border-blue-200/60 dark:border-blue-800/60 text-blue-900 dark:text-blue-100",
-    green:
-      "bg-green-50/60 dark:bg-green-900/40 border-green-200/60 dark:border-green-800/60 text-green-900 dark:text-green-100",
-    yellow:
-      "bg-yellow-50/60 dark:bg-yellow-900/40 border-yellow-200/60 dark:border-yellow-800/60 text-yellow-900 dark:text-yellow-100",
-    red:
-      "bg-red-50/60 dark:bg-red-900/40 border-red-200/60 dark:border-red-800/60 text-red-900 dark:text-red-100",
-    gray:
-      "bg-gray-50/60 dark:bg-gray-900/40 border-gray-200/60 dark:border-gray-700/60 text-gray-800 dark:text-gray-200",
-  };
-
-  const colorClasses = colors[color] || colors.default;
-
-  /* --------------------------------------------------
-     🔑 KRITISCHE LOGICA
-     - JSX (ReactElement) → DIRECT renderen
-     - Data → formatteren
-  -------------------------------------------------- */
   const hasJSXChildren = React.isValidElement(children);
   const resolvedContent =
     children !== undefined && children !== null ? children : content;
@@ -103,50 +78,33 @@ export default function ReportCard({
     : resolvedContent;
 
   return (
-    <div
+    <section
       className={cn(
         `
-        rounded-2xl p-5
-        shadow-sm hover:shadow-md transition-all duration-200
-        backdrop-blur-xl
-        border
-        ${colorClasses}
+        w-full
+        max-w-none
+        py-6
         `,
         full && "md:col-span-2"
       )}
     >
-      {/* Titel + icon */}
-      <div className="flex items-center gap-2 mb-3">
-        {icon && (
-          <span
-            className="
-              inline-flex items-center justify-center
-              w-7 h-7
-              rounded-lg
-              bg-black/5 dark:bg-white/10
-              backdrop-blur-sm
-            "
-          >
-            {icon}
-          </span>
-        )}
-
-        <h2 className="text-base font-semibold tracking-tight">
+      {/* Titel */}
+      <header className="mb-3">
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--text-dark)]">
           {title}
         </h2>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="text-sm leading-relaxed whitespace-pre-wrap">
+      <div className="text-sm leading-relaxed text-[var(--text-dark)] whitespace-pre-wrap">
         {pre && shouldFormat ? (
           <pre
             className="
               font-mono text-[13px] leading-snug
-              bg-black/5 dark:bg-white/10
-              p-3 rounded-lg
-              border border-[var(--border)]
+              bg-transparent
+              p-0
+              m-0
               whitespace-pre-wrap
-              overflow-x-auto
             "
           >
             {renderedContent}
@@ -155,6 +113,6 @@ export default function ReportCard({
           renderedContent
         )}
       </div>
-    </div>
+    </section>
   );
 }

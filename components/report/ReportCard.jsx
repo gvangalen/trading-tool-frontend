@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 /* ---------------------------------------------------------
    Mini utility fn → vervangt clsx / cn / tailwind-merge
 --------------------------------------------------------- */
@@ -9,6 +11,7 @@ function cn(...classes) {
 
 /* ---------------------------------------------------------
    🔎 Content formatter (jsonb-aware)
+   ❗ Alleen voor DATA — nooit voor JSX
 --------------------------------------------------------- */
 function formatContent(value) {
   if (value === null || value === undefined) return "–";
@@ -30,9 +33,8 @@ function formatContent(value) {
       .join("\n");
   }
 
-  // Object → probeer menselijk te maken
+  // Object → menselijk maken (jsonb / AI output)
   if (typeof value === "object") {
-    // Veelgebruikte AI patronen
     if (value.text) return value.text;
 
     if (value.comment || value.recommendation) {
@@ -52,10 +54,14 @@ function formatContent(value) {
   return String(value);
 }
 
+/* =====================================================
+   REPORT CARD
+===================================================== */
+
 export default function ReportCard({
   title,
   content,
-  children,          // ✅ NIEUW
+  children,
   icon = null,
   pre = false,
   color = "default",
@@ -79,14 +85,22 @@ export default function ReportCard({
 
   const colorClasses = colors[color] || colors.default;
 
-  // 🔥 BELANGRIJK:
-  // children > content (sections & blocks werken nu)
+  /* --------------------------------------------------
+     🔑 KRITISCHE LOGICA
+     - JSX (ReactElement) → DIRECT renderen
+     - Data → formatteren
+  -------------------------------------------------- */
+  const hasJSXChildren = React.isValidElement(children);
   const resolvedContent =
-    children !== undefined && children !== null
-      ? children
-      : content;
+    children !== undefined && children !== null ? children : content;
 
-  const formatted = formatContent(resolvedContent);
+  const shouldFormat =
+    !hasJSXChildren &&
+    typeof resolvedContent !== "function";
+
+  const renderedContent = shouldFormat
+    ? formatContent(resolvedContent)
+    : resolvedContent;
 
   return (
     <div
@@ -124,7 +138,7 @@ export default function ReportCard({
 
       {/* Content */}
       <div className="text-sm leading-relaxed whitespace-pre-wrap">
-        {pre ? (
+        {pre && shouldFormat ? (
           <pre
             className="
               font-mono text-[13px] leading-snug
@@ -135,10 +149,10 @@ export default function ReportCard({
               overflow-x-auto
             "
           >
-            {formatted}
+            {renderedContent}
           </pre>
         ) : (
-          formatted
+          renderedContent
         )}
       </div>
     </div>

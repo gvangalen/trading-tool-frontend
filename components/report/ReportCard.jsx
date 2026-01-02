@@ -34,11 +34,9 @@ function formatContent(value) {
   if (typeof value === "object") {
     // Veelgebruikte AI patronen
     if (value.text) return value.text;
+
     if (value.comment || value.recommendation) {
-      return [
-        value.comment,
-        value.recommendation,
-      ]
+      return [value.comment, value.recommendation]
         .filter(Boolean)
         .join("\n\n");
     }
@@ -57,6 +55,7 @@ function formatContent(value) {
 export default function ReportCard({
   title,
   content,
+  children,          // ✅ NIEUW
   icon = null,
   pre = false,
   color = "default",
@@ -79,7 +78,15 @@ export default function ReportCard({
   };
 
   const colorClasses = colors[color] || colors.default;
-  const formatted = formatContent(content);
+
+  // 🔥 BELANGRIJK:
+  // children > content (sections & blocks werken nu)
+  const resolvedContent =
+    children !== undefined && children !== null
+      ? children
+      : content;
+
+  const formatted = formatContent(resolvedContent);
 
   return (
     <div
@@ -90,7 +97,7 @@ export default function ReportCard({
         backdrop-blur-xl
         border
         ${colorClasses}
-      `,
+        `,
         full && "md:col-span-2"
       )}
     >
@@ -100,8 +107,8 @@ export default function ReportCard({
           <span
             className="
               inline-flex items-center justify-center
-              w-7 h-7 
-              rounded-lg 
+              w-7 h-7
+              rounded-lg
               bg-black/5 dark:bg-white/10
               backdrop-blur-sm
             "

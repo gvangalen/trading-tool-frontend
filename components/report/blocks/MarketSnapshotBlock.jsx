@@ -1,66 +1,117 @@
 import ReportCard from '../ReportCard';
-import { TrendingUp } from 'lucide-react';
+import {
+  TrendingUp,
+  DollarSign,
+  BarChart3,
+  Activity,
+} from 'lucide-react';
 
 /* =====================================================
-   HELPERS – block-eigen formatter
+   HELPERS
 ===================================================== */
 
-function formatValue(v, suffix = '') {
-  if (v === null || v === undefined || v === '') return '–';
-  return `${v}${suffix}`;
+function formatNumber(v, decimals = 2) {
+  if (v === null || v === undefined || isNaN(v)) return '–';
+  return Number(v).toLocaleString(undefined, {
+    maximumFractionDigits: decimals,
+  });
 }
 
-function buildSnapshotLines(report) {
-  if (!report) return [];
-
-  const lines = [];
-
-  // 🔹 Marktdata (exact zoals oude report)
-  lines.push(`Prijs: $${formatValue(report.price)}`);
-  lines.push(`24h: ${formatValue(report.change_24h, '%')}`);
-  lines.push(`Volume: ${formatValue(report.volume)}`);
-
-  // 🔹 Scores (zat vroeger óók in snapshot)
-  if (
-    report.macro_score !== undefined ||
-    report.technical_score !== undefined ||
-    report.market_score !== undefined ||
-    report.setup_score !== undefined
-  ) {
-    lines.push(''); // lege regel
-    lines.push('Scores:');
-    lines.push(`Macro: ${formatValue(report.macro_score)}`);
-    lines.push(`Technical: ${formatValue(report.technical_score)}`);
-    lines.push(`Market: ${formatValue(report.market_score)}`);
-    lines.push(`Setup: ${formatValue(report.setup_score)}`);
-  }
-
-  return lines;
+function formatPercent(v) {
+  if (v === null || v === undefined || isNaN(v)) return '–';
+  const n = Number(v);
+  return `${n > 0 ? '+' : ''}${n.toFixed(2)}%`;
 }
 
 /* =====================================================
-   BLOCK
+   BLOCK — MARKET SNAPSHOT (2.0)
 ===================================================== */
 
 export default function MarketSnapshotBlock({
   report,
   title = 'Market Snapshot',
-  color = 'blue',
 }) {
   if (!report) return null;
 
-  const lines = buildSnapshotLines(report);
-
-  if (!lines.length) return null;
+  const {
+    price,
+    change_24h,
+    volume,
+    macro_score,
+    technical_score,
+    market_score,
+    setup_score,
+  } = report;
 
   return (
     <ReportCard
-      icon={<TrendingUp size={18} />}
       title={title}
-      pre
-      color={color}
+      icon={<TrendingUp size={18} />}
     >
-      {lines.join('\n')}
+      {/* === PRICE ROW === */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <DollarSign size={14} />
+          Bitcoin prijs
+        </div>
+
+        <div className="flex items-end gap-3 mt-1">
+          <div className="text-3xl font-semibold text-gray-900">
+            ${formatNumber(price, 0)}
+          </div>
+
+          <div
+            className={`text-sm font-medium ${
+              Number(change_24h) >= 0
+                ? 'text-green-600'
+                : 'text-red-600'
+            }`}
+          >
+            {formatPercent(change_24h)}
+          </div>
+        </div>
+      </div>
+
+      {/* === STATS ROW === */}
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <BarChart3 size={14} />
+          <span>
+            Volume&nbsp;
+            <strong className="text-gray-900">
+              {formatNumber(volume, 0)}
+            </strong>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Activity size={14} />
+          24h beweging
+        </div>
+      </div>
+
+      {/* === SCORES GRID === */}
+      <div className="grid grid-cols-4 gap-3">
+        <ScoreItem label="Macro" value={macro_score} />
+        <ScoreItem label="Technical" value={technical_score} />
+        <ScoreItem label="Market" value={market_score} />
+        <ScoreItem label="Setup" value={setup_score} />
+      </div>
     </ReportCard>
+  );
+}
+
+/* =====================================================
+   SUB — SCORE ITEM
+===================================================== */
+
+function ScoreItem({ label, value }) {
+  return (
+    <div className="rounded-lg border border-gray-100 p-2 text-center">
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-lg font-semibold text-gray-900">
+        {value ?? '–'}
+      </div>
+    </div>
   );
 }

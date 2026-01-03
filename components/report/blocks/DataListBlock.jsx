@@ -34,29 +34,34 @@ function getIconForIndicator(name = '') {
 }
 
 /* =====================================================
-   BLOCK — MARKET INDICATOR HIGHLIGHTS
+   BLOCK — INDICATOR HIGHLIGHTS (GENERIC)
 ===================================================== */
 
 export default function DataListBlock({
   report,
-  title = 'Market Indicator Highlights',
+  title,
+  field, // 👈 key verschil
+  maxItems = 6,
 }) {
-  if (!report) return null;
+  if (!report || !field) return null;
 
-  const inds = parseJsonMaybe(report?.indicator_highlights);
-  if (!inds || !Array.isArray(inds) || inds.length === 0) return null;
+  const inds = parseJsonMaybe(report[field]);
+  if (!Array.isArray(inds) || inds.length === 0) return null;
 
   return (
     <ReportCard
       title={title}
       icon={<ListChecks size={18} />}
     >
-      <div className="grid gap-4">
-        {inds.slice(0, 6).map((i, idx) => {
+      <div className="grid gap-3">
+        {inds.slice(0, maxItems).map((i, idx) => {
           const name = i?.indicator ?? i?.name ?? 'Onbekend';
           const score = i?.score;
           const interp =
-            i?.interpretation ?? i?.advies ?? i?.action;
+            i?.interpretation ??
+            i?.uitleg ??
+            i?.advies ??
+            i?.action;
 
           return (
             <div
@@ -68,17 +73,16 @@ export default function DataListBlock({
                 p-3
               "
             >
-              {/* Icon */}
               <div className="mt-0.5">
                 {getIconForIndicator(name)}
               </div>
 
-              {/* Content */}
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-gray-900">
                     {name}
                   </div>
+
                   {typeof score === 'number' && (
                     <div className="text-sm font-semibold text-gray-900">
                       {score}

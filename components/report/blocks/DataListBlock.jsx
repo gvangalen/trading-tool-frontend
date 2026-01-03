@@ -1,8 +1,13 @@
 import ReportCard from '../ReportCard';
-import { ListChecks } from 'lucide-react';
+import {
+  ListChecks,
+  TrendingUp,
+  BarChart3,
+  Activity,
+} from 'lucide-react';
 
 /* =====================================================
-   HELPERS – exact uit oud report gehaald
+   HELPERS
 ===================================================== */
 
 function parseJsonMaybe(value) {
@@ -19,48 +24,78 @@ function parseJsonMaybe(value) {
   return null;
 }
 
-function formatIndicatorHighlights(report) {
-  const raw = report?.indicator_highlights;
-  const inds = parseJsonMaybe(raw);
-
-  if (!inds || !Array.isArray(inds) || inds.length === 0) {
-    return 'Geen indicator-highlights gevonden.';
-  }
-
-  return inds
-    .slice(0, 8)
-    .map((i) => {
-      const name = i?.indicator ?? i?.name ?? '–';
-      const score = i?.score ?? '–';
-      const interp =
-        i?.interpretation ?? i?.advies ?? i?.action ?? '–';
-      return `- ${name}: score ${score} → ${interp}`;
-    })
-    .join('\n');
+function getIconForIndicator(name = '') {
+  const n = name.toLowerCase();
+  if (n.includes('change') || n.includes('price'))
+    return <TrendingUp size={16} className="text-green-600" />;
+  if (n.includes('volume'))
+    return <BarChart3 size={16} className="text-blue-600" />;
+  return <Activity size={16} className="text-gray-500" />;
 }
 
 /* =====================================================
-   BLOCK
+   BLOCK — MARKET INDICATOR HIGHLIGHTS
 ===================================================== */
 
 export default function DataListBlock({
   report,
-  title = 'Indicator Highlights',
-  color = 'gray',
+  title = 'Market Indicator Highlights',
 }) {
   if (!report) return null;
 
-  const content = formatIndicatorHighlights(report);
-  if (!content) return null;
+  const inds = parseJsonMaybe(report?.indicator_highlights);
+  if (!inds || !Array.isArray(inds) || inds.length === 0) return null;
 
   return (
     <ReportCard
-      icon={<ListChecks size={18} />}
       title={title}
-      pre
-      color={color}
+      icon={<ListChecks size={18} />}
     >
-      {content}
+      <div className="grid gap-4">
+        {inds.slice(0, 6).map((i, idx) => {
+          const name = i?.indicator ?? i?.name ?? 'Onbekend';
+          const score = i?.score;
+          const interp =
+            i?.interpretation ?? i?.advies ?? i?.action;
+
+          return (
+            <div
+              key={idx}
+              className="
+                flex items-start gap-3
+                border border-gray-100
+                rounded-lg
+                p-3
+              "
+            >
+              {/* Icon */}
+              <div className="mt-0.5">
+                {getIconForIndicator(name)}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-gray-900">
+                    {name}
+                  </div>
+                  {typeof score === 'number' && (
+                    <div className="text-sm font-semibold text-gray-900">
+                      {score}
+                    </div>
+                  )}
+                </div>
+
+                {interp && (
+                  <div className="mt-1 text-sm text-gray-600">
+                    {interp}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </ReportCard>
   );
 }

@@ -1,13 +1,6 @@
 import SummaryBlock from '../blocks/SummaryBlock';
-import ScoreBarBlock from '../blocks/ScoreBarBlock';
+// import ScoreBarBlock from '../blocks/ScoreBarBlock';
 import MarketSnapshotBlock from '../blocks/MarketSnapshotBlock';
-
-/* =====================================================
-   SECTION: MARKET
-   - Wat is er gebeurd?
-   - Waar staan we nu?
-   - Eerste context vóór analyse
-===================================================== */
 
 export default function ReportSectionMarket({ report }) {
   if (!report) return null;
@@ -20,10 +13,10 @@ export default function ReportSectionMarket({ report }) {
         report={report}
       />
 
-      {/* SCORES — macro / technical / market / setup */}
-      <ScoreBarBlock report={report} />
+      {/* ❌ SCORES — verwijderd (duplicatie) */}
+      {/* <ScoreBarBlock report={report} /> */}
 
-      {/* MARKT SNAPSHOT — prijs, volume, scores */}
+      {/* ✅ MARKT SNAPSHOT — ENIGE SCORE-OVERZICHT */}
       <MarketSnapshotBlock report={report} />
     </div>
   );

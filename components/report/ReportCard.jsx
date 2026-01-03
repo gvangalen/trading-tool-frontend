@@ -3,15 +3,14 @@
 import React from "react";
 
 /* ---------------------------------------------------------
-   Mini utility fn → vervangt clsx / cn / tailwind-merge
+   Mini utility fn
 --------------------------------------------------------- */
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
 /* ---------------------------------------------------------
-   🔎 Content formatter (jsonb-aware)
-   ❗ Alleen voor DATA — nooit voor JSX
+   Content formatter — ALLEEN voor data
 --------------------------------------------------------- */
 function formatContent(value) {
   if (value === null || value === undefined) return "–";
@@ -19,26 +18,17 @@ function formatContent(value) {
   if (typeof value === "string") return value;
 
   if (Array.isArray(value)) {
-    if (value.length === 0) return "–";
     return value
-      .map((item) => {
-        if (typeof item === "string") return `- ${item}`;
-        if (typeof item === "object")
-          return `- ${JSON.stringify(item, null, 2)}`;
-        return `- ${String(item)}`;
-      })
+      .map((item) =>
+        typeof item === "string"
+          ? `- ${item}`
+          : `- ${JSON.stringify(item, null, 2)}`
+      )
       .join("\n");
   }
 
   if (typeof value === "object") {
     if (value.text) return value.text;
-
-    if (value.comment || value.recommendation) {
-      return [value.comment, value.recommendation]
-        .filter(Boolean)
-        .join("\n\n");
-    }
-
     try {
       return JSON.stringify(value, null, 2);
     } catch {
@@ -50,33 +40,23 @@ function formatContent(value) {
 }
 
 /* =====================================================
-   REPORT CARD — DASHBOARD BASE
-   ✔ lichte border
-   ✔ zachte shadow
-   ✔ padding
-   ✔ afgeronde hoeken
-   ❌ geen kleuren
+   REPORT CARD — DEFINITIEF
 ===================================================== */
 
 export default function ReportCard({
   title,
-  content,
-  children,
   icon = null,
+
+  /** DATA-modus */
+  content,
   pre = false,
+
+  /** UI-modus */
+  children,
+
   full = false,
 }) {
-  const hasJSXChildren = React.isValidElement(children);
-  const resolvedContent =
-    children !== undefined && children !== null ? children : content;
-
-  const shouldFormat =
-    !hasJSXChildren &&
-    typeof resolvedContent !== "function";
-
-  const renderedContent = shouldFormat
-    ? formatContent(resolvedContent)
-    : resolvedContent;
+  const isDataMode = content !== undefined;
 
   return (
     <section
@@ -92,34 +72,32 @@ export default function ReportCard({
         full && "md:col-span-2"
       )}
     >
-      {/* Titel */}
-      <header className="mb-3 flex items-center gap-2">
-        {icon && (
-          <span className="inline-flex items-center justify-center text-gray-500">
-            {icon}
-          </span>
-        )}
-        <h2 className="text-base font-semibold tracking-tight text-[var(--text-dark)]">
-          {title}
-        </h2>
-      </header>
+      {/* Header */}
+      {(title || icon) && (
+        <header className="mb-3 flex items-center gap-2">
+          {icon && (
+            <span className="text-gray-500">{icon}</span>
+          )}
+          {title && (
+            <h2 className="text-base font-semibold tracking-tight text-[var(--text-dark)]">
+              {title}
+            </h2>
+          )}
+        </header>
+      )}
 
       {/* Content */}
-      <div className="text-sm leading-relaxed text-[var(--text-dark)] whitespace-pre-wrap">
-        {pre && shouldFormat ? (
-          <pre
-            className="
-              font-mono text-[13px] leading-snug
-              bg-transparent
-              p-0
-              m-0
-              whitespace-pre-wrap
-            "
-          >
-            {renderedContent}
-          </pre>
+      <div className="text-sm leading-relaxed text-[var(--text-dark)]">
+        {isDataMode ? (
+          pre ? (
+            <pre className="whitespace-pre-wrap font-mono text-[13px] leading-snug">
+              {formatContent(content)}
+            </pre>
+          ) : (
+            formatContent(content)
+          )
         ) : (
-          renderedContent
+          children
         )}
       </div>
     </section>

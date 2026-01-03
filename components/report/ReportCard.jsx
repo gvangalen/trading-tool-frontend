@@ -40,7 +40,7 @@ function formatContent(value) {
 }
 
 /* =====================================================
-   REPORT CARD — DEFINITIEF
+   REPORT CARD — DEFINITIEF (breedte gefixt)
 ===================================================== */
 
 export default function ReportCard({
@@ -54,6 +54,7 @@ export default function ReportCard({
   /** UI-modus */
   children,
 
+  /** layout */
   full = false,
 }) {
   const isDataMode = content !== undefined;
@@ -62,22 +63,23 @@ export default function ReportCard({
     <section
       className={cn(
         `
-        w-full
         bg-white
         border border-gray-200
         rounded-xl
         shadow-sm
         p-5
+
+        /* 👇 CRUCIAAL */
+        max-w-3xl
+        mx-auto
         `,
-        full && "md:col-span-2"
+        full && "max-w-none md:col-span-2"
       )}
     >
       {/* Header */}
       {(title || icon) && (
         <header className="mb-3 flex items-center gap-2">
-          {icon && (
-            <span className="text-gray-500">{icon}</span>
-          )}
+          {icon && <span className="text-gray-500">{icon}</span>}
           {title && (
             <h2 className="text-base font-semibold tracking-tight text-[var(--text-dark)]">
               {title}

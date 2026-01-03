@@ -1,27 +1,29 @@
-import ReportCard from '../ReportCard';
-import { Brain } from 'lucide-react';
+"use client";
+
+import ReportCard from "../ReportCard";
+import { Brain } from "lucide-react";
 
 /* =====================================================
-   HELPERS – exact gedrag oud report
+   HELPERS
+   - robuust voor string / jsonb / AI-output
 ===================================================== */
 
 function normalizeExecutiveSummary(value) {
   if (value === null || value === undefined) return null;
 
-  // 1️⃣ string → direct tonen
-  if (typeof value === 'string') {
+  // string → direct
+  if (typeof value === "string") {
     const v = value.trim();
-    return v.length > 0 ? v : null;
+    return v.length ? v : null;
   }
 
-  // 2️⃣ object (jsonb / AI-output)
-  if (typeof value === 'object') {
-    // bekende patronen eerst
-    if (typeof value.text === 'string') return value.text;
-    if (typeof value.summary === 'string') return value.summary;
-    if (typeof value.description === 'string') return value.description;
+  // object (jsonb / AI)
+  if (typeof value === "object") {
+    if (typeof value.text === "string") return value.text.trim();
+    if (typeof value.summary === "string") return value.summary.trim();
+    if (typeof value.description === "string") return value.description.trim();
 
-    // fallback: exact zoals oud report renderJson
+    // fallback: leesbaar stringify
     try {
       return JSON.stringify(value, null, 2);
     } catch {
@@ -33,14 +35,17 @@ function normalizeExecutiveSummary(value) {
 }
 
 /* =====================================================
-   BLOCK
+   BLOCK — Executive Summary (2.0)
+   - opening van het rapport
+   - iets meer gewicht
+   - nog steeds rustig
 ===================================================== */
 
 export default function SummaryBlock({
   report,
-  title = 'Executive Summary',
+  title = "Executive Summary",
 }) {
-  if (!report) return null;
+  if (!report || typeof report !== "object") return null;
 
   const content = normalizeExecutiveSummary(
     report.executive_summary
@@ -52,9 +57,12 @@ export default function SummaryBlock({
     <ReportCard
       icon={<Brain size={18} />}
       title={title}
-      content={content}
       full
-      color="blue"
-    />
+    >
+      {/* 👇 iets grotere typografie dan normaal */}
+      <div className="text-[15px] leading-relaxed text-[var(--text-dark)] space-y-3">
+        {content}
+      </div>
+    </ReportCard>
   );
 }

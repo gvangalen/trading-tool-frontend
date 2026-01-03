@@ -1,41 +1,56 @@
+"use client";
+
 import ReportCard from "../ReportCard";
 import { Activity } from "lucide-react";
 
 /* =====================================================
-   HELPERS – exact oud report gedrag
+   HELPERS
 ===================================================== */
 
 function normalizeScore(value) {
-  if (value === null || value === undefined) return "–";
+  if (value === null || value === undefined) return null;
 
   if (typeof value === "number") {
     return Math.round(value);
   }
 
   if (typeof value === "string") {
-    return value;
+    const v = value.trim();
+    return v.length ? v : null;
   }
 
-  return "–";
+  return null;
 }
 
 /* =====================================================
-   UI SUBCOMPONENT
+   UI SUBCOMPONENTS
 ===================================================== */
 
-function ScoreItem({ label, value }) {
+function ScoreRow({ label, value }) {
+  const v = normalizeScore(value);
+  if (v === null) return null;
+
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-[var(--text-light)]">{label}</span>
-      <span className="font-semibold">{normalizeScore(value)}</span>
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-[var(--text-light)]">
+        {label}
+      </span>
+      <span className="text-base font-semibold text-[var(--text-dark)]">
+        {v}
+      </span>
     </div>
   );
 }
 
+function ScoreDivider() {
+  return <div className="h-px bg-gray-100 my-1" />;
+}
+
 /* =====================================================
-   BLOCK
-   - UI via children
-   - Data komt 1-op-1 uit report (DB)
+   BLOCK — Scores (2.0)
+   - rust
+   - hiërarchie
+   - dashboard-waardig
 ===================================================== */
 
 export default function ScoreBarBlock({ report }) {
@@ -48,28 +63,31 @@ export default function ScoreBarBlock({ report }) {
     setup_score,
   } = report;
 
-  // 🔒 niets renderen als ALLES ontbreekt
-  if (
-    macro_score === undefined &&
-    technical_score === undefined &&
-    market_score === undefined &&
-    setup_score === undefined
-  ) {
-    return null;
-  }
+  // 🔒 niets renderen als alles ontbreekt
+  const hasAny =
+    macro_score !== undefined ||
+    technical_score !== undefined ||
+    market_score !== undefined ||
+    setup_score !== undefined;
+
+  if (!hasAny) return null;
 
   return (
     <ReportCard
       icon={<Activity size={18} />}
       title="Scores"
-      color="gray"
     >
-      {/* 👇 UI → children (NOOIT via content) */}
-      <div className="space-y-2">
-        <ScoreItem label="Macro" value={macro_score} />
-        <ScoreItem label="Technical" value={technical_score} />
-        <ScoreItem label="Market" value={market_score} />
-        <ScoreItem label="Setup" value={setup_score} />
+      <div className="space-y-3">
+        <ScoreRow label="Macro" value={macro_score} />
+        <ScoreDivider />
+
+        <ScoreRow label="Technical" value={technical_score} />
+        <ScoreDivider />
+
+        <ScoreRow label="Market" value={market_score} />
+        <ScoreDivider />
+
+        <ScoreRow label="Setup" value={setup_score} />
       </div>
     </ReportCard>
   );

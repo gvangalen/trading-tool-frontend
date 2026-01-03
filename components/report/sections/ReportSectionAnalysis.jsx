@@ -1,6 +1,6 @@
 import NarrativeBlock from "../blocks/NarrativeBlock";
 import DataListBlock from "../blocks/DataListBlock";
-import SetupMatchCard from "../blocks/SetupMatchCard";
+import SetupMatchCard from "../blocks/SetupMatchReportCard";
 import ActiveStrategyReportCard from "../blocks/ActiveStrategyReportCard";
 
 /*

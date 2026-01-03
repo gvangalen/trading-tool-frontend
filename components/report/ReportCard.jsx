@@ -50,11 +50,12 @@ function formatContent(value) {
 }
 
 /* =====================================================
-   REPORT CARD — DOCUMENT STYLE
-   - GEEN borders
-   - GEEN kleuren
-   - GEEN card-gevoel
-   - Alleen spacing + typografie
+   REPORT CARD — DASHBOARD BASE
+   ✔ lichte border
+   ✔ zachte shadow
+   ✔ padding
+   ✔ afgeronde hoeken
+   ❌ geen kleuren
 ===================================================== */
 
 export default function ReportCard({
@@ -82,15 +83,23 @@ export default function ReportCard({
       className={cn(
         `
         w-full
-        max-w-none
-        py-6
+        bg-white
+        border border-gray-200
+        rounded-xl
+        shadow-sm
+        p-5
         `,
         full && "md:col-span-2"
       )}
     >
       {/* Titel */}
-      <header className="mb-3">
-        <h2 className="text-lg font-semibold tracking-tight text-[var(--text-dark)]">
+      <header className="mb-3 flex items-center gap-2">
+        {icon && (
+          <span className="inline-flex items-center justify-center text-gray-500">
+            {icon}
+          </span>
+        )}
+        <h2 className="text-base font-semibold tracking-tight text-[var(--text-dark)]">
           {title}
         </h2>
       </header>

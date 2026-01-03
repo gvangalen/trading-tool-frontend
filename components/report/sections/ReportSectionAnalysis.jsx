@@ -1,16 +1,26 @@
 import NarrativeBlock from '../blocks/NarrativeBlock';
 import DataListBlock from '../blocks/DataListBlock';
 
+/*
+=====================================================
+ SECTION: ANALYSIS
+ - Waarom staat de markt hier?
+ - Wat zegt data (macro / technical / setup)?
+ - Tekst links, indicator-cards rechts
+=====================================================
+*/
+
 export default function ReportSectionAnalysis({ report }) {
   if (!report) return null;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
 
       {/* =========================
-         MACRO ANALYSE
+         1️⃣ MACRO ANALYSE
       ========================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Tekst */}
         <div className="md:col-span-2">
           <NarrativeBlock
             title="Macro Context"
@@ -19,6 +29,7 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
+        {/* Card */}
         <div className="md:col-span-1">
           <DataListBlock
             report={report}
@@ -29,9 +40,10 @@ export default function ReportSectionAnalysis({ report }) {
       </div>
 
       {/* =========================
-         TECHNISCHE ANALYSE
+         2️⃣ TECHNISCHE ANALYSE
       ========================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Tekst */}
         <div className="md:col-span-2">
           <NarrativeBlock
             title="Technische Analyse"
@@ -40,6 +52,7 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
+        {/* Card */}
         <div className="md:col-span-1">
           <DataListBlock
             report={report}
@@ -50,13 +63,27 @@ export default function ReportSectionAnalysis({ report }) {
       </div>
 
       {/* =========================
-         SETUP VALIDATIE
+         3️⃣ SETUP VALIDATIE
       ========================= */}
-      <NarrativeBlock
-        title="Setup Validatie"
-        field="setup_validation"
-        report={report}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Tekst */}
+        <div className="md:col-span-2">
+          <NarrativeBlock
+            title="Setup Validatie"
+            field="setup_validation"
+            report={report}
+          />
+        </div>
+
+        {/* Card */}
+        <div className="md:col-span-1">
+          <DataListBlock
+            report={report}
+            field="setup_indicator_highlights"
+            title="Setup Indicator Highlights"
+          />
+        </div>
+      </div>
 
     </div>
   );

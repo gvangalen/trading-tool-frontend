@@ -8,7 +8,7 @@ import ActiveStrategyReportCard from "../blocks/ActiveStrategyReportCard";
  SECTION: ANALYSIS
  - Middenstuk van het rapport
  - Verhaal + bewijs uit data
- - Afwisselend: tekst ↔ cards
+ - Cards zijn ankers, tekst mag groeien
 =====================================================
 */
 
@@ -16,13 +16,13 @@ export default function ReportSectionAnalysis({ report }) {
   if (!report) return null;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-16">
 
       {/* =================================================
           1️⃣ MARKET ANALYSE
-          Tekst links — Card rechts
+          Layout A — naast elkaar
       ================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
           <NarrativeBlock
             title="Market Analyse"
@@ -31,7 +31,7 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 self-start">
           <DataListBlock
             report={report}
             field="market_indicator_highlights"
@@ -42,10 +42,10 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           2️⃣ MACRO ANALYSE
-          Card links — Tekst rechts
+          Layout A — afwisseling (card links)
       ================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 md:order-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="md:col-span-1 self-start">
           <DataListBlock
             report={report}
             field="macro_indicator_highlights"
@@ -53,7 +53,7 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-2 md:order-2">
+        <div className="md:col-span-2">
           <NarrativeBlock
             title="Macro Context"
             field="macro_context"
@@ -64,9 +64,9 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           3️⃣ TECHNISCHE ANALYSE
-          Tekst links — Card rechts
+          Layout A — naast elkaar
       ================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
           <NarrativeBlock
             title="Technische Analyse"
@@ -75,7 +75,7 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 self-start">
           <DataListBlock
             report={report}
             field="technical_indicator_highlights"
@@ -86,38 +86,34 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           4️⃣ SETUP VALIDATIE
-          Card links — Tekst rechts
-          (SPECIAL CARD)
+          Layout B — tekst → card
+          (conclusie + actie)
       ================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 md:order-1">
-          <SetupMatchCard report={report} />
-        </div>
+      <div className="space-y-6">
+        <NarrativeBlock
+          title="Setup Validatie"
+          field="setup_validation"
+          report={report}
+        />
 
-        <div className="md:col-span-2 md:order-2">
-          <NarrativeBlock
-            title="Setup Validatie"
-            field="setup_validation"
-            report={report}
-          />
+        <div className="max-w-md">
+          <SetupMatchCard report={report} />
         </div>
       </div>
 
       {/* =================================================
           5️⃣ STRATEGIE
-          Tekst links — Card rechts
-          (SPECIAL CARD)
+          Layout B — tekst → card
+          (actiegericht)
       ================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <NarrativeBlock
-            title="Strategie Implicatie"
-            field="strategy_implication"
-            report={report}
-          />
-        </div>
+      <div className="space-y-6">
+        <NarrativeBlock
+          title="Strategie Implicatie"
+          field="strategy_implication"
+          report={report}
+        />
 
-        <div className="md:col-span-1">
+        <div className="max-w-md">
           <ActiveStrategyReportCard report={report} />
         </div>
       </div>

@@ -2,9 +2,8 @@ import NarrativeBlock from '../blocks/NarrativeBlock';
 
 /* =====================================================
    SECTION: STRATEGIE
-   - Wat betekent dit concreet?
-   - Hoe handelen we?
-   - Wat verwachten we vooruit?
+   - Alleen vooruitblik / scenario’s
+   - Strategie-implicatie zit in Analysis
 ===================================================== */
 
 export default function ReportSectionStrategy({ report }) {
@@ -12,14 +11,6 @@ export default function ReportSectionStrategy({ report }) {
 
   return (
     <div className="space-y-4">
-      {/* STRATEGIE IMPLICATIE — wat betekent dit voor handelen? */}
-      <NarrativeBlock
-        title="Strategie Implicatie"
-        field="strategy_implication"
-        report={report}
-        color="red"
-      />
-
       {/* VOORUITBLIK — scenario’s & verwachting */}
       <NarrativeBlock
         title="Vooruitblik & Scenario’s"

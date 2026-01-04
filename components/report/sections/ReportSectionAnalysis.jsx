@@ -20,7 +20,7 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           1️⃣ MARKET ANALYSE
-          Layout A — naast elkaar
+          Layout A — tekst links, card rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -42,7 +42,7 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           2️⃣ MACRO ANALYSE
-          Layout A — afwisseling (card links)
+          Layout A — card links, tekst rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-1 self-start">
@@ -64,7 +64,7 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           3️⃣ TECHNISCHE ANALYSE
-          Layout A — naast elkaar
+          Layout A — tekst links, card rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -86,34 +86,36 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           4️⃣ SETUP VALIDATIE
-          Layout B — tekst → card
-          (conclusie + actie)
+          Layout A — tekst links, card rechts ✅ FIX
       ================================================= */}
-      <div className="space-y-6">
-        <NarrativeBlock
-          title="Setup Validatie"
-          field="setup_validation"
-          report={report}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="md:col-span-2">
+          <NarrativeBlock
+            title="Setup Validatie"
+            field="setup_validation"
+            report={report}
+          />
+        </div>
 
-        <div className="max-w-md">
+        <div className="md:col-span-1 self-start">
           <SetupMatchCard report={report} />
         </div>
       </div>
 
       {/* =================================================
           5️⃣ STRATEGIE
-          Layout B — tekst → card
-          (actiegericht)
+          Layout A — tekst links, card rechts ✅ FIX
       ================================================= */}
-      <div className="space-y-6">
-        <NarrativeBlock
-          title="Strategie Implicatie"
-          field="strategy_implication"
-          report={report}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="md:col-span-2">
+          <NarrativeBlock
+            title="Strategie Implicatie"
+            field="strategy_implication"
+            report={report}
+          />
+        </div>
 
-        <div className="max-w-md">
+        <div className="md:col-span-1 self-start">
           <ActiveStrategyReportCard report={report} />
         </div>
       </div>

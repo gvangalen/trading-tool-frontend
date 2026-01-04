@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import ReportSectionMarket from '@/components/report/sections/ReportSectionMarket';
 import ReportSectionAnalysis from '@/components/report/sections/ReportSectionAnalysis';
 import ReportSectionStrategy from '@/components/report/sections/ReportSectionStrategy';
@@ -14,7 +12,7 @@ import ReportSectionStrategy from '@/components/report/sections/ReportSectionStr
    • structuur van het rapport
    • leesflow (data → uitleg → actie)
  - GEEN business logic
- - GEEN formatting
+ - MINIMALE layout (content-breedte)
 =====================================================
 */
 
@@ -22,11 +20,9 @@ export default function ReportLayout({ report }) {
   if (!report) return null;
 
   return (
-    <div className="space-y-12">
+    <div className="mx-auto max-w-7xl px-6 space-y-16">
       {/* =================================================
           1️⃣ MARKT OVERZICHT
-          - Wat is er gebeurd?
-          - Waar staan we nu?
       ================================================= */}
       <section>
         <ReportSectionMarket report={report} />
@@ -34,8 +30,6 @@ export default function ReportLayout({ report }) {
 
       {/* =================================================
           2️⃣ ANALYSE & ONDERBOUWING
-          - Waarom is dit zo?
-          - Wat zeggen macro / setups / indicators?
       ================================================= */}
       <section>
         <ReportSectionAnalysis report={report} />
@@ -43,9 +37,6 @@ export default function ReportLayout({ report }) {
 
       {/* =================================================
           3️⃣ STRATEGIE & VOORUITBLIK
-          - Wat betekent dit?
-          - Hoe handelen we?
-          - Scenario’s vooruit
       ================================================= */}
       <section>
         <ReportSectionStrategy report={report} />

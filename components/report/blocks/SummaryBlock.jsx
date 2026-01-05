@@ -1,7 +1,6 @@
 "use client";
 
 import ReportSection from "../ReportSection";
-import { Brain } from "lucide-react";
 
 /* =====================================================
    HELPERS
@@ -33,10 +32,10 @@ function normalizeExecutiveSummary(value) {
 }
 
 /* =====================================================
-   BLOCK — Executive Summary (DOCUMENT)
+   BLOCK — Executive Summary
    ✔ opening van het rapport
-   ✔ geen card
-   ✔ iets zwaardere typografie
+   ✔ meta (datum + gebruiker) HIER
+   ✔ tekst eronder
 ===================================================== */
 
 export default function SummaryBlock({
@@ -45,16 +44,28 @@ export default function SummaryBlock({
 }) {
   if (!report || typeof report !== "object") return null;
 
-  const content = normalizeExecutiveSummary(
-    report.executive_summary
-  );
-
+  const content = normalizeExecutiveSummary(report.executive_summary);
   if (!content) return null;
 
   return (
     <ReportSection title={title}>
-      <div className="text-[15px] leading-relaxed text-[var(--text-dark)]">
-        {content}
+      <div className="space-y-3">
+
+        {/* META — HIER IS DE ENIGE PLEK */}
+        <div className="text-xs text-[var(--text-muted)]">
+          {report.report_date && (
+            <div>Datum: {report.report_date}</div>
+          )}
+          {report.user_name && (
+            <div>Rapport voor: {report.user_name}</div>
+          )}
+        </div>
+
+        {/* TEKST */}
+        <div className="text-[15px] leading-relaxed text-[var(--text-dark)]">
+          {content}
+        </div>
+
       </div>
     </ReportSection>
   );

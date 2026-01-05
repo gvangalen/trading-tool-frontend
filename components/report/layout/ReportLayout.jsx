@@ -33,12 +33,8 @@ export default function ReportLayout({ report }) {
       </section>
 
       {/* 3️⃣ STRATEGIE & VOORUITBLIK */}
-      <section className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="md:col-span-2">
-            <ReportSectionStrategy report={report} />
-          </div>
-        </div>
+      <section>
+       <ReportSectionStrategy report={report} />
       </section>
 
     </div>

@@ -255,113 +255,106 @@ export default function ReportPage() {
     }
   };
 
-  /* =====================================================
-     RENDER
+ /* =====================================================
+   RENDER
 ===================================================== */
 
-  return (
-    <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
-      {/* HEADER */}
-      <header className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[var(--primary-light)] rounded-xl flex items-center justify-center">
-            <FileText size={20} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-semibold">
-              Rapportage ({fallbackLabel})
-            </h1>
-            <p className="text-sm text-[var(--text-light)]">
-              AI-gegenereerde markt- en tradingrapporten
-            </p>
-          </div>
+return (
+  <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
+    {/* HEADER */}
+    <header className="flex justify-between items-center">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-[var(--primary-light)] rounded-xl flex items-center justify-center">
+          <FileText size={20} />
         </div>
+        <div>
+          <h1 className="text-3xl font-semibold">
+            Rapportage ({fallbackLabel})
+          </h1>
+          <p className="text-sm text-[var(--text-light)]">
+            AI-gegenereerde markt- en tradingrapporten
+          </p>
+        </div>
+      </div>
 
-        {report?.report_date && (
-          <div className="text-xs bg-[var(--bg-soft)] px-3 py-1 rounded-full flex items-center gap-2">
-            <CalendarRange size={14} />
-            {report.report_date}
-          </div>
-        )}
-      </header>
+      {report?.report_date && (
+        <div className="text-xs bg-[var(--bg-soft)] px-3 py-1 rounded-full flex items-center gap-2">
+          <CalendarRange size={14} />
+          {report.report_date}
+        </div>
+      )}
+    </header>
 
-      {/* CONTROLS */}
+    {/* CONTROLS */}
+    <CardWrapper>
+      <div className="space-y-4">
+        <ReportTabs selected={reportType} onChange={setReportType} />
+
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* DATE SELECT (smal) */}
+          <select
+            value={selectedDate}
+            onChange={(e) => loadData(e.target.value)}
+            className="max-w-[160px]"
+            style={{ width: '160px' }}   // ⬅️ override global width: 100%
+          >
+            <option value="latest">Laatste</option>
+            {dates.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex-1" />
+
+          {/* PDF BUTTON */}
+          <button
+            onClick={handleDownload}
+            disabled={pdfLoading}
+            className="btn-secondary h-10"
+          >
+            {pdfLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
+            PDF
+          </button>
+
+          {/* GENERATE BUTTON — THEME PRIMARY */}
+          <button
+            onClick={() => handleGenerate(false, selectedDate)}
+            disabled={generating}
+            className="btn-primary h-10"
+          >
+            <RefreshCw size={16} />
+            Genereer rapport
+          </button>
+        </div>
+      </div>
+    </CardWrapper>
+
+    {/* AI LOADER */}
+    {generating && (
       <CardWrapper>
-        <div className="space-y-4">
-          <ReportTabs selected={reportType} onChange={setReportType} />
-
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedDate}
-              onChange={(e) => loadData(e.target.value)}
-              className="px-3 py-2 rounded-xl border"
-            >
-              <option value="latest">Laatste</option>
-              {dates.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-
-            <div className="flex-1" />
-
-            {/* PDF BUTTON */}
-            <button
-              onClick={handleDownload}
-              disabled={pdfLoading}
-              className="
-                inline-flex items-center gap-2
-                px-4 py-2 rounded-lg
-                border text-sm font-medium
-                bg-white hover:bg-gray-50
-                disabled:opacity-50
-              "
-            >
-              {pdfLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Download size={16} />
-              )}
-              PDF
-            </button>
-
-            {/* GENERATE BUTTON */}
-            <button
-              onClick={() => handleGenerate(false, selectedDate)}
-              disabled={generating}
-              className="
-                inline-flex items-center gap-2
-                px-4 py-2 rounded-lg
-                text-sm font-semibold
-                bg-blue-600 hover:bg-blue-700
-                text-white
-                disabled:opacity-50
-              "
-            >
-              <RefreshCw size={16} />
-              Genereer rapport
-            </button>
-          </div>
-        </div>
+        <AILoader text={generateInfo} />
       </CardWrapper>
+    )}
 
-      {generating && (
-        <CardWrapper>
-          <AILoader text={generateInfo} />
-        </CardWrapper>
-      )}
+    {/* ERROR */}
+    {error && (
+      <div className="bg-yellow-50 border p-3 rounded-xl flex gap-2">
+        <AlertTriangle size={16} />
+        {error}
+      </div>
+    )}
 
-      {error && (
-        <div className="bg-yellow-50 border p-3 rounded-xl flex gap-2">
-          <AlertTriangle size={16} />
-          {error}
-        </div>
-      )}
-
-      {!loading && report && (
-        <ReportContainer>
-          <ReportLayout report={report} />
-        </ReportContainer>
-      )}
-    </div>
-  );
-}
+    {/* REPORT */}
+    {!loading && report && (
+      <ReportContainer>
+        <ReportLayout report={report} />
+      </ReportContainer>
+    )}
+  </div>
+);

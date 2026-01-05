@@ -1,5 +1,15 @@
 import SummaryBlock from "../blocks/SummaryBlock";
 import MarketSnapshotBlock from "../blocks/MarketSnapshotBlock";
+import SectionAlignedAside from "../layout/SectionAlignedAside";
+
+/*
+=====================================================
+ SECTION: MARKET OVERVIEW
+ - Opening van het rapport
+ - Dagoverzicht + context
+ - Market snapshot als anker
+=====================================================
+*/
 
 export default function ReportSectionMarket({ report }) {
   if (!report) return null;
@@ -12,10 +22,10 @@ export default function ReportSectionMarket({ report }) {
         <SummaryBlock report={report} />
       </div>
 
-      {/* RECHTS: MARKET SNAPSHOT */}
-      <div className="md:col-span-1">
+      {/* RECHTS: MARKET SNAPSHOT (uitgelijnd) */}
+      <SectionAlignedAside>
         <MarketSnapshotBlock report={report} />
-      </div>
+      </SectionAlignedAside>
 
     </div>
   );

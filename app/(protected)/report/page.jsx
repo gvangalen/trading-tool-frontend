@@ -174,29 +174,68 @@ export default function ReportPage() {
     loadData('latest');
   }, [reportType]);
 
+  
   /* =====================================================
+     GENERATE
+  ===================================================== */
+  
+  const pollUntilNewReport = async (preferDate = 'latest') => {
+  pollTokenRef.current += 1;
+  const token = pollTokenRef.current;
+
+  let attempts = 0;
+
+  while (attempts < POLL_MAX_ATTEMPTS) {
+    if (pollTokenRef.current !== token) return;
+
+    await sleep(POLL_INTERVAL_MS);
+
+    const data =
+      preferDate === 'latest'
+        ? await current.getLatest()
+        : await current.getByDate(preferDate);
+
+    const sig = getReportSignature(data);
+
+    if (sig && sig !== lastSignatureRef.current) {
+      lastSignatureRef.current = sig;
+      setReport(data);
+      return;
+    }
+
+    attempts++;
+  }
+
+  throw new Error('Polling timeout: rapport niet verschenen');
+};
+
+/* =====================================================
      GENERATE
 ===================================================== */
 
   const handleGenerate = async (fromAuto = false, preferDate = 'latest') => {
-    setGenerating(true);
-    setGenerateInfo(
-      fromAuto
-        ? `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig…`
-        : `AI genereert het ${fallbackLabel.toLowerCase()}rapport…`
-    );
+  setGenerating(true);
+  setGenerateInfo(
+    fromAuto
+      ? `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig…`
+      : `AI genereert het ${fallbackLabel.toLowerCase()}rapport…`
+  );
 
-    try {
-      await current.generate();
-      await sleep(POLL_INTERVAL_MS);
-      await loadData(preferDate);
-      showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
-    } catch {
-      setError('Rapport genereren mislukt.');
-    } finally {
-      setGenerating(false);
-    }
-  };
+  try {
+    // 🔥 Trigger async generatie
+    await current.generate();
+
+    // 🧠 Wacht tot er écht een nieuw rapport is
+    await pollUntilNewReport(preferDate);
+
+    showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
+  } catch (err) {
+    console.error(err);
+    setError('Rapport genereren mislukt of duurde te lang.');
+  } finally {
+    setGenerating(false);
+  }
+};
 
   /* =====================================================
      PDF

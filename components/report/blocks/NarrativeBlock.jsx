@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
 import ReportSection from "../ReportSection";
-import { FileText } from "lucide-react";
 
 /* =====================================================
-   HELPERS — robuuste normalisatie (blijft nodig)
+   HELPERS — robuuste normalisatie
+   (nodig i.v.m. variabele AI-output)
 ===================================================== */
 
 function normalizeText(input) {
@@ -28,6 +28,7 @@ function normalizeText(input) {
   }
 
   if (typeof input === "object") {
+    // Veelvoorkomende AI-structuren
     if (input.text) return normalizeText(input.text);
     if (input.summary) return normalizeText(input.summary);
     if (input.description) return normalizeText(input.description);
@@ -37,12 +38,17 @@ function normalizeText(input) {
     if (input.points) return normalizeText(input.points);
     if (input.items) return normalizeText(input.items);
 
-    try {
-      const s = JSON.stringify(input, null, 2);
-      return s && s.trim().length ? s : null;
-    } catch {
-      return null;
+    // ❗ Alleen in development JSON dumpen
+    if (process.env.NODE_ENV === "development") {
+      try {
+        const s = JSON.stringify(input, null, 2);
+        return s && s.trim().length ? s : null;
+      } catch {
+        return null;
+      }
     }
+
+    return null;
   }
 
   return null;
@@ -64,10 +70,10 @@ function resolveText({ text, field, report }) {
 }
 
 /* =====================================================
-   NarrativeBlock — DOCUMENT STYLE (correct)
+   NarrativeBlock — DOCUMENT STYLE
    ✔ géén card
    ✔ géén border
-   ✔ analyse / verhaal
+   ✔ verhaal / analyse
 ===================================================== */
 
 export default function NarrativeBlock({

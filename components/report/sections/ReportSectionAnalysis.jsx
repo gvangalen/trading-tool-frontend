@@ -2,13 +2,14 @@ import NarrativeBlock from "../blocks/NarrativeBlock";
 import DataListBlock from "../blocks/DataListBlock";
 import SetupMatchCard from "../blocks/SetupMatchReportCard";
 import ActiveStrategyReportCard from "../blocks/ActiveStrategyReportCard";
+import SectionAlignedAside from "../layout/SectionAlignedAside";
 
 /*
 =====================================================
  SECTION: ANALYSIS
  - Middenstuk van het rapport
  - Verhaal + bewijs uit data
- - Cards zijn ankers, tekst mag groeien
+ - Tekst en cards delen layout, niet inhoud
 =====================================================
 */
 
@@ -20,7 +21,7 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           1️⃣ MARKET ANALYSE
-          Layout A — tekst links, card rechts
+          Tekst links, card rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -31,27 +32,27 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-1 self-start">
+        <SectionAlignedAside>
           <DataListBlock
             report={report}
             field="market_indicator_highlights"
             title="Market Indicator Highlights"
           />
-        </div>
+        </SectionAlignedAside>
       </div>
 
       {/* =================================================
           2️⃣ MACRO ANALYSE
-          Layout A — card links, tekst rechts
+          Card links, tekst rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        <div className="md:col-span-1 self-start">
+        <SectionAlignedAside>
           <DataListBlock
             report={report}
             field="macro_indicator_highlights"
             title="Macro Indicator Highlights"
           />
-        </div>
+        </SectionAlignedAside>
 
         <div className="md:col-span-2">
           <NarrativeBlock
@@ -64,7 +65,7 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           3️⃣ TECHNISCHE ANALYSE
-          Layout A — tekst links, card rechts
+          Tekst links, card rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -75,18 +76,18 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-1 self-start">
+        <SectionAlignedAside>
           <DataListBlock
             report={report}
             field="technical_indicator_highlights"
             title="Technical Indicator Highlights"
           />
-        </div>
+        </SectionAlignedAside>
       </div>
 
       {/* =================================================
           4️⃣ SETUP VALIDATIE
-          Layout A — tekst links, card rechts ✅ FIX
+          Tekst links, card rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -97,14 +98,14 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-1 self-start">
+        <SectionAlignedAside>
           <SetupMatchCard report={report} />
-        </div>
+        </SectionAlignedAside>
       </div>
 
       {/* =================================================
           5️⃣ STRATEGIE
-          Layout A — tekst links, card rechts ✅ FIX
+          Tekst links, card rechts
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -115,9 +116,9 @@ export default function ReportSectionAnalysis({ report }) {
           />
         </div>
 
-        <div className="md:col-span-1 self-start">
+        <SectionAlignedAside>
           <ActiveStrategyReportCard report={report} />
-        </div>
+        </SectionAlignedAside>
       </div>
 
     </div>

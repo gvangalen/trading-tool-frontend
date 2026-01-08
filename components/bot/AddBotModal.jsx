@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function AddBotModal({ open, onClose, onCreated }) {
+export default function AddBotModal({ open, onClose, onCreate }) {
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("BTC");
   const [mode, setMode] = useState("manual");
@@ -9,23 +9,27 @@ export default function AddBotModal({ open, onClose, onCreated }) {
   if (!open) return null;
 
   async function submit() {
-    if (!name) return alert("Bot name verplicht");
+    if (!name) {
+      alert("Bot name verplicht");
+      return;
+    }
 
     setLoading(true);
     try {
-      const res = await fetch("/api/bot/configs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, symbol, mode }),
+      await onCreate({
+        name,
+        symbol,
+        mode,
       });
 
-      const data = await res.json();
-      if (!data.ok) throw new Error();
+      // reset
+      setName("");
+      setSymbol("BTC");
+      setMode("manual");
 
-      onCreated(data); // ⬅️ bot teruggeven aan parent
       onClose();
-    } catch {
-      alert("Bot aanmaken mislukt");
+    } catch (e) {
+      alert(e?.message || "Bot aanmaken mislukt");
     } finally {
       setLoading(false);
     }

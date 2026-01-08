@@ -21,12 +21,13 @@ import CardWrapper from "@/components/ui/CardWrapper";
 
 export default function BotPage() {
   /* =====================================================
-     🧠 MODAL
+     🧠 MODAL (globale modal / snackbar)
   ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
 
   /* =====================================================
-     🧠 FORM STATE (voor nieuwe bot)
+     🧠 FORM STATE (nieuwe bot)
+     → bewust hier, niet in modal
   ===================================================== */
   const [form, setForm] = useState({
     name: "",
@@ -35,7 +36,7 @@ export default function BotPage() {
   });
 
   /* =====================================================
-     🧠 DATA
+     🧠 DATA (centrale hook)
   ===================================================== */
   const {
     configs = [],
@@ -54,18 +55,29 @@ export default function BotPage() {
 
   /* =====================================================
      ➕ ADD BOT HANDLER
+     → opent algemene modal met formulier
   ===================================================== */
   const handleAddBot = () => {
-    setForm({ name: "", symbol: "BTC", mode: "manual" });
+    // reset form bij openen
+    setForm({
+      name: "",
+      symbol: "BTC",
+      mode: "manual",
+    });
 
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
-        <AddBotForm form={form} setForm={setForm} />
+        <AddBotForm
+          form={form}
+          setForm={setForm}
+        />
       ),
       confirmText: "Opslaan",
+      cancelText: "Annuleren",
+
       onConfirm: async () => {
-        if (!form.name) {
+        if (!form.name || form.name.trim().length < 2) {
           showSnackbar("Botnaam is verplicht", "danger");
           return;
         }
@@ -75,8 +87,15 @@ export default function BotPage() {
           {
             method: "POST",
             credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: form.name.trim(),
+              symbol: form.symbol,
+              mode: form.mode,
+              active: true,
+            }),
           }
         );
 
@@ -84,7 +103,9 @@ export default function BotPage() {
           throw new Error("Bot aanmaken mislukt");
         }
 
+        // refresh bots direct
         await refresh.configs();
+
         showSnackbar("Bot succesvol toegevoegd", "success");
       },
     });
@@ -150,9 +171,14 @@ export default function BotPage() {
                 ))}
               </select>
 
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
-                Meerdere bots volgen later.
-              </p>
+              <div className="mt-3">
+                <button
+                  className="btn-secondary"
+                  onClick={handleAddBot}
+                >
+                  ➕ Nieuwe bot
+                </button>
+              </div>
             </>
           )}
         </CardWrapper>
@@ -192,12 +218,14 @@ export default function BotPage() {
       {/* 📊 SCORES */}
       {/* ================================================= */}
       <BotScores
-        scores={decision?.scores || {
-          macro: null,
-          market: null,
-          technical: null,
-          setup: null,
-        }}
+        scores={
+          decision?.scores || {
+            macro: null,
+            market: null,
+            technical: null,
+            setup: null,
+          }
+        }
         loading={loading.today}
       />
 

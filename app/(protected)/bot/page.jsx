@@ -8,21 +8,31 @@ import {
 } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
+import { useModal } from "@/components/ui/ModalProvider";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotScores from "@/components/bot/BotScores";
 import BotRules from "@/components/bot/BotRules";
 import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
-import AddBotModal from "@/components/bot/AddBotModal";
+import AddBotForm from "@/components/bot/AddBotForm";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 
 export default function BotPage() {
   /* =====================================================
-     🧠 STATE
+     🧠 MODAL
   ===================================================== */
-  const [showAddBot, setShowAddBot] = useState(false);
+  const { openConfirm, showSnackbar } = useModal();
+
+  /* =====================================================
+     🧠 FORM STATE (voor nieuwe bot)
+  ===================================================== */
+  const [form, setForm] = useState({
+    name: "",
+    symbol: "BTC",
+    mode: "manual",
+  });
 
   /* =====================================================
      🧠 DATA
@@ -35,13 +45,50 @@ export default function BotPage() {
     runBotToday,
     executeBot,
     skipBot,
-    createBot,          // ⬅️ NODIG
-    refresh,            // ⬅️ voor configs reload
+    refresh,
   } = useBotData();
 
   const decision = today?.decisions?.[0] ?? null;
   const order = today?.orders?.[0] ?? null;
   const activeBot = configs?.[0] ?? null;
+
+  /* =====================================================
+     ➕ ADD BOT HANDLER
+  ===================================================== */
+  const handleAddBot = () => {
+    setForm({ name: "", symbol: "BTC", mode: "manual" });
+
+    openConfirm({
+      title: "➕ Nieuwe bot",
+      description: (
+        <AddBotForm form={form} setForm={setForm} />
+      ),
+      confirmText: "Opslaan",
+      onConfirm: async () => {
+        if (!form.name) {
+          showSnackbar("Botnaam is verplicht", "danger");
+          return;
+        }
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE}/bot/configs`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(form),
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Bot aanmaken mislukt");
+        }
+
+        await refresh.configs();
+        showSnackbar("Bot succesvol toegevoegd", "success");
+      },
+    });
+  };
 
   /* =====================================================
      🧠 PAGE
@@ -84,7 +131,7 @@ export default function BotPage() {
 
               <button
                 className="btn-primary"
-                onClick={() => setShowAddBot(true)}
+                onClick={handleAddBot}
               >
                 ➕ Bot toevoegen
               </button>
@@ -188,19 +235,6 @@ export default function BotPage() {
       <BotHistoryTable
         history={history}
         loading={loading.history}
-      />
-
-      {/* ================================================= */}
-      {/* ➕ ADD BOT MODAL */}
-      {/* ================================================= */}
-      <AddBotModal
-        open={showAddBot}
-        onClose={() => setShowAddBot(false)}
-        onCreated={async (payload) => {
-          await createBot(payload);     // ⬅️ backend POST
-          await refresh.configs();      // ⬅️ direct zichtbaar
-          setShowAddBot(false);
-        }}
       />
     </div>
   );

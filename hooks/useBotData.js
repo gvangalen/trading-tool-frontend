@@ -1,5 +1,4 @@
 // frontend/hooks/useBotData.js
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -11,7 +10,7 @@ import {
   generateBotToday,
   markBotExecuted,
   skipBotToday,
-  createBotConfig,
+  createBotConfig, // ✅ moet bestaan in botApi.js
 } from "@lib/api/botApi";
 
 /**
@@ -23,7 +22,7 @@ import {
  * - bot configs
  * - bot decisions (today)
  * - bot history
- * - generate / execute / skip flows
+ * - create / generate / execute / skip flows
  *
  * ❌ GEEN business logic
  * ✅ Alleen state + API orchestration
@@ -42,6 +41,7 @@ export default function useBotData() {
     history: false,
     generate: false,
     action: false,
+    create: false, // ✅ extra loader voor create
   });
 
   const [error, setError] = useState(null);
@@ -89,102 +89,116 @@ export default function useBotData() {
   }, []);
 
   /* =====================================================
+     ➕ CREATE BOT
+     - POST /bot/configs
+     - refresh configs list
+  ===================================================== */
+  const createBot = useCallback(
+    async (payload) => {
+      setLoading((l) => ({ ...l, create: true }));
+      setError(null);
+
+      try {
+        const res = await createBotConfig(payload);
+
+        // 🔁 refresh bot list meteen
+        await loadConfigs();
+
+        return res;
+      } catch (e) {
+        console.error("❌ createBot error:", e);
+        setError(e.message);
+        throw e;
+      } finally {
+        setLoading((l) => ({ ...l, create: false }));
+      }
+    },
+    [loadConfigs]
+  );
+
+  /* =====================================================
      🔁 GENERATE
   ===================================================== */
-  const runBotToday = useCallback(async (report_date = null) => {
-    setLoading((l) => ({ ...l, generate: true }));
-    setError(null);
+  const runBotToday = useCallback(
+    async (report_date = null) => {
+      setLoading((l) => ({ ...l, generate: true }));
+      setError(null);
 
-    try {
-      const res = await generateBotToday(report_date);
+      try {
+        const res = await generateBotToday(report_date);
 
-      // Celery queued → polling later mogelijk
-      if (res?.queued) {
-        console.info("🕒 Bot queued via Celery", res.task_id);
+        // Celery queued → polling later mogelijk
+        if (res?.queued) {
+          console.info("🕒 Bot queued via Celery", res.task_id);
+        }
+
+        // Direct refresh
+        await loadToday();
+        await loadHistory(30);
+
+        return res;
+      } catch (e) {
+        console.error("❌ runBotToday error:", e);
+        setError(e.message);
+        throw e;
+      } finally {
+        setLoading((l) => ({ ...l, generate: false }));
       }
-
-      // Direct refresh
-      await loadToday();
-      await loadHistory(30);
-
-      return res;
-    } catch (e) {
-      console.error("❌ runBotToday error:", e);
-      setError(e.message);
-      throw e;
-    } finally {
-      setLoading((l) => ({ ...l, generate: false }));
-    }
-  }, [loadToday, loadHistory]);
+    },
+    [loadToday, loadHistory]
+  );
 
   /* =====================================================
      ✅ EXECUTE (human-in-the-loop)
   ===================================================== */
-  const executeBot = useCallback(async (payload) => {
-    setLoading((l) => ({ ...l, action: true }));
-    setError(null);
+  const executeBot = useCallback(
+    async (payload) => {
+      setLoading((l) => ({ ...l, action: true }));
+      setError(null);
 
-    try {
-      const res = await markBotExecuted(payload);
+      try {
+        const res = await markBotExecuted(payload);
 
-      await loadToday();
-      await loadHistory(30);
+        await loadToday();
+        await loadHistory(30);
 
-      return res;
-    } catch (e) {
-      console.error("❌ executeBot error:", e);
-      setError(e.message);
-      throw e;
-    } finally {
-      setLoading((l) => ({ ...l, action: false }));
-    }
-  }, [loadToday, loadHistory]);
-
-  /* =====================================================
-   ➕ CREATE BOT
-===================================================== */
-const createBot = useCallback(async (payload) => {
-  setLoading((l) => ({ ...l, configs: true }));
-  setError(null);
-
-  try {
-    const res = await createBotConfig(payload);
-
-    // 🔁 refresh bot list
-    await loadConfigs();
-
-    return res;
-  } catch (e) {
-    console.error("❌ createBot error:", e);
-    setError(e.message);
-    throw e;
-  } finally {
-    setLoading((l) => ({ ...l, configs: false }));
-  }
-}, [loadConfigs]);
+        return res;
+      } catch (e) {
+        console.error("❌ executeBot error:", e);
+        setError(e.message);
+        throw e;
+      } finally {
+        setLoading((l) => ({ ...l, action: false }));
+      }
+    },
+    [loadToday, loadHistory]
+  );
 
   /* =====================================================
      ⏭️ SKIP
   ===================================================== */
-  const skipBot = useCallback(async (payload) => {
-    setLoading((l) => ({ ...l, action: true }));
-    setError(null);
+  const skipBot = useCallback(
+    async (payload) => {
+      setLoading((l) => ({ ...l, action: true }));
+      setError(null);
 
-    try {
-      const res = await skipBotToday(payload);
+      try {
+        const res = await skipBotToday(payload);
 
-      await loadToday();
-      await loadHistory(30);
+        await loadToday();
+        await loadHistory(30);
 
-      return res;
-    } catch (e) {
-      console.error("❌ skipBot error:", e);
-      setError(e.message);
-      throw e;
-    } finally {
-      setLoading((l) => ({ ...l, action: false }));
-    }
-  }, [loadToday, loadHistory]);
+        return res;
+      } catch (e) {
+        console.error("❌ skipBot error:", e);
+        setError(e.message);
+        throw e;
+      } finally {
+        setLoading((l) => ({ ...l, action: false }));
+      }
+    },
+    [loadToday, loadHistory]
+  );
 
   /* =====================================================
      🔁 INIT LOAD
@@ -214,9 +228,10 @@ const createBot = useCallback(async (payload) => {
       today: loadToday,
       history: loadHistory,
     },
+
+    createBot, // ✅ nieuw
     runBotToday,
     executeBot,
     skipBot,
-    createBot,
   };
 }

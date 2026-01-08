@@ -35,6 +35,8 @@ export default function BotPage() {
     runBotToday,
     executeBot,
     skipBot,
+    createBot,          // ⬅️ NODIG
+    refresh,            // ⬅️ voor configs reload
   } = useBotData();
 
   const decision = today?.decisions?.[0] ?? null;
@@ -90,12 +92,12 @@ export default function BotPage() {
           ) : (
             <>
               <select
-                value={activeBot?.name || ""}
+                value={activeBot?.id || ""}
                 disabled
                 className="input opacity-70 cursor-not-allowed"
               >
                 {configs.map((bot) => (
-                  <option key={bot.id} value={bot.name}>
+                  <option key={bot.id} value={bot.id}>
                     {bot.name}
                   </option>
                 ))}
@@ -191,15 +193,15 @@ export default function BotPage() {
       {/* ================================================= */}
       {/* ➕ ADD BOT MODAL */}
       {/* ================================================= */}
-      {showAddBot && (
-        <AddBotModal
-          onClose={() => setShowAddBot(false)}
-          onCreated={() => {
-            setShowAddBot(false);
-            // eventueel later: refetch configs
-          }}
-        />
-      )}
+      <AddBotModal
+        open={showAddBot}
+        onClose={() => setShowAddBot(false)}
+        onCreated={async (payload) => {
+          await createBot(payload);     // ⬅️ backend POST
+          await refresh.configs();      // ⬅️ direct zichtbaar
+          setShowAddBot(false);
+        }}
+      />
     </div>
   );
 }

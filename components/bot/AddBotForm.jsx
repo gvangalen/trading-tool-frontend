@@ -38,8 +38,7 @@ export default function AddBotForm({ form, setForm }) {
           }
         >
           <option value="BTC">BTC</option>
-          <option value="ETH">ETH</option>
-        </select>
+          </select>
       </div>
 
       {/* ================= MODE ================= */}

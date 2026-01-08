@@ -11,6 +11,7 @@ import {
   generateBotToday,
   markBotExecuted,
   skipBotToday,
+  createBotConfig,
 } from "@lib/api/botApi";
 
 /**
@@ -140,6 +141,29 @@ export default function useBotData() {
   }, [loadToday, loadHistory]);
 
   /* =====================================================
+   ➕ CREATE BOT
+===================================================== */
+const createBot = useCallback(async (payload) => {
+  setLoading((l) => ({ ...l, configs: true }));
+  setError(null);
+
+  try {
+    const res = await createBotConfig(payload);
+
+    // 🔁 refresh bot list
+    await loadConfigs();
+
+    return res;
+  } catch (e) {
+    console.error("❌ createBot error:", e);
+    setError(e.message);
+    throw e;
+  } finally {
+    setLoading((l) => ({ ...l, configs: false }));
+  }
+}, [loadConfigs]);
+
+  /* =====================================================
      ⏭️ SKIP
   ===================================================== */
   const skipBot = useCallback(async (payload) => {
@@ -193,5 +217,6 @@ export default function useBotData() {
     runBotToday,
     executeBot,
     skipBot,
+    createBot,
   };
 }

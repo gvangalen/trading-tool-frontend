@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
-import { useModal } from "@/components/ui/ModalProvider";
+import { useModal } from "@/components/modal/ModalProvider";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotScores from "@/components/bot/BotScores";

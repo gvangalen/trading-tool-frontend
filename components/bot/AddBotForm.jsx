@@ -1,9 +1,23 @@
 "use client";
 
+/**
+ * AddBotForm
+ * --------------------------------------------------
+ * Controlled form voor het aanmaken van een trading bot
+ *
+ * Props:
+ * - form: { name, symbol, mode }
+ * - setForm: React setState
+ *
+ * ❌ geen API calls
+ * ❌ geen modal logic
+ * ✅ alleen input → state
+ */
 export default function AddBotForm({ form, setForm }) {
   return (
     <div className="space-y-4">
-      {/* ================= NAME ================= */}
+
+      {/* ================= NAAM ================= */}
       <div>
         <label className="block text-sm font-medium mb-1">
           Naam
@@ -12,10 +26,10 @@ export default function AddBotForm({ form, setForm }) {
           type="text"
           className="input w-full"
           placeholder="DCA BTC"
-          value={form.name}
+          value={form?.name ?? ""}
           onChange={(e) =>
-            setForm((f) => ({
-              ...f,
+            setForm((prev) => ({
+              ...prev,
               name: e.target.value,
             }))
           }
@@ -29,16 +43,17 @@ export default function AddBotForm({ form, setForm }) {
         </label>
         <select
           className="input w-full"
-          value={form.symbol}
+          value={form?.symbol ?? "BTC"}
           onChange={(e) =>
-            setForm((f) => ({
-              ...f,
+            setForm((prev) => ({
+              ...prev,
               symbol: e.target.value,
             }))
           }
         >
           <option value="BTC">BTC</option>
-          </select>
+          <option value="ETH">ETH</option>
+        </select>
       </div>
 
       {/* ================= MODE ================= */}
@@ -48,10 +63,10 @@ export default function AddBotForm({ form, setForm }) {
         </label>
         <select
           className="input w-full"
-          value={form.mode}
+          value={form?.mode ?? "manual"}
           onChange={(e) =>
-            setForm((f) => ({
-              ...f,
+            setForm((prev) => ({
+              ...prev,
               mode: e.target.value,
             }))
           }
@@ -61,6 +76,7 @@ export default function AddBotForm({ form, setForm }) {
           <option value="auto">Auto</option>
         </select>
       </div>
+
     </div>
   );
 }

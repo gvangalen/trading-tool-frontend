@@ -67,12 +67,16 @@ export default function BotPage() {
 
     openConfirm({
       title: "➕ Nieuwe bot",
+
+      // 🔑 CRUCIAAL: key forceert re-render van form in modal
       description: (
         <AddBotForm
+          key={`${form.name}-${form.symbol}-${form.mode}`}
           form={form}
           setForm={setForm}
         />
       ),
+
       confirmText: "Opslaan",
       cancelText: "Annuleren",
 

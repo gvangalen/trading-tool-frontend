@@ -153,6 +153,36 @@ export default function BotPage() {
     });
   };
 
+  <BotRules
+  rules={activeBot?.rules || []}
+  loading={loading.configs}
+  onEdit={() => {
+    rulesRef.current = activeBot?.rules || [];
+
+    openConfirm({
+      title: "🧠 Bot rules",
+      description: (
+        <BotRulesEditor
+          initialRules={rulesRef.current}
+          onChange={(r) => {
+            rulesRef.current = r;
+          }}
+        />
+      ),
+      confirmText: "Opslaan",
+      cancelText: "Annuleren",
+      onConfirm: async () => {
+        console.log("Rules save (frontend):", rulesRef.current);
+
+        // 🔜 later:
+        // await updateBot(activeBot.id, { rules: rulesRef.current })
+
+        showSnackbar("Rules opgeslagen", "success");
+      },
+    });
+  }}
+/>
+
   /* =====================================================
      🧠 PAGE
   ===================================================== */

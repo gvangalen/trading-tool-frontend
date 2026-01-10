@@ -5,6 +5,8 @@ import {
   Brain,
   SlidersHorizontal,
   Bot as BotIcon,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
@@ -26,8 +28,7 @@ export default function BotPage() {
   const { openConfirm, showSnackbar } = useModal();
 
   /* =====================================================
-     🧠 FORM REF
-     → ModalProvider rendert JSX maar beheert geen state
+     🧠 FORM REF (voor create & edit)
   ===================================================== */
   const formRef = useRef({
     name: "",
@@ -36,14 +37,16 @@ export default function BotPage() {
   });
 
   /* =====================================================
-     🧠 DATA (CENTRAAL)
+     🧠 DATA (CENTRALE HOOK)
   ===================================================== */
   const {
     configs = [],
     today = null,
     history = [],
     loading,
-    createBot,      // ✅ ENIGE manier om bot te maken
+    createBot,
+    updateBot,
+    deleteBot,
     runBotToday,
     executeBot,
     skipBot,
@@ -54,50 +57,82 @@ export default function BotPage() {
   const activeBot = configs?.[0] ?? null;
 
   /* =====================================================
-     ➕ BOT TOEVOEGEN
+     ➕ CREATE BOT
   ===================================================== */
   const handleAddBot = () => {
-    // reset bij openen
-    formRef.current = {
-      name: "",
-      symbol: "BTC",
-      mode: "manual",
-    };
+    formRef.current = { name: "", symbol: "BTC", mode: "manual" };
 
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
         <AddBotForm
           initialForm={formRef.current}
-          onChange={(data) => {
-            formRef.current = data;
-          }}
+          onChange={(data) => (formRef.current = data)}
         />
       ),
       confirmText: "Opslaan",
-      cancelText: "Annuleren",
-
       onConfirm: async () => {
-        const payload = formRef.current;
+        const p = formRef.current;
 
-        if (!payload.name || payload.name.trim().length < 2) {
+        if (!p.name || p.name.trim().length < 2) {
           showSnackbar("Botnaam is verplicht", "danger");
           return;
         }
 
-        try {
-          await createBot({
-            name: payload.name.trim(),
-            symbol: payload.symbol,
-            mode: payload.mode,
-            active: true,
-          });
+        await createBot({
+          name: p.name.trim(),
+          symbol: p.symbol,
+          mode: p.mode,
+          active: true,
+        });
 
-          showSnackbar("Bot succesvol toegevoegd", "success");
-        } catch (e) {
-          showSnackbar(e.message || "Bot aanmaken mislukt", "danger");
-          throw e;
-        }
+        showSnackbar("Bot toegevoegd", "success");
+      },
+    });
+  };
+
+  /* =====================================================
+     ✏️ EDIT BOT
+  ===================================================== */
+  const handleEditBot = (bot) => {
+    formRef.current = {
+      name: bot.name,
+      symbol: bot.symbol,
+      mode: bot.mode,
+    };
+
+    openConfirm({
+      title: "✏️ Bot aanpassen",
+      description: (
+        <AddBotForm
+          initialForm={formRef.current}
+          onChange={(data) => (formRef.current = data)}
+        />
+      ),
+      confirmText: "Opslaan",
+      onConfirm: async () => {
+        await updateBot(bot.id, formRef.current);
+        showSnackbar("Bot aangepast", "success");
+      },
+    });
+  };
+
+  /* =====================================================
+     🗑 DELETE BOT
+  ===================================================== */
+  const handleDeleteBot = (bot) => {
+    openConfirm({
+      title: "🗑 Bot verwijderen",
+      tone: "danger",
+      description: (
+        <p>
+          Weet je zeker dat je <b>{bot.name}</b> wilt verwijderen?
+        </p>
+      ),
+      confirmText: "Verwijderen",
+      onConfirm: async () => {
+        await deleteBot(bot.id);
+        showSnackbar("Bot verwijderd", "success");
       },
     });
   };
@@ -119,31 +154,46 @@ export default function BotPage() {
       <BotDecisionCard
         decision={decision}
         loading={loading.today}
-        onGenerate={() => runBotToday()}
+        onGenerate={runBotToday}
       />
 
       {/* ================= CONFIG ================= */}
       <div className="grid md:grid-cols-2 gap-6">
-        <CardWrapper title="Bot" icon={<Brain className="icon" />}>
+        <CardWrapper title="Bots" icon={<Brain className="icon" />}>
           {configs.length === 0 ? (
             <button className="btn-primary" onClick={handleAddBot}>
               ➕ Bot toevoegen
             </button>
           ) : (
-            <>
-              <select disabled className="input opacity-70">
-                {configs.map((bot) => (
-                  <option key={bot.id}>{bot.name}</option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              {configs.map((bot) => (
+                <div
+                  key={bot.id}
+                  className="flex items-center justify-between p-2 rounded-lg border border-[var(--card-border)]"
+                >
+                  <span className="font-medium">{bot.name}</span>
 
-              <button
-                className="btn-secondary mt-3"
-                onClick={handleAddBot}
-              >
+                  <div className="flex gap-2">
+                    <button
+                      className="btn-icon"
+                      onClick={() => handleEditBot(bot)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="btn-icon text-red-500"
+                      onClick={() => handleDeleteBot(bot)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <button className="btn-secondary mt-2" onClick={handleAddBot}>
                 ➕ Nieuwe bot
               </button>
-            </>
+            </div>
           )}
         </CardWrapper>
 

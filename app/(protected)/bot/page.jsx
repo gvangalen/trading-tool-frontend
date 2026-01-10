@@ -34,6 +34,7 @@ export default function BotPage() {
   ===================================================== */
   const formRef = useRef({
     name: "",
+    bot_type: "dca",
     symbol: "BTC",
     mode: "manual",
   });
@@ -64,7 +65,12 @@ export default function BotPage() {
      ➕ CREATE BOT
   ===================================================== */
   const handleAddBot = () => {
-    formRef.current = { name: "", symbol: "BTC", mode: "manual" };
+    formRef.current = {
+      name: "",
+      bot_type: "dca",
+      symbol: "BTC",
+      mode: "manual",
+    };
 
     openConfirm({
       title: "➕ Nieuwe bot",
@@ -85,9 +91,9 @@ export default function BotPage() {
 
         await createBot({
           name: p.name.trim(),
+          bot_type: p.bot_type,
           symbol: p.symbol,
           mode: p.mode,
-          bot_type: p.bot_type,
           is_active: true,
         });
 
@@ -102,9 +108,9 @@ export default function BotPage() {
   const handleEditBot = (bot) => {
     formRef.current = {
       name: bot.name,
+      bot_type: bot.bot_type,
       symbol: bot.symbol,
       mode: bot.mode,
-      bot_type: p.bot_type,
     };
 
     openConfirm({
@@ -171,56 +177,56 @@ export default function BotPage() {
       <div className="grid md:grid-cols-2 gap-6">
         {/* ===== BOTS ===== */}
         <CardWrapper title="Bots" icon={<Brain className="icon" />}>
-          {configs.length === 0 ? (
-            <button className="btn-primary" onClick={handleAddBot}>
-              ➕ Bot toevoegen
-            </button>
-          ) : (
-            <div className="space-y-2">
-              {configs.map((bot) => {
-                const isActive = bot.id === activeBot?.id;
+          <div className="space-y-2">
+            {configs.map((bot) => {
+              const isActive = bot.id === activeBot?.id;
 
-                return (
-                  <div
-                    key={bot.id}
-                    className={`flex items-center justify-between p-2 rounded-lg border ${
-                      isActive
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                        : "border-[var(--card-border)]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {isActive ? (
-                        <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-muted" />
-                      )}
-                      <span className="font-medium">{bot.name}</span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        className="btn-icon"
-                        onClick={() => handleEditBot(bot)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        className="btn-icon text-red-500"
-                        onClick={() => handleDeleteBot(bot)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+              return (
+                <div
+                  key={bot.id}
+                  className={`flex items-center justify-between p-2 rounded-lg border ${
+                    isActive
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      : "border-[var(--card-border)]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isActive ? (
+                      <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-muted" />
+                    )}
+                    <span className="font-medium">
+                      {bot.name}{" "}
+                      <span className="text-xs opacity-60">
+                        ({bot.bot_type.toUpperCase()})
+                      </span>
+                    </span>
                   </div>
-                );
-              })}
 
-              <button className="btn-secondary mt-2" onClick={handleAddBot}>
-                ➕ Nieuwe bot
-              </button>
-            </div>
-          )}
+                  <div className="flex gap-2">
+                    <button
+                      className="btn-icon"
+                      onClick={() => handleEditBot(bot)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="btn-icon text-red-500"
+                      onClick={() => handleDeleteBot(bot)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* 👉 ALTIJD zelfde knop-design */}
+            <button className="btn-secondary mt-2" onClick={handleAddBot}>
+              ➕ Nieuwe bot
+            </button>
+          </div>
         </CardWrapper>
 
         {/* ===== MODE ===== */}

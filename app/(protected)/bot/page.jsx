@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Brain,
   SlidersHorizontal,
@@ -43,6 +43,11 @@ export default function BotPage() {
   const rulesRef = useRef([]);
 
   /* =====================================================
+     ✅ ACTIVE BOT (UI selection)
+  ===================================================== */
+  const [activeBotId, setActiveBotId] = useState(null);
+
+  /* =====================================================
      🧠 DATA (CENTRALE HOOK)
   ===================================================== */
   const {
@@ -58,11 +63,24 @@ export default function BotPage() {
     skipBot,
   } = useBotData();
 
+  // ✅ kies default active bot (1x) zodra configs geladen zijn
+  useEffect(() => {
+    if (!activeBotId && configs.length > 0) {
+      const preferred = configs.find((b) => b.is_active)?.id ?? configs[0].id;
+      setActiveBotId(preferred);
+    }
+  }, [configs, activeBotId]);
+
+  // ✅ echte selected bot
+  const activeBot =
+    configs.find((b) => b.id === activeBotId) ??
+    configs.find((b) => b.is_active) ??
+    configs[0] ??
+    null;
+
+  // (voor nu) today/decision/order zijn nog “globaal”
   const decision = today?.decisions?.[0] ?? null;
   const order = today?.orders?.[0] ?? null;
-
-  const activeBot =
-    configs.find((b) => b.is_active) ?? configs[0] ?? null;
 
   /* =====================================================
      ➕ CREATE BOT
@@ -92,13 +110,17 @@ export default function BotPage() {
           return;
         }
 
-        await createBot({
+        const res = await createBot({
           name: p.name.trim(),
           bot_type: p.bot_type,
           symbol: p.symbol,
           mode: p.mode,
           is_active: true,
         });
+
+        // ✅ selecteer net aangemaakte bot (als backend id teruggeeft)
+        const newId = res?.bot_id ?? res?.id ?? null;
+        if (newId) setActiveBotId(newId);
 
         showSnackbar("Bot toegevoegd", "success");
       },
@@ -151,13 +173,20 @@ export default function BotPage() {
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
+
+        // ✅ als je actieve bot delete → selecteer volgende
+        if (activeBotId === bot.id) {
+          const remaining = configs.filter((b) => b.id !== bot.id);
+          setActiveBotId(remaining[0]?.id ?? null);
+        }
+
         showSnackbar("Bot verwijderd", "success");
       },
     });
   };
 
   /* =====================================================
-     🧠 EDIT RULES (FRONTEND ONLY)
+     🧠 EDIT RULES (per selected bot) — FRONTEND ONLY
   ===================================================== */
   const handleEditRules = () => {
     if (!activeBot) return;
@@ -165,7 +194,7 @@ export default function BotPage() {
     rulesRef.current = activeBot.rules || [];
 
     openConfirm({
-      title: "🧠 Bot rules",
+      title: `🧠 Rules – ${activeBot.name}`,
       description: (
         <BotRulesEditor
           initialRules={rulesRef.current}
@@ -177,10 +206,16 @@ export default function BotPage() {
       confirmText: "Opslaan",
       cancelText: "Annuleren",
       onConfirm: async () => {
-        console.log("Rules save (frontend only):", rulesRef.current);
-
-        // 🔜 later:
-        // await updateBot(activeBot.id, { rules: rulesRef.current })
+        // ✅ NU al “echt per bot” (frontend) — backend kan later
+        // Als je backend dit al accepteert: uncommenten en klaar
+        await updateBot(activeBot.id, {
+          rules: rulesRef.current,
+          is_active: activeBot.is_active,
+          name: activeBot.name,
+          bot_type: activeBot.bot_type,
+          symbol: activeBot.symbol,
+          mode: activeBot.mode,
+        });
 
         showSnackbar("Rules opgeslagen", "success");
       },
@@ -195,9 +230,7 @@ export default function BotPage() {
       {/* ================= TITLE ================= */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Trading Bots
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Trading Bots</h1>
       </div>
 
       {/* ================= TODAY ================= */}
@@ -218,11 +251,13 @@ export default function BotPage() {
               return (
                 <div
                   key={bot.id}
-                  className={`flex items-center justify-between p-2 rounded-lg border ${
+                  onClick={() => setActiveBotId(bot.id)}
+                  className={`cursor-pointer flex items-center justify-between p-2 rounded-lg border ${
                     isActive
                       ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                       : "border-[var(--card-border)]"
                   }`}
+                  title="Klik om deze bot te selecteren"
                 >
                   <div className="flex items-center gap-2">
                     {isActive ? (
@@ -233,21 +268,31 @@ export default function BotPage() {
                     <span className="font-medium">
                       {bot.name}{" "}
                       <span className="text-xs opacity-60">
-                        ({bot.bot_type.toUpperCase()})
+                        ({String(bot.bot_type || "").toUpperCase()})
                       </span>
                     </span>
                   </div>
 
+                  {/* ✅ stop propagation zodat click niet ook “select” triggert (optioneel, maar netjes) */}
                   <div className="flex gap-2">
                     <button
                       className="btn-icon"
-                      onClick={() => handleEditBot(bot)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditBot(bot);
+                      }}
+                      title="Bewerken"
                     >
                       <Pencil size={16} />
                     </button>
+
                     <button
                       className="btn-icon text-red-500"
-                      onClick={() => handleDeleteBot(bot)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBot(bot);
+                      }}
+                      title="Verwijderen"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -289,7 +334,7 @@ export default function BotPage() {
       {/* ================= SCORES ================= */}
       <BotScores scores={decision?.scores || {}} loading={loading.today} />
 
-      {/* ================= RULES ================= */}
+      {/* ================= RULES (per selected bot) ================= */}
       <BotRules
         rules={activeBot?.rules || []}
         loading={loading.configs}

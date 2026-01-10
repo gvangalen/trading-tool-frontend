@@ -48,6 +48,12 @@ export default function BotPage() {
   const [activeBotId, setActiveBotId] = useState(null);
 
   /* =====================================================
+     ✅ LOCAL RULES (UI-first, zodat je DIRECT verschil ziet)
+     - backend kan later (of nu al) syncen
+  ===================================================== */
+  const [localRulesByBotId, setLocalRulesByBotId] = useState({});
+
+  /* =====================================================
      🧠 DATA (CENTRALE HOOK)
   ===================================================== */
   const {
@@ -66,17 +72,24 @@ export default function BotPage() {
   // ✅ kies default active bot (1x) zodra configs geladen zijn
   useEffect(() => {
     if (!activeBotId && configs.length > 0) {
-      const preferred = configs.find((b) => b.is_active)?.id ?? configs[0].id;
+      const preferred =
+        configs.find((b) => b.is_active)?.id ?? configs[0].id;
       setActiveBotId(preferred);
     }
   }, [configs, activeBotId]);
 
-  // ✅ echte selected bot
+  // ✅ echte selected bot (UI selection is leading)
   const activeBot =
     configs.find((b) => b.id === activeBotId) ??
     configs.find((b) => b.is_active) ??
     configs[0] ??
     null;
+
+  // ✅ rules die je toont: eerst local override, anders backend value
+  const activeBotRules =
+    (activeBot?.id && localRulesByBotId?.[activeBot.id]) ??
+    activeBot?.rules ??
+    [];
 
   // (voor nu) today/decision/order zijn nog “globaal”
   const decision = today?.decisions?.[0] ?? null;
@@ -174,6 +187,13 @@ export default function BotPage() {
       onConfirm: async () => {
         await deleteBot(bot.id);
 
+        // ✅ ruim local rules op
+        setLocalRulesByBotId((prev) => {
+          const next = { ...prev };
+          delete next[bot.id];
+          return next;
+        });
+
         // ✅ als je actieve bot delete → selecteer volgende
         if (activeBotId === bot.id) {
           const remaining = configs.filter((b) => b.id !== bot.id);
@@ -186,12 +206,13 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧠 EDIT RULES (per selected bot) — FRONTEND ONLY
+     🧠 EDIT RULES (per selected bot) — UI FIRST + backend sync
   ===================================================== */
   const handleEditRules = () => {
     if (!activeBot) return;
 
-    rulesRef.current = activeBot.rules || [];
+    // ✅ pak de rules die we NU tonen (local override > backend)
+    rulesRef.current = Array.isArray(activeBotRules) ? activeBotRules : [];
 
     openConfirm({
       title: `🧠 Rules – ${activeBot.name}`,
@@ -206,20 +227,41 @@ export default function BotPage() {
       confirmText: "Opslaan",
       cancelText: "Annuleren",
       onConfirm: async () => {
-        // ✅ NU al “echt per bot” (frontend) — backend kan later
-        // Als je backend dit al accepteert: uncommenten en klaar
-        await updateBot(activeBot.id, {
-          rules: rulesRef.current,
-          is_active: activeBot.is_active,
-          name: activeBot.name,
-          bot_type: activeBot.bot_type,
-          symbol: activeBot.symbol,
-          mode: activeBot.mode,
-        });
+        // ✅ 1) DIRECT zichtbaar in UI (altijd)
+        setLocalRulesByBotId((prev) => ({
+          ...prev,
+          [activeBot.id]: rulesRef.current,
+        }));
+
+        // ✅ 2) Probeer backend sync (als backend rules accepteert)
+        //    - Als backend het (nog) negeert: UI blijft alsnog correct (local)
+        try {
+          await updateBot(activeBot.id, {
+            rules: rulesRef.current,
+            is_active: activeBot.is_active,
+            name: activeBot.name,
+            bot_type: activeBot.bot_type,
+            symbol: activeBot.symbol,
+            mode: activeBot.mode,
+          });
+        } catch (e) {
+          console.warn("⚠️ Backend rules save failed (UI blijft local):", e);
+        }
 
         showSnackbar("Rules opgeslagen", "success");
       },
     });
+  };
+
+  /* =====================================================
+     ✅ UX: duidelijke selecteer-flow
+     - Klik op rij = selecteren
+     - Extra hint bovenaan
+  ===================================================== */
+  const handleSelectBot = (botId) => {
+    setActiveBotId(botId);
+    // (optioneel) kleine feedback, maar niet spammen
+    // showSnackbar("Bot geselecteerd", "success");
   };
 
   /* =====================================================
@@ -245,35 +287,55 @@ export default function BotPage() {
         {/* ===== BOTS ===== */}
         <CardWrapper title="Bots" icon={<Brain className="icon" />}>
           <div className="space-y-2">
+            <p className="text-xs text-[var(--text-muted)]">
+              Klik op een bot om te selecteren. De geselecteerde bot bepaalt
+              welke rules hieronder worden getoond en bewerkt.
+            </p>
+
             {configs.map((bot) => {
-              const isActive = bot.id === activeBot?.id;
+              const isSelected = bot.id === activeBot?.id;
 
               return (
                 <div
                   key={bot.id}
-                  onClick={() => setActiveBotId(bot.id)}
+                  onClick={() => handleSelectBot(bot.id)}
                   className={`cursor-pointer flex items-center justify-between p-2 rounded-lg border ${
-                    isActive
+                    isSelected
                       ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                       : "border-[var(--card-border)]"
                   }`}
                   title="Klik om deze bot te selecteren"
                 >
                   <div className="flex items-center gap-2">
-                    {isActive ? (
+                    {isSelected ? (
                       <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
                     ) : (
                       <Circle className="w-4 h-4 text-muted" />
                     )}
-                    <span className="font-medium">
-                      {bot.name}{" "}
-                      <span className="text-xs opacity-60">
-                        ({String(bot.bot_type || "").toUpperCase()})
+
+                    <div className="flex flex-col leading-tight">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {bot.name}{" "}
+                          <span className="text-xs opacity-60">
+                            ({String(bot.bot_type || "").toUpperCase()})
+                          </span>
+                        </span>
+
+                        {isSelected && (
+                          <span className="text-[10px] px-2 py-[2px] rounded-full border border-[var(--accent)] text-[var(--accent)]">
+                            geselecteerd
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-xs text-[var(--text-muted)]">
+                        Asset: {bot.symbol} • Mode: {bot.mode}
                       </span>
-                    </span>
+                    </div>
                   </div>
 
-                  {/* ✅ stop propagation zodat click niet ook “select” triggert (optioneel, maar netjes) */}
+                  {/* ✅ stop propagation zodat click op icons niet óók select triggert */}
                   <div className="flex gap-2">
                     <button
                       className="btn-icon"
@@ -335,11 +397,26 @@ export default function BotPage() {
       <BotScores scores={decision?.scores || {}} loading={loading.today} />
 
       {/* ================= RULES (per selected bot) ================= */}
-      <BotRules
-        rules={activeBot?.rules || []}
-        loading={loading.configs}
-        onEdit={handleEditRules}
-      />
+      <div className="space-y-3">
+        {/* Extra duidelijke context boven rules */}
+        <div className="text-xs text-[var(--text-muted)]">
+          Geselecteerde bot:{" "}
+          <span className="font-medium text-[var(--text)]">
+            {activeBot ? activeBot.name : "—"}
+          </span>
+          {activeBot?.bot_type ? (
+            <span className="ml-2 opacity-70">
+              ({String(activeBot.bot_type).toUpperCase()})
+            </span>
+          ) : null}
+        </div>
+
+        <BotRules
+          rules={activeBotRules}
+          loading={loading.configs}
+          onEdit={handleEditRules}
+        />
+      </div>
 
       {/* ================= ORDER ================= */}
       <BotOrderPreview

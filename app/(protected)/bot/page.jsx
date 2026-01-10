@@ -27,7 +27,7 @@ export default function BotPage() {
 
   /* =====================================================
      🧠 FORM REF
-     → nodig omdat ModalProvider JSX niet re-rendert
+     → ModalProvider rendert JSX maar beheert geen state
   ===================================================== */
   const formRef = useRef({
     name: "",
@@ -36,17 +36,17 @@ export default function BotPage() {
   });
 
   /* =====================================================
-     🧠 DATA (centrale hook)
+     🧠 DATA (CENTRAAL)
   ===================================================== */
   const {
     configs = [],
     today = null,
     history = [],
     loading,
+    createBot,      // ✅ ENIGE manier om bot te maken
     runBotToday,
     executeBot,
     skipBot,
-    refresh,
   } = useBotData();
 
   const decision = today?.decisions?.[0] ?? null;
@@ -54,11 +54,10 @@ export default function BotPage() {
   const activeBot = configs?.[0] ?? null;
 
   /* =====================================================
-     ➕ ADD BOT HANDLER
-     → correcte manier met jouw ModalProvider
+     ➕ BOT TOEVOEGEN
   ===================================================== */
   const handleAddBot = () => {
-    // reset ref bij openen
+    // reset bij openen
     formRef.current = {
       name: "",
       symbol: "BTC",
@@ -77,6 +76,7 @@ export default function BotPage() {
       ),
       confirmText: "Opslaan",
       cancelText: "Annuleren",
+
       onConfirm: async () => {
         const payload = formRef.current;
 
@@ -85,30 +85,19 @@ export default function BotPage() {
           return;
         }
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE}/bot/configs`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: payload.name.trim(),
-              symbol: payload.symbol,
-              mode: payload.mode,
-              active: true,
-            }),
-          }
-        );
+        try {
+          await createBot({
+            name: payload.name.trim(),
+            symbol: payload.symbol,
+            mode: payload.mode,
+            active: true,
+          });
 
-        if (!res.ok) {
-          showSnackbar("Bot aanmaken mislukt", "danger");
-          throw new Error("Bot aanmaken mislukt");
+          showSnackbar("Bot succesvol toegevoegd", "success");
+        } catch (e) {
+          showSnackbar(e.message || "Bot aanmaken mislukt", "danger");
+          throw e;
         }
-
-        await refresh.configs();
-        showSnackbar("Bot succesvol toegevoegd", "success");
       },
     });
   };
@@ -126,7 +115,7 @@ export default function BotPage() {
         </h1>
       </div>
 
-      {/* ================= DECISION ================= */}
+      {/* ================= TODAY ================= */}
       <BotDecisionCard
         decision={decision}
         loading={loading.today}
@@ -135,81 +124,38 @@ export default function BotPage() {
 
       {/* ================= CONFIG ================= */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* BOT SELECT */}
         <CardWrapper title="Bot" icon={<Brain className="icon" />}>
           {configs.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-[var(--text-muted)]">
-                Je hebt nog geen bots.
-              </p>
-
-              <button className="btn-primary" onClick={handleAddBot}>
-                ➕ Bot toevoegen
-              </button>
-            </div>
+            <button className="btn-primary" onClick={handleAddBot}>
+              ➕ Bot toevoegen
+            </button>
           ) : (
             <>
-              <select
-                value={activeBot?.id || ""}
-                disabled
-                className="input opacity-70 cursor-not-allowed"
-              >
+              <select disabled className="input opacity-70">
                 {configs.map((bot) => (
-                  <option key={bot.id} value={bot.id}>
-                    {bot.name}
-                  </option>
+                  <option key={bot.id}>{bot.name}</option>
                 ))}
               </select>
 
-              <div className="mt-3">
-                <button className="btn-secondary" onClick={handleAddBot}>
-                  ➕ Nieuwe bot
-                </button>
-              </div>
+              <button
+                className="btn-secondary mt-3"
+                onClick={handleAddBot}
+              >
+                ➕ Nieuwe bot
+              </button>
             </>
           )}
         </CardWrapper>
 
-        {/* MODE */}
         <CardWrapper title="Mode" icon={<SlidersHorizontal className="icon" />}>
-          <div className="flex gap-3">
-            {[
-              { id: "manual", label: "Manual" },
-              { id: "semi", label: "Semi-auto" },
-              { id: "auto", label: "Auto", disabled: true },
-            ].map((m) => (
-              <button
-                key={m.id}
-                disabled={m.disabled}
-                className={`
-                  btn-secondary
-                  ${m.id === activeBot?.mode ? "btn-primary" : ""}
-                  ${m.disabled ? "opacity-40 cursor-not-allowed" : ""}
-                `}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-
-          <p className="mt-3 text-sm text-[var(--text-muted)]">
-            Auto-mode wordt later geactiveerd zodra exchanges gekoppeld zijn.
+          <p className="text-sm text-[var(--text-muted)]">
+            Auto-mode volgt zodra exchanges gekoppeld zijn.
           </p>
         </CardWrapper>
       </div>
 
       {/* ================= SCORES ================= */}
-      <BotScores
-        scores={
-          decision?.scores || {
-            macro: null,
-            market: null,
-            technical: null,
-            setup: null,
-          }
-        }
-        loading={loading.today}
-      />
+      <BotScores scores={decision?.scores || {}} loading={loading.today} />
 
       {/* ================= RULES ================= */}
       <BotRules rules={activeBot?.rules || []} />

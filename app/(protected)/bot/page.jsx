@@ -17,6 +17,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotScores from "@/components/bot/BotScores";
 import BotRules from "@/components/bot/BotRules";
+import BotRulesEditor from "@/components/bot/BotRulesEditor";
 import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import AddBotForm from "@/components/bot/AddBotForm";
@@ -30,7 +31,7 @@ export default function BotPage() {
   const { openConfirm, showSnackbar } = useModal();
 
   /* =====================================================
-     🧠 FORM REF (create & edit)
+     🧠 FORM REFS
   ===================================================== */
   const formRef = useRef({
     name: "",
@@ -38,6 +39,8 @@ export default function BotPage() {
     symbol: "BTC",
     mode: "manual",
   });
+
+  const rulesRef = useRef([]);
 
   /* =====================================================
      🧠 DATA (CENTRALE HOOK)
@@ -153,11 +156,13 @@ export default function BotPage() {
     });
   };
 
-  <BotRules
-  rules={activeBot?.rules || []}
-  loading={loading.configs}
-  onEdit={() => {
-    rulesRef.current = activeBot?.rules || [];
+  /* =====================================================
+     🧠 EDIT RULES (FRONTEND ONLY)
+  ===================================================== */
+  const handleEditRules = () => {
+    if (!activeBot) return;
+
+    rulesRef.current = activeBot.rules || [];
 
     openConfirm({
       title: "🧠 Bot rules",
@@ -172,7 +177,7 @@ export default function BotPage() {
       confirmText: "Opslaan",
       cancelText: "Annuleren",
       onConfirm: async () => {
-        console.log("Rules save (frontend):", rulesRef.current);
+        console.log("Rules save (frontend only):", rulesRef.current);
 
         // 🔜 later:
         // await updateBot(activeBot.id, { rules: rulesRef.current })
@@ -180,8 +185,7 @@ export default function BotPage() {
         showSnackbar("Rules opgeslagen", "success");
       },
     });
-  }}
-/>
+  };
 
   /* =====================================================
      🧠 PAGE
@@ -252,7 +256,6 @@ export default function BotPage() {
               );
             })}
 
-            {/* 👉 ALTIJD zelfde knop-design */}
             <button className="btn-secondary mt-2" onClick={handleAddBot}>
               ➕ Nieuwe bot
             </button>
@@ -272,23 +275,11 @@ export default function BotPage() {
               <b>Manual</b> – Alleen beslissingen, jij voert uit
             </div>
 
-            <div
-              className={`p-2 rounded border ${
-                activeBot?.mode === "semi"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                  : "border-[var(--card-border)] opacity-60"
-              }`}
-            >
+            <div className="p-2 rounded border opacity-60">
               <b>Semi-auto</b> – Orders klaarzetten (binnenkort)
             </div>
 
-            <div
-              className={`p-2 rounded border ${
-                activeBot?.mode === "auto"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                  : "border-[var(--card-border)] opacity-60"
-              }`}
-            >
+            <div className="p-2 rounded border opacity-60">
               <b>Auto</b> – Volledig automatisch (exchanges vereist)
             </div>
           </div>
@@ -299,7 +290,11 @@ export default function BotPage() {
       <BotScores scores={decision?.scores || {}} loading={loading.today} />
 
       {/* ================= RULES ================= */}
-      <BotRules rules={activeBot?.rules || []} />
+      <BotRules
+        rules={activeBot?.rules || []}
+        loading={loading.configs}
+        onEdit={handleEditRules}
+      />
 
       {/* ================= ORDER ================= */}
       <BotOrderPreview

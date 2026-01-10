@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
-export default function BotRulesEditor({ initialRules = [], onChange }) {
-  const [rules, setRules] = useState(
-    initialRules.length > 0
-      ? initialRules
-      : []
-  );
+export default function BotRulesEditor({
+  initialRules = [],
+  onChange,
+}) {
+  const [rules, setRules] = useState([]);
+
+  // sync initialRules → local state (BELANGRIJK)
+  useEffect(() => {
+    setRules(
+      Array.isArray(initialRules) ? initialRules : []
+    );
+  }, [initialRules]);
 
   // push changes naar parent (modal owner)
   useEffect(() => {
@@ -27,6 +33,7 @@ export default function BotRulesEditor({ initialRules = [], onChange }) {
     setRules((prev) => [
       ...prev,
       {
+        // tijdelijke frontend-id (backend genereert later echte id)
         id: crypto.randomUUID(),
         name: "Nieuwe rule",
         enabled: true,
@@ -105,7 +112,10 @@ export default function BotRulesEditor({ initialRules = [], onChange }) {
         </div>
       ))}
 
-      <button className="btn-secondary w-full" onClick={addRule}>
+      <button
+        className="btn-secondary w-full"
+        onClick={addRule}
+      >
         <Plus size={16} className="mr-1" />
         Rule toevoegen
       </button>

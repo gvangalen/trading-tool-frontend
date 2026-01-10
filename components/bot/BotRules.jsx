@@ -7,24 +7,35 @@ import { SlidersHorizontal, Pencil } from "lucide-react";
 /**
  * BotRules
  * --------------------------------------------------
- * - Toont rules van de geselecteerde / actieve bot
- * - Volledig stateless
- * - Geen backend logica
+ * - Toont rules van de ACTIEVE bot
+ * - Maakt bot-context expliciet (UX!)
+ * - Stateless
  * - Edit wordt afgehandeld door parent (BotPage)
  */
 export default function BotRules({
+  bot,            // 👈 ACTIEVE BOT (verplicht voor context)
   rules = [],
   loading = false,
   onEdit,
 }) {
+  const hasBot = !!bot;
   const hasRules = Array.isArray(rules) && rules.length > 0;
 
   return (
     <CardWrapper
-      title="Bot Rules"
+      title={
+        hasBot
+          ? `Bot Rules — ${bot.name}`
+          : "Bot Rules"
+      }
+      subtitle={
+        hasBot
+          ? `${bot.bot_type.toUpperCase()} bot • ${bot.symbol}`
+          : "Geen bot geselecteerd"
+      }
       icon={<SlidersHorizontal className="icon" />}
       action={
-        onEdit && (
+        hasBot && onEdit ? (
           <button
             className="btn-icon"
             onClick={onEdit}
@@ -32,7 +43,7 @@ export default function BotRules({
           >
             <Pencil size={16} />
           </button>
-        )
+        ) : null
       }
     >
       {/* ===================== */}
@@ -41,18 +52,28 @@ export default function BotRules({
       {loading && <CardLoader text="Rules laden…" />}
 
       {/* ===================== */}
-      {/* EMPTY STATE */}
+      {/* NO BOT SELECTED */}
       {/* ===================== */}
-      {!loading && !hasRules && (
+      {!loading && !hasBot && (
         <p className="text-sm text-[var(--text-muted)]">
-          Geen regels geconfigureerd voor deze bot.
+          Selecteer eerst een bot om regels te bekijken of te bewerken.
+        </p>
+      )}
+
+      {/* ===================== */}
+      {/* EMPTY STATE (BOT, MAAR GEEN RULES) */}
+      {/* ===================== */}
+      {!loading && hasBot && !hasRules && (
+        <p className="text-sm text-[var(--text-muted)]">
+          Geen regels geconfigureerd voor{" "}
+          <b>{bot.name}</b>.
         </p>
       )}
 
       {/* ===================== */}
       {/* RULES LIST */}
       {/* ===================== */}
-      {!loading && hasRules && (
+      {!loading && hasBot && hasRules && (
         <div className="space-y-3 text-sm">
           {rules.map((rule, index) => {
             const ruleText =

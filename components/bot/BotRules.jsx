@@ -2,11 +2,20 @@
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Pencil } from "lucide-react";
 
+/**
+ * BotRules
+ * ----------------------------------------
+ * - Toont huidige rules van actieve bot
+ * - Geen state
+ * - Geen backend
+ * - Edit knop wordt afgehandeld door parent
+ */
 export default function BotRules({
   rules = [],
   loading = false,
+  onEdit, // 👈 callback vanuit BotPage
 }) {
   const hasRules = Array.isArray(rules) && rules.length > 0;
 
@@ -14,13 +23,20 @@ export default function BotRules({
     <CardWrapper
       title="Bot Rules"
       icon={<SlidersHorizontal className="icon" />}
+      action={
+        <button
+          className="btn-icon"
+          onClick={onEdit}
+          title="Rules bewerken"
+        >
+          <Pencil size={16} />
+        </button>
+      }
     >
       {/* ===================== */}
       {/* LOADING */}
       {/* ===================== */}
-      {loading && (
-        <CardLoader text="Rules laden…" />
-      )}
+      {loading && <CardLoader text="Rules laden…" />}
 
       {/* ===================== */}
       {/* EMPTY STATE */}
@@ -32,21 +48,24 @@ export default function BotRules({
       )}
 
       {/* ===================== */}
-      {/* RULES */}
+      {/* RULES LIST */}
       {/* ===================== */}
       {!loading && hasRules && (
         <div className="space-y-3 text-sm">
           {rules.map((r, i) => {
-            // Ondersteun meerdere rule-structuren
+            // Ondersteunt meerdere rule structuren
             const ruleText =
               typeof r === "string"
                 ? r
-                : r.rule || r.condition || "—";
+                : r.name || r.rule || r.condition || "—";
 
             const actionText =
               typeof r === "string"
                 ? ""
-                : r.action || r.result || "—";
+                : r.action || r.result || "";
+
+            const enabled =
+              typeof r === "object" ? r.enabled !== false : true;
 
             return (
               <div
@@ -57,7 +76,17 @@ export default function BotRules({
                   pb-2 last:border-0
                 "
               >
-                <span>{ruleText}</span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={
+                      enabled
+                        ? ""
+                        : "line-through text-[var(--text-muted)]"
+                    }
+                  >
+                    {ruleText}
+                  </span>
+                </div>
 
                 {actionText && (
                   <span className="font-medium">

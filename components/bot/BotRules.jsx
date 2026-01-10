@@ -6,16 +6,16 @@ import { SlidersHorizontal, Pencil } from "lucide-react";
 
 /**
  * BotRules
- * ----------------------------------------
- * - Toont huidige rules van actieve bot
- * - Geen state
- * - Geen backend
- * - Edit knop wordt afgehandeld door parent
+ * --------------------------------------------------
+ * - Toont rules van de geselecteerde / actieve bot
+ * - Volledig stateless
+ * - Geen backend logica
+ * - Edit wordt afgehandeld door parent (BotPage)
  */
 export default function BotRules({
   rules = [],
   loading = false,
-  onEdit, // 👈 callback vanuit BotPage
+  onEdit,
 }) {
   const hasRules = Array.isArray(rules) && rules.length > 0;
 
@@ -24,13 +24,15 @@ export default function BotRules({
       title="Bot Rules"
       icon={<SlidersHorizontal className="icon" />}
       action={
-        <button
-          className="btn-icon"
-          onClick={onEdit}
-          title="Rules bewerken"
-        >
-          <Pencil size={16} />
-        </button>
+        onEdit && (
+          <button
+            className="btn-icon"
+            onClick={onEdit}
+            title="Regels bewerken"
+          >
+            <Pencil size={16} />
+          </button>
+        )
       }
     >
       {/* ===================== */}
@@ -52,41 +54,43 @@ export default function BotRules({
       {/* ===================== */}
       {!loading && hasRules && (
         <div className="space-y-3 text-sm">
-          {rules.map((r, i) => {
-            // Ondersteunt meerdere rule structuren
+          {rules.map((rule, index) => {
             const ruleText =
-              typeof r === "string"
-                ? r
-                : r.name || r.rule || r.condition || "—";
+              typeof rule === "string"
+                ? rule
+                : rule.name ||
+                  rule.rule ||
+                  rule.condition ||
+                  "—";
 
             const actionText =
-              typeof r === "string"
+              typeof rule === "string"
                 ? ""
-                : r.action || r.result || "";
+                : rule.action || rule.result || "";
 
             const enabled =
-              typeof r === "object" ? r.enabled !== false : true;
+              typeof rule === "object"
+                ? rule.enabled !== false
+                : true;
 
             return (
               <div
-                key={i}
+                key={rule.id ?? index}
                 className="
                   flex justify-between items-center
                   border-b border-[var(--border)]
                   pb-2 last:border-0
                 "
               >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={
-                      enabled
-                        ? ""
-                        : "line-through text-[var(--text-muted)]"
-                    }
-                  >
-                    {ruleText}
-                  </span>
-                </div>
+                <span
+                  className={
+                    enabled
+                      ? ""
+                      : "line-through text-[var(--text-muted)]"
+                  }
+                >
+                  {ruleText}
+                </span>
 
                 {actionText && (
                   <span className="font-medium">

@@ -87,6 +87,7 @@ export default function BotPage() {
           name: p.name.trim(),
           symbol: p.symbol,
           mode: p.mode,
+          bot_type: p.bot_type,
           is_active: true,
         });
 
@@ -103,6 +104,7 @@ export default function BotPage() {
       name: bot.name,
       symbol: bot.symbol,
       mode: bot.mode,
+      bot_type: p.bot_type,
     };
 
     openConfirm({

@@ -1,53 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Brain,
-  Bot as BotIcon,
-  Pencil,
-  Trash2,
-  CheckCircle2,
-  Circle,
-} from "lucide-react";
+import { Bot as BotIcon } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
 import { useModal } from "@/components/modal/ModalProvider";
 
+import BotCard from "@/components/bot/BotCard";
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotScores from "@/components/bot/BotScores";
-import BotRules from "@/components/bot/BotRules";
-import BotRulesEditor from "@/components/bot/BotRulesEditor";
 import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import AddBotForm from "@/components/bot/AddBotForm";
 
-import CardWrapper from "@/components/ui/CardWrapper";
-
 export default function BotPage() {
-  /* =====================================================
-     🧠 MODAL / SNACKBAR
-  ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
+  const formRef = useRef({});
 
-  /* =====================================================
-     🧠 FORM REFS
-  ===================================================== */
-  const formRef = useRef({
-    name: "",
-    bot_type: "dca",
-    symbol: "BTC",
-    mode: "manual",
-  });
+  const [activeBotId, setActiveBotId] = useState(null);
 
-  const rulesRef = useRef([]);
-
-  /* =====================================================
-     🧠 DATA
-  ===================================================== */
   const {
     configs = [],
-    today = null,
-    history = [],
+    today,
+    history,
     loading,
     createBot,
     updateBot,
@@ -57,12 +32,20 @@ export default function BotPage() {
     skipBot,
   } = useBotData();
 
+  /* ================= DEFAULT BOT ================= */
+  useEffect(() => {
+    if (!activeBotId && configs.length > 0) {
+      setActiveBotId(configs[0].id);
+    }
+  }, [configs, activeBotId]);
+
+  const activeBot =
+    configs.find((b) => b.id === activeBotId) ?? null;
+
   const decision = today?.decisions?.[0] ?? null;
   const order = today?.orders?.[0] ?? null;
 
-  /* =====================================================
-     ➕ CREATE BOT
-  ===================================================== */
+  /* ================= ADD BOT ================= */
   const handleAddBot = () => {
     formRef.current = {
       name: "",
@@ -76,187 +59,108 @@ export default function BotPage() {
       description: (
         <AddBotForm
           initialForm={formRef.current}
-          onChange={(data) => (formRef.current = data)}
+          onChange={(v) => (formRef.current = v)}
         />
       ),
       confirmText: "Opslaan",
       onConfirm: async () => {
-        const p = formRef.current;
-
-        if (!p.name || p.name.trim().length < 2) {
-          showSnackbar("Botnaam is verplicht", "danger");
+        if (!formRef.current.name) {
+          showSnackbar("Naam is verplicht", "danger");
           return;
         }
 
-        await createBot({
-          name: p.name.trim(),
-          bot_type: p.bot_type,
-          symbol: p.symbol,
-          mode: p.mode,
-          is_active: true,
-        });
+        const res = await createBot(formRef.current);
+        if (res?.id) setActiveBotId(res.id);
 
         showSnackbar("Bot toegevoegd", "success");
       },
     });
   };
 
-  /* =====================================================
-     ✏️ EDIT BOT
-  ===================================================== */
+  /* ================= EDIT BOT ================= */
   const handleEditBot = (bot) => {
-    formRef.current = {
-      name: bot.name,
-      bot_type: bot.bot_type,
-      symbol: bot.symbol,
-      mode: bot.mode,
-    };
+    formRef.current = { ...bot };
 
     openConfirm({
-      title: "✏️ Bot aanpassen",
+      title: "✏️ Bot bewerken",
       description: (
         <AddBotForm
           initialForm={formRef.current}
-          onChange={(data) => (formRef.current = data)}
+          onChange={(v) => (formRef.current = v)}
         />
       ),
       confirmText: "Opslaan",
       onConfirm: async () => {
-        await updateBot(bot.id, {
-          ...formRef.current,
-          is_active: bot.is_active,
-        });
-
+        await updateBot(bot.id, formRef.current);
         showSnackbar("Bot aangepast", "success");
       },
     });
   };
 
-  /* =====================================================
-     🗑 DELETE BOT
-  ===================================================== */
+  /* ================= DELETE BOT ================= */
   const handleDeleteBot = (bot) => {
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: (
-        <p>
-          Weet je zeker dat je <b>{bot.name}</b> wilt verwijderen?
-        </p>
-      ),
+      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
+        if (activeBotId === bot.id) {
+          setActiveBotId(configs[0]?.id ?? null);
+        }
         showSnackbar("Bot verwijderd", "success");
       },
     });
   };
 
-  /* =====================================================
-     🧠 EDIT RULES — PER BOT (KOMT UIT BotRules)
-  ===================================================== */
-  const handleEditRules = (bot) => {
-    if (!bot) return;
-
-    rulesRef.current = Array.isArray(bot.rules) ? bot.rules : [];
-
-    openConfirm({
-      title: `🧠 Rules — ${bot.name}`,
-      description: (
-        <BotRulesEditor
-          initialRules={rulesRef.current}
-          onChange={(r) => (rulesRef.current = r)}
-        />
-      ),
-      confirmText: "Opslaan",
-      cancelText: "Annuleren",
-      onConfirm: async () => {
-        try {
-          await updateBot(bot.id, {
-            ...bot,
-            rules: rulesRef.current,
-          });
-        } catch (e) {
-          console.warn("Rules niet opgeslagen in backend:", e);
-        }
-
-        showSnackbar("Rules opgeslagen", "success");
-      },
-    });
-  };
-
-  /* =====================================================
-     🧠 PAGE
-  ===================================================== */
+  /* ================= PAGE ================= */
   return (
     <div className="space-y-8 animate-fade-slide">
-      {/* ================= TITLE ================= */}
+      {/* ===== TITLE ===== */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Trading Bots
-        </h1>
+        <h1 className="text-2xl font-semibold">Trading Bots</h1>
       </div>
 
-      {/* ================= TODAY ================= */}
+      {/* ===== TODAY ===== */}
       <BotDecisionCard
         decision={decision}
         loading={loading.today}
         onGenerate={runBotToday}
       />
 
-      {/* ================= BOTS ================= */}
-      <CardWrapper title="Bots" icon={<Brain className="icon" />}>
-        <div className="space-y-2">
-          {configs.map((bot) => (
-            <div
-              key={bot.id}
-              className="flex items-center justify-between p-2 rounded-lg border border-[var(--card-border)]"
-            >
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
-                <span className="font-medium">
-                  {bot.name}{" "}
-                  <span className="text-xs opacity-60">
-                    ({bot.bot_type.toUpperCase()})
-                  </span>
-                </span>
-              </div>
+      {/* ===== BOTS GRID ===== */}
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {configs.map((bot) => (
+          <BotCard
+            key={bot.id}
+            bot={bot}
+            isActive={bot.id === activeBotId}
+            onSelect={() => setActiveBotId(bot.id)}
+            onEdit={handleEditBot}
+            onDelete={handleDeleteBot}
+            onRun={() => runBotToday(bot.id)}
+          />
+        ))}
 
-              <div className="flex gap-2">
-                <button
-                  className="btn-icon"
-                  onClick={() => handleEditBot(bot)}
-                >
-                  <Pencil size={16} />
-                </button>
-                <button
-                  className="btn-icon text-red-500"
-                  onClick={() => handleDeleteBot(bot)}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
+        {/* ADD BOT CARD */}
+        <button
+          onClick={handleAddBot}
+          className="rounded-xl border border-dashed border-[var(--border)] p-6
+                     text-sm text-muted hover:border-[var(--accent)]"
+        >
+          ➕ Nieuwe bot toevoegen
+        </button>
+      </div>
 
-          <button className="btn-secondary mt-2" onClick={handleAddBot}>
-            ➕ Nieuwe bot
-          </button>
-        </div>
-      </CardWrapper>
-
-      {/* ================= SCORES ================= */}
-      <BotScores scores={decision?.scores || {}} loading={loading.today} />
-
-      {/* ================= RULES (ZELF BOT-SELECTIE) ================= */}
-      <BotRules
-        bots={configs}
-        loading={loading.configs}
-        onEdit={handleEditRules}
+      {/* ===== SCORES ===== */}
+      <BotScores
+        scores={decision?.scores || {}}
+        loading={loading.today}
       />
 
-      {/* ================= ORDER ================= */}
+      {/* ===== ORDER ===== */}
       <BotOrderPreview
         order={order}
         loading={loading.action}
@@ -264,9 +168,6 @@ export default function BotPage() {
           executeBot({
             bot_id: decision?.bot_id,
             report_date: today?.date,
-            symbol: order?.symbol,
-            side: order?.side,
-            amount_eur: order?.amount_eur,
           })
         }
         onSkip={() =>
@@ -277,8 +178,11 @@ export default function BotPage() {
         }
       />
 
-      {/* ================= HISTORY ================= */}
-      <BotHistoryTable history={history} loading={loading.history} />
+      {/* ===== HISTORY ===== */}
+      <BotHistoryTable
+        history={history}
+        loading={loading.history}
+      />
     </div>
   );
 }

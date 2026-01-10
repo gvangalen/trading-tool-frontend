@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import {
   Brain,
   SlidersHorizontal,
@@ -21,15 +21,15 @@ import CardWrapper from "@/components/ui/CardWrapper";
 
 export default function BotPage() {
   /* =====================================================
-     🧠 MODAL (globale modal / snackbar)
+     🧠 MODAL / SNACKBAR
   ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
 
   /* =====================================================
-     🧠 FORM STATE (nieuwe bot)
-     → bewust hier, niet in modal
+     🧠 FORM REF
+     → nodig omdat ModalProvider JSX niet re-rendert
   ===================================================== */
-  const [form, setForm] = useState({
+  const formRef = useRef({
     name: "",
     symbol: "BTC",
     mode: "manual",
@@ -55,33 +55,32 @@ export default function BotPage() {
 
   /* =====================================================
      ➕ ADD BOT HANDLER
-     → opent algemene modal met formulier
+     → correcte manier met jouw ModalProvider
   ===================================================== */
   const handleAddBot = () => {
-    // reset form bij openen
-    setForm({
+    // reset ref bij openen
+    formRef.current = {
       name: "",
       symbol: "BTC",
       mode: "manual",
-    });
+    };
 
     openConfirm({
       title: "➕ Nieuwe bot",
-
-      // 🔑 CRUCIAAL: key forceert re-render van form in modal
       description: (
         <AddBotForm
-          key={`${form.name}-${form.symbol}-${form.mode}`}
-          form={form}
-          setForm={setForm}
+          initialForm={formRef.current}
+          onChange={(data) => {
+            formRef.current = data;
+          }}
         />
       ),
-
       confirmText: "Opslaan",
       cancelText: "Annuleren",
-
       onConfirm: async () => {
-        if (!form.name || form.name.trim().length < 2) {
+        const payload = formRef.current;
+
+        if (!payload.name || payload.name.trim().length < 2) {
           showSnackbar("Botnaam is verplicht", "danger");
           return;
         }
@@ -95,21 +94,20 @@ export default function BotPage() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              name: form.name.trim(),
-              symbol: form.symbol,
-              mode: form.mode,
+              name: payload.name.trim(),
+              symbol: payload.symbol,
+              mode: payload.mode,
               active: true,
             }),
           }
         );
 
         if (!res.ok) {
+          showSnackbar("Bot aanmaken mislukt", "danger");
           throw new Error("Bot aanmaken mislukt");
         }
 
-        // refresh bots direct
         await refresh.configs();
-
         showSnackbar("Bot succesvol toegevoegd", "success");
       },
     });
@@ -120,9 +118,7 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="space-y-8 animate-fade-slide">
-      {/* ================================================= */}
-      {/* 🧠 PAGE TITLE */}
-      {/* ================================================= */}
+      {/* ================= TITLE ================= */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
         <h1 className="text-2xl font-semibold tracking-tight">
@@ -130,34 +126,24 @@ export default function BotPage() {
         </h1>
       </div>
 
-      {/* ================================================= */}
-      {/* 🤖 BOT DECISION TODAY */}
-      {/* ================================================= */}
+      {/* ================= DECISION ================= */}
       <BotDecisionCard
         decision={decision}
         loading={loading.today}
         onGenerate={() => runBotToday()}
       />
 
-      {/* ================================================= */}
-      {/* 🤖 BOT CONFIG */}
-      {/* ================================================= */}
+      {/* ================= CONFIG ================= */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* ================= BOT SELECT ================= */}
-        <CardWrapper
-          title="Bot"
-          icon={<Brain className="icon" />}
-        >
+        {/* BOT SELECT */}
+        <CardWrapper title="Bot" icon={<Brain className="icon" />}>
           {configs.length === 0 ? (
             <div className="space-y-3">
               <p className="text-sm text-[var(--text-muted)]">
                 Je hebt nog geen bots.
               </p>
 
-              <button
-                className="btn-primary"
-                onClick={handleAddBot}
-              >
+              <button className="btn-primary" onClick={handleAddBot}>
                 ➕ Bot toevoegen
               </button>
             </div>
@@ -176,10 +162,7 @@ export default function BotPage() {
               </select>
 
               <div className="mt-3">
-                <button
-                  className="btn-secondary"
-                  onClick={handleAddBot}
-                >
+                <button className="btn-secondary" onClick={handleAddBot}>
                   ➕ Nieuwe bot
                 </button>
               </div>
@@ -187,11 +170,8 @@ export default function BotPage() {
           )}
         </CardWrapper>
 
-        {/* ================= MODE ================= */}
-        <CardWrapper
-          title="Mode"
-          icon={<SlidersHorizontal className="icon" />}
-        >
+        {/* MODE */}
+        <CardWrapper title="Mode" icon={<SlidersHorizontal className="icon" />}>
           <div className="flex gap-3">
             {[
               { id: "manual", label: "Manual" },
@@ -218,9 +198,7 @@ export default function BotPage() {
         </CardWrapper>
       </div>
 
-      {/* ================================================= */}
-      {/* 📊 SCORES */}
-      {/* ================================================= */}
+      {/* ================= SCORES ================= */}
       <BotScores
         scores={
           decision?.scores || {
@@ -233,14 +211,10 @@ export default function BotPage() {
         loading={loading.today}
       />
 
-      {/* ================================================= */}
-      {/* 📐 RULES */}
-      {/* ================================================= */}
+      {/* ================= RULES ================= */}
       <BotRules rules={activeBot?.rules || []} />
 
-      {/* ================================================= */}
-      {/* 🧾 ORDER PREVIEW */}
-      {/* ================================================= */}
+      {/* ================= ORDER ================= */}
       <BotOrderPreview
         order={order}
         loading={loading.action}
@@ -261,13 +235,8 @@ export default function BotPage() {
         }
       />
 
-      {/* ================================================= */}
-      {/* 📜 HISTORY */}
-      {/* ================================================= */}
-      <BotHistoryTable
-        history={history}
-        loading={loading.history}
-      />
+      {/* ================= HISTORY ================= */}
+      <BotHistoryTable history={history} loading={loading.history} />
     </div>
   );
 }

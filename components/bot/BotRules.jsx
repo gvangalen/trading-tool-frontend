@@ -3,61 +3,78 @@
 import { useEffect, useState } from "react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
-import { SlidersHorizontal, Pencil } from "lucide-react";
+import { SlidersHorizontal, Plus, Trash2 } from "lucide-react";
 
 /**
  * BotRules
  * --------------------------------------------------
- * - Bevat ZELF bot-selectie (dropdown)
- * - Toont rules van geselecteerde bot
- * - Edit knop opent editor voor DIE bot
- * - Geen verborgen context
- * - UX = expliciet, voorspelbaar, logisch
+ * - Bot selecteren (dropdown IN de card)
+ * - Rules aanmaken / bewerken / verwijderen
+ * - Frontend state ONLY
+ * - Geen modals, geen verborgen context
  *
  * Props:
- * - bots: [{ id, name, bot_type, symbol, rules }]
+ * - bots: [{ id, name, bot_type, symbol }]
  * - loading: boolean
- * - onEdit(bot): opent BotRulesEditor
+ * - rulesByBotId: { [botId]: rules[] }
+ * - onChangeRules(botId, rules)
  */
 export default function BotRules({
   bots = [],
   loading = false,
-  onEdit,
+  rulesByBotId = {},
+  onChangeRules,
 }) {
   /* =====================================================
-     🧠 LOCAL STATE — geselecteerde bot
+     🧠 SELECTED BOT
   ===================================================== */
   const [selectedBotId, setSelectedBotId] = useState(null);
 
-  /* =====================================================
-     ✅ INIT / SYNC SELECTED BOT
-     - bij eerste load
-     - bij verwijderen van bots
-  ===================================================== */
   useEffect(() => {
-    if (!bots || bots.length === 0) {
+    if (!bots.length) {
       setSelectedBotId(null);
       return;
     }
 
-    // als huidige selectie niet meer bestaat → reset
-    const exists = bots.some((b) => b.id === selectedBotId);
-
-    if (!selectedBotId || !exists) {
+    if (!selectedBotId || !bots.find((b) => b.id === selectedBotId)) {
       setSelectedBotId(bots[0].id);
     }
   }, [bots, selectedBotId]);
 
+  const selectedBot = bots.find((b) => b.id === selectedBotId) ?? null;
+  const rules = rulesByBotId[selectedBotId] || [];
+
   /* =====================================================
-     🧠 AFGELEIDE DATA
+     🧠 RULE HELPERS
   ===================================================== */
-  const selectedBot =
-    bots.find((b) => b.id === selectedBotId) ?? null;
+  const updateRules = (nextRules) => {
+    if (!selectedBotId) return;
+    onChangeRules(selectedBotId, nextRules);
+  };
 
-  const rules =
-    Array.isArray(selectedBot?.rules) ? selectedBot.rules : [];
+  const addRule = () => {
+    updateRules([
+      ...rules,
+      {
+        id: crypto.randomUUID(),
+        name: "Nieuwe rule",
+        condition: "",
+        action: "BUY",
+      },
+    ]);
+  };
 
-  const hasRules = rules.length > 0;
+  const updateRule = (id, field, value) => {
+    updateRules(
+      rules.map((r) =>
+        r.id === id ? { ...r, [field]: value } : r
+      )
+    );
+  };
+
+  const removeRule = (id) => {
+    updateRules(rules.filter((r) => r.id !== id));
+  };
 
   /* =====================================================
      🧠 RENDER
@@ -72,20 +89,9 @@ export default function BotRules({
       subtitle={
         selectedBot
           ? `${String(selectedBot.bot_type).toUpperCase()} • ${selectedBot.symbol}`
-          : "Selecteer een bot om regels te beheren"
+          : "Selecteer een bot"
       }
       icon={<SlidersHorizontal className="icon" />}
-      action={
-        selectedBot && onEdit ? (
-          <button
-            className="btn-icon"
-            onClick={() => onEdit(selectedBot)}
-            title="Rules bewerken"
-          >
-            <Pencil size={16} />
-          </button>
-        ) : null
-      }
     >
       {/* ===================== */}
       {/* LOADING */}
@@ -97,12 +103,12 @@ export default function BotRules({
       {/* ===================== */}
       {!loading && bots.length === 0 && (
         <p className="text-sm text-[var(--text-muted)]">
-          Nog geen bots aangemaakt. Maak eerst een bot aan.
+          Nog geen bots aangemaakt.
         </p>
       )}
 
       {/* ===================== */}
-      {/* BOT SELECTOR */}
+      {/* BOT SELECT */}
       {/* ===================== */}
       {!loading && bots.length > 0 && (
         <div className="mb-4">
@@ -116,7 +122,7 @@ export default function BotRules({
           >
             {bots.map((bot) => (
               <option key={bot.id} value={bot.id}>
-                {bot.name} — {String(bot.bot_type).toUpperCase()} • {bot.symbol}
+                {bot.name} — {bot.bot_type?.toUpperCase()} • {bot.symbol}
               </option>
             ))}
           </select>
@@ -124,63 +130,72 @@ export default function BotRules({
       )}
 
       {/* ===================== */}
-      {/* GEEN RULES */}
+      {/* RULES */}
       {/* ===================== */}
-      {!loading && selectedBot && !hasRules && (
-        <p className="text-sm text-[var(--text-muted)]">
-          Geen regels geconfigureerd voor{" "}
-          <b>{selectedBot.name}</b>.
-        </p>
-      )}
+      {selectedBot && (
+        <>
+          {rules.length === 0 && (
+            <p className="text-sm text-[var(--text-muted)] mb-2">
+              Geen regels voor deze bot.
+            </p>
+          )}
 
-      {/* ===================== */}
-      {/* RULES LIST */}
-      {/* ===================== */}
-      {!loading && selectedBot && hasRules && (
-        <div className="space-y-3 text-sm">
-          {rules.map((rule, index) => {
-            const text =
-              typeof rule === "string"
-                ? rule
-                : rule.name ||
-                  rule.condition ||
-                  rule.rule ||
-                  "—";
-
-            const action =
-              typeof rule === "object"
-                ? rule.action || rule.result || ""
-                : "";
-
-            const enabled =
-              typeof rule === "object"
-                ? rule.enabled !== false
-                : true;
-
-            return (
+          <div className="space-y-3">
+            {rules.map((rule) => (
               <div
-                key={rule.id ?? index}
-                className="flex justify-between items-center border-b border-[var(--border)] pb-2 last:border-0"
+                key={rule.id}
+                className="border border-[var(--border)] rounded-lg p-3 space-y-2"
               >
-                <span
-                  className={
-                    enabled
-                      ? ""
-                      : "line-through text-[var(--text-muted)]"
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1"
+                    value={rule.name}
+                    onChange={(e) =>
+                      updateRule(rule.id, "name", e.target.value)
+                    }
+                    placeholder="Rule naam"
+                  />
+                  <button
+                    className="btn-icon text-red-500"
+                    onClick={() => removeRule(rule.id)}
+                    title="Verwijderen"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                <input
+                  className="input"
+                  value={rule.condition}
+                  onChange={(e) =>
+                    updateRule(rule.id, "condition", e.target.value)
+                  }
+                  placeholder="Voorwaarde (bv: score > 70)"
+                />
+
+                <select
+                  className="input"
+                  value={rule.action}
+                  onChange={(e) =>
+                    updateRule(rule.id, "action", e.target.value)
                   }
                 >
-                  {text}
-                </span>
-
-                {action && (
-                  <span className="font-medium">
-                    {action}
-                  </span>
-                )}
+                  <option value="BUY">BUY</option>
+                  <option value="SELL">SELL</option>
+                  <option value="HOLD">HOLD</option>
+                </select>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+
+          <button
+            className="btn-secondary w-full mt-4"
+            onClick={addRule}
+          >
+            <Plus size={16} className="mr-1" />
+            Rule toevoegen
+          </button>
+        </>
       )}
     </CardWrapper>
   );

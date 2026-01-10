@@ -1,35 +1,30 @@
 "use client";
 
-/**
- * AddBotForm
- * --------------------------------------------------
- * Controlled form voor het aanmaken van een trading bot
- *
- * Props:
- * - form: { name, symbol, mode }
- * - setForm: React setState
- *
- * ❌ geen API calls
- * ❌ geen modal logic
- * ✅ alleen input → state
- */
-export default function AddBotForm({ form, setForm }) {
+import { useEffect, useState } from "react";
+
+export default function AddBotForm({ initialForm, onChange }) {
+  const [local, setLocal] = useState(
+    initialForm || { name: "", symbol: "BTC", mode: "manual" }
+  );
+
+  // push elke wijziging naar parent (via callback)
+  useEffect(() => {
+    onChange?.(local);
+  }, [local, onChange]);
+
   return (
     <div className="space-y-4">
-
-      {/* ================= NAAM ================= */}
+      {/* ================= NAME ================= */}
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Naam
-        </label>
+        <label className="block text-sm font-medium mb-1">Naam</label>
         <input
           type="text"
           className="input w-full"
           placeholder="DCA BTC"
-          value={form?.name ?? ""}
+          value={local.name}
           onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
+            setLocal((s) => ({
+              ...s,
               name: e.target.value,
             }))
           }
@@ -38,35 +33,32 @@ export default function AddBotForm({ form, setForm }) {
 
       {/* ================= ASSET ================= */}
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Asset
-        </label>
+        <label className="block text-sm font-medium mb-1">Asset</label>
         <select
           className="input w-full"
-          value={form?.symbol ?? "BTC"}
+          value={local.symbol}
           onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
+            setLocal((s) => ({
+              ...s,
               symbol: e.target.value,
             }))
           }
         >
           <option value="BTC">BTC</option>
           <option value="ETH">ETH</option>
+          <option value="SOL">SOL</option>
         </select>
       </div>
 
       {/* ================= MODE ================= */}
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Mode
-        </label>
+        <label className="block text-sm font-medium mb-1">Mode</label>
         <select
           className="input w-full"
-          value={form?.mode ?? "manual"}
+          value={local.mode}
           onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
+            setLocal((s) => ({
+              ...s,
               mode: e.target.value,
             }))
           }
@@ -76,7 +68,6 @@ export default function AddBotForm({ form, setForm }) {
           <option value="auto">Auto</option>
         </select>
       </div>
-
     </div>
   );
 }

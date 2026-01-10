@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Brain,
-  SlidersHorizontal,
   Bot as BotIcon,
   Pencil,
   Trash2,
@@ -43,18 +42,6 @@ export default function BotPage() {
   const rulesRef = useRef([]);
 
   /* =====================================================
-     ✅ UI-STATE
-  ===================================================== */
-  const [activeBotId, setActiveBotId] = useState(null);
-
-  /**
-   * Local rules per bot
-   * → ZORGT DAT JE DIRECT VERSCHIL ZIET
-   * → backend sync is secundair
-   */
-  const [localRulesByBotId, setLocalRulesByBotId] = useState({});
-
-  /* =====================================================
      🧠 DATA
   ===================================================== */
   const {
@@ -70,37 +57,6 @@ export default function BotPage() {
     skipBot,
   } = useBotData();
 
-  /* =====================================================
-     ✅ INIT DEFAULT BOT
-  ===================================================== */
-  useEffect(() => {
-    if (!activeBotId && configs.length > 0) {
-      const preferred =
-        configs.find((b) => b.is_active)?.id ?? configs[0].id;
-      setActiveBotId(preferred);
-    }
-  }, [configs, activeBotId]);
-
-  /* =====================================================
-     ✅ ACTIEVE BOT
-  ===================================================== */
-  const activeBot =
-    configs.find((b) => b.id === activeBotId) ??
-    configs.find((b) => b.is_active) ??
-    configs[0] ??
-    null;
-
-  /* =====================================================
-     ✅ ACTIEVE RULES (LOCAL > BACKEND)
-  ===================================================== */
-  const activeBotRules =
-    (activeBot?.id && localRulesByBotId[activeBot.id]) ??
-    activeBot?.rules ??
-    [];
-
-  /* =====================================================
-     📊 TODAY
-  ===================================================== */
   const decision = today?.decisions?.[0] ?? null;
   const order = today?.orders?.[0] ?? null;
 
@@ -132,16 +88,13 @@ export default function BotPage() {
           return;
         }
 
-        const res = await createBot({
+        await createBot({
           name: p.name.trim(),
           bot_type: p.bot_type,
           symbol: p.symbol,
           mode: p.mode,
           is_active: true,
         });
-
-        const newId = res?.id ?? res?.bot_id ?? null;
-        if (newId) setActiveBotId(newId);
 
         showSnackbar("Bot toegevoegd", "success");
       },
@@ -194,35 +147,21 @@ export default function BotPage() {
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
-
-        setLocalRulesByBotId((prev) => {
-          const next = { ...prev };
-          delete next[bot.id];
-          return next;
-        });
-
-        if (activeBotId === bot.id) {
-          const remaining = configs.filter((b) => b.id !== bot.id);
-          setActiveBotId(remaining[0]?.id ?? null);
-        }
-
         showSnackbar("Bot verwijderd", "success");
       },
     });
   };
 
   /* =====================================================
-     🧠 EDIT RULES (ECHT PER BOT)
+     🧠 EDIT RULES — PER BOT (KOMT UIT BotRules)
   ===================================================== */
-  const handleEditRules = () => {
-    if (!activeBot) return;
+  const handleEditRules = (bot) => {
+    if (!bot) return;
 
-    rulesRef.current = Array.isArray(activeBotRules)
-      ? activeBotRules
-      : [];
+    rulesRef.current = Array.isArray(bot.rules) ? bot.rules : [];
 
     openConfirm({
-      title: `🧠 Rules — ${activeBot.name}`,
+      title: `🧠 Rules — ${bot.name}`,
       description: (
         <BotRulesEditor
           initialRules={rulesRef.current}
@@ -232,20 +171,13 @@ export default function BotPage() {
       confirmText: "Opslaan",
       cancelText: "Annuleren",
       onConfirm: async () => {
-        // 1️⃣ UI DIRECT UPDATEN
-        setLocalRulesByBotId((prev) => ({
-          ...prev,
-          [activeBot.id]: rulesRef.current,
-        }));
-
-        // 2️⃣ BACKEND (optioneel / veilig)
         try {
-          await updateBot(activeBot.id, {
-            ...activeBot,
+          await updateBot(bot.id, {
+            ...bot,
             rules: rulesRef.current,
           });
         } catch (e) {
-          console.warn("Backend rules save failed — UI blijft correct", e);
+          console.warn("Rules niet opgeslagen in backend:", e);
         }
 
         showSnackbar("Rules opgeslagen", "success");
@@ -276,57 +208,37 @@ export default function BotPage() {
       {/* ================= BOTS ================= */}
       <CardWrapper title="Bots" icon={<Brain className="icon" />}>
         <div className="space-y-2">
-          {configs.map((bot) => {
-            const isSelected = bot.id === activeBot?.id;
-
-            return (
-              <div
-                key={bot.id}
-                onClick={() => setActiveBotId(bot.id)}
-                className={`cursor-pointer flex items-center justify-between p-2 rounded-lg border ${
-                  isSelected
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--card-border)]"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {isSelected ? (
-                    <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-muted" />
-                  )}
-                  <span className="font-medium">
-                    {bot.name}{" "}
-                    <span className="text-xs opacity-60">
-                      ({bot.bot_type.toUpperCase()})
-                    </span>
+          {configs.map((bot) => (
+            <div
+              key={bot.id}
+              className="flex items-center justify-between p-2 rounded-lg border border-[var(--card-border)]"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
+                <span className="font-medium">
+                  {bot.name}{" "}
+                  <span className="text-xs opacity-60">
+                    ({bot.bot_type.toUpperCase()})
                   </span>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    className="btn-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditBot(bot);
-                    }}
-                  >
-                    <Pencil size={16} />
-                  </button>
-
-                  <button
-                    className="btn-icon text-red-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteBot(bot);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+                </span>
               </div>
-            );
-          })}
+
+              <div className="flex gap-2">
+                <button
+                  className="btn-icon"
+                  onClick={() => handleEditBot(bot)}
+                >
+                  <Pencil size={16} />
+                </button>
+                <button
+                  className="btn-icon text-red-500"
+                  onClick={() => handleDeleteBot(bot)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
 
           <button className="btn-secondary mt-2" onClick={handleAddBot}>
             ➕ Nieuwe bot
@@ -337,10 +249,9 @@ export default function BotPage() {
       {/* ================= SCORES ================= */}
       <BotScores scores={decision?.scores || {}} loading={loading.today} />
 
-      {/* ================= RULES ================= */}
+      {/* ================= RULES (ZELF BOT-SELECTIE) ================= */}
       <BotRules
-        bot={activeBot}
-        rules={activeBotRules}
+        bots={configs}
         loading={loading.configs}
         onEdit={handleEditRules}
       />

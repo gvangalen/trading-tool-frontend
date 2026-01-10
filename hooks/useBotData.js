@@ -12,7 +12,7 @@ import {
   createBotConfig,
   updateBotConfig,
   deleteBotConfig,
-} from "@lib/api/botApi";
+} from "@/lib/api/botApi";
 
 /**
  * useBotData
@@ -23,7 +23,7 @@ import {
  * - bot configs
  * - bot decisions (today)
  * - bot history
- * - create / update / delete
+ * - create / update / delete bots
  * - generate / execute / skip flows
  *
  * ❌ GEEN business logic
@@ -94,6 +94,7 @@ export default function useBotData() {
 
   /* =====================================================
      ➕ CREATE BOT
+     (let op: backend verwacht is_active)
   ===================================================== */
   const createBot = useCallback(
     async (payload) => {
@@ -101,7 +102,11 @@ export default function useBotData() {
       setError(null);
 
       try {
-        const res = await createBotConfig(payload);
+        const res = await createBotConfig({
+          ...payload,
+          is_active: payload.is_active ?? true,
+        });
+
         await loadConfigs();
         return res;
       } catch (e) {
@@ -124,7 +129,11 @@ export default function useBotData() {
       setError(null);
 
       try {
-        const res = await updateBotConfig(bot_id, payload);
+        const res = await updateBotConfig(bot_id, {
+          ...payload,
+          is_active: payload.is_active ?? true,
+        });
+
         await loadConfigs();
         return res;
       } catch (e) {
@@ -162,7 +171,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     🔁 GENERATE
+     🔁 GENERATE BOT
   ===================================================== */
   const runBotToday = useCallback(
     async (report_date = null) => {
@@ -186,7 +195,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     ✅ EXECUTE
+     ✅ EXECUTE BOT
   ===================================================== */
   const executeBot = useCallback(
     async (payload) => {
@@ -210,7 +219,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     ⏭️ SKIP
+     ⏭️ SKIP BOT
   ===================================================== */
   const skipBot = useCallback(
     async (payload) => {
@@ -251,11 +260,11 @@ export default function useBotData() {
     today,
     history,
 
-    /* loading */
+    /* loading + error */
     loading,
     error,
 
-    /* refresh */
+    /* refresh helpers */
     refresh: {
       configs: loadConfigs,
       today: loadToday,

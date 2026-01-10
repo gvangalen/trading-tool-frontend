@@ -1,4 +1,3 @@
-// frontend/hooks/useBotData.js
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -10,7 +9,9 @@ import {
   generateBotToday,
   markBotExecuted,
   skipBotToday,
-  createBotConfig, // ✅ moet bestaan in botApi.js
+  createBotConfig,
+  updateBotConfig,
+  deleteBotConfig,
 } from "@lib/api/botApi";
 
 /**
@@ -22,7 +23,8 @@ import {
  * - bot configs
  * - bot decisions (today)
  * - bot history
- * - create / generate / execute / skip flows
+ * - create / update / delete
+ * - generate / execute / skip flows
  *
  * ❌ GEEN business logic
  * ✅ Alleen state + API orchestration
@@ -41,7 +43,9 @@ export default function useBotData() {
     history: false,
     generate: false,
     action: false,
-    create: false, // ✅ extra loader voor create
+    create: false,
+    update: false,
+    delete: false,
   });
 
   const [error, setError] = useState(null);
@@ -90,8 +94,6 @@ export default function useBotData() {
 
   /* =====================================================
      ➕ CREATE BOT
-     - POST /bot/configs
-     - refresh configs list
   ===================================================== */
   const createBot = useCallback(
     async (payload) => {
@@ -100,10 +102,7 @@ export default function useBotData() {
 
       try {
         const res = await createBotConfig(payload);
-
-        // 🔁 refresh bot list meteen
         await loadConfigs();
-
         return res;
       } catch (e) {
         console.error("❌ createBot error:", e);
@@ -111,6 +110,52 @@ export default function useBotData() {
         throw e;
       } finally {
         setLoading((l) => ({ ...l, create: false }));
+      }
+    },
+    [loadConfigs]
+  );
+
+  /* =====================================================
+     ✏️ UPDATE BOT
+  ===================================================== */
+  const updateBot = useCallback(
+    async (bot_id, payload) => {
+      setLoading((l) => ({ ...l, update: true }));
+      setError(null);
+
+      try {
+        const res = await updateBotConfig(bot_id, payload);
+        await loadConfigs();
+        return res;
+      } catch (e) {
+        console.error("❌ updateBot error:", e);
+        setError(e.message);
+        throw e;
+      } finally {
+        setLoading((l) => ({ ...l, update: false }));
+      }
+    },
+    [loadConfigs]
+  );
+
+  /* =====================================================
+     🗑 DELETE BOT
+  ===================================================== */
+  const deleteBot = useCallback(
+    async (bot_id) => {
+      setLoading((l) => ({ ...l, delete: true }));
+      setError(null);
+
+      try {
+        const res = await deleteBotConfig(bot_id);
+        await loadConfigs();
+        return res;
+      } catch (e) {
+        console.error("❌ deleteBot error:", e);
+        setError(e.message);
+        throw e;
+      } finally {
+        setLoading((l) => ({ ...l, delete: false }));
       }
     },
     [loadConfigs]
@@ -126,16 +171,8 @@ export default function useBotData() {
 
       try {
         const res = await generateBotToday(report_date);
-
-        // Celery queued → polling later mogelijk
-        if (res?.queued) {
-          console.info("🕒 Bot queued via Celery", res.task_id);
-        }
-
-        // Direct refresh
         await loadToday();
         await loadHistory(30);
-
         return res;
       } catch (e) {
         console.error("❌ runBotToday error:", e);
@@ -149,7 +186,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     ✅ EXECUTE (human-in-the-loop)
+     ✅ EXECUTE
   ===================================================== */
   const executeBot = useCallback(
     async (payload) => {
@@ -158,10 +195,8 @@ export default function useBotData() {
 
       try {
         const res = await markBotExecuted(payload);
-
         await loadToday();
         await loadHistory(30);
-
         return res;
       } catch (e) {
         console.error("❌ executeBot error:", e);
@@ -184,10 +219,8 @@ export default function useBotData() {
 
       try {
         const res = await skipBotToday(payload);
-
         await loadToday();
         await loadHistory(30);
-
         return res;
       } catch (e) {
         console.error("❌ skipBot error:", e);
@@ -222,14 +255,17 @@ export default function useBotData() {
     loading,
     error,
 
-    /* actions */
+    /* refresh */
     refresh: {
       configs: loadConfigs,
       today: loadToday,
       history: loadHistory,
     },
 
-    createBot, // ✅ nieuw
+    /* actions */
+    createBot,
+    updateBot,
+    deleteBot,
     runBotToday,
     executeBot,
     skipBot,

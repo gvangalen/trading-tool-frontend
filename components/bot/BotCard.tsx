@@ -1,13 +1,33 @@
 "use client";
 
 import {
-  Bot,
+  Bot as BotIcon,
   Pencil,
   Trash2,
   Play,
-  Pause,
 } from "lucide-react";
 
+/**
+ * BotCard (NEW MODEL)
+ * --------------------------------------------------
+ * Bot = uitvoerder
+ * Strategy = intelligentie
+ *
+ * Verwachte bot shape:
+ * {
+ *   id
+ *   name
+ *   mode
+ *   is_active
+ *   strategy: {
+ *     id
+ *     name
+ *     type
+ *     symbol
+ *     timeframe
+ *   }
+ * }
+ */
 export default function BotCard({
   bot,
   isActive = false,
@@ -18,7 +38,7 @@ export default function BotCard({
 }) {
   if (!bot) return null;
 
-  const rules = Array.isArray(bot.rules) ? bot.rules : [];
+  const strategy = bot.strategy;
 
   return (
     <div
@@ -36,17 +56,27 @@ export default function BotCard({
       {/* ================= HEADER ================= */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-2">
-          <Bot className="w-5 h-5 text-[var(--accent)]" />
+          <BotIcon className="w-5 h-5 text-[var(--accent)]" />
           <div>
             <h3 className="font-semibold leading-tight">
               {bot.name}
             </h3>
-            <p className="text-xs text-muted">
-              {String(bot.bot_type).toUpperCase()} • {bot.symbol} • {bot.mode}
-            </p>
+
+            {strategy ? (
+              <p className="text-xs text-muted">
+                {String(strategy.type).toUpperCase()} •{" "}
+                {strategy.symbol} •{" "}
+                {strategy.timeframe}
+              </p>
+            ) : (
+              <p className="text-xs text-red-500">
+                ⚠️ Geen strategie gekoppeld
+              </p>
+            )}
           </div>
         </div>
 
+        {/* ACTION ICONS */}
         <div className="flex gap-2">
           <button
             className="btn-icon"
@@ -72,34 +102,19 @@ export default function BotCard({
         </div>
       </div>
 
-      {/* ================= RULES ================= */}
-      <div className="space-y-2">
-        <div className="text-xs font-medium uppercase text-muted">
-          Rules
-        </div>
-
-        {rules.length === 0 && (
-          <p className="text-sm text-muted">
-            Geen rules geconfigureerd.
-          </p>
-        )}
-
-        {rules.map((rule, i) => (
-          <div
-            key={rule.id ?? i}
-            className="flex justify-between text-sm border-b pb-1 last:border-0"
-          >
-            <span className={rule.enabled === false ? "line-through opacity-60" : ""}>
-              {rule.condition || "—"}
-            </span>
-            <span className="font-medium">
-              {rule.action || ""}
-            </span>
+      {/* ================= STRATEGY INFO ================= */}
+      {strategy && (
+        <div className="rounded-lg border bg-[var(--card-muted)] p-3 text-sm space-y-1">
+          <div>
+            <b>Strategie:</b> {strategy.name}
           </div>
-        ))}
-      </div>
+          <div className="text-muted">
+            Type: {String(strategy.type).toUpperCase()}
+          </div>
+        </div>
+      )}
 
-      {/* ================= ACTION ================= */}
+      {/* ================= STATUS + ACTION ================= */}
       <div className="flex justify-between items-center pt-2">
         <span
           className={`text-xs font-medium ${
@@ -117,18 +132,10 @@ export default function BotCard({
             e.stopPropagation();
             onRun?.(bot);
           }}
+          disabled={!strategy}
         >
-          {bot.is_active ? (
-            <>
-              <Play size={14} />
-              Run
-            </>
-          ) : (
-            <>
-              <Pause size={14} />
-              Inactief
-            </>
-          )}
+          <Play size={14} />
+          Run
         </button>
       </div>
     </div>

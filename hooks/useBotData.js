@@ -17,17 +17,21 @@ import {
 /**
  * useBotData
  * --------------------------------------------------
- * Centrale hook voor Trading Bot data
+ * Centrale hook voor Trading Bots
  *
- * Verantwoordelijk voor:
- * - bot configs
- * - bot decisions (today)
- * - bot history
- * - create / update / delete bots
- * - generate / execute / skip flows
+ * Model:
+ * - Bot = uitvoerder
+ * - Strategy = intelligentie
  *
- * ❌ GEEN business logic
- * ✅ Alleen state + API orchestration
+ * Verantwoordelijkheden:
+ * - ophalen bot configs (incl. strategy + is_active)
+ * - today decisions + orders
+ * - history
+ * - CRUD bots
+ * - generate / execute / skip
+ *
+ * ❌ geen business logic
+ * ❌ geen interpretatie
  */
 export default function useBotData() {
   /* =====================================================
@@ -55,9 +59,11 @@ export default function useBotData() {
   ===================================================== */
   const loadConfigs = useCallback(async () => {
     setLoading((l) => ({ ...l, configs: true }));
+    setError(null);
+
     try {
       const data = await fetchBotConfigs();
-      setConfigs(data || []);
+      setConfigs(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("❌ loadConfigs error:", e);
       setError(e.message);
@@ -68,9 +74,11 @@ export default function useBotData() {
 
   const loadToday = useCallback(async () => {
     setLoading((l) => ({ ...l, today: true }));
+    setError(null);
+
     try {
       const data = await fetchBotToday();
-      setToday(data || null);
+      setToday(data ?? null);
     } catch (e) {
       console.error("❌ loadToday error:", e);
       setError(e.message);
@@ -81,9 +89,11 @@ export default function useBotData() {
 
   const loadHistory = useCallback(async (days = 30) => {
     setLoading((l) => ({ ...l, history: true }));
+    setError(null);
+
     try {
       const data = await fetchBotHistory(days);
-      setHistory(data || []);
+      setHistory(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("❌ loadHistory error:", e);
       setError(e.message);
@@ -94,7 +104,13 @@ export default function useBotData() {
 
   /* =====================================================
      ➕ CREATE BOT
-     (let op: backend verwacht is_active)
+     Payload:
+     {
+       name,
+       strategy_id,
+       mode,
+       is_active? (optional)
+     }
   ===================================================== */
   const createBot = useCallback(
     async (payload) => {
@@ -103,7 +119,9 @@ export default function useBotData() {
 
       try {
         const res = await createBotConfig({
-          ...payload,
+          name: payload.name,
+          strategy_id: payload.strategy_id,
+          mode: payload.mode ?? "manual",
           is_active: payload.is_active ?? true,
         });
 
@@ -130,8 +148,10 @@ export default function useBotData() {
 
       try {
         const res = await updateBotConfig(bot_id, {
-          ...payload,
-          is_active: payload.is_active ?? true,
+          name: payload.name,
+          strategy_id: payload.strategy_id,
+          mode: payload.mode,
+          is_active: payload.is_active,
         });
 
         await loadConfigs();
@@ -171,7 +191,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     🔁 GENERATE BOT
+     🔁 GENERATE BOT (today)
   ===================================================== */
   const runBotToday = useCallback(
     async (report_date = null) => {
@@ -195,7 +215,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     ✅ EXECUTE BOT
+     ✅ EXECUTE BOT (human-in-the-loop)
   ===================================================== */
   const executeBot = useCallback(
     async (payload) => {
@@ -219,7 +239,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     ⏭️ SKIP BOT
+     ⏭️ SKIP BOT (today)
   ===================================================== */
   const skipBot = useCallback(
     async (payload) => {

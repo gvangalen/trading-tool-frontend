@@ -8,41 +8,45 @@ import {
 } from "lucide-react";
 
 /**
- * BotCard (NEW MODEL)
+ * BotCard (ID-GEDREVEN)
  * --------------------------------------------------
  * Bot = uitvoerder
  * Strategy = intelligentie
  *
  * Verwachte bot shape:
  * {
- *   id
- *   name
- *   mode
- *   is_active
- *   strategy: {
- *     id
- *     name
- *     type
- *     symbol
- *     timeframe
+ *   id,
+ *   name,
+ *   mode,
+ *   is_active,
+ *   strategy_id,
+ *   strategy?: {
+ *     id,
+ *     name,
+ *     type,
+ *     symbol,
+ *     timeframe,
  *   }
  * }
+ *
+ * Callbacks werken ALTIJD op bot.id
  */
 export default function BotCard({
   bot,
   isActive = false,
-  onSelect,
-  onEdit,
-  onDelete,
-  onRun,
+  onSelect,   // (botId)
+  onEdit,     // (botId)
+  onDelete,   // (botId)
+  onRun,      // (botId)
 }) {
   if (!bot) return null;
 
-  const strategy = bot.strategy;
+  const { id, name, mode, is_active, strategy } = bot;
 
   return (
     <div
-      onClick={() => onSelect?.(bot)}
+      data-bot-id={id}
+      onClick={() => onSelect?.(id)}
       className={`
         cursor-pointer rounded-xl border p-4 space-y-4
         transition
@@ -59,14 +63,13 @@ export default function BotCard({
           <BotIcon className="w-5 h-5 text-[var(--accent)]" />
           <div>
             <h3 className="font-semibold leading-tight">
-              {bot.name}
+              {name}
             </h3>
 
             {strategy ? (
               <p className="text-xs text-muted">
                 {String(strategy.type).toUpperCase()} •{" "}
-                {strategy.symbol} •{" "}
-                {strategy.timeframe}
+                {strategy.symbol} • {strategy.timeframe}
               </p>
             ) : (
               <p className="text-xs text-red-500">
@@ -82,7 +85,7 @@ export default function BotCard({
             className="btn-icon"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit?.(bot);
+              onEdit?.(id);
             }}
             title="Bewerken"
           >
@@ -93,7 +96,7 @@ export default function BotCard({
             className="btn-icon text-red-500"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete?.(bot);
+              onDelete?.(id);
             }}
             title="Verwijderen"
           >
@@ -118,21 +121,24 @@ export default function BotCard({
       <div className="flex justify-between items-center pt-2">
         <span
           className={`text-xs font-medium ${
-            bot.is_active
-              ? "text-green-600"
-              : "text-muted"
+            is_active ? "text-green-600" : "text-muted"
           }`}
         >
-          {bot.is_active ? "Actief" : "Inactief"}
+          {is_active ? "Actief" : "Inactief"}
         </span>
 
         <button
           className="btn-primary flex items-center gap-1"
           onClick={(e) => {
             e.stopPropagation();
-            onRun?.(bot);
+            onRun?.(id);
           }}
           disabled={!strategy}
+          title={
+            strategy
+              ? "Bot uitvoeren"
+              : "Koppel eerst een strategie"
+          }
         >
           <Play size={14} />
           Run

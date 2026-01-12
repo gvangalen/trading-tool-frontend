@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
  *
  * Velden:
  * - name
- * - strategy_id
+ * - strategy_id (NUMBER, verplicht)
  * - mode
  *
  * Props:
@@ -25,7 +25,7 @@ export default function AddBotForm({
 }) {
   const [local, setLocal] = useState({
     name: "",
-    strategy_id: "",
+    strategy_id: null, // ⬅️ ALTIJD number | null
     mode: "manual",
   });
 
@@ -36,7 +36,10 @@ export default function AddBotForm({
     if (initialForm) {
       setLocal({
         name: initialForm.name ?? "",
-        strategy_id: initialForm.strategy_id ?? "",
+        strategy_id:
+          typeof initialForm.strategy_id === "number"
+            ? initialForm.strategy_id
+            : initialForm.strategy?.id ?? null,
         mode: initialForm.mode ?? "manual",
       });
     }
@@ -44,8 +47,12 @@ export default function AddBotForm({
 
   /* =====================================================
      📤 PUSH NAAR PARENT
+     (alleen als form valide is)
   ===================================================== */
   useEffect(() => {
+    if (!local.name) return;
+    if (!local.strategy_id) return;
+
     onChange?.(local);
   }, [local, onChange]);
 
@@ -82,11 +89,13 @@ export default function AddBotForm({
         </label>
         <select
           className="input w-full"
-          value={local.strategy_id}
+          value={local.strategy_id ?? ""}
           onChange={(e) =>
             setLocal((s) => ({
               ...s,
-              strategy_id: e.target.value,
+              strategy_id: e.target.value
+                ? Number(e.target.value)
+                : null,
             }))
           }
         >

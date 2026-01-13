@@ -45,10 +45,7 @@ export default function BotPage() {
   /* =====================================================
      🧠 STRATEGY DATA
   ===================================================== */
-  const {
-    strategies = [],
-    loadStrategies,
-  } = useStrategyData();
+  const { strategies = [], loadStrategies } = useStrategyData();
 
   useEffect(() => {
     loadStrategies();
@@ -66,8 +63,18 @@ export default function BotPage() {
   const activeBot =
     bots.find((b) => b.id === activeBotId) ?? null;
 
-  const decision = today?.decisions?.[0] ?? null;
-  const order = today?.orders?.[0] ?? null;
+  /* =====================================================
+     🧠 TODAY (FILTER OP ACTIEVE BOT)
+  ===================================================== */
+  const decision =
+    today?.decisions?.find(
+      (d) => d.bot_id === activeBotId
+    ) ?? null;
+
+  const order =
+    today?.orders?.find(
+      (o) => o.bot_id === activeBotId
+    ) ?? null;
 
   /* =====================================================
      ➕ ADD BOT
@@ -165,10 +172,10 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ RUN BOT
+     ▶️ RUN BOT (GEEN ARGUMENTEN)
   ===================================================== */
-  const handleRunBot = (botId) => {
-    runBotToday(botId);
+  const handleRunBot = () => {
+    runBotToday();
   };
 
   /* =====================================================
@@ -188,7 +195,7 @@ export default function BotPage() {
       <BotDecisionCard
         decision={decision}
         loading={loading.today}
-        onGenerate={runBotToday}
+        onGenerate={handleRunBot}
       />
 
       {/* ===== BOTS GRID ===== */}
@@ -199,13 +206,12 @@ export default function BotPage() {
             bot={bot}
             isActive={bot.id === activeBotId}
             onSelect={(id) => setActiveBotId(id)}
-            onEdit={(id) => handleEditBot(id)}
-            onDelete={(id) => handleDeleteBot(id)}
-            onRun={(id) => handleRunBot(id)}
+            onEdit={handleEditBot}
+            onDelete={handleDeleteBot}
+            onRun={handleRunBot}
           />
         ))}
 
-        {/* ADD BOT CARD */}
         <button
           onClick={handleAddBot}
           className="
@@ -228,17 +234,23 @@ export default function BotPage() {
       <BotOrderPreview
         order={order}
         loading={loading.action}
-        onMarkExecuted={() =>
-          executeBot({
-            bot_id: decision?.bot_id,
-            report_date: today?.date,
-          })
+        onMarkExecuted={
+          decision
+            ? () =>
+                executeBot({
+                  bot_id: decision.bot_id,
+                  report_date: today?.date,
+                })
+            : null
         }
-        onSkip={() =>
-          skipBot({
-            bot_id: decision?.bot_id,
-            report_date: today?.date,
-          })
+        onSkip={
+          decision
+            ? () =>
+                skipBot({
+                  bot_id: decision.bot_id,
+                  report_date: today?.date,
+                })
+            : null
         }
       />
 

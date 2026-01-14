@@ -4,23 +4,9 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
 import { Brain, Play, SkipForward } from "lucide-react";
 
-/**
- * BotDecisionCard
- * --------------------------------------------------
- * Toont beslissingen van vandaag per bot
- *
- * Props:
- * - today: { date, decisions[], orders[] }
- * - loading: boolean        (fetch today)
- * - generating: boolean     (run bot)
- * - onGenerate(): generate today
- * - onExecute({ bot_id, report_date })
- * - onSkip({ bot_id, report_date })
- */
 export default function BotDecisionCard({
   today = null,
   loading = false,
-  generating = false,
   onGenerate,
   onExecute,
   onSkip,
@@ -36,50 +22,33 @@ export default function BotDecisionCard({
   };
 
   return (
-    <CardWrapper
-      title="Bot Decision Today"
-      icon={<Brain className="icon" />}
-    >
-      {/* ===================== */}
+    <CardWrapper title="Bot Decisions Today" icon={<Brain className="icon" />}>
       {/* LOADING */}
-      {/* ===================== */}
-      {(loading || generating) && (
-        <CardLoader text="Beslissing genereren…" />
-      )}
+      {loading && <CardLoader text="Beslissingen ophalen…" />}
 
-      {/* ===================== */}
-      {/* EMPTY STATE */}
-      {/* ===================== */}
-      {!loading && !generating && decisions.length === 0 && (
+      {/* EMPTY */}
+      {!loading && decisions.length === 0 && (
         <div className="space-y-4">
           <p className="text-sm text-[var(--text-muted)]">
-            Er is vandaag nog geen bot-beslissing gegenereerd.
+            Er zijn vandaag nog geen bot-beslissingen gegenereerd.
           </p>
 
           {onGenerate && (
-            <button
-              onClick={onGenerate}
-              className="btn-primary"
-              disabled={generating}
-            >
-              Genereer beslissing
+            <button onClick={onGenerate} className="btn-primary">
+              Genereer beslissingen
             </button>
           )}
         </div>
       )}
 
-      {/* ===================== */}
-      {/* DECISIONS */}
-      {/* ===================== */}
+      {/* MULTI DECISIONS */}
       {!loading &&
-        !generating &&
-        decisions.length > 0 &&
         decisions.map((d) => (
           <div
             key={d.id}
             className="border rounded-xl p-4 mb-4 bg-[var(--card-muted)]"
           >
-            {/* Header */}
+            {/* HEADER */}
             <div className="flex items-center justify-between mb-3">
               <div>
                 <div className="text-sm text-[var(--text-muted)]">
@@ -87,8 +56,7 @@ export default function BotDecisionCard({
                 </div>
                 <div
                   className={`text-2xl font-semibold ${
-                    actionClass[d.action] ||
-                    "text-[var(--text-dark)]"
+                    actionClass[d.action] || ""
                   }`}
                 >
                   {String(d.action).toUpperCase()}
@@ -105,8 +73,8 @@ export default function BotDecisionCard({
               </div>
             </div>
 
-            {/* Reasons */}
-            {Array.isArray(d.reasons) && d.reasons.length > 0 && (
+            {/* REASONS */}
+            {d.reasons?.length > 0 && (
               <ul className="text-sm space-y-1 mb-4">
                 {d.reasons.map((r, i) => (
                   <li key={i}>• {r}</li>
@@ -114,7 +82,7 @@ export default function BotDecisionCard({
               </ul>
             )}
 
-            {/* Actions */}
+            {/* ACTIONS */}
             <div className="flex gap-2">
               {onExecute && (
                 <button

@@ -11,7 +11,8 @@ import { Brain, Play, SkipForward } from "lucide-react";
  *
  * Props:
  * - today: { date, decisions[], orders[] }
- * - loading: boolean
+ * - loading: boolean        (fetch today)
+ * - generating: boolean     (run bot)
  * - onGenerate(): generate today
  * - onExecute({ bot_id, report_date })
  * - onSkip({ bot_id, report_date })
@@ -19,6 +20,7 @@ import { Brain, Play, SkipForward } from "lucide-react";
 export default function BotDecisionCard({
   today = null,
   loading = false,
+  generating = false,
   onGenerate,
   onExecute,
   onSkip,
@@ -41,14 +43,14 @@ export default function BotDecisionCard({
       {/* ===================== */}
       {/* LOADING */}
       {/* ===================== */}
-      {loading && (
-        <CardLoader text="Beslissingen ophalen…" />
+      {(loading || generating) && (
+        <CardLoader text="Beslissing genereren…" />
       )}
 
       {/* ===================== */}
-      {/* EMPTY */}
+      {/* EMPTY STATE */}
       {/* ===================== */}
-      {!loading && decisions.length === 0 && (
+      {!loading && !generating && decisions.length === 0 && (
         <div className="space-y-4">
           <p className="text-sm text-[var(--text-muted)]">
             Er is vandaag nog geen bot-beslissing gegenereerd.
@@ -58,6 +60,7 @@ export default function BotDecisionCard({
             <button
               onClick={onGenerate}
               className="btn-primary"
+              disabled={generating}
             >
               Genereer beslissing
             </button>
@@ -69,6 +72,7 @@ export default function BotDecisionCard({
       {/* DECISIONS */}
       {/* ===================== */}
       {!loading &&
+        !generating &&
         decisions.length > 0 &&
         decisions.map((d) => (
           <div
@@ -102,7 +106,7 @@ export default function BotDecisionCard({
             </div>
 
             {/* Reasons */}
-            {d.reasons?.length > 0 && (
+            {Array.isArray(d.reasons) && d.reasons.length > 0 && (
               <ul className="text-sm space-y-1 mb-4">
                 {d.reasons.map((r, i) => (
                   <li key={i}>• {r}</li>

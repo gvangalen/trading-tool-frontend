@@ -52,7 +52,7 @@ export default function BotPage() {
   }, [loadStrategies]);
 
   /* =====================================================
-     ✅ DEFAULT BOT
+     ✅ DEFAULT ACTIVE BOT
   ===================================================== */
   useEffect(() => {
     if (!activeBotId && bots.length > 0) {
@@ -64,7 +64,7 @@ export default function BotPage() {
     bots.find((b) => b.id === activeBotId) ?? null;
 
   /* =====================================================
-     🧠 TODAY (FILTER OP ACTIEVE BOT)
+     🧠 TODAY → FILTER OP ACTIEVE BOT
   ===================================================== */
   const decision =
     today?.decisions?.find(
@@ -84,6 +84,7 @@ export default function BotPage() {
       name: "",
       strategy_id: "",
       mode: "manual",
+nd,
     };
 
     openConfirm({
@@ -172,9 +173,9 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ RUN BOT (GEEN ARGUMENTEN)
+     ▶️ RUN BOT (GENEREER BESLISSING VANDAAG)
   ===================================================== */
-  const handleRunBot = () => {
+  const handleRunBotToday = () => {
     runBotToday();
   };
 
@@ -193,9 +194,12 @@ export default function BotPage() {
 
       {/* ===== TODAY ===== */}
       <BotDecisionCard
-        decision={decision}
+        today={today}
         loading={loading.today}
-        onGenerate={handleRunBot}
+        generating={loading.generate}
+        onGenerate={handleRunBotToday}
+        onExecute={executeBot}
+        onSkip={skipBot}
       />
 
       {/* ===== BOTS GRID ===== */}
@@ -205,10 +209,10 @@ export default function BotPage() {
             key={bot.id}
             bot={bot}
             isActive={bot.id === activeBotId}
-            onSelect={(id) => setActiveBotId(id)}
+            onSelect={setActiveBotId}
             onEdit={handleEditBot}
             onDelete={handleDeleteBot}
-            onRun={handleRunBot}
+            onRun={handleRunBotToday}
           />
         ))}
 
@@ -230,7 +234,7 @@ export default function BotPage() {
         loading={loading.today}
       />
 
-      {/* ===== ORDER ===== */}
+      {/* ===== ORDER PREVIEW ===== */}
       <BotOrderPreview
         order={order}
         loading={loading.action}

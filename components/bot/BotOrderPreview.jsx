@@ -7,7 +7,7 @@ import { ShoppingCart, AlertTriangle } from "lucide-react";
 export default function BotOrderPreview({
   order = null,
   loading = false,
-  onMarkExecuted,
+  onExecute,
   onSkip,
 }) {
   const isReady = order?.status === "ready";
@@ -91,27 +91,17 @@ export default function BotOrderPreview({
           {/* ===================== */}
           <div className="flex gap-3 mt-6">
             <button
-              onClick={() =>
-                onMarkExecuted?.({
-                  bot_id: order.bot_id,
-                  decision_id: order.decision_id,
-                })
-              }
+              onClick={onExecute}
               className="btn-primary"
-              disabled={!isReady}
+              disabled={!isReady || !onExecute}
             >
               Execute
             </button>
 
             <button
-              onClick={() =>
-                onSkip?.({
-                  bot_id: order.bot_id,
-                  decision_id: order.decision_id,
-                })
-              }
+              onClick={onSkip}
               className="btn-secondary"
-              disabled={!isReady}
+              disabled={!isReady || !onSkip}
             >
               Skip today
             </button>

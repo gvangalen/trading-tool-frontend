@@ -60,9 +60,6 @@ export default function BotPage() {
     }
   }, [bots, activeBotId]);
 
-  const activeBot =
-    bots.find((b) => b.id === activeBotId) ?? null;
-
   /* =====================================================
      🧠 TODAY → FILTER OP ACTIEVE BOT
   ===================================================== */
@@ -84,7 +81,6 @@ export default function BotPage() {
       name: "",
       strategy_id: "",
       mode: "manual",
-nd,
     };
 
     openConfirm({
@@ -173,7 +169,7 @@ nd,
   };
 
   /* =====================================================
-     ▶️ RUN BOT (GENEREER BESLISSING VANDAAG)
+     ▶️ GENEREER DAGELIJKSE BESLISSINGEN (ALLE BOTS)
   ===================================================== */
   const handleRunBotToday = () => {
     runBotToday();
@@ -192,7 +188,7 @@ nd,
         </h1>
       </div>
 
-      {/* ===== TODAY ===== */}
+      {/* ===== TODAY: MULTI BOT DECISIONS ===== */}
       <BotDecisionCard
         today={today}
         loading={loading.today}
@@ -212,7 +208,6 @@ nd,
             onSelect={setActiveBotId}
             onEdit={handleEditBot}
             onDelete={handleDeleteBot}
-            onRun={handleRunBotToday}
           />
         ))}
 
@@ -228,13 +223,13 @@ nd,
         </button>
       </div>
 
-      {/* ===== SCORES ===== */}
+      {/* ===== SCORES (ACTIEVE BOT) ===== */}
       <BotScores
         scores={decision?.scores || {}}
         loading={loading.today}
       />
 
-      {/* ===== ORDER PREVIEW ===== */}
+      {/* ===== ORDER PREVIEW (ACTIEVE BOT) ===== */}
       <BotOrderPreview
         order={order}
         loading={loading.action}

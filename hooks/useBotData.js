@@ -6,6 +6,7 @@ import {
   fetchBotConfigs,
   fetchBotToday,
   fetchBotHistory,
+  fetchBotPortfolios, // 🆕
   generateBotToday,
   markBotExecuted,
   skipBotToday,
@@ -34,10 +35,14 @@ export default function useBotData() {
   const [today, setToday] = useState(null); // { date, decisions[], orders[] }
   const [history, setHistory] = useState([]);
 
+  // 🆕 portfolio & budget per bot
+  const [portfolios, setPortfolios] = useState([]);
+
   const [loading, setLoading] = useState({
     configs: false,
     today: false,
     history: false,
+    portfolios: false, // 🆕
     generate: false,
     action: false,
     create: false,
@@ -95,9 +100,24 @@ export default function useBotData() {
     }
   }, []);
 
+  // 🆕 portfolio / budget loader
+  const loadPortfolios = useCallback(async () => {
+    setLoading((l) => ({ ...l, portfolios: true }));
+    setError(null);
+
+    try {
+      const data = await fetchBotPortfolios();
+      setPortfolios(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("❌ loadPortfolios error:", e);
+      setError(e?.message ?? "Load portfolios failed");
+    } finally {
+      setLoading((l) => ({ ...l, portfolios: false }));
+    }
+  }, []);
+
   /* =====================================================
      ➕ CREATE BOT
-     strategy_id mag hier WEL
   ===================================================== */
   const createBot = useCallback(
     async (payload) => {
@@ -109,10 +129,16 @@ export default function useBotData() {
           name: payload.name,
           strategy_id: payload.strategy_id,
           mode: payload.mode ?? "manual",
-          is_active: payload.is_active ?? true,
+
+          // 🆕 budget
+          budget_total_eur: payload.budget_total_eur ?? 0,
+          budget_daily_limit_eur: payload.budget_daily_limit_eur ?? 0,
+          budget_min_order_eur: payload.budget_min_order_eur ?? 0,
+          budget_max_order_eur: payload.budget_max_order_eur ?? 0,
         });
 
         await loadConfigs();
+        await loadPortfolios();
         return res;
       } catch (e) {
         console.error("❌ createBot error:", e);
@@ -122,12 +148,11 @@ export default function useBotData() {
         setLoading((l) => ({ ...l, create: false }));
       }
     },
-    [loadConfigs]
+    [loadConfigs, loadPortfolios]
   );
 
   /* =====================================================
      ✏️ UPDATE BOT
-     ❗ strategy_id bewust NIET wijzigen
   ===================================================== */
   const updateBot = useCallback(
     async (bot_id, payload) => {
@@ -138,11 +163,16 @@ export default function useBotData() {
         const res = await updateBotConfig(bot_id, {
           name: payload.name,
           mode: payload.mode,
-          is_active: payload.is_active,
-          // ❌ strategy_id NIET meesturen
+
+          // 🆕 budget
+          budget_total_eur: payload.budget_total_eur ?? 0,
+          budget_daily_limit_eur: payload.budget_daily_limit_eur ?? 0,
+          budget_min_order_eur: payload.budget_min_order_eur ?? 0,
+          budget_max_order_eur: payload.budget_max_order_eur ?? 0,
         });
 
         await loadConfigs();
+        await loadPortfolios();
         return res;
       } catch (e) {
         console.error("❌ updateBot error:", e);
@@ -152,7 +182,7 @@ export default function useBotData() {
         setLoading((l) => ({ ...l, update: false }));
       }
     },
-    [loadConfigs]
+    [loadConfigs, loadPortfolios]
   );
 
   /* =====================================================
@@ -166,6 +196,7 @@ export default function useBotData() {
       try {
         const res = await deleteBotConfig(bot_id);
         await loadConfigs();
+        await loadPortfolios();
         return res;
       } catch (e) {
         console.error("❌ deleteBot error:", e);
@@ -175,12 +206,11 @@ export default function useBotData() {
         setLoading((l) => ({ ...l, delete: false }));
       }
     },
-    [loadConfigs]
+    [loadConfigs, loadPortfolios]
   );
 
   /* =====================================================
      🔁 GENERATE BOT (today)
-     ❗ altijd EXPLICIET payload → geen cyclic JSON
   ===================================================== */
   const runBotToday = useCallback(
     async (report_date = null) => {
@@ -188,13 +218,10 @@ export default function useBotData() {
       setError(null);
 
       try {
-        const payload = report_date
-          ? { report_date }
-          : {};
-
-        const res = await generateBotToday(payload);
+        const res = await generateBotToday(report_date);
         await loadToday();
         await loadHistory(30);
+        await loadPortfolios(); // 🆕 budget verandert
         return res;
       } catch (e) {
         console.error("❌ runBotToday error:", e);
@@ -204,12 +231,11 @@ export default function useBotData() {
         setLoading((l) => ({ ...l, generate: false }));
       }
     },
-    [loadToday, loadHistory]
+    [loadToday, loadHistory, loadPortfolios]
   );
 
   /* =====================================================
      ✅ EXECUTE BOT
-     payload = { bot_id, report_date? }
   ===================================================== */
   const executeBot = useCallback(
     async ({ bot_id, report_date }) => {
@@ -223,6 +249,7 @@ export default function useBotData() {
         });
         await loadToday();
         await loadHistory(30);
+        await loadPortfolios(); // 🆕 ledger update
         return res;
       } catch (e) {
         console.error("❌ executeBot error:", e);
@@ -232,12 +259,11 @@ export default function useBotData() {
         setLoading((l) => ({ ...l, action: false }));
       }
     },
-    [loadToday, loadHistory]
+    [loadToday, loadHistory, loadPortfolios]
   );
 
   /* =====================================================
      ⏭️ SKIP BOT
-     payload = { bot_id, report_date? }
   ===================================================== */
   const skipBot = useCallback(
     async ({ bot_id, report_date }) => {
@@ -270,7 +296,8 @@ export default function useBotData() {
     loadConfigs();
     loadToday();
     loadHistory(30);
-  }, [loadConfigs, loadToday, loadHistory]);
+    loadPortfolios(); // 🆕
+  }, [loadConfigs, loadToday, loadHistory, loadPortfolios]);
 
   /* =====================================================
      📤 EXPORT
@@ -280,6 +307,7 @@ export default function useBotData() {
     configs,
     today,
     history,
+    portfolios, // 🆕
 
     /* loading + error */
     loading,
@@ -290,6 +318,7 @@ export default function useBotData() {
       configs: loadConfigs,
       today: loadToday,
       history: loadHistory,
+      portfolios: loadPortfolios,
     },
 
     /* actions */

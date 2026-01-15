@@ -14,6 +14,9 @@ import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import AddBotForm from "@/components/bot/AddBotForm";
 
+/* 🆕 NIEUW */
+import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
+
 export default function BotPage() {
   /* =====================================================
      🧠 MODAL / FORM
@@ -40,6 +43,7 @@ export default function BotPage() {
     runBotToday,
     executeBot,
     skipBot,
+    portfolios = [], // 👈 verwacht uit useBotData (nieuw)
   } = useBotData();
 
   /* =====================================================
@@ -64,14 +68,10 @@ export default function BotPage() {
      🧠 TODAY → FILTER OP ACTIEVE BOT
   ===================================================== */
   const decision =
-    today?.decisions?.find(
-      (d) => d.bot_id === activeBotId
-    ) ?? null;
+    today?.decisions?.find((d) => d.bot_id === activeBotId) ?? null;
 
   const order =
-    today?.orders?.find(
-      (o) => o.bot_id === activeBotId
-    ) ?? null;
+    today?.orders?.find((o) => o.bot_id === activeBotId) ?? null;
 
   /* =====================================================
      ➕ ADD BOT
@@ -152,9 +152,7 @@ export default function BotPage() {
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: (
-        <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>
-      ),
+      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
@@ -183,9 +181,7 @@ export default function BotPage() {
       {/* ===== TITLE ===== */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold">
-          Trading Bots
-        </h1>
+        <h1 className="text-2xl font-semibold">Trading Bots</h1>
       </div>
 
       {/* ===== TODAY: MULTI BOT DECISIONS ===== */}
@@ -197,6 +193,24 @@ export default function BotPage() {
         onExecute={executeBot}
         onSkip={skipBot}
       />
+
+      {/* ===== 🆕 BOT PORTFOLIO & BUDGET DASHBOARD ===== */}
+      {portfolios.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">
+            Bot portfolio & budget
+          </h2>
+
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {portfolios.map((bot) => (
+              <BotPortfolioCard
+                key={bot.bot_id}
+                bot={bot}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ===== BOTS GRID ===== */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">

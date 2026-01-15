@@ -6,7 +6,7 @@ import {
   fetchBotConfigs,
   fetchBotToday,
   fetchBotHistory,
-  fetchBotPortfolios, // 🆕
+  fetchBotPortfolios, // 🆕 portfolio + budget
   generateBotToday,
   markBotExecuted,
   skipBotToday,
@@ -221,7 +221,7 @@ export default function useBotData() {
         const res = await generateBotToday(report_date);
         await loadToday();
         await loadHistory(30);
-        await loadPortfolios(); // 🆕 budget verandert
+        await loadPortfolios(); // budget verandert
         return res;
       } catch (e) {
         console.error("❌ runBotToday error:", e);
@@ -243,13 +243,10 @@ export default function useBotData() {
       setError(null);
 
       try {
-        const res = await markBotExecuted({
-          bot_id,
-          report_date,
-        });
+        const res = await markBotExecuted({ bot_id, report_date });
         await loadToday();
         await loadHistory(30);
-        await loadPortfolios(); // 🆕 ledger update
+        await loadPortfolios(); // ledger update
         return res;
       } catch (e) {
         console.error("❌ executeBot error:", e);
@@ -271,10 +268,7 @@ export default function useBotData() {
       setError(null);
 
       try {
-        const res = await skipBotToday({
-          bot_id,
-          report_date,
-        });
+        const res = await skipBotToday({ bot_id, report_date });
         await loadToday();
         await loadHistory(30);
         return res;
@@ -296,7 +290,7 @@ export default function useBotData() {
     loadConfigs();
     loadToday();
     loadHistory(30);
-    loadPortfolios(); // 🆕
+    loadPortfolios();
   }, [loadConfigs, loadToday, loadHistory, loadPortfolios]);
 
   /* =====================================================
@@ -307,7 +301,7 @@ export default function useBotData() {
     configs,
     today,
     history,
-    portfolios, // 🆕
+    portfolios,
 
     /* loading + error */
     loading,

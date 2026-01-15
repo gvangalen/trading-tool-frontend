@@ -14,7 +14,7 @@ import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import AddBotForm from "@/components/bot/AddBotForm";
 
-/* 🆕 NIEUW */
+/* 🆕 Portfolio & budget */
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 
 export default function BotPage() {
@@ -36,6 +36,7 @@ export default function BotPage() {
     configs: bots = [],
     today,
     history,
+    portfolios = [],
     loading,
     createBot,
     updateBot,
@@ -43,7 +44,6 @@ export default function BotPage() {
     runBotToday,
     executeBot,
     skipBot,
-    portfolios = [], // 👈 verwacht uit useBotData (nieuw)
   } = useBotData();
 
   /* =====================================================
@@ -65,7 +65,7 @@ export default function BotPage() {
   }, [bots, activeBotId]);
 
   /* =====================================================
-     🧠 TODAY → FILTER OP ACTIEVE BOT
+     🧠 TODAY → ACTIEVE BOT
   ===================================================== */
   const decision =
     today?.decisions?.find((d) => d.bot_id === activeBotId) ?? null;
@@ -121,7 +121,7 @@ export default function BotPage() {
 
     formRef.current = {
       name: bot.name,
-      strategy_id: bot.strategy_id ?? "",
+      strategy_id: bot.strategy?.id ?? "",
       mode: bot.mode,
     };
 
@@ -152,7 +152,11 @@ export default function BotPage() {
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
+      description: (
+        <>
+          Weet je zeker dat <b>{bot.name}</b> weg mag?
+        </>
+      ),
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
@@ -167,7 +171,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ GENEREER DAGELIJKSE BESLISSINGEN (ALLE BOTS)
+     ▶️ GENEREER DAGELIJKSE BESLISSINGEN
   ===================================================== */
   const handleRunBotToday = () => {
     runBotToday();
@@ -181,7 +185,9 @@ export default function BotPage() {
       {/* ===== TITLE ===== */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold">Trading Bots</h1>
+        <h1 className="text-2xl font-semibold">
+          Trading Bots
+        </h1>
       </div>
 
       {/* ===== TODAY: MULTI BOT DECISIONS ===== */}
@@ -194,7 +200,7 @@ export default function BotPage() {
         onSkip={skipBot}
       />
 
-      {/* ===== 🆕 BOT PORTFOLIO & BUDGET DASHBOARD ===== */}
+      {/* ===== 🆕 BOT PORTFOLIO & BUDGET ===== */}
       {portfolios.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">

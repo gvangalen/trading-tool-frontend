@@ -65,13 +65,24 @@ export default function BotPage() {
   }, [bots, activeBotId]);
 
   /* =====================================================
-     🧠 TODAY → ACTIEVE BOT
+     🧠 TODAY → ACTIEVE BOT (decision/order)
   ===================================================== */
   const decision =
     today?.decisions?.find((d) => d.bot_id === activeBotId) ?? null;
 
   const order =
     today?.orders?.find((o) => o.bot_id === activeBotId) ?? null;
+
+  /* =====================================================
+     ✅ ALGEMENE SCORES (altijd uit daily_scores)
+     Backend levert: today.scores = { macro, technical, market, setup }
+  ===================================================== */
+  const dailyScores = today?.scores ?? {
+    macro: 10,
+    technical: 10,
+    market: 10,
+    setup: 10,
+  };
 
   /* =====================================================
      ➕ ADD BOT
@@ -185,9 +196,7 @@ export default function BotPage() {
       {/* ===== TITLE ===== */}
       <div className="flex items-center gap-3">
         <BotIcon className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold">
-          Trading Bots
-        </h1>
+        <h1 className="text-2xl font-semibold">Trading Bots</h1>
       </div>
 
       {/* ===== TODAY: MULTI BOT DECISIONS ===== */}
@@ -203,16 +212,11 @@ export default function BotPage() {
       {/* ===== 🆕 BOT PORTFOLIO & BUDGET ===== */}
       {portfolios.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">
-            Bot portfolio & budget
-          </h2>
+          <h2 className="text-lg font-semibold">Bot portfolio & budget</h2>
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
             {portfolios.map((bot) => (
-              <BotPortfolioCard
-                key={bot.bot_id}
-                bot={bot}
-              />
+              <BotPortfolioCard key={bot.bot_id} bot={bot} />
             ))}
           </div>
         </div>
@@ -243,11 +247,8 @@ export default function BotPage() {
         </button>
       </div>
 
-      {/* ===== SCORES (ACTIEVE BOT) ===== */}
-      <BotScores
-        scores={decision?.scores || {}}
-        loading={loading.today}
-      />
+      {/* ✅ SCORES (ALTIJD: algemene daily scores) */}
+      <BotScores scores={dailyScores} loading={loading.today} />
 
       {/* ===== ORDER PREVIEW (ACTIEVE BOT) ===== */}
       <BotOrderPreview
@@ -274,10 +275,7 @@ export default function BotPage() {
       />
 
       {/* ===== HISTORY ===== */}
-      <BotHistoryTable
-        history={history}
-        loading={loading.history}
-      />
+      <BotHistoryTable history={history} loading={loading.history} />
     </div>
   );
 }

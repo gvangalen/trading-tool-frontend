@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot as BotIcon } from "lucide-react";
+import { Bot as BotIcon, Wallet } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
 import { useStrategyData } from "@/hooks/useStrategyData";
@@ -13,8 +13,6 @@ import BotScores from "@/components/bot/BotScores";
 import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import AddBotForm from "@/components/bot/AddBotForm";
-
-/* 🆕 Portfolio & budget */
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 
 export default function BotPage() {
@@ -27,7 +25,7 @@ export default function BotPage() {
   /* =====================================================
      🧠 UI STATE
   ===================================================== */
-  const [activeBotId, setActiveBotId] = useState(null);
+  const [activeBotId, setActiveBotId] = useState<number | null>(null);
 
   /* =====================================================
      🤖 BOT DATA
@@ -47,7 +45,7 @@ export default function BotPage() {
   } = useBotData();
 
   /* =====================================================
-     🧠 STRATEGY DATA
+     🧠 STRATEGIES
   ===================================================== */
   const { strategies = [], loadStrategies } = useStrategyData();
 
@@ -65,7 +63,7 @@ export default function BotPage() {
   }, [bots, activeBotId]);
 
   /* =====================================================
-     🧠 TODAY → ACTIEVE BOT (decision/order)
+     🧠 TODAY CONTEXT
   ===================================================== */
   const decision =
     today?.decisions?.find((d) => d.bot_id === activeBotId) ?? null;
@@ -73,10 +71,6 @@ export default function BotPage() {
   const order =
     today?.orders?.find((o) => o.bot_id === activeBotId) ?? null;
 
-  /* =====================================================
-     ✅ ALGEMENE SCORES (altijd uit daily_scores)
-     Backend levert: today.scores = { macro, technical, market, setup }
-  ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
     technical: 10,
@@ -105,19 +99,13 @@ export default function BotPage() {
       ),
       confirmText: "Opslaan",
       onConfirm: async () => {
-        if (!formRef.current.name) {
-          showSnackbar("Naam is verplicht", "danger");
-          return;
-        }
-
-        if (!formRef.current.strategy_id) {
-          showSnackbar("Selecteer een strategie", "danger");
+        if (!formRef.current.name || !formRef.current.strategy_id) {
+          showSnackbar("Vul alle velden in", "danger");
           return;
         }
 
         const res = await createBot(formRef.current);
         if (res?.id) setActiveBotId(res.id);
-
         showSnackbar("Bot toegevoegd", "success");
       },
     });
@@ -126,7 +114,7 @@ export default function BotPage() {
   /* =====================================================
      ✏️ EDIT BOT
   ===================================================== */
-  const handleEditBot = (botId) => {
+  const handleEditBot = (botId: number) => {
     const bot = bots.find((b) => b.id === botId);
     if (!bot) return;
 
@@ -156,50 +144,78 @@ export default function BotPage() {
   /* =====================================================
      🗑 DELETE BOT
   ===================================================== */
-  const handleDeleteBot = (botId) => {
+  const handleDeleteBot = (botId: number) => {
     const bot = bots.find((b) => b.id === botId);
     if (!bot) return;
 
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: (
-        <>
-          Weet je zeker dat <b>{bot.name}</b> weg mag?
-        </>
-      ),
+      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
-
-        if (activeBotId === bot.id) {
-          setActiveBotId(bots[0]?.id ?? null);
-        }
-
+        setActiveBotId(bots[0]?.id ?? null);
         showSnackbar("Bot verwijderd", "success");
       },
     });
   };
 
   /* =====================================================
-     ▶️ GENEREER DAGELIJKSE BESLISSINGEN
+     ▶️ RUN DAILY
   ===================================================== */
-  const handleRunBotToday = () => {
-    runBotToday();
-  };
+  const handleRunBotToday = () => runBotToday();
+
+  /* =====================================================
+     🧠 GLOBAL PORTFOLIO (AGGREGATED)
+  ===================================================== */
+  const totalValue = portfolios.reduce((a, b) => a + (b.value ?? 0), 0);
+  const totalPnl = portfolios.reduce((a, b) => a + (b.pnl ?? 0), 0);
 
   /* =====================================================
      🧠 PAGE
   ===================================================== */
   return (
-    <div className="space-y-8 animate-fade-slide">
-      {/* ===== TITLE ===== */}
+    <div className="space-y-10 animate-fade-slide">
+
+      {/* ===== PAGE TITLE ===== */}
       <div className="flex items-center gap-3">
-        <BotIcon className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold">Trading Bots</h1>
+        <Wallet className="w-6 h-6 text-[var(--accent)]" />
+        <h1 className="text-2xl font-semibold">Portfolio Management</h1>
       </div>
 
-      {/* ===== TODAY: MULTI BOT DECISIONS ===== */}
+      {/* =====================================================
+         🟢 GLOBAL PORTFOLIO
+      ===================================================== */}
+      <div className="rounded-2xl border bg-card p-6 space-y-2">
+        <div className="text-sm text-muted">Total Portfolio Value</div>
+        <div className="text-3xl font-bold">€{totalValue.toFixed(2)}</div>
+        <div
+          className={`text-sm ${
+            totalPnl >= 0 ? "text-green-500" : "text-red-500"
+          }`}
+        >
+          {totalPnl >= 0 ? "+" : ""}€{totalPnl.toFixed(2)}
+        </div>
+      </div>
+
+      {/* =====================================================
+         🤖 BOT PORTFOLIOS (AGENTS)
+      ===================================================== */}
+      {portfolios.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Agent Portfolios</h2>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {portfolios.map((bot) => (
+              <BotPortfolioCard key={bot.bot_id} bot={bot} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+         🧠 TODAY – BOT DECISIONS
+      ===================================================== */}
       <BotDecisionCard
         today={today}
         loading={loading.today}
@@ -209,48 +225,14 @@ export default function BotPage() {
         onSkip={skipBot}
       />
 
-      {/* ===== 🆕 BOT PORTFOLIO & BUDGET ===== */}
-      {portfolios.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Bot portfolio & budget</h2>
-
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {portfolios.map((bot) => (
-              <BotPortfolioCard key={bot.bot_id} bot={bot} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ===== BOTS GRID ===== */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {bots.map((bot) => (
-          <BotCard
-            key={bot.id}
-            bot={bot}
-            isActive={bot.id === activeBotId}
-            onSelect={setActiveBotId}
-            onEdit={handleEditBot}
-            onDelete={handleDeleteBot}
-          />
-        ))}
-
-        <button
-          onClick={handleAddBot}
-          className="
-            rounded-xl border border-dashed border-[var(--border)]
-            p-6 text-sm text-muted
-            hover:border-[var(--accent)]
-          "
-        >
-          ➕ Nieuwe bot toevoegen
-        </button>
-      </div>
-
-      {/* ✅ SCORES (ALTIJD: algemene daily scores) */}
+      {/* =====================================================
+         📊 CONTEXT SCORES
+      ===================================================== */}
       <BotScores scores={dailyScores} loading={loading.today} />
 
-      {/* ===== ORDER PREVIEW (ACTIEVE BOT) ===== */}
+      {/* =====================================================
+         📦 ORDER PREVIEW
+      ===================================================== */}
       <BotOrderPreview
         order={order}
         loading={loading.action}
@@ -274,7 +256,35 @@ export default function BotPage() {
         }
       />
 
-      {/* ===== HISTORY ===== */}
+      {/* =====================================================
+         🤖 BOTS (CONFIG / MGMT)
+      ===================================================== */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Bots & Strategies</h2>
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {bots.map((bot) => (
+            <BotCard
+              key={bot.id}
+              bot={bot}
+              isActive={bot.id === activeBotId}
+              onSelect={setActiveBotId}
+              onEdit={handleEditBot}
+              onDelete={handleDeleteBot}
+            />
+          ))}
+
+          <button
+            onClick={handleAddBot}
+            className="rounded-xl border border-dashed border-[var(--border)] p-6 text-sm text-muted hover:border-[var(--accent)]"
+          >
+            ➕ Nieuwe bot toevoegen
+          </button>
+        </div>
+      </div>
+
+      {/* =====================================================
+         📜 HISTORY (LOGBOOK)
+      ===================================================== */}
       <BotHistoryTable history={history} loading={loading.history} />
     </div>
   );

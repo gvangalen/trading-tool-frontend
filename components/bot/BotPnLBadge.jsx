@@ -1,4 +1,3 @@
-// components/bot/BotPnLBadge.jsx
 "use client";
 
 export default function BotPnLBadge({ pnlEur = 0, pnlPct = null }) {
@@ -6,15 +5,16 @@ export default function BotPnLBadge({ pnlEur = 0, pnlPct = null }) {
   const isNegative = pnlEur < 0;
 
   const colorClass = isPositive
-    ? "text-green-600"
+    ? "icon-success"
     : isNegative
-    ? "text-red-600"
+    ? "icon-danger"
     : "text-[var(--text-muted)]";
 
   return (
     <div className={`text-sm font-medium ${colorClass}`}>
       {pnlEur > 0 && "+"}
       €{pnlEur.toFixed(2)}
+
       {pnlPct !== null && (
         <span className="ml-1 text-xs">
           ({pnlPct > 0 ? "+" : ""}

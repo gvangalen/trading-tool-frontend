@@ -63,13 +63,17 @@ export default function BotPage() {
   }, [bots, activeBotId]);
 
   /* =====================================================
-     🧠 TODAY CONTEXT
+     🧠 ACTIVE BOT CONTEXT
   ===================================================== */
-  const decision =
-    today?.decisions?.find((d) => d.bot_id === activeBotId) ?? null;
+  const activeDecision =
+    today?.decisions?.find(
+      (d) => d.bot_id === activeBotId
+    ) ?? null;
 
-  const order =
-    today?.orders?.find((o) => o.bot_id === activeBotId) ?? null;
+  const activeOrder =
+    today?.orders?.find(
+      (o) => o.bot_id === activeBotId
+    ) ?? null;
 
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -167,15 +171,25 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ RUN DAILY
+     ▶️ RUN DAILY (PER BOT)
   ===================================================== */
-  const handleRunBotToday = () => runBotToday();
+  const handleRunBotToday = () => {
+    if (!activeBotId) return;
+    runBotToday(activeBotId);
+  };
 
   /* =====================================================
      🧠 GLOBAL PORTFOLIO
   ===================================================== */
-  const totalValue = portfolios.reduce((a, b) => a + (b.value ?? 0), 0);
-  const totalPnl = portfolios.reduce((a, b) => a + (b.pnl ?? 0), 0);
+  const totalValue = portfolios.reduce(
+    (a, b) => a + (b.value ?? 0),
+    0
+  );
+
+  const totalPnl = portfolios.reduce(
+    (a, b) => a + (b.pnl ?? 0),
+    0
+  );
 
   /* =====================================================
      🧠 PAGE
@@ -220,44 +234,49 @@ export default function BotPage() {
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
             {portfolios.map((bot) => (
-              <BotPortfolioCard key={bot.bot_id} bot={bot} />
+              <BotPortfolioCard
+                key={bot.bot_id}
+                bot={bot}
+              />
             ))}
           </div>
         </div>
       )}
 
-      {/* ===== BOT DECISIONS ===== */}
+      {/* ===== BOT DECISION (ACTIVE BOT) ===== */}
       <BotDecisionCard
-        today={today}
+        decision={activeDecision}
         loading={loading.today}
-        generating={loading.generate}
         onGenerate={handleRunBotToday}
         onExecute={executeBot}
         onSkip={skipBot}
       />
 
       {/* ===== CONTEXT SCORES ===== */}
-      <BotScores scores={dailyScores} loading={loading.today} />
+      <BotScores
+        scores={dailyScores}
+        loading={loading.today}
+      />
 
-      {/* ===== ORDER PREVIEW ===== */}
+      {/* ===== ORDER PREVIEW (ACTIVE BOT) ===== */}
       <BotOrderPreview
-        order={order}
+        order={activeOrder}
         loading={loading.action}
-        onMarkExecuted={
-          decision
+        onExecute={
+          activeDecision
             ? () =>
                 executeBot({
-                  bot_id: decision.bot_id,
-                  report_date: today?.date,
+                  bot_id: activeDecision.bot_id,
+                  report_date: activeDecision.report_date,
                 })
             : null
         }
         onSkip={
-          decision
+          activeDecision
             ? () =>
                 skipBot({
-                  bot_id: decision.bot_id,
-                  report_date: today?.date,
+                  bot_id: activeDecision.bot_id,
+                  report_date: activeDecision.report_date,
                 })
             : null
         }
@@ -283,7 +302,13 @@ export default function BotPage() {
 
           <button
             onClick={handleAddBot}
-            className="card-surface flex items-center justify-center text-sm text-[var(--text-muted)] border-dashed hover:border-[var(--primary)]"
+            className="
+              card-surface
+              flex items-center justify-center
+              text-sm text-[var(--text-muted)]
+              border-dashed
+              hover:border-[var(--primary)]
+            "
           >
             ➕ Nieuwe bot toevoegen
           </button>
@@ -291,7 +316,10 @@ export default function BotPage() {
       </div>
 
       {/* ===== HISTORY ===== */}
-      <BotHistoryTable history={history} loading={loading.history} />
+      <BotHistoryTable
+        history={history}
+        loading={loading.history}
+      />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export default function BotScores({
   return (
     <CardWrapper
       title="Scores"
-      icon={<BarChart3 className="icon" />}
+      icon={<BarChart3 className="icon icon-primary" />}
     >
       {/* ===================== */}
       {/* LOADING */}
@@ -40,25 +40,25 @@ export default function BotScores({
           {Object.entries(scores).map(([key, value]) => {
             const score = Number(value) || 0;
 
-            let color = "text-[var(--text-muted)]";
-            if (score >= 70) color = "text-green-600";
-            else if (score <= 35) color = "text-red-600";
+            let colorClass = "text-[var(--text-muted)]";
+            if (score >= 70) colorClass = "score-strong-buy";
+            else if (score <= 35) colorClass = "score-sell";
 
             return (
               <div
                 key={key}
                 className="
-                  border border-[var(--border)]
                   rounded-[var(--radius-sm)]
+                  bg-[var(--surface-2)]
+                  border border-[var(--border)]
                   p-4 text-center
-                  bg-[var(--bg-soft)]
                 "
               >
                 <div className="text-sm text-[var(--text-muted)] capitalize">
                   {key}
                 </div>
 
-                <div className={`text-2xl font-semibold ${color}`}>
+                <div className={`text-2xl font-semibold ${colorClass}`}>
                   {score}
                 </div>
               </div>

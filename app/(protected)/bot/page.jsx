@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Wallet, Play } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
 import { useStrategyData } from "@/hooks/useStrategyData";
@@ -193,23 +193,11 @@ export default function BotPage() {
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
       {/* ===== PAGE TITLE ===== */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Wallet className="icon icon-primary" />
-          <h1 className="text-2xl font-semibold text-[var(--text-dark)]">
-            Portfolio Management
-          </h1>
-        </div>
-
-        {/* GLOBAL RUN */}
-        <button
-          onClick={() => runBotToday()}
-          className="btn-primary flex items-center gap-2"
-          disabled={loading.generate}
-        >
-          <Play size={16} />
-          Run bots today
-        </button>
+      <div className="flex items-center gap-3">
+        <Wallet className="icon icon-primary" />
+        <h1 className="text-2xl font-semibold text-[var(--text-dark)]">
+          Portfolio Management
+        </h1>
       </div>
 
       {/* ===== GLOBAL PORTFOLIO ===== */}
@@ -247,7 +235,7 @@ export default function BotPage() {
         </div>
       )}
 
-      {/* ===== BOT DECISIONS (PER BOT) ===== */}
+      {/* ===== BOT DECISIONS (PER BOT, MET GENERATE) ===== */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-[var(--text-dark)]">
           Bot Decisions Today
@@ -259,7 +247,10 @@ export default function BotPage() {
               key={bot.id}
               bot={bot}
               decision={decision}
-              loading={loading.today}
+              loading={loading.generate}
+              onGenerate={() =>
+                runBotToday({ bot_id: bot.id })
+              }
               onExecute={executeBot}
               onSkip={skipBot}
             />
@@ -328,7 +319,10 @@ export default function BotPage() {
       </div>
 
       {/* ===== HISTORY ===== */}
-      <BotHistoryTable history={history} loading={loading.history} />
+      <BotHistoryTable
+        history={history}
+        loading={loading.history}
+      />
     </div>
   );
 }

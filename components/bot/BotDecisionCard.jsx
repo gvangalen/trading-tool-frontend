@@ -70,7 +70,8 @@ export default function BotDecisionCard({
 
                 <div
                   className={`text-2xl font-semibold ${
-                    actionClass[d.action] || "text-[var(--text-muted)]"
+                    actionClass[d.action] ||
+                    "text-[var(--text-muted)]"
                   }`}
                 >
                   {String(d.action).toUpperCase()}

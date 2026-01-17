@@ -78,7 +78,7 @@ export default function BotPortfolioCard({ bot }) {
             className={
               status === "active"
                 ? "icon-success"
-                : "text-[var(--text-muted)]""
+                : "text-[var(--text-muted)]"
             }
           >
             {status.toUpperCase()}

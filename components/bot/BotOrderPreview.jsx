@@ -13,17 +13,17 @@ export default function BotOrderPreview({
   const isReady = order?.status === "ready";
 
   const statusClass = {
-    ready: "text-green-600",
-    filled: "text-green-700",
-    cancelled: "text-gray-500",
-    skipped: "text-gray-500",
-    failed: "text-red-600",
+    ready: "icon-success",
+    filled: "icon-success",
+    cancelled: "text-[var(--text-muted)]",
+    skipped: "text-[var(--text-muted)]",
+    failed: "icon-danger",
   };
 
   return (
     <CardWrapper
       title="Order Preview"
-      icon={<ShoppingCart className="icon" />}
+      icon={<ShoppingCart className="icon icon-primary" />}
     >
       {/* ===================== */}
       {/* LOADING */}
@@ -45,7 +45,7 @@ export default function BotOrderPreview({
       {!loading && order && (
         <>
           {/* ⚠️ PAPER NOTICE */}
-          <div className="flex items-center gap-2 mb-4 text-xs text-orange-600">
+          <div className="flex items-center gap-2 mb-4 text-xs icon-warning">
             <AlertTriangle size={14} />
             <span>
               Dit is een <b>paper order</b>. Er wordt niets live verhandeld.
@@ -78,7 +78,8 @@ export default function BotOrderPreview({
               <div className="text-[var(--text-muted)]">Status</div>
               <div
                 className={`font-medium ${
-                  statusClass[order.status] || ""
+                  statusClass[order.status] ||
+                  "text-[var(--text-muted)]"
                 }`}
               >
                 {order.status || "planned"}

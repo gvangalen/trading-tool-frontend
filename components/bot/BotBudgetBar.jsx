@@ -1,4 +1,3 @@
-// components/bot/BotBudgetBar.jsx
 "use client";
 
 export default function BotBudgetBar({
@@ -16,6 +15,10 @@ export default function BotBudgetBar({
 
   const pct = Math.min((spent / total) * 100, 100);
 
+  let barClass = "score-buy";
+  if (pct > 90) barClass = "score-sell";
+  else if (pct > 70) barClass = "score-neutral";
+
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
@@ -25,15 +28,9 @@ export default function BotBudgetBar({
         </span>
       </div>
 
-      <div className="h-2 rounded bg-[var(--card-muted)] overflow-hidden">
+      <div className="h-2 rounded-[var(--radius-xs)] bg-[var(--surface-3)] overflow-hidden">
         <div
-          className={`h-full ${
-            pct > 90
-              ? "bg-red-500"
-              : pct > 70
-              ? "bg-orange-500"
-              : "bg-green-500"
-          }`}
+          className={`h-full ${barClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>

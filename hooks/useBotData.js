@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   fetchBotConfigs,
   fetchBotToday,
   fetchBotHistory,
-  fetchBotPortfolios, // 🆕 portfolio + budget
+  fetchBotPortfolios,
   generateBotToday,
   markBotExecuted,
   skipBotToday,
@@ -32,17 +32,15 @@ export default function useBotData() {
      📦 STATE
   ===================================================== */
   const [configs, setConfigs] = useState([]);
-  const [today, setToday] = useState(null); // { date, decisions[], orders[] }
+  const [today, setToday] = useState(null); // { date, decisions[], orders[], scores }
   const [history, setHistory] = useState([]);
-
-  // 🆕 portfolio & budget per bot
   const [portfolios, setPortfolios] = useState([]);
 
   const [loading, setLoading] = useState({
     configs: false,
     today: false,
     history: false,
-    portfolios: false, // 🆕
+    portfolios: false,
     generate: false,
     action: false,
     create: false,
@@ -57,13 +55,10 @@ export default function useBotData() {
   ===================================================== */
   const loadConfigs = useCallback(async () => {
     setLoading((l) => ({ ...l, configs: true }));
-    setError(null);
-
     try {
       const data = await fetchBotConfigs();
       setConfigs(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error("❌ loadConfigs error:", e);
       setError(e?.message ?? "Load configs failed");
     } finally {
       setLoading((l) => ({ ...l, configs: false }));
@@ -72,13 +67,10 @@ export default function useBotData() {
 
   const loadToday = useCallback(async () => {
     setLoading((l) => ({ ...l, today: true }));
-    setError(null);
-
     try {
       const data = await fetchBotToday();
       setToday(data ?? null);
     } catch (e) {
-      console.error("❌ loadToday error:", e);
       setError(e?.message ?? "Load today failed");
     } finally {
       setLoading((l) => ({ ...l, today: false }));
@@ -87,29 +79,22 @@ export default function useBotData() {
 
   const loadHistory = useCallback(async (days = 30) => {
     setLoading((l) => ({ ...l, history: true }));
-    setError(null);
-
     try {
       const data = await fetchBotHistory(days);
       setHistory(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error("❌ loadHistory error:", e);
       setError(e?.message ?? "Load history failed");
     } finally {
       setLoading((l) => ({ ...l, history: false }));
     }
   }, []);
 
-  // 🆕 portfolio / budget loader
   const loadPortfolios = useCallback(async () => {
     setLoading((l) => ({ ...l, portfolios: true }));
-    setError(null);
-
     try {
       const data = await fetchBotPortfolios();
       setPortfolios(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error("❌ loadPortfolios error:", e);
       setError(e?.message ?? "Load portfolios failed");
     } finally {
       setLoading((l) => ({ ...l, portfolios: false }));
@@ -117,174 +102,106 @@ export default function useBotData() {
   }, []);
 
   /* =====================================================
-     ➕ CREATE BOT
+     🧠 DERIVED DATA (DIT WAS DE MISSENDE SCHAKEL)
   ===================================================== */
-  const createBot = useCallback(
-    async (payload) => {
-      setLoading((l) => ({ ...l, create: true }));
-      setError(null);
+  const decisionsByBot = useMemo(() => {
+    const map = {};
+    (today?.decisions || []).forEach((d) => {
+      map[d.bot_id] = d;
+    });
+    return map;
+  }, [today]);
 
-      try {
-        const res = await createBotConfig({
-          name: payload.name,
-          strategy_id: payload.strategy_id,
-          mode: payload.mode ?? "manual",
-
-          // 🆕 budget
-          budget_total_eur: payload.budget_total_eur ?? 0,
-          budget_daily_limit_eur: payload.budget_daily_limit_eur ?? 0,
-          budget_min_order_eur: payload.budget_min_order_eur ?? 0,
-          budget_max_order_eur: payload.budget_max_order_eur ?? 0,
-        });
-
-        await loadConfigs();
-        await loadPortfolios();
-        return res;
-      } catch (e) {
-        console.error("❌ createBot error:", e);
-        setError(e?.message ?? "Create bot failed");
-        throw e;
-      } finally {
-        setLoading((l) => ({ ...l, create: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios]
-  );
+  const ordersByBot = useMemo(() => {
+    const map = {};
+    (today?.orders || []).forEach((o) => {
+      map[o.bot_id] = o;
+    });
+    return map;
+  }, [today]);
 
   /* =====================================================
-     ✏️ UPDATE BOT
+     ➕ CREATE / UPDATE / DELETE
   ===================================================== */
-  const updateBot = useCallback(
-    async (bot_id, payload) => {
-      setLoading((l) => ({ ...l, update: true }));
-      setError(null);
+  const createBot = useCallback(async (payload) => {
+    setLoading((l) => ({ ...l, create: true }));
+    try {
+      const res = await createBotConfig(payload);
+      await loadConfigs();
+      await loadPortfolios();
+      return res;
+    } finally {
+      setLoading((l) => ({ ...l, create: false }));
+    }
+  }, [loadConfigs, loadPortfolios]);
 
-      try {
-        const res = await updateBotConfig(bot_id, {
-          name: payload.name,
-          mode: payload.mode,
+  const updateBot = useCallback(async (bot_id, payload) => {
+    setLoading((l) => ({ ...l, update: true }));
+    try {
+      const res = await updateBotConfig(bot_id, payload);
+      await loadConfigs();
+      await loadPortfolios();
+      return res;
+    } finally {
+      setLoading((l) => ({ ...l, update: false }));
+    }
+  }, [loadConfigs, loadPortfolios]);
 
-          // 🆕 budget
-          budget_total_eur: payload.budget_total_eur ?? 0,
-          budget_daily_limit_eur: payload.budget_daily_limit_eur ?? 0,
-          budget_min_order_eur: payload.budget_min_order_eur ?? 0,
-          budget_max_order_eur: payload.budget_max_order_eur ?? 0,
-        });
-
-        await loadConfigs();
-        await loadPortfolios();
-        return res;
-      } catch (e) {
-        console.error("❌ updateBot error:", e);
-        setError(e?.message ?? "Update bot failed");
-        throw e;
-      } finally {
-        setLoading((l) => ({ ...l, update: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios]
-  );
+  const deleteBot = useCallback(async (bot_id) => {
+    setLoading((l) => ({ ...l, delete: true }));
+    try {
+      const res = await deleteBotConfig(bot_id);
+      await loadConfigs();
+      await loadPortfolios();
+      return res;
+    } finally {
+      setLoading((l) => ({ ...l, delete: false }));
+    }
+  }, [loadConfigs, loadPortfolios]);
 
   /* =====================================================
-     🗑 DELETE BOT
+     🔁 DAILY FLOW
   ===================================================== */
-  const deleteBot = useCallback(
-    async (bot_id) => {
-      setLoading((l) => ({ ...l, delete: true }));
-      setError(null);
+  const runBotToday = useCallback(async (report_date = null) => {
+    setLoading((l) => ({ ...l, generate: true }));
+    try {
+      const res = await generateBotToday(report_date);
+      await loadToday();
+      await loadHistory(30);
+      await loadPortfolios();
+      return res;
+    } finally {
+      setLoading((l) => ({ ...l, generate: false }));
+    }
+  }, [loadToday, loadHistory, loadPortfolios]);
 
-      try {
-        const res = await deleteBotConfig(bot_id);
-        await loadConfigs();
-        await loadPortfolios();
-        return res;
-      } catch (e) {
-        console.error("❌ deleteBot error:", e);
-        setError(e?.message ?? "Delete bot failed");
-        throw e;
-      } finally {
-        setLoading((l) => ({ ...l, delete: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios]
-  );
+  const executeBot = useCallback(async ({ bot_id, report_date }) => {
+    setLoading((l) => ({ ...l, action: true }));
+    try {
+      const res = await markBotExecuted({ bot_id, report_date });
+      await loadToday();
+      await loadHistory(30);
+      await loadPortfolios();
+      return res;
+    } finally {
+      setLoading((l) => ({ ...l, action: false }));
+    }
+  }, [loadToday, loadHistory, loadPortfolios]);
+
+  const skipBot = useCallback(async ({ bot_id, report_date }) => {
+    setLoading((l) => ({ ...l, action: true }));
+    try {
+      const res = await skipBotToday({ bot_id, report_date });
+      await loadToday();
+      await loadHistory(30);
+      return res;
+    } finally {
+      setLoading((l) => ({ ...l, action: false }));
+    }
+  }, [loadToday, loadHistory]);
 
   /* =====================================================
-     🔁 GENERATE BOT (today)
-  ===================================================== */
-  const runBotToday = useCallback(
-    async (report_date = null) => {
-      setLoading((l) => ({ ...l, generate: true }));
-      setError(null);
-
-      try {
-        const res = await generateBotToday(report_date);
-        await loadToday();
-        await loadHistory(30);
-        await loadPortfolios(); // budget verandert
-        return res;
-      } catch (e) {
-        console.error("❌ runBotToday error:", e);
-        setError(e?.message ?? "Run bot today failed");
-        throw e;
-      } finally {
-        setLoading((l) => ({ ...l, generate: false }));
-      }
-    },
-    [loadToday, loadHistory, loadPortfolios]
-  );
-
-  /* =====================================================
-     ✅ EXECUTE BOT
-  ===================================================== */
-  const executeBot = useCallback(
-    async ({ bot_id, report_date }) => {
-      setLoading((l) => ({ ...l, action: true }));
-      setError(null);
-
-      try {
-        const res = await markBotExecuted({ bot_id, report_date });
-        await loadToday();
-        await loadHistory(30);
-        await loadPortfolios(); // ledger update
-        return res;
-      } catch (e) {
-        console.error("❌ executeBot error:", e);
-        setError(e?.message ?? "Execute bot failed");
-        throw e;
-      } finally {
-        setLoading((l) => ({ ...l, action: false }));
-      }
-    },
-    [loadToday, loadHistory, loadPortfolios]
-  );
-
-  /* =====================================================
-     ⏭️ SKIP BOT
-  ===================================================== */
-  const skipBot = useCallback(
-    async ({ bot_id, report_date }) => {
-      setLoading((l) => ({ ...l, action: true }));
-      setError(null);
-
-      try {
-        const res = await skipBotToday({ bot_id, report_date });
-        await loadToday();
-        await loadHistory(30);
-        return res;
-      } catch (e) {
-        console.error("❌ skipBot error:", e);
-        setError(e?.message ?? "Skip bot failed");
-        throw e;
-      } finally {
-        setLoading((l) => ({ ...l, action: false }));
-      }
-    },
-    [loadToday, loadHistory]
-  );
-
-  /* =====================================================
-     🔁 INIT LOAD
+     🔁 INIT
   ===================================================== */
   useEffect(() => {
     loadConfigs();
@@ -297,23 +214,19 @@ export default function useBotData() {
      📤 EXPORT
   ===================================================== */
   return {
-    /* data */
+    /* raw data */
     configs,
     today,
     history,
     portfolios,
 
-    /* loading + error */
+    /* derived (KEY FIX) */
+    decisionsByBot,
+    ordersByBot,
+
+    /* state */
     loading,
     error,
-
-    /* refresh helpers */
-    refresh: {
-      configs: loadConfigs,
-      today: loadToday,
-      history: loadHistory,
-      portfolios: loadPortfolios,
-    },
 
     /* actions */
     createBot,

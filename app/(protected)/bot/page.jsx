@@ -171,7 +171,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ RUN DAILY (PER BOT)
+     ▶️ RUN DECISION (PER ACTIVE BOT)
   ===================================================== */
   const handleRunBotToday = () => {
     if (!activeBotId) return;
@@ -196,7 +196,6 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-
       {/* ===== PAGE TITLE ===== */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
@@ -243,7 +242,7 @@ export default function BotPage() {
         </div>
       )}
 
-      {/* ===== BOT DECISION (ACTIVE BOT) ===== */}
+      {/* ===== BOT DECISION (ACTIVE BOT ONLY) ===== */}
       <BotDecisionCard
         decision={activeDecision}
         loading={loading.today}

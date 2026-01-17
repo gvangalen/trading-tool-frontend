@@ -2,26 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-/**
- * AddBotForm (STABLE MODEL)
- * --------------------------------------------------
- * Bot = uitvoerder
- * Strategy = intelligentie
- *
- * Regels:
- * - Bij CREATE: strategy is verplicht & selecteerbaar
- * - Bij EDIT: strategy is LOCKED (read-only)
- *
- * Velden:
- * - name
- * - strategy_id (number | null)
- * - mode
- *
- * Props:
- * - initialForm (bij edit)
- * - onChange(form)
- * - strategies [{ id, name, type, symbol, timeframe, description }]
- */
 export default function AddBotForm({
   initialForm,
   onChange,
@@ -31,7 +11,7 @@ export default function AddBotForm({
 
   const [local, setLocal] = useState({
     name: "",
-    strategy_id: null, // number | null
+    strategy_id: null,
     mode: "manual",
   });
 
@@ -97,7 +77,7 @@ export default function AddBotForm({
 
         {isEdit ? (
           /* 🔒 READ-ONLY BIJ EDIT */
-          <div className="input w-full bg-muted cursor-not-allowed">
+          <div className="input w-full bg-[var(--surface-2)] cursor-not-allowed">
             {selectedStrategy
               ? `${selectedStrategy.name} · ${String(
                   selectedStrategy.type
@@ -135,7 +115,7 @@ export default function AddBotForm({
 
       {/* ================= STRATEGY PREVIEW ================= */}
       {selectedStrategy && (
-        <div className="rounded-lg border p-3 bg-[var(--card-muted)] text-sm space-y-1">
+        <div className="rounded-[var(--radius-sm)] bg-[var(--surface-2)] border border-[var(--border)] p-3 text-sm space-y-1">
           <div>
             <b>Type:</b>{" "}
             {String(selectedStrategy.type).toUpperCase()}
@@ -147,7 +127,7 @@ export default function AddBotForm({
             <b>Timeframe:</b> {selectedStrategy.timeframe}
           </div>
           {selectedStrategy.description && (
-            <div className="text-muted">
+            <div className="text-[var(--text-muted)]">
               {selectedStrategy.description}
             </div>
           )}

@@ -2,7 +2,7 @@
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import CardLoader from "@/components/ui/CardLoader";
-import { Brain, Play, SkipForward } from "lucide-react";
+import { Brain, Play, SkipForward, Wand2 } from "lucide-react";
 
 /**
  * BotDecisionCard
@@ -13,6 +13,7 @@ import { Brain, Play, SkipForward } from "lucide-react";
  * - bot: bot config object
  * - decision: decision object | null
  * - loading: boolean
+ * - onGenerate: ({ bot_id }) => void        ✅ NIEUW
  * - onExecute: ({ bot_id, report_date }) => void
  * - onSkip: ({ bot_id, report_date }) => void
  */
@@ -20,6 +21,7 @@ export default function BotDecisionCard({
   bot,
   decision = null,
   loading = false,
+  onGenerate,
   onExecute,
   onSkip,
 }) {
@@ -36,17 +38,35 @@ export default function BotDecisionCard({
       subtitle={bot?.strategy?.type?.toUpperCase()}
       icon={<Brain className="icon icon-primary" />}
     >
+      {/* ===================== */}
       {/* LOADING */}
+      {/* ===================== */}
       {loading && <CardLoader text="Beslissing ophalen…" />}
 
-      {/* GEEN BESLISSING */}
+      {/* ===================== */}
+      {/* GEEN BESLISSING → GENEREER */}
+      {/* ===================== */}
       {!loading && !decision && (
-        <p className="text-sm text-[var(--text-muted)]">
-          Voor deze bot is vandaag nog geen beslissing genomen.
-        </p>
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            Voor deze bot is vandaag nog geen beslissing genomen.
+          </p>
+
+          {onGenerate && (
+            <button
+              onClick={() => onGenerate({ bot_id: bot.id })}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Wand2 size={16} />
+              Genereer decision
+            </button>
+          )}
+        </div>
       )}
 
+      {/* ===================== */}
       {/* BESLISSING */}
+      {/* ===================== */}
       {!loading && decision && (
         <div className="bg-[var(--surface-2)] rounded-[var(--radius-md)] p-4">
           {/* HEADER */}

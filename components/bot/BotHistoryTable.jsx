@@ -11,7 +11,7 @@ export default function BotHistoryTable({
   return (
     <CardWrapper
       title="Bot History"
-      icon={<Clock className="icon" />}
+      icon={<Clock className="icon icon-muted" />}
     >
       {/* ===================== */}
       {/* LOADING STATE */}
@@ -43,31 +43,48 @@ export default function BotHistoryTable({
               <th>Status</th>
             </tr>
           </thead>
+
           <tbody>
-            {history.map((h, i) => (
-              <tr
-                key={i}
-                className="border-b border-[var(--border)] last:border-0"
-              >
-                <td className="py-2">
-                  {h.date || "—"}
-                </td>
-                <td>
-                  {h.action || "—"}
-                </td>
-                <td>
-                  €{h.amount_eur ?? h.amount ?? 0}
-                </td>
-                <td>
-                  {h.confidence || "—"}
-                </td>
-                <td>
-                  {h.executed
-                    ? "Executed"
-                    : h.status || "Planned"}
-                </td>
-              </tr>
-            ))}
+            {history.map((h, i) => {
+              let statusClass = "text-[var(--text-muted)]";
+
+              if (h.executed) statusClass = "icon-success";
+              else if (h.status === "failed") statusClass = "icon-danger";
+              else if (h.status === "skipped") statusClass = "icon-warning";
+
+              return (
+                <tr
+                  key={i}
+                  className="
+                    border-b border-[var(--border)] last:border-0
+                    hover:bg-[var(--surface-2)]
+                    transition
+                  "
+                >
+                  <td className="py-2">
+                    {h.date || "—"}
+                  </td>
+
+                  <td>
+                    {h.action || "—"}
+                  </td>
+
+                  <td>
+                    €{h.amount_eur ?? h.amount ?? 0}
+                  </td>
+
+                  <td>
+                    {h.confidence || "—"}
+                  </td>
+
+                  <td className={`font-medium ${statusClass}`}>
+                    {h.executed
+                      ? "Executed"
+                      : h.status || "Planned"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

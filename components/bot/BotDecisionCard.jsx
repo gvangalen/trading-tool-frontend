@@ -5,21 +5,21 @@ import CardLoader from "@/components/ui/CardLoader";
 import { Brain, Play, SkipForward } from "lucide-react";
 
 /**
- * BotDecisionCard — v2.0
+ * BotDecisionCard
  * ----------------------------------------
- * Toont ALLEEN de beslissing van de actieve bot
+ * Toont de DAGELIJKSE beslissing van ÉÉN bot
  *
  * Props:
- * - decision: object | null
+ * - bot: bot config object
+ * - decision: decision object | null
  * - loading: boolean
- * - onGenerate: () => void
  * - onExecute: ({ bot_id, report_date }) => void
  * - onSkip: ({ bot_id, report_date }) => void
  */
 export default function BotDecisionCard({
+  bot,
   decision = null,
   loading = false,
-  onGenerate,
   onExecute,
   onSkip,
 }) {
@@ -32,62 +32,36 @@ export default function BotDecisionCard({
 
   return (
     <CardWrapper
-      title="Bot Decision Today"
+      title={bot?.name ?? "Bot decision"}
+      subtitle={bot?.strategy?.type?.toUpperCase()}
       icon={<Brain className="icon icon-primary" />}
     >
-      {/* ===================== */}
       {/* LOADING */}
-      {/* ===================== */}
-      {loading && (
-        <CardLoader text="Beslissing ophalen…" />
-      )}
+      {loading && <CardLoader text="Beslissing ophalen…" />}
 
-      {/* ===================== */}
-      {/* EMPTY (NO DECISION YET) */}
-      {/* ===================== */}
+      {/* GEEN BESLISSING */}
       {!loading && !decision && (
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--text-muted)]">
-            Voor deze bot is vandaag nog geen beslissing gegenereerd.
-          </p>
-
-          {onGenerate && (
-            <button
-              onClick={onGenerate}
-              className="btn-primary"
-            >
-              Genereer beslissing voor deze bot
-            </button>
-          )}
-        </div>
+        <p className="text-sm text-[var(--text-muted)]">
+          Voor deze bot is vandaag nog geen beslissing genomen.
+        </p>
       )}
 
-      {/* ===================== */}
-      {/* DECISION */}
-      {/* ===================== */}
+      {/* BESLISSING */}
       {!loading && decision && (
-        <div
-          className="
-            bg-[var(--surface-2)]
-            rounded-[var(--radius-md)]
-            p-4
-            animate-fade-slide
-          "
-        >
+        <div className="bg-[var(--surface-2)] rounded-[var(--radius-md)] p-4">
           {/* HEADER */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex justify-between mb-3">
             <div>
               <div className="text-sm text-[var(--text-muted)]">
-                Bot #{decision.bot_id} · {decision.symbol}
+                {decision.symbol}
               </div>
-
               <div
                 className={`text-2xl font-semibold ${
                   actionClass[decision.action] ||
                   "text-[var(--text-muted)]"
                 }`}
               >
-                {String(decision.action).toUpperCase()}
+                {decision.action.toUpperCase()}
               </div>
             </div>
 
@@ -96,28 +70,28 @@ export default function BotDecisionCard({
                 Confidence
               </div>
               <div className="font-semibold">
-                {String(decision.confidence).toUpperCase()}
+                {decision.confidence.toUpperCase()}
               </div>
             </div>
           </div>
 
-          {/* REASONS */}
+          {/* REDENEN */}
           {decision.reasons?.length > 0 && (
-            <ul className="text-sm space-y-1 mb-4 text-[var(--text-dark)]">
+            <ul className="text-sm space-y-1 mb-4">
               {decision.reasons.map((r, i) => (
                 <li key={i}>• {r}</li>
               ))}
             </ul>
           )}
 
-          {/* ACTIONS */}
+          {/* ACTIES */}
           <div className="flex gap-2">
             {onExecute && (
               <button
                 onClick={() =>
                   onExecute({
                     bot_id: decision.bot_id,
-                    report_date: decision.report_date,
+                    report_date: decision.date,
                   })
                 }
                 className="btn-primary flex items-center gap-2"
@@ -132,7 +106,7 @@ export default function BotDecisionCard({
                 onClick={() =>
                   onSkip({
                     bot_id: decision.bot_id,
-                    report_date: decision.report_date,
+                    report_date: decision.date,
                   })
                 }
                 className="btn-secondary flex items-center gap-2"

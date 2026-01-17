@@ -7,7 +7,7 @@ import {
   fetchBotToday,
   fetchBotHistory,
   fetchBotPortfolios,
-  generateBotToday,
+  generateBotDecision, // ✅ NIEUW
   markBotExecuted,
   skipBotToday,
   createBotConfig,
@@ -102,7 +102,7 @@ export default function useBotData() {
   }, []);
 
   /* =====================================================
-     🧠 DERIVED DATA (DIT WAS DE MISSENDE SCHAKEL)
+     🧠 DERIVED DATA (CRUCIAAL)
   ===================================================== */
   const decisionsByBot = useMemo(() => {
     const map = {};
@@ -123,82 +123,110 @@ export default function useBotData() {
   /* =====================================================
      ➕ CREATE / UPDATE / DELETE
   ===================================================== */
-  const createBot = useCallback(async (payload) => {
-    setLoading((l) => ({ ...l, create: true }));
-    try {
-      const res = await createBotConfig(payload);
-      await loadConfigs();
-      await loadPortfolios();
-      return res;
-    } finally {
-      setLoading((l) => ({ ...l, create: false }));
-    }
-  }, [loadConfigs, loadPortfolios]);
+  const createBot = useCallback(
+    async (payload) => {
+      setLoading((l) => ({ ...l, create: true }));
+      try {
+        const res = await createBotConfig(payload);
+        await loadConfigs();
+        await loadPortfolios();
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, create: false }));
+      }
+    },
+    [loadConfigs, loadPortfolios]
+  );
 
-  const updateBot = useCallback(async (bot_id, payload) => {
-    setLoading((l) => ({ ...l, update: true }));
-    try {
-      const res = await updateBotConfig(bot_id, payload);
-      await loadConfigs();
-      await loadPortfolios();
-      return res;
-    } finally {
-      setLoading((l) => ({ ...l, update: false }));
-    }
-  }, [loadConfigs, loadPortfolios]);
+  const updateBot = useCallback(
+    async (bot_id, payload) => {
+      setLoading((l) => ({ ...l, update: true }));
+      try {
+        const res = await updateBotConfig(bot_id, payload);
+        await loadConfigs();
+        await loadPortfolios();
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, update: false }));
+      }
+    },
+    [loadConfigs, loadPortfolios]
+  );
 
-  const deleteBot = useCallback(async (bot_id) => {
-    setLoading((l) => ({ ...l, delete: true }));
-    try {
-      const res = await deleteBotConfig(bot_id);
-      await loadConfigs();
-      await loadPortfolios();
-      return res;
-    } finally {
-      setLoading((l) => ({ ...l, delete: false }));
-    }
-  }, [loadConfigs, loadPortfolios]);
+  const deleteBot = useCallback(
+    async (bot_id) => {
+      setLoading((l) => ({ ...l, delete: true }));
+      try {
+        const res = await deleteBotConfig(bot_id);
+        await loadConfigs();
+        await loadPortfolios();
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, delete: false }));
+      }
+    },
+    [loadConfigs, loadPortfolios]
+  );
 
   /* =====================================================
-     🔁 DAILY FLOW
+     🔁 DAILY FLOW (PER BOT)
   ===================================================== */
-  const runBotToday = useCallback(async (report_date = null) => {
-    setLoading((l) => ({ ...l, generate: true }));
-    try {
-      const res = await generateBotToday(report_date);
-      await loadToday();
-      await loadHistory(30);
-      await loadPortfolios();
-      return res;
-    } finally {
-      setLoading((l) => ({ ...l, generate: false }));
-    }
-  }, [loadToday, loadHistory, loadPortfolios]);
 
-  const executeBot = useCallback(async ({ bot_id, report_date }) => {
-    setLoading((l) => ({ ...l, action: true }));
-    try {
-      const res = await markBotExecuted({ bot_id, report_date });
-      await loadToday();
-      await loadHistory(30);
-      await loadPortfolios();
-      return res;
-    } finally {
-      setLoading((l) => ({ ...l, action: false }));
-    }
-  }, [loadToday, loadHistory, loadPortfolios]);
+  /**
+   * 🔁 Genereer decision voor ÉÉN bot
+   */
+  const generateDecisionForBot = useCallback(
+    async ({ bot_id, report_date = null }) => {
+      if (!bot_id) return;
 
-  const skipBot = useCallback(async ({ bot_id, report_date }) => {
-    setLoading((l) => ({ ...l, action: true }));
-    try {
-      const res = await skipBotToday({ bot_id, report_date });
-      await loadToday();
-      await loadHistory(30);
-      return res;
-    } finally {
-      setLoading((l) => ({ ...l, action: false }));
-    }
-  }, [loadToday, loadHistory]);
+      setLoading((l) => ({ ...l, generate: true }));
+      try {
+        const res = await generateBotDecision({
+          bot_id,
+          report_date,
+        });
+
+        await loadToday();
+        await loadHistory(30);
+        await loadPortfolios();
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, generate: false }));
+      }
+    },
+    [loadToday, loadHistory, loadPortfolios]
+  );
+
+  const executeBot = useCallback(
+    async ({ bot_id, report_date }) => {
+      setLoading((l) => ({ ...l, action: true }));
+      try {
+        const res = await markBotExecuted({ bot_id, report_date });
+        await loadToday();
+        await loadHistory(30);
+        await loadPortfolios();
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, action: false }));
+      }
+    },
+    [loadToday, loadHistory, loadPortfolios]
+  );
+
+  const skipBot = useCallback(
+    async ({ bot_id, report_date }) => {
+      setLoading((l) => ({ ...l, action: true }));
+      try {
+        const res = await skipBotToday({ bot_id, report_date });
+        await loadToday();
+        await loadHistory(30);
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, action: false }));
+      }
+    },
+    [loadToday, loadHistory]
+  );
 
   /* =====================================================
      🔁 INIT
@@ -220,7 +248,7 @@ export default function useBotData() {
     history,
     portfolios,
 
-    /* derived (KEY FIX) */
+    /* derived (KEY) */
     decisionsByBot,
     ordersByBot,
 
@@ -232,7 +260,8 @@ export default function useBotData() {
     createBot,
     updateBot,
     deleteBot,
-    runBotToday,
+
+    generateDecisionForBot, // ✅ DIT GEBRUIK JE IN DE CARD
     executeBot,
     skipBot,
   };

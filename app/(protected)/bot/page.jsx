@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Wallet } from "lucide-react";
+import { Wallet, Play } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
 import { useStrategyData } from "@/hooks/useStrategyData";
@@ -63,17 +63,21 @@ export default function BotPage() {
   }, [bots, activeBotId]);
 
   /* =====================================================
-     🧠 ACTIVE BOT CONTEXT
+     🧠 TODAY CONTEXT
   ===================================================== */
+  const decisions = today?.decisions ?? [];
+  const orders = today?.orders ?? [];
+
+  const decisionsByBot = bots.map((bot) => ({
+    bot,
+    decision: decisions.find((d) => d.bot_id === bot.id) ?? null,
+  }));
+
   const activeDecision =
-    today?.decisions?.find(
-      (d) => d.bot_id === activeBotId
-    ) ?? null;
+    decisions.find((d) => d.bot_id === activeBotId) ?? null;
 
   const activeOrder =
-    today?.orders?.find(
-      (o) => o.bot_id === activeBotId
-    ) ?? null;
+    orders.find((o) => o.bot_id === activeBotId) ?? null;
 
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -171,23 +175,15 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ RUN DECISION (PER ACTIVE BOT)
-  ===================================================== */
-  const handleRunBotToday = () => {
-    if (!activeBotId) return;
-    runBotToday(activeBotId);
-  };
-
-  /* =====================================================
      🧠 GLOBAL PORTFOLIO
   ===================================================== */
   const totalValue = portfolios.reduce(
-    (a, b) => a + (b.value ?? 0),
+    (a, b) => a + (b.portfolio?.cost_basis_eur ?? 0),
     0
   );
 
   const totalPnl = portfolios.reduce(
-    (a, b) => a + (b.pnl ?? 0),
+    (a, b) => a + (b.portfolio?.unrealized_pnl_eur ?? 0),
     0
   );
 
@@ -197,11 +193,23 @@ export default function BotPage() {
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
       {/* ===== PAGE TITLE ===== */}
-      <div className="flex items-center gap-3">
-        <Wallet className="icon icon-primary" />
-        <h1 className="text-2xl font-semibold text-[var(--text-dark)]">
-          Portfolio Management
-        </h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Wallet className="icon icon-primary" />
+          <h1 className="text-2xl font-semibold text-[var(--text-dark)]">
+            Portfolio Management
+          </h1>
+        </div>
+
+        {/* GLOBAL RUN */}
+        <button
+          onClick={() => runBotToday()}
+          className="btn-primary flex items-center gap-2"
+          disabled={loading.generate}
+        >
+          <Play size={16} />
+          Run bots today
+        </button>
       </div>
 
       {/* ===== GLOBAL PORTFOLIO ===== */}
@@ -233,29 +241,34 @@ export default function BotPage() {
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
             {portfolios.map((bot) => (
-              <BotPortfolioCard
-                key={bot.bot_id}
-                bot={bot}
-              />
+              <BotPortfolioCard key={bot.bot_id} bot={bot} />
             ))}
           </div>
         </div>
       )}
 
-      {/* ===== BOT DECISION (ACTIVE BOT ONLY) ===== */}
-      <BotDecisionCard
-        decision={activeDecision}
-        loading={loading.today}
-        onGenerate={handleRunBotToday}
-        onExecute={executeBot}
-        onSkip={skipBot}
-      />
+      {/* ===== BOT DECISIONS (PER BOT) ===== */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-[var(--text-dark)]">
+          Bot Decisions Today
+        </h2>
+
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {decisionsByBot.map(({ bot, decision }) => (
+            <BotDecisionCard
+              key={bot.id}
+              bot={bot}
+              decision={decision}
+              loading={loading.today}
+              onExecute={executeBot}
+              onSkip={skipBot}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* ===== CONTEXT SCORES ===== */}
-      <BotScores
-        scores={dailyScores}
-        loading={loading.today}
-      />
+      <BotScores scores={dailyScores} loading={loading.today} />
 
       {/* ===== ORDER PREVIEW (ACTIVE BOT) ===== */}
       <BotOrderPreview
@@ -266,7 +279,7 @@ export default function BotPage() {
             ? () =>
                 executeBot({
                   bot_id: activeDecision.bot_id,
-                  report_date: activeDecision.report_date,
+                  report_date: activeDecision.date,
                 })
             : null
         }
@@ -275,7 +288,7 @@ export default function BotPage() {
             ? () =>
                 skipBot({
                   bot_id: activeDecision.bot_id,
-                  report_date: activeDecision.report_date,
+                  report_date: activeDecision.date,
                 })
             : null
         }
@@ -315,10 +328,7 @@ export default function BotPage() {
       </div>
 
       {/* ===== HISTORY ===== */}
-      <BotHistoryTable
-        history={history}
-        loading={loading.history}
-      />
+      <BotHistoryTable history={history} loading={loading.history} />
     </div>
   );
 }

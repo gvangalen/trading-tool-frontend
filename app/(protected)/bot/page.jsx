@@ -106,6 +106,7 @@ export default function BotPage() {
 
         const res = await createBot(formRef.current);
         if (res?.id) setActiveBotId(res.id);
+
         showSnackbar("Bot toegevoegd", "success");
       },
     });
@@ -180,30 +181,43 @@ export default function BotPage() {
      🧠 PAGE
   ===================================================== */
   return (
-    <div className="space-y-10 animate-fade-slide">
-      {/* ===== TITLE ===== */}
+    <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
+
+      {/* ===== PAGE TITLE ===== */}
       <div className="flex items-center gap-3">
-        <Wallet className="w-6 h-6 text-[var(--accent)]" />
-        <h1 className="text-2xl font-semibold">Portfolio Management</h1>
+        <Wallet className="icon icon-primary" />
+        <h1 className="text-2xl font-semibold text-[var(--text-dark)]">
+          Portfolio Management
+        </h1>
       </div>
 
       {/* ===== GLOBAL PORTFOLIO ===== */}
-      <div className="rounded-2xl border bg-card p-6 space-y-2">
-        <div className="text-sm text-muted">Total Portfolio Value</div>
-        <div className="text-3xl font-bold">€{totalValue.toFixed(2)}</div>
+      <div className="card-surface p-7 space-y-1">
+        <div className="text-sm text-[var(--text-muted)]">
+          Total Portfolio Value
+        </div>
+
+        <div className="text-4xl font-bold text-[var(--text-dark)]">
+          €{totalValue.toFixed(2)}
+        </div>
+
         <div
           className={`text-sm ${
-            totalPnl >= 0 ? "text-green-500" : "text-red-500"
+            totalPnl >= 0 ? "icon-success" : "icon-danger"
           }`}
         >
-          {totalPnl >= 0 ? "+" : ""}€{totalPnl.toFixed(2)}
+          {totalPnl >= 0 ? "+" : ""}
+          €{totalPnl.toFixed(2)}
         </div>
       </div>
 
-      {/* ===== BOT PORTFOLIOS ===== */}
+      {/* ===== AGENT PORTFOLIOS ===== */}
       {portfolios.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Agent Portfolios</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-dark)]">
+            Agent Portfolios
+          </h2>
+
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
             {portfolios.map((bot) => (
               <BotPortfolioCard key={bot.bot_id} bot={bot} />
@@ -212,7 +226,7 @@ export default function BotPage() {
         </div>
       )}
 
-      {/* ===== DECISIONS ===== */}
+      {/* ===== BOT DECISIONS ===== */}
       <BotDecisionCard
         today={today}
         loading={loading.today}
@@ -222,7 +236,7 @@ export default function BotPage() {
         onSkip={skipBot}
       />
 
-      {/* ===== SCORES ===== */}
+      {/* ===== CONTEXT SCORES ===== */}
       <BotScores scores={dailyScores} loading={loading.today} />
 
       {/* ===== ORDER PREVIEW ===== */}
@@ -249,9 +263,12 @@ export default function BotPage() {
         }
       />
 
-      {/* ===== BOTS ===== */}
+      {/* ===== BOTS & STRATEGIES ===== */}
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Bots & Strategies</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-dark)]">
+          Bots & Strategies
+        </h2>
+
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
           {bots.map((bot) => (
             <BotCard
@@ -266,7 +283,7 @@ export default function BotPage() {
 
           <button
             onClick={handleAddBot}
-            className="rounded-xl border border-dashed border-[var(--border)] p-6 text-sm text-muted hover:border-[var(--accent)]"
+            className="card-surface flex items-center justify-center text-sm text-[var(--text-muted)] border-dashed hover:border-[var(--primary)]"
           >
             ➕ Nieuwe bot toevoegen
           </button>

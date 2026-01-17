@@ -7,72 +7,49 @@ import {
   Play,
 } from "lucide-react";
 
-/**
- * BotCard (ID-GEDREVEN)
- * --------------------------------------------------
- * Bot = uitvoerder
- * Strategy = intelligentie
- *
- * Verwachte bot shape:
- * {
- *   id,
- *   name,
- *   mode,
- *   is_active,
- *   strategy_id,
- *   strategy?: {
- *     id,
- *     name,
- *     type,
- *     symbol,
- *     timeframe,
- *   }
- * }
- *
- * Callbacks werken ALTIJD op bot.id
- */
 export default function BotCard({
   bot,
   isActive = false,
-  onSelect,   // (botId)
-  onEdit,     // (botId)
-  onDelete,   // (botId)
-  onRun,      // (botId)
+  onSelect,
+  onEdit,
+  onDelete,
+  onRun,
 }) {
   if (!bot) return null;
 
-  const { id, name, mode, is_active, strategy } = bot;
+  const { id, name, is_active, strategy } = bot;
 
   return (
     <div
       data-bot-id={id}
       onClick={() => onSelect?.(id)}
       className={`
-        cursor-pointer rounded-xl border p-4 space-y-4
+        card-surface cursor-pointer p-4 space-y-4
         transition
         ${
           isActive
-            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-            : "border-[var(--card-border)] hover:border-[var(--accent)]"
+            ? "ring-2 ring-[var(--primary)]"
+            : "hover:shadow-md"
         }
       `}
     >
       {/* ================= HEADER ================= */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-2">
-          <BotIcon className="w-5 h-5 text-[var(--accent)]" />
+          <BotIcon className="icon icon-primary" />
+
           <div>
-            <h3 className="font-semibold leading-tight">
+            <h3 className="font-semibold leading-tight text-[var(--text-dark)]">
               {name}
             </h3>
 
             {strategy ? (
-              <p className="text-xs text-muted">
+              <p className="text-xs text-[var(--text-muted)]">
                 {String(strategy.type).toUpperCase()} •{" "}
                 {strategy.symbol} • {strategy.timeframe}
               </p>
             ) : (
-              <p className="text-xs text-red-500">
+              <p className="text-xs icon-danger">
                 ⚠️ Geen strategie gekoppeld
               </p>
             )}
@@ -82,7 +59,7 @@ export default function BotCard({
         {/* ACTION ICONS */}
         <div className="flex gap-2">
           <button
-            className="btn-icon"
+            className="btn-ghost"
             onClick={(e) => {
               e.stopPropagation();
               onEdit?.(id);
@@ -93,7 +70,7 @@ export default function BotCard({
           </button>
 
           <button
-            className="btn-icon text-red-500"
+            className="btn-ghost icon-danger"
             onClick={(e) => {
               e.stopPropagation();
               onDelete?.(id);
@@ -107,11 +84,11 @@ export default function BotCard({
 
       {/* ================= STRATEGY INFO ================= */}
       {strategy && (
-        <div className="rounded-lg border bg-[var(--card-muted)] p-3 text-sm space-y-1">
+        <div className="rounded-md bg-[var(--surface-2)] p-3 text-sm space-y-1">
           <div>
             <b>Strategie:</b> {strategy.name}
           </div>
-          <div className="text-muted">
+          <div className="text-[var(--text-muted)]">
             Type: {String(strategy.type).toUpperCase()}
           </div>
         </div>
@@ -121,7 +98,7 @@ export default function BotCard({
       <div className="flex justify-between items-center pt-2">
         <span
           className={`text-xs font-medium ${
-            is_active ? "text-green-600" : "text-muted"
+            is_active ? "icon-success" : "text-[var(--text-muted)]"
           }`}
         >
           {is_active ? "Actief" : "Inactief"}

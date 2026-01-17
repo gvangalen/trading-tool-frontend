@@ -22,11 +22,18 @@ export default function BotDecisionCard({
   };
 
   return (
-    <CardWrapper title="Bot Decisions Today" icon={<Brain className="icon" />}>
+    <CardWrapper
+      title="Bot Decisions Today"
+      icon={<Brain className="icon icon-primary" />}
+    >
+      {/* ===================== */}
       {/* LOADING */}
+      {/* ===================== */}
       {loading && <CardLoader text="Beslissingen ophalen…" />}
 
+      {/* ===================== */}
       {/* EMPTY */}
+      {/* ===================== */}
       {!loading && decisions.length === 0 && (
         <div className="space-y-4">
           <p className="text-sm text-[var(--text-muted)]">
@@ -41,12 +48,18 @@ export default function BotDecisionCard({
         </div>
       )}
 
-      {/* MULTI DECISIONS */}
+      {/* ===================== */}
+      {/* DECISIONS */}
+      {/* ===================== */}
       {!loading &&
         decisions.map((d) => (
           <div
             key={d.id}
-            className="border rounded-xl p-4 mb-4 bg-[var(--card-muted)]"
+            className="
+              bg-[var(--surface-2)]
+              rounded-[var(--radius-md)]
+              p-4 mb-4
+            "
           >
             {/* HEADER */}
             <div className="flex items-center justify-between mb-3">
@@ -54,9 +67,10 @@ export default function BotDecisionCard({
                 <div className="text-sm text-[var(--text-muted)]">
                   Bot #{d.bot_id} · {d.symbol}
                 </div>
+
                 <div
                   className={`text-2xl font-semibold ${
-                    actionClass[d.action] || ""
+                    actionClass[d.action] || "text-[var(--text-muted)]"
                   }`}
                 >
                   {String(d.action).toUpperCase()}
@@ -75,7 +89,7 @@ export default function BotDecisionCard({
 
             {/* REASONS */}
             {d.reasons?.length > 0 && (
-              <ul className="text-sm space-y-1 mb-4">
+              <ul className="text-sm space-y-1 mb-4 text-[var(--text-dark)]">
                 {d.reasons.map((r, i) => (
                   <li key={i}>• {r}</li>
                 ))}

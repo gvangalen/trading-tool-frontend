@@ -44,6 +44,8 @@ export default function BotPage() {
     updateBot,
     deleteBot,
 
+    updateBudgetForBot, // ✅ DIT WAS DE MISSENDE SCHAKEL
+
     generateDecisionForBot,
     executeBot,
     skipBot,
@@ -91,15 +93,9 @@ export default function BotPage() {
         bot_id: bot.id,
       });
 
-      showSnackbar(
-        `Decision gegenereerd voor ${bot.name}`,
-        "success"
-      );
-    } catch (e) {
-      showSnackbar(
-        `Fout bij genereren decision voor ${bot.name}`,
-        "danger"
-      );
+      showSnackbar(`Decision gegenereerd voor ${bot.name}`, "success");
+    } catch {
+      showSnackbar(`Fout bij genereren decision voor ${bot.name}`, "danger");
     } finally {
       setGeneratingBotId(null);
     }
@@ -179,9 +175,7 @@ export default function BotPage() {
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: (
-        <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>
-      ),
+      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
@@ -209,15 +203,13 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-      {/* ===== TITLE ===== */}
+      {/* TITLE */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
-        <h1 className="text-2xl font-semibold">
-          Portfolio Management
-        </h1>
+        <h1 className="text-2xl font-semibold">Portfolio Management</h1>
       </div>
 
-      {/* ===== GLOBAL PORTFOLIO ===== */}
+      {/* GLOBAL PORTFOLIO */}
       <div className="card-surface p-7 space-y-1">
         <div className="text-sm text-[var(--text-muted)]">
           Total Portfolio Value
@@ -227,26 +219,24 @@ export default function BotPage() {
           €{totalValue.toFixed(2)}
         </div>
 
-        <div
-          className={totalPnl >= 0 ? "icon-success" : "icon-danger"}
-        >
+        <div className={totalPnl >= 0 ? "icon-success" : "icon-danger"}>
           {totalPnl >= 0 ? "+" : ""}
           €{totalPnl.toFixed(2)}
         </div>
       </div>
 
-      {/* ===== AGENT PORTFOLIOS ===== */}
+      {/* AGENT PORTFOLIOS */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {portfolios.map((bot) => (
           <BotPortfolioCard
             key={bot.bot_id}
             bot={bot}
-            onUpdateBudget={updateBot}
+            onUpdateBudget={updateBudgetForBot} // ✅ HIER ZAT DE BUG
           />
         ))}
       </div>
 
-      {/* ===== BOT DECISIONS (PER BOT) ===== */}
+      {/* BOT DECISIONS */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => (
           <BotDecisionCard
@@ -261,13 +251,8 @@ export default function BotPage() {
         ))}
       </div>
 
-      {/* ===== SCORES ===== */}
-      <BotScores
-        scores={dailyScores}
-        loading={loading.today}
-      />
+      <BotScores scores={dailyScores} loading={loading.today} />
 
-      {/* ===== ORDER PREVIEW (ACTIVE BOT) ===== */}
       <BotOrderPreview
         order={activeOrder}
         loading={loading.action}
@@ -291,7 +276,7 @@ export default function BotPage() {
         }
       />
 
-      {/* ===== BOTS ===== */}
+      {/* BOTS */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => (
           <BotCard
@@ -312,11 +297,7 @@ export default function BotPage() {
         </button>
       </div>
 
-      {/* ===== HISTORY ===== */}
-      <BotHistoryTable
-        history={history}
-        loading={loading.history}
-      />
+      <BotHistoryTable history={history} loading={loading.history} />
     </div>
   );
 }

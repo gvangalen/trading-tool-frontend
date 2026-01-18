@@ -28,18 +28,20 @@ export default function BotPage() {
   const [activeBotId, setActiveBotId] = useState(null);
 
   /* =====================================================
-     🤖 BOT DATA
+     🤖 BOT DATA (ENKEL SOURCE OF TRUTH)
   ===================================================== */
   const {
     configs: bots = [],
     today,
     history,
     portfolios = [],
+    decisionsByBot,
+    ordersByBot,
     loading,
     createBot,
     updateBot,
     deleteBot,
-    runBotToday,
+    generateDecisionForBot,
     executeBot,
     skipBot,
   } = useBotData();
@@ -63,21 +65,10 @@ export default function BotPage() {
   }, [bots, activeBotId]);
 
   /* =====================================================
-     🧠 TODAY CONTEXT
+     🧠 ACTIVE CONTEXT
   ===================================================== */
-  const decisions = today?.decisions ?? [];
-  const orders = today?.orders ?? [];
-
-  const decisionsByBot = bots.map((bot) => ({
-    bot,
-    decision: decisions.find((d) => d.bot_id === bot.id) ?? null,
-  }));
-
-  const activeDecision =
-    decisions.find((d) => d.bot_id === activeBotId) ?? null;
-
-  const activeOrder =
-    orders.find((o) => o.bot_id === activeBotId) ?? null;
+  const activeDecision = decisionsByBot[activeBotId] ?? null;
+  const activeOrder = ordersByBot[activeBotId] ?? null;
 
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -160,11 +151,7 @@ export default function BotPage() {
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: (
-        <>
-          Weet je zeker dat <b>{bot.name}</b> weg mag?
-        </>
-      ),
+      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
@@ -192,76 +179,53 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-      {/* ===== PAGE TITLE ===== */}
+      {/* TITLE */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
-        <h1 className="text-2xl font-semibold text-[var(--text-dark)]">
-          Portfolio Management
-        </h1>
+        <h1 className="text-2xl font-semibold">Portfolio Management</h1>
       </div>
 
-      {/* ===== GLOBAL PORTFOLIO ===== */}
-      <div className="card-surface p-7 space-y-1">
+      {/* GLOBAL PORTFOLIO */}
+      <div className="card-surface p-7">
         <div className="text-sm text-[var(--text-muted)]">
           Total Portfolio Value
         </div>
-
-        <div className="text-4xl font-bold text-[var(--text-dark)]">
+        <div className="text-4xl font-bold">
           €{totalValue.toFixed(2)}
         </div>
-
-        <div
-          className={`text-sm ${
-            totalPnl >= 0 ? "icon-success" : "icon-danger"
-          }`}
-        >
-          {totalPnl >= 0 ? "+" : ""}
-          €{totalPnl.toFixed(2)}
+        <div className={totalPnl >= 0 ? "icon-success" : "icon-danger"}>
+          {totalPnl >= 0 ? "+" : ""}€{totalPnl.toFixed(2)}
         </div>
       </div>
 
-      {/* ===== AGENT PORTFOLIOS ===== */}
-      {portfolios.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-[var(--text-dark)]">
-            Agent Portfolios
-          </h2>
-
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {portfolios.map((bot) => (
-              <BotPortfolioCard key={bot.bot_id} bot={bot} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ===== BOT DECISIONS (PER BOT, MET GENERATE) ===== */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-[var(--text-dark)]">
-          Bot Decisions Today
-        </h2>
-
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {decisionsByBot.map(({ bot, decision }) => (
-            <BotDecisionCard
-              key={bot.id}
-              bot={bot}
-              decision={decision}
-              loading={loading.generate}
-              onGenerate={() =>
-                runBotToday({ bot_id: bot.id })
-              }
-              onExecute={executeBot}
-              onSkip={skipBot}
-            />
-          ))}
-        </div>
+      {/* AGENT PORTFOLIOS */}
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {portfolios.map((bot) => (
+          <BotPortfolioCard key={bot.bot_id} bot={bot} />
+        ))}
       </div>
 
-      {/* ===== CONTEXT SCORES ===== */}
+      {/* BOT DECISIONS */}
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {bots.map((bot) => (
+          <BotDecisionCard
+            key={bot.id}
+            bot={bot}
+            decision={decisionsByBot[bot.id] ?? null}
+            loading={loading.generate}
+            onGenerate={() =>
+              generateDecisionForBot({ bot_id: bot.id })
+            }
+            onExecute={executeBot}
+            onSkip={skipBot}
+          />
+        ))}
+      </div>
+
+      {/* SCORES */}
       <BotScores scores={dailyScores} loading={loading.today} />
 
-      {/* ===== ORDER PREVIEW (ACTIVE BOT) ===== */}
+      {/* ORDER PREVIEW */}
       <BotOrderPreview
         order={activeOrder}
         loading={loading.action}
@@ -285,44 +249,28 @@ export default function BotPage() {
         }
       />
 
-      {/* ===== BOTS & STRATEGIES ===== */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-[var(--text-dark)]">
-          Bots & Strategies
-        </h2>
-
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {bots.map((bot) => (
-            <BotCard
-              key={bot.id}
-              bot={bot}
-              isActive={bot.id === activeBotId}
-              onSelect={setActiveBotId}
-              onEdit={handleEditBot}
-              onDelete={handleDeleteBot}
-            />
-          ))}
-
-          <button
-            onClick={handleAddBot}
-            className="
-              card-surface
-              flex items-center justify-center
-              text-sm text-[var(--text-muted)]
-              border-dashed
-              hover:border-[var(--primary)]
-            "
-          >
-            ➕ Nieuwe bot toevoegen
-          </button>
-        </div>
+      {/* BOTS */}
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {bots.map((bot) => (
+          <BotCard
+            key={bot.id}
+            bot={bot}
+            isActive={bot.id === activeBotId}
+            onSelect={setActiveBotId}
+            onEdit={handleEditBot}
+            onDelete={handleDeleteBot}
+          />
+        ))}
+        <button
+          onClick={handleAddBot}
+          className="card-surface text-sm text-[var(--text-muted)]"
+        >
+          ➕ Nieuwe bot toevoegen
+        </button>
       </div>
 
-      {/* ===== HISTORY ===== */}
-      <BotHistoryTable
-        history={history}
-        loading={loading.history}
-      />
+      {/* HISTORY */}
+      <BotHistoryTable history={history} loading={loading.history} />
     </div>
   );
 }

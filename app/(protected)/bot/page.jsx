@@ -10,15 +10,15 @@ import { useModal } from "@/components/modal/ModalProvider";
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
 import BotOrderPreview from "@/components/bot/BotOrderPreview";
-import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
  * BotPage — Trading Bots v2.0
  *
- * - 1 bot = 1 card
- * - Portfolio + Decision + Budget = samen
- * - Geen chaos bij 5+ bots
+ * Principes:
+ * - 1 bot = 1 card (Decision | Portfolio | History)
+ * - Geen losse portfolio / decision grids meer
+ * - Schaalbaar bij veel bots
  */
 export default function BotPage() {
   /* =====================================================
@@ -33,12 +33,12 @@ export default function BotPage() {
   const [generatingBotId, setGeneratingBotId] = useState(null);
 
   /* =====================================================
-     🤖 BOT DATA
+     🤖 BOT DATA (single source of truth)
   ===================================================== */
   const {
     configs: bots = [],
     today,
-    history,
+    history = [],
     portfolios = [],
     decisionsByBot,
     ordersByBot,
@@ -64,7 +64,7 @@ export default function BotPage() {
   }, [loadStrategies]);
 
   /* =====================================================
-     🧠 GLOBAL CONTEXT
+     🌍 GLOBAL CONTEXT
   ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -77,7 +77,7 @@ export default function BotPage() {
     Object.values(ordersByBot || {})[0] ?? null;
 
   /* =====================================================
-     🔁 GENERATE DECISION
+     🔁 GENERATE DECISION (per bot)
   ===================================================== */
   const handleGenerateDecision = async (bot) => {
     try {
@@ -119,7 +119,10 @@ export default function BotPage() {
       ),
       confirmText: "Opslaan",
       onConfirm: async () => {
-        if (!formRef.current.name || !formRef.current.strategy_id) {
+        if (
+          !formRef.current.name ||
+          !formRef.current.strategy_id
+        ) {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
@@ -131,15 +134,16 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧠 GLOBAL PORTFOLIO
+     🧮 GLOBAL PORTFOLIO
   ===================================================== */
   const totalValue = portfolios.reduce(
-    (a, b) => a + (b.portfolio?.cost_basis_eur ?? 0),
+    (sum, p) => sum + (p.portfolio?.cost_basis_eur ?? 0),
     0
   );
 
   const totalPnl = portfolios.reduce(
-    (a, b) => a + (b.portfolio?.unrealized_pnl_eur ?? 0),
+    (sum, p) =>
+      sum + (p.portfolio?.unrealized_pnl_eur ?? 0),
     0
   );
 
@@ -148,7 +152,9 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-      {/* ===== TITLE ===== */}
+      {/* =====================================================
+         TITLE
+      ===================================================== */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
         <h1 className="text-2xl font-semibold">
@@ -156,7 +162,9 @@ export default function BotPage() {
         </h1>
       </div>
 
-      {/* ===== GLOBAL PORTFOLIO ===== */}
+      {/* =====================================================
+         GLOBAL PORTFOLIO SUMMARY
+      ===================================================== */}
       <div className="card-surface p-7 space-y-1">
         <div className="text-sm text-[var(--text-muted)]">
           Total Portfolio Value
@@ -176,7 +184,9 @@ export default function BotPage() {
         </div>
       </div>
 
-      {/* ===== BOT AGENTS (🔥 HIER ZIT DE GROTE WIJZIGING) ===== */}
+      {/* =====================================================
+         BOT AGENTS (🔥 NIEUWE OPZET)
+      ===================================================== */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => {
           const portfolio = portfolios.find(
@@ -189,8 +199,11 @@ export default function BotPage() {
               bot={bot}
               decision={decisionsByBot[bot.id] ?? null}
               portfolio={portfolio}
+              history={history}
               loadingDecision={generatingBotId === bot.id}
-              onGenerate={() => handleGenerateDecision(bot)}
+              onGenerate={() =>
+                handleGenerateDecision(bot)
+              }
               onExecute={executeBot}
               onSkip={skipBot}
               onUpdateBudget={updateBudgetForBot}
@@ -207,13 +220,17 @@ export default function BotPage() {
         </button>
       </div>
 
-      {/* ===== SCORES ===== */}
+      {/* =====================================================
+         SCORES (GLOBAL CONTEXT)
+      ===================================================== */}
       <BotScores
         scores={dailyScores}
         loading={loading.today}
       />
 
-      {/* ===== ORDER PREVIEW ===== */}
+      {/* =====================================================
+         ORDER PREVIEW (OPTIONEEL / GLOBAL)
+      ===================================================== */}
       <BotOrderPreview
         order={activeOrder}
         loading={loading.action}
@@ -235,12 +252,6 @@ export default function BotPage() {
                 })
             : null
         }
-      />
-
-      {/* ===== HISTORY ===== */}
-      <BotHistoryTable
-        history={history}
-        loading={loading.history}
       />
     </div>
   );

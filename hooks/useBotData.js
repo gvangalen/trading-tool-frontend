@@ -13,9 +13,6 @@ import {
   createBotConfig,
   updateBotConfig,
   deleteBotConfig,
-
-  // 🔥 NIEUW
-  updateBotBudget,
 } from "@/lib/api/botApi";
 
 /**
@@ -23,12 +20,9 @@ import {
  * --------------------------------------------------
  * Centrale hook voor Trading Bots
  *
- * Model:
- * - Bot = uitvoerder
- * - Strategy = intelligentie
- *
  * ❌ geen business logic
  * ❌ geen interpretatie
+ * ✅ backend is single source of truth
  */
 export default function useBotData() {
   /* =====================================================
@@ -49,7 +43,7 @@ export default function useBotData() {
     create: false,
     update: false,
     delete: false,
-    budget: false, // 🔥 NIEUW
+    budget: false,
   });
 
   const [error, setError] = useState(null);
@@ -173,7 +167,7 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     💰 BOT BUDGET (🔥 DIT MISSTE)
+     💰 BOT BUDGET (✅ CORRECT)
   ===================================================== */
   const updateBudgetForBot = useCallback(
     async (bot_id, budgetPayload) => {
@@ -181,9 +175,13 @@ export default function useBotData() {
 
       setLoading((l) => ({ ...l, budget: true }));
       try {
-        const res = await updateBotBudget(bot_id, budgetPayload);
+        const res = await updateBotConfig(bot_id, {
+          budget_total_eur: budgetPayload.total_eur,
+          budget_daily_limit_eur: budgetPayload.daily_limit_eur,
+          budget_min_order_eur: budgetPayload.min_order_eur,
+          budget_max_order_eur: budgetPayload.max_order_eur,
+        });
 
-        // refresh alles wat budget raakt
         await loadConfigs();
         await loadPortfolios();
         await loadToday();
@@ -277,7 +275,7 @@ export default function useBotData() {
     updateBot,
     deleteBot,
 
-    updateBudgetForBot, // 🔥 HIER GAAT DE CARD OP AAN
+    updateBudgetForBot, // ✅ nu correct
     generateDecisionForBot,
     executeBot,
     skipBot,

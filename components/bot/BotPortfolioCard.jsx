@@ -11,7 +11,7 @@ import { useModal } from "@/components/modal/ModalProvider";
  * Volledig werkende portfolio + budget card
  *
  * Props:
- * - bot: bot portfolio object
+ * - bot: bot portfolio object (uit /api/bot/portfolios)
  * - onUpdateBudget: (bot_id, payload) => Promise
  */
 export default function BotPortfolioCard({ bot, onUpdateBudget }) {
@@ -23,45 +23,96 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
     bot_name,
     symbol,
     status,
-    budget,
+    budget = {},
     strategy,
     portfolio,
   } = bot;
+
+  const hasBudget =
+    (budget.total_eur ?? 0) > 0 ||
+    (budget.daily_limit_eur ?? 0) > 0 ||
+    (budget.max_order_eur ?? 0) > 0;
 
   const handleEditBudget = () => {
     const form = {
       total_eur: budget.total_eur ?? 0,
       daily_limit_eur: budget.daily_limit_eur ?? 0,
+      min_order_eur: budget.min_order_eur ?? 0,
       max_order_eur: budget.max_order_eur ?? 0,
     };
 
     openConfirm({
-      title: `💰 Budget instellen – ${bot_name}`,
+      title: `💰 Bot budget instellen – ${bot_name}`,
       description: (
-        <div className="space-y-3 text-sm">
-          <input
-            type="number"
-            defaultValue={form.total_eur}
-            onChange={(e) => (form.total_eur = Number(e.target.value))}
-            className="input"
-            placeholder="Totaal budget (€)"
-          />
+        <div className="space-y-4 text-sm">
+          <p className="text-[var(--text-muted)]">
+            Dit budget begrenst hoeveel deze bot maximaal mag handelen.
+            De strategy bepaalt het voorstel, dit budget is altijd leidend.
+          </p>
 
-          <input
-            type="number"
-            defaultValue={form.daily_limit_eur}
-            onChange={(e) => (form.daily_limit_eur = Number(e.target.value))}
-            className="input"
-            placeholder="Daglimiet (€)"
-          />
+          <div>
+            <label className="block font-medium mb-1">
+              Totaal budget (€)
+            </label>
+            <p className="text-xs text-[var(--text-muted)] mb-1">
+              Maximale totale investering voor deze bot (0 = geen limiet)
+            </p>
+            <input
+              type="number"
+              defaultValue={form.total_eur}
+              onChange={(e) =>
+                (form.total_eur = Number(e.target.value))
+              }
+              className="input"
+            />
+          </div>
 
-          <input
-            type="number"
-            defaultValue={form.max_order_eur}
-            onChange={(e) => (form.max_order_eur = Number(e.target.value))}
-            className="input"
-            placeholder="Max per trade (€)"
-          />
+          <div>
+            <label className="block font-medium mb-1">
+              Daglimiet (€)
+            </label>
+            <p className="text-xs text-[var(--text-muted)] mb-1">
+              Maximaal bedrag dat de bot per dag mag gebruiken
+            </p>
+            <input
+              type="number"
+              defaultValue={form.daily_limit_eur}
+              onChange={(e) =>
+                (form.daily_limit_eur = Number(e.target.value))
+              }
+              className="input"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">
+              Per trade (€)
+            </label>
+            <p className="text-xs text-[var(--text-muted)] mb-1">
+              Minimum en maximum bedrag per order
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                defaultValue={form.min_order_eur}
+                onChange={(e) =>
+                  (form.min_order_eur = Number(e.target.value))
+                }
+                className="input"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                defaultValue={form.max_order_eur}
+                onChange={(e) =>
+                  (form.max_order_eur = Number(e.target.value))
+                }
+                className="input"
+              />
+            </div>
+          </div>
         </div>
       ),
       confirmText: "Opslaan",
@@ -78,8 +129,7 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
 
   return (
     <CardWrapper title={bot_name} subtitle={symbol}>
-      <div className="space-y-4 text-sm">
-
+      <div className="space-y-5 text-sm">
         {/* STRATEGY CONTEXT */}
         {strategy && (
           <div>
@@ -97,24 +147,61 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
 
         {/* BUDGET */}
         <div>
-          <BotBudgetBar
-            label="Budget"
-            total={budget.total_eur}
-            spent={budget.total_eur - budget.remaining_eur}
-          />
-
-          <div className="flex justify-between text-xs mt-1">
-            <span>
-              Remaining €{budget.remaining_eur?.toFixed(0)}
-            </span>
-
-            <button
-              onClick={handleEditBudget}
-              className="underline text-[var(--primary)]"
-            >
-              Aanpassen
-            </button>
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-[var(--text-muted)]">
+              💰 Bot budget
+            </div>
           </div>
+
+          {hasBudget ? (
+            <>
+              <BotBudgetBar
+                label="Budget"
+                total={budget.total_eur}
+                spent={
+                  budget.total_eur -
+                  (budget.remaining_eur ?? 0)
+                }
+              />
+
+              <div className="flex justify-between items-center text-xs mt-2">
+                <div className="space-y-0.5">
+                  <div>
+                    Beschikbaar: €
+                    {budget.remaining_eur?.toFixed(0) ?? 0}
+                  </div>
+                  <div className="text-[var(--text-muted)]">
+                    Daglimiet: €
+                    {budget.daily_limit_eur?.toFixed(0) ??
+                      "–"}
+                    {budget.max_order_eur
+                      ? ` · Per trade max €${budget.max_order_eur}`
+                      : ""}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleEditBudget}
+                  className="btn-secondary"
+                >
+                  ✏️ Budget wijzigen
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-[var(--text-muted)]">
+                Geen budget ingesteld – deze bot kan nog
+                geen trades uitvoeren.
+              </div>
+              <button
+                onClick={handleEditBudget}
+                className="btn-primary w-full"
+              >
+                💰 Budget instellen
+              </button>
+            </div>
+          )}
         </div>
 
         {/* PORTFOLIO */}

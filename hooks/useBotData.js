@@ -7,12 +7,15 @@ import {
   fetchBotToday,
   fetchBotHistory,
   fetchBotPortfolios,
-  generateBotDecision, // ✅ NIEUW
+  generateBotDecision,
   markBotExecuted,
   skipBotToday,
   createBotConfig,
   updateBotConfig,
   deleteBotConfig,
+
+  // 🔥 NIEUW
+  updateBotBudget,
 } from "@/lib/api/botApi";
 
 /**
@@ -32,7 +35,7 @@ export default function useBotData() {
      📦 STATE
   ===================================================== */
   const [configs, setConfigs] = useState([]);
-  const [today, setToday] = useState(null); // { date, decisions[], orders[], scores }
+  const [today, setToday] = useState(null);
   const [history, setHistory] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
 
@@ -46,6 +49,7 @@ export default function useBotData() {
     create: false,
     update: false,
     delete: false,
+    budget: false, // 🔥 NIEUW
   });
 
   const [error, setError] = useState(null);
@@ -102,7 +106,7 @@ export default function useBotData() {
   }, []);
 
   /* =====================================================
-     🧠 DERIVED DATA (CRUCIAAL)
+     🧠 DERIVED DATA
   ===================================================== */
   const decisionsByBot = useMemo(() => {
     const map = {};
@@ -169,23 +173,39 @@ export default function useBotData() {
   );
 
   /* =====================================================
-     🔁 DAILY FLOW (PER BOT)
+     💰 BOT BUDGET (🔥 DIT MISSTE)
   ===================================================== */
+  const updateBudgetForBot = useCallback(
+    async (bot_id, budgetPayload) => {
+      if (!bot_id) return;
 
-  /**
-   * 🔁 Genereer decision voor ÉÉN bot
-   */
+      setLoading((l) => ({ ...l, budget: true }));
+      try {
+        const res = await updateBotBudget(bot_id, budgetPayload);
+
+        // refresh alles wat budget raakt
+        await loadConfigs();
+        await loadPortfolios();
+        await loadToday();
+
+        return res;
+      } finally {
+        setLoading((l) => ({ ...l, budget: false }));
+      }
+    },
+    [loadConfigs, loadPortfolios, loadToday]
+  );
+
+  /* =====================================================
+     🔁 DAILY FLOW
+  ===================================================== */
   const generateDecisionForBot = useCallback(
     async ({ bot_id, report_date = null }) => {
       if (!bot_id) return;
 
       setLoading((l) => ({ ...l, generate: true }));
       try {
-        const res = await generateBotDecision({
-          bot_id,
-          report_date,
-        });
-
+        const res = await generateBotDecision({ bot_id, report_date });
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
@@ -242,26 +262,23 @@ export default function useBotData() {
      📤 EXPORT
   ===================================================== */
   return {
-    /* raw data */
     configs,
     today,
     history,
     portfolios,
 
-    /* derived (KEY) */
     decisionsByBot,
     ordersByBot,
 
-    /* state */
     loading,
     error,
 
-    /* actions */
     createBot,
     updateBot,
     deleteBot,
 
-    generateDecisionForBot, // ✅ DIT GEBRUIK JE IN DE CARD
+    updateBudgetForBot, // 🔥 HIER GAAT DE CARD OP AAN
+    generateDecisionForBot,
     executeBot,
     skipBot,
   };

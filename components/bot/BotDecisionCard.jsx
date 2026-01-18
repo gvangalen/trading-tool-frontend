@@ -12,8 +12,9 @@ import { Brain, Play, SkipForward, Wand2 } from "lucide-react";
  * Props:
  * - bot: bot config object
  * - decision: decision object | null
- * - loading: boolean
- * - onGenerate: ({ bot_id }) => void        ✅ NIEUW
+ * - loading: boolean                → algemene load (today)
+ * - isGenerating: boolean           → specifieke bot generate state
+ * - onGenerate: () => void
  * - onExecute: ({ bot_id, report_date }) => void
  * - onSkip: ({ bot_id, report_date }) => void
  */
@@ -21,6 +22,7 @@ export default function BotDecisionCard({
   bot,
   decision = null,
   loading = false,
+  isGenerating = false,
   onGenerate,
   onExecute,
   onSkip,
@@ -39,12 +41,12 @@ export default function BotDecisionCard({
       icon={<Brain className="icon icon-primary" />}
     >
       {/* ===================== */}
-      {/* LOADING */}
+      {/* LOADING (GLOBAL TODAY) */}
       {/* ===================== */}
       {loading && <CardLoader text="Beslissing ophalen…" />}
 
       {/* ===================== */}
-      {/* GEEN BESLISSING → GENEREER */}
+      {/* GEEN BESLISSING → GENERATE */}
       {/* ===================== */}
       {!loading && !decision && (
         <div className="space-y-4">
@@ -54,11 +56,14 @@ export default function BotDecisionCard({
 
           {onGenerate && (
             <button
-              onClick={() => onGenerate({ bot_id: bot.id })}
+              onClick={onGenerate}
+              disabled={isGenerating}
               className="btn-primary flex items-center gap-2"
             >
               <Wand2 size={16} />
-              Genereer decision
+              {isGenerating
+                ? "Genereren…"
+                : "Genereer decision"}
             </button>
           )}
         </div>

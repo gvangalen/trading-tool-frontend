@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import CardWrapper from "@/components/ui/CardWrapper";
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
@@ -12,10 +12,10 @@ import { Brain, MoreVertical, ChevronDown } from "lucide-react";
 /**
  * BotAgentCard
  * --------------------------------------------------
- * Eén bot = één overzicht (v2.0)
+ * Eén bot = één horizontale agent card
  *
  * Layout:
- * - Header
+ * - Header (bot meta)
  * - Tabs: Decision | Portfolio | History
  * - Desktop: tabs
  * - Mobile: accordion
@@ -48,13 +48,22 @@ export default function BotAgentCard({
   const TABS = ["decision", "portfolio", "history"];
   const [activeTab, setActiveTab] = useState("decision");
   const [accordionOpen, setAccordionOpen] = useState("decision");
-
-  const isMobile =
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 768px)").matches;
+  const [isMobile, setIsMobile] = useState(false);
 
   /* =====================================================
-     RENDER TAB CONTENT
+     RESPONSIVE CHECK (client-safe)
+  ===================================================== */
+  useEffect(() => {
+    const check = () =>
+      setIsMobile(window.matchMedia("(max-width: 768px)").matches);
+
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  /* =====================================================
+     TAB CONTENT
   ===================================================== */
   const renderContent = (tab) => {
     switch (tab) {
@@ -82,9 +91,7 @@ export default function BotAgentCard({
       case "history":
         return (
           <BotHistoryTable
-            history={history.filter(
-              (h) => h.bot_id === bot.id
-            )}
+            history={history.filter((h) => h.bot_id === bot.id)}
             compact
           />
         );
@@ -95,34 +102,18 @@ export default function BotAgentCard({
   };
 
   /* =====================================================
-     MOBILE ACCORDION
+     MOBILE — ACCORDION
   ===================================================== */
   if (isMobile) {
     return (
       <CardWrapper className="space-y-4">
         {/* HEADER */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="icon-primary">
-              <Brain size={18} />
-            </div>
+        <Header bot={bot} />
 
-            <div>
-              <div className="font-semibold leading-tight">
-                {bot.name}
-              </div>
-              <div className="text-xs text-[var(--text-muted)]">
-                {bot.strategy?.name ?? "—"} · {bot.symbol}
-              </div>
-            </div>
-          </div>
-
-          <MoreVertical size={16} className="icon-muted" />
-        </div>
-
-        {/* ACCORDION SECTIONS */}
+        {/* ACCORDION */}
         {TABS.map((tab) => {
           const open = accordionOpen === tab;
+
           return (
             <div
               key={tab}
@@ -137,7 +128,7 @@ export default function BotAgentCard({
                 <span className="capitalize">{tab}</span>
                 <ChevronDown
                   size={16}
-                  className={`transition ${
+                  className={`transition-transform ${
                     open ? "rotate-180" : ""
                   }`}
                 />
@@ -156,48 +147,23 @@ export default function BotAgentCard({
   }
 
   /* =====================================================
-     DESKTOP TABS
+     DESKTOP — TABS (FULL WIDTH)
   ===================================================== */
   return (
-    <CardWrapper className="space-y-5">
-      {/* =====================================================
-         HEADER
-      ===================================================== */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
-          <div className="icon-primary">
-            <Brain size={18} />
-          </div>
+    <CardWrapper className="space-y-4">
+      {/* HEADER */}
+      <Header bot={bot} />
 
-          <div>
-            <div className="font-semibold leading-tight">
-              {bot.name}
-            </div>
-
-            <div className="text-xs text-[var(--text-muted)]">
-              {bot.strategy?.name ?? "—"} · {bot.symbol} ·{" "}
-              {bot.timeframe ?? "—"}
-            </div>
-          </div>
-        </div>
-
-        <button className="icon-muted hover:icon-primary">
-          <MoreVertical size={16} />
-        </button>
-      </div>
-
-      {/* =====================================================
-         TABS
-      ===================================================== */}
-      <div className="flex gap-2 border-b text-sm">
+      {/* TABS */}
+      <div className="flex gap-4 border-b text-sm">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-t-md capitalize ${
+            className={`px-4 py-2 -mb-px border-b-2 capitalize transition ${
               activeTab === tab
-                ? "bg-[var(--bg-soft)] font-medium"
-                : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                ? "border-primary font-medium"
+                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text)]"
             }`}
           >
             {tab}
@@ -205,10 +171,37 @@ export default function BotAgentCard({
         ))}
       </div>
 
-      {/* =====================================================
-         CONTENT
-      ===================================================== */}
+      {/* CONTENT */}
       <div className="pt-2">{renderContent(activeTab)}</div>
     </CardWrapper>
+  );
+}
+
+/* =====================================================
+   HEADER (shared)
+===================================================== */
+function Header({ bot }) {
+  return (
+    <div className="flex items-start justify-between">
+      <div className="flex items-start gap-3">
+        <div className="icon-primary">
+          <Brain size={18} />
+        </div>
+
+        <div>
+          <div className="font-semibold leading-tight">
+            {bot.name}
+          </div>
+          <div className="text-xs text-[var(--text-muted)]">
+            {bot.strategy?.name ?? "—"} · {bot.symbol} ·{" "}
+            {bot.timeframe ?? "—"}
+          </div>
+        </div>
+      </div>
+
+      <button className="icon-muted hover:icon-primary">
+        <MoreVertical size={16} />
+      </button>
+    </div>
   );
 }

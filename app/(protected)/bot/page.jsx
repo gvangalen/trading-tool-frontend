@@ -13,11 +13,12 @@ import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
- * BotPage — Trading Bots v2.0
+ * BotPage — Trading Bots v2.1
  *
  * Principes:
- * - 1 bot = 1 card (Decision | Portfolio | History)
- * - Geen losse portfolio / decision grids meer
+ * - 1 bot = 1 horizontale card
+ * - Decision | Portfolio | History in tabs
+ * - Bots onder elkaar (geen grid-chaos)
  * - Schaalbaar bij veel bots
  */
 export default function BotPage() {
@@ -185,9 +186,9 @@ export default function BotPage() {
       </div>
 
       {/* =====================================================
-         BOT AGENTS (🔥 NIEUWE OPZET)
+         BOT AGENTS — HORIZONTAAL (🔥 BELANGRIJK)
       ===================================================== */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {bots.map((bot) => {
           const portfolio = portfolios.find(
             (p) => p.bot_id === bot.id
@@ -211,10 +212,10 @@ export default function BotPage() {
           );
         })}
 
-        {/* ➕ ADD BOT CARD */}
+        {/* ➕ ADD BOT ROW */}
         <button
           onClick={handleAddBot}
-          className="card-surface text-sm text-[var(--text-muted)] flex items-center justify-center"
+          className="card-surface text-sm text-[var(--text-muted)] flex items-center justify-center py-6"
         >
           ➕ Nieuwe bot toevoegen
         </button>

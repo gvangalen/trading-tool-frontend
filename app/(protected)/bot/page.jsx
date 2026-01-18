@@ -39,9 +39,11 @@ export default function BotPage() {
     decisionsByBot,
     ordersByBot,
     loading,
+
     createBot,
     updateBot,
     deleteBot,
+
     generateDecisionForBot,
     executeBot,
     skipBot,
@@ -177,7 +179,9 @@ export default function BotPage() {
     openConfirm({
       title: "🗑 Bot verwijderen",
       tone: "danger",
-      description: <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>,
+      description: (
+        <>Weet je zeker dat <b>{bot.name}</b> weg mag?</>
+      ),
       confirmText: "Verwijderen",
       onConfirm: async () => {
         await deleteBot(bot.id);
@@ -205,7 +209,7 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-      {/* TITLE */}
+      {/* ===== TITLE ===== */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
         <h1 className="text-2xl font-semibold">
@@ -213,14 +217,16 @@ export default function BotPage() {
         </h1>
       </div>
 
-      {/* GLOBAL PORTFOLIO */}
+      {/* ===== GLOBAL PORTFOLIO ===== */}
       <div className="card-surface p-7 space-y-1">
         <div className="text-sm text-[var(--text-muted)]">
           Total Portfolio Value
         </div>
+
         <div className="text-4xl font-bold">
           €{totalValue.toFixed(2)}
         </div>
+
         <div
           className={totalPnl >= 0 ? "icon-success" : "icon-danger"}
         >
@@ -229,22 +235,25 @@ export default function BotPage() {
         </div>
       </div>
 
-      {/* AGENT PORTFOLIOS */}
+      {/* ===== AGENT PORTFOLIOS ===== */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {portfolios.map((bot) => (
-          <BotPortfolioCard key={bot.bot_id} bot={bot} />
+          <BotPortfolioCard
+            key={bot.bot_id}
+            bot={bot}
+            onUpdateBudget={updateBot}
+          />
         ))}
       </div>
 
-      {/* BOT DECISIONS (PER BOT) */}
+      {/* ===== BOT DECISIONS (PER BOT) ===== */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => (
           <BotDecisionCard
             key={bot.id}
             bot={bot}
             decision={decisionsByBot[bot.id] ?? null}
-            loading={loading.today}
-            isGenerating={generatingBotId === bot.id}
+            loading={generatingBotId === bot.id}
             onGenerate={() => handleGenerateDecision(bot)}
             onExecute={executeBot}
             onSkip={skipBot}
@@ -252,10 +261,13 @@ export default function BotPage() {
         ))}
       </div>
 
-      {/* SCORES */}
-      <BotScores scores={dailyScores} loading={loading.today} />
+      {/* ===== SCORES ===== */}
+      <BotScores
+        scores={dailyScores}
+        loading={loading.today}
+      />
 
-      {/* ORDER PREVIEW (ACTIVE BOT) */}
+      {/* ===== ORDER PREVIEW (ACTIVE BOT) ===== */}
       <BotOrderPreview
         order={activeOrder}
         loading={loading.action}
@@ -279,7 +291,7 @@ export default function BotPage() {
         }
       />
 
-      {/* BOTS */}
+      {/* ===== BOTS ===== */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => (
           <BotCard
@@ -300,7 +312,7 @@ export default function BotPage() {
         </button>
       </div>
 
-      {/* HISTORY */}
+      {/* ===== HISTORY ===== */}
       <BotHistoryTable
         history={history}
         loading={loading.history}

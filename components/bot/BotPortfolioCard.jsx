@@ -117,9 +117,14 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
       confirmText: "Opslaan",
       onConfirm: async () => {
         try {
+          if (!onUpdateBudget) {
+            throw new Error("onUpdateBudget niet gekoppeld");
+          }
+
           await onUpdateBudget(bot_id, form);
           showSnackbar("Bot budget bijgewerkt", "success");
-        } catch {
+        } catch (err) {
+          console.error("❌ Budget update fout:", err);
           showSnackbar("Budget opslaan mislukt", "danger");
         }
       },

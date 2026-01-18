@@ -4,11 +4,10 @@ import CardWrapper from "@/components/ui/CardWrapper";
 import BotBudgetBar from "./BotBudgetBar";
 import BotPnLBadge from "./BotPnLBadge";
 import { useModal } from "@/components/modal/ModalProvider";
+import { Info } from "lucide-react";
 
 /**
- * BotPortfolioCard
- * --------------------------------------------------
- * Volledig werkende portfolio + budget card
+ * BotPortfolioCard — Portfolio + Budget (v2.0)
  *
  * Props:
  * - bot: bot portfolio object (uit /api/bot/portfolios)
@@ -42,12 +41,12 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
     };
 
     openConfirm({
-      title: `💰 Bot budget instellen – ${bot_name}`,
+      title: `💰 Bot budget – ${bot_name}`,
       description: (
         <div className="space-y-4 text-sm">
           <p className="text-[var(--text-muted)]">
-            Dit budget begrenst hoeveel deze bot maximaal mag handelen.
-            De strategy bepaalt het voorstel, dit budget is altijd leidend.
+            Dit budget begrenst wat deze bot maximaal mag uitvoeren.
+            De strategy doet voorstellen, maar dit budget is altijd leidend.
           </p>
 
           <div>
@@ -55,7 +54,7 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
               Totaal budget (€)
             </label>
             <p className="text-xs text-[var(--text-muted)] mb-1">
-              Maximale totale investering voor deze bot (0 = geen limiet)
+              Maximale totale investering (0 = geen limiet)
             </p>
             <input
               type="number"
@@ -72,7 +71,7 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
               Daglimiet (€)
             </label>
             <p className="text-xs text-[var(--text-muted)] mb-1">
-              Maximaal bedrag dat de bot per dag mag gebruiken
+              Maximaal bedrag per dag
             </p>
             <input
               type="number"
@@ -89,7 +88,7 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
               Per trade (€)
             </label>
             <p className="text-xs text-[var(--text-muted)] mb-1">
-              Minimum en maximum bedrag per order
+              Minimum en maximum per order
             </p>
 
             <div className="grid grid-cols-2 gap-2">
@@ -120,8 +119,8 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
         try {
           await onUpdateBudget(bot_id, form);
           showSnackbar("Bot budget bijgewerkt", "success");
-        } catch (e) {
-          showSnackbar("Opslaan van budget mislukt", "danger");
+        } catch {
+          showSnackbar("Budget opslaan mislukt", "danger");
         }
       },
     });
@@ -130,7 +129,7 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
   return (
     <CardWrapper title={bot_name} subtitle={symbol}>
       <div className="space-y-5 text-sm">
-        {/* STRATEGY CONTEXT */}
+        {/* STRATEGY */}
         {strategy && (
           <div>
             <div className="text-xs text-[var(--text-muted)]">
@@ -138,19 +137,29 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
             </div>
             <div className="font-medium">
               {strategy.name}
-              {strategy.amount_per_trade
-                ? ` · €${strategy.amount_per_trade} / ${strategy.frequency}`
-                : null}
             </div>
           </div>
         )}
 
         {/* BUDGET */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-xs text-[var(--text-muted)]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
               💰 Bot budget
+              <span
+                title="Zonder budget mag deze bot geen trades uitvoeren"
+                className="cursor-help"
+              >
+                <Info size={13} className="icon-muted" />
+              </span>
             </div>
+
+            <button
+              onClick={handleEditBudget}
+              className="btn-outline text-xs px-3 py-1"
+            >
+              {hasBudget ? "Wijzigen" : "Instellen"}
+            </button>
           </div>
 
           {hasBudget ? (
@@ -164,42 +173,19 @@ export default function BotPortfolioCard({ bot, onUpdateBudget }) {
                 }
               />
 
-              <div className="flex justify-between items-center text-xs mt-2">
-                <div className="space-y-0.5">
-                  <div>
-                    Beschikbaar: €
-                    {budget.remaining_eur?.toFixed(0) ?? 0}
-                  </div>
-                  <div className="text-[var(--text-muted)]">
-                    Daglimiet: €
-                    {budget.daily_limit_eur?.toFixed(0) ??
-                      "–"}
-                    {budget.max_order_eur
-                      ? ` · Per trade max €${budget.max_order_eur}`
-                      : ""}
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleEditBudget}
-                  className="btn-secondary"
-                >
-                  ✏️ Budget wijzigen
-                </button>
+              <div className="text-xs text-[var(--text-muted)] mt-2">
+                Beschikbaar €{budget.remaining_eur?.toFixed(0) ?? 0}
+                {budget.daily_limit_eur
+                  ? ` · Daglimiet €${budget.daily_limit_eur}`
+                  : ""}
+                {budget.max_order_eur
+                  ? ` · Max per trade €${budget.max_order_eur}`
+                  : ""}
               </div>
             </>
           ) : (
-            <div className="space-y-2">
-              <div className="text-[var(--text-muted)]">
-                Geen budget ingesteld – deze bot kan nog
-                geen trades uitvoeren.
-              </div>
-              <button
-                onClick={handleEditBudget}
-                className="btn-primary w-full"
-              >
-                💰 Budget instellen
-              </button>
+            <div className="text-xs text-[var(--text-muted)]">
+              Nog geen budget ingesteld
             </div>
           )}
         </div>

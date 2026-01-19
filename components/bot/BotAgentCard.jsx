@@ -14,20 +14,21 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — FINAL SURFACE
+ * BotAgentCard — FINAL (TradeLayer 2.0)
  * --------------------------------------------------
- * ÉÉN bot = ÉÉN card
+ * ÉÉN bot = ÉÉN surface
  *
  * Structuur:
  * - Header (bot meta)
+ * - State bar (decision context)
  * - Main grid:
- *   - Portfolio (context)
- *   - Decision (actie)
- * - History (toggle / accordion)
+ *   - Decision (actie, dominant)
+ *   - Portfolio (context, rustig)
+ * - History (progressief: toggle / accordion)
  *
- * ❌ GEEN nested cards
- * ❌ GEEN tabs
- * ✅ Rust + hiërarchie
+ * ❌ Geen nested cards
+ * ❌ Geen tabs
+ * ❌ Geen visuele chaos
  */
 export default function BotAgentCard({
   bot,
@@ -47,7 +48,7 @@ export default function BotAgentCard({
   const [isMobile, setIsMobile] = useState(false);
 
   /* =====================================================
-     RESPONSIVE CHECK (client-safe)
+     RESPONSIVE CHECK
   ===================================================== */
   useEffect(() => {
     const check = () =>
@@ -61,30 +62,78 @@ export default function BotAgentCard({
       window.removeEventListener("resize", check);
   }, []);
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
   return (
-    <div className="card-surface w-full space-y-6">
+    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6">
       {/* =====================================================
          HEADER
       ===================================================== */}
       <Header bot={bot} />
 
       {/* =====================================================
+         STATE BAR (MENTAL ANCHOR)
+      ===================================================== */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--bg-soft)] rounded-xl px-4 py-3">
+        <div className="flex items-center gap-4">
+          <div>
+            <div className="text-xs text-[var(--text-muted)]">
+              Huidige status
+            </div>
+            <div className="font-semibold text-sm">
+              {decision
+                ? decision.action.toUpperCase()
+                : "GEEN BESLISSING"}
+            </div>
+          </div>
+
+          {decision && (
+            <div>
+              <div className="text-xs text-[var(--text-muted)]">
+                Confidence
+              </div>
+              <div className="font-semibold text-sm">
+                {decision.confidence.toUpperCase()}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          {decision ? (
+            <button
+              onClick={() =>
+                onExecute?.({
+                  bot_id: decision.bot_id,
+                  report_date: decision.date,
+                })
+              }
+              className="btn-primary"
+            >
+              Execute
+            </button>
+          ) : (
+            <button
+              onClick={onGenerate}
+              disabled={loadingDecision}
+              className="btn-primary"
+            >
+              {loadingDecision
+                ? "Genereren…"
+                : "Genereer decision"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* =====================================================
          MAIN CONTENT
       ===================================================== */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* -------- PORTFOLIO (CONTEXT) -------- */}
-        <div>
-          <BotPortfolioCard
-            bot={portfolio}
-            onUpdateBudget={onUpdateBudget}
-          />
-        </div>
+        {/* -------- DECISION (PRIMARY) -------- */}
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-[var(--text-muted)]">
+            Decision
+          </div>
 
-        {/* -------- DECISION (ACTION) -------- */}
-        <div>
           <BotDecisionCard
             bot={bot}
             decision={decision}
@@ -94,14 +143,26 @@ export default function BotAgentCard({
             onSkip={onSkip}
           />
         </div>
+
+        {/* -------- PORTFOLIO (CONTEXT) -------- */}
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-[var(--text-muted)]">
+            Portfolio
+          </div>
+
+          <BotPortfolioCard
+            bot={portfolio}
+            onUpdateBudget={onUpdateBudget}
+          />
+        </div>
       </div>
 
       {/* =====================================================
          HISTORY
       ===================================================== */}
       {isMobile ? (
-        /* ---------- MOBILE: ACCORDION ---------- */
-        <div className="border rounded-lg overflow-hidden">
+        /* ---------- MOBILE ---------- */
+        <div className="border rounded-xl overflow-hidden">
           <button
             onClick={() => setShowHistory(!showHistory)}
             className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
@@ -131,7 +192,7 @@ export default function BotAgentCard({
           )}
         </div>
       ) : (
-        /* ---------- DESKTOP: INLINE TOGGLE ---------- */
+        /* ---------- DESKTOP ---------- */
         <div className="pt-2 border-t">
           <button
             onClick={() => setShowHistory(!showHistory)}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-import CardWrapper from "@/components/ui/CardWrapper";
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
@@ -15,18 +14,20 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — v2.1 (final)
+ * BotAgentCard — FINAL SURFACE
  * --------------------------------------------------
- * Eén bot = één horizontale agent card
+ * ÉÉN bot = ÉÉN card
  *
  * Structuur:
  * - Header (bot meta)
- * - Portfolio summary (ALTIJD zichtbaar)
- * - Decision panel (ALTIJD zichtbaar)
- * - History (tab / accordion)
+ * - Main grid:
+ *   - Portfolio (context)
+ *   - Decision (actie)
+ * - History (toggle / accordion)
  *
- * Desktop: history als tab
- * Mobile: history als accordion
+ * ❌ GEEN nested cards
+ * ❌ GEEN tabs
+ * ✅ Rust + hiërarchie
  */
 export default function BotAgentCard({
   bot,
@@ -50,30 +51,31 @@ export default function BotAgentCard({
   ===================================================== */
   useEffect(() => {
     const check = () =>
-      setIsMobile(window.matchMedia("(max-width: 768px)").matches);
+      setIsMobile(
+        window.matchMedia("(max-width: 768px)").matches
+      );
 
     check();
     window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    return () =>
+      window.removeEventListener("resize", check);
   }, []);
 
   /* =====================================================
      RENDER
   ===================================================== */
   return (
-    <CardWrapper className="space-y-6 w-full">
+    <div className="card-surface w-full space-y-6">
       {/* =====================================================
          HEADER
       ===================================================== */}
       <Header bot={bot} />
 
       {/* =====================================================
-         MAIN CONTENT (2-COLUMN DESKTOP)
+         MAIN CONTENT
       ===================================================== */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* -------------------------------
-           PORTFOLIO (PRIMARY CONTEXT)
-        -------------------------------- */}
+        {/* -------- PORTFOLIO (CONTEXT) -------- */}
         <div>
           <BotPortfolioCard
             bot={portfolio}
@@ -81,9 +83,7 @@ export default function BotAgentCard({
           />
         </div>
 
-        {/* -------------------------------
-           DECISION (ACTION PANEL)
-        -------------------------------- */}
+        {/* -------- DECISION (ACTION) -------- */}
         <div>
           <BotDecisionCard
             bot={bot}
@@ -92,7 +92,6 @@ export default function BotAgentCard({
             onGenerate={onGenerate}
             onExecute={onExecute}
             onSkip={onSkip}
-            compact
           />
         </div>
       </div>
@@ -132,14 +131,16 @@ export default function BotAgentCard({
           )}
         </div>
       ) : (
-        /* ---------- DESKTOP: TOGGLE ---------- */
+        /* ---------- DESKTOP: INLINE TOGGLE ---------- */
         <div className="pt-2 border-t">
           <button
             onClick={() => setShowHistory(!showHistory)}
             className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
           >
             <Clock size={14} />
-            {showHistory ? "Verberg history" : "Toon history"}
+            {showHistory
+              ? "Verberg history"
+              : "Toon history"}
           </button>
 
           {showHistory && (
@@ -154,7 +155,7 @@ export default function BotAgentCard({
           )}
         </div>
       )}
-    </CardWrapper>
+    </div>
   );
 }
 

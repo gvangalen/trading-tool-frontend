@@ -14,21 +14,16 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — FINAL (TradeLayer 2.0)
+ * BotAgentCard — TradeLayer 2.0 (FINAL RESET)
  * --------------------------------------------------
- * ÉÉN bot = ÉÉN surface
+ * ÉÉN bot = ÉÉN agent surface
  *
- * Structuur:
- * - Header (identiteit: strategy + mode)
- * - State bar (mentale anchor + actie)
- * - Main grid:
- *   - Decision (uitleg)
- *   - Portfolio (context)
- * - History (progressief)
- *
- * ❌ Geen dubbele knoppen
- * ❌ Geen nested cards
- * ✅ Agent-gevoel
+ * Principes:
+ * - Strategy + mode altijd zichtbaar
+ * - Alle bot modes zichtbaar (mentaal model)
+ * - Decision is actiepunt
+ * - State bar = context, geen knop
+ * - Portfolio = rustig, secundair
  */
 export default function BotAgentCard({
   bot,
@@ -62,17 +57,18 @@ export default function BotAgentCard({
       window.removeEventListener("resize", check);
   }, []);
 
+  const MODES = ["auto", "semi", "manual"];
+
   const modeLabel = {
-    auto: "🤖 Auto",
-    semi: "🧑‍✋ Semi-auto",
-    manual: "✍️ Manual",
+    auto: "Auto",
+    semi: "Semi",
+    manual: "Manual",
   };
 
-  const modeClass = {
-    auto: "bg-green-100 text-green-700",
-    semi: "bg-orange-100 text-orange-700",
-    manual: "bg-gray-100 text-gray-600",
-  };
+  const modeClass = (mode) =>
+    bot.mode === mode
+      ? "bg-blue-600 text-white"
+      : "bg-gray-100 text-gray-600 hover:bg-gray-200";
 
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6">
@@ -90,24 +86,34 @@ export default function BotAgentCard({
               {bot.name}
             </div>
 
-            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+            <div className="text-xs text-[var(--text-muted)]">
               {bot.symbol} · {bot.timeframe ?? "—"}
             </div>
 
-            {/* STRATEGY + MODE */}
-            <div className="flex flex-wrap gap-2 mt-2">
-              <span className="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-700">
-                🧠 {bot.strategy?.name ?? "No strategy"}
+            {/* STRATEGY */}
+            <div className="mt-2 text-xs">
+              <span className="text-[var(--text-muted)]">
+                Strategy:
+              </span>{" "}
+              <span className="font-medium">
+                {bot.strategy?.name ?? "—"}
               </span>
+            </div>
 
-              <span
-                className={`px-2 py-0.5 rounded-md text-xs ${
-                  modeClass[bot.mode] ??
-                  "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {modeLabel[bot.mode] ?? "—"}
-              </span>
+            {/* MODE SELECTOR (VISUEEL) */}
+            <div className="flex gap-2 mt-2">
+              {MODES.map((m) => (
+                <button
+                  key={m}
+                  className={`px-3 py-1 rounded-md text-xs transition ${modeClass(
+                    m
+                  )}`}
+                  /* later: onClick = switch mode */
+                  disabled
+                >
+                  {modeLabel[m]}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -118,65 +124,33 @@ export default function BotAgentCard({
       </div>
 
       {/* =====================================================
-         STATE BAR — ENIGE ACTIEPUNT
+         STATE BAR — CONTEXT
       ===================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--bg-soft)] rounded-xl px-4 py-3">
-        <div className="flex items-center gap-6">
-          <div>
-            <div className="text-xs text-[var(--text-muted)]">
-              Huidige status
-            </div>
-            <div className="font-semibold text-sm">
-              {decision
-                ? decision.action.toUpperCase()
-                : "GEEN BESLISSING"}
-            </div>
-          </div>
-
-          {decision && (
-            <div>
-              <div className="text-xs text-[var(--text-muted)]">
-                Confidence
-              </div>
-              <div className="font-semibold text-sm">
-                {decision.confidence.toUpperCase()}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div>
-          {decision ? (
-            <button
-              onClick={() =>
-                onExecute?.({
-                  bot_id: decision.bot_id,
-                  report_date: decision.date,
-                })
-              }
-              className="btn-primary"
-            >
-              Execute
-            </button>
-          ) : (
-            <button
-              onClick={onGenerate}
-              disabled={loadingDecision}
-              className="btn-primary"
-            >
-              {loadingDecision
-                ? "Genereren…"
-                : "Genereer decision"}
-            </button>
-          )}
-        </div>
+      <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
+        <span className="text-[var(--text-muted)]">
+          Huidige status:
+        </span>{" "}
+        <span className="font-semibold">
+          {decision
+            ? decision.action.toUpperCase()
+            : "GEEN BESLISSING"}
+        </span>
+        {decision && (
+          <>
+            {" "}
+            · Confidence{" "}
+            <span className="font-semibold">
+              {decision.confidence.toUpperCase()}
+            </span>
+          </>
+        )}
       </div>
 
       {/* =====================================================
-         MAIN CONTENT
+         MAIN GRID
       ===================================================== */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* DECISION — UITLEG */}
+        {/* DECISION — ACTIE */}
         <div className="space-y-2">
           <div className="text-xs font-medium text-[var(--text-muted)]">
             Decision
@@ -186,8 +160,9 @@ export default function BotAgentCard({
             bot={bot}
             decision={decision}
             loading={loadingDecision}
+            onGenerate={onGenerate}
+            onExecute={onExecute}
             onSkip={onSkip}
-            /* ❌ geen execute / generate hier */
           />
         </div>
 

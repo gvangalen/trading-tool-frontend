@@ -14,15 +14,15 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.0 (FINAL RESET)
+ * BotAgentCard — TradeLayer 2.2 (FINAL)
  * --------------------------------------------------
  * ÉÉN bot = ÉÉN agent surface
  *
  * Principes:
  * - Strategy + mode altijd zichtbaar
- * - Alle bot modes zichtbaar (mentaal model)
- * - Decision is actiepunt
- * - State bar = context, geen knop
+ * - Decision = voorstel van vandaag
+ * - Order preview zit IN decision
+ * - State bar = context (geen actie)
  * - Portfolio = rustig, secundair
  */
 export default function BotAgentCard({
@@ -108,7 +108,6 @@ export default function BotAgentCard({
                   className={`px-3 py-1 rounded-md text-xs transition ${modeClass(
                     m
                   )}`}
-                  /* later: onClick = switch mode */
                   disabled
                 >
                   {modeLabel[m]}
@@ -133,9 +132,10 @@ export default function BotAgentCard({
         <span className="font-semibold">
           {decision
             ? decision.action.toUpperCase()
-            : "GEEN BESLISSING"}
+            : "GEEN VOORSTEL"}
         </span>
-        {decision && (
+
+        {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
@@ -159,6 +159,7 @@ export default function BotAgentCard({
           <BotDecisionCard
             bot={bot}
             decision={decision}
+            order={decision?.order ?? null}
             loading={loadingDecision}
             onGenerate={onGenerate}
             onExecute={onExecute}

@@ -6,14 +6,17 @@ import {
   SkipForward,
   ShoppingCart,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 
 /**
  * BotTodayProposal — TradeLayer 2.0
  * --------------------------------------------------
  * ÉÉN waarheid voor vandaag:
- * - Geen order → duidelijke reden
- * - Wel order → volledige preview + execute
+ * - Dit IS de decision
+ * - Execute = bevestigen (ook bij OBSERVE)
+ * - Skip = bewust niets doen
+ * - Opnieuw kijken = AI her-evaluatie
  */
 export default function BotTodayProposal({
   bot,
@@ -25,6 +28,9 @@ export default function BotTodayProposal({
   onExecute,
   onSkip,
 }) {
+  /* =====================================================
+     LOADING
+  ===================================================== */
   if (loading) {
     return (
       <div className="py-6">
@@ -34,7 +40,7 @@ export default function BotTodayProposal({
   }
 
   /* =====================================================
-     INTENT (KLEIN, CONTEXT)
+     INTENT (KLEIN & CONTEXTUEEL)
   ===================================================== */
   const intent = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
@@ -50,7 +56,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     GEEN ORDER VANDAAG
+     GEEN ORDER VANDAAG (OBSERVE / HOLD)
   ===================================================== */
   if (!order) {
     return (
@@ -70,26 +76,44 @@ export default function BotTodayProposal({
             </ul>
           )}
 
-          {onGenerate && (
-            <div className="mt-4">
+          {/* ACTIONS */}
+          <div className="flex flex-wrap gap-2 mt-5">
+            <button
+              onClick={onExecute}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Play size={16} />
+              Execute
+            </button>
+
+            <button
+              onClick={onSkip}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <SkipForward size={16} />
+              Skip
+            </button>
+
+            {onGenerate && (
               <button
                 onClick={onGenerate}
                 disabled={isGenerating}
-                className="btn-secondary"
+                className="btn-ghost flex items-center gap-2"
               >
+                <RotateCcw size={14} />
                 {isGenerating
                   ? "Analyse loopt…"
                   : "Laat bot opnieuw kijken"}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
   /* =====================================================
-     ORDER PREVIEW (DE BESLISSING)
+     ORDER PREVIEW = DE BESLISSING
   ===================================================== */
   return (
     <div className="space-y-5 py-4">
@@ -168,11 +192,11 @@ export default function BotTodayProposal({
             <div>Na deze trade:</div>
             <ul className="mt-1 space-y-1">
               <li>
-                • Daglimiet: €
+                • Daglimiet resterend: €
                 {order.budget_after.daily_remaining}
               </li>
               <li>
-                • Totaal budget: €
+                • Totaal budget resterend: €
                 {order.budget_after.total_remaining}
               </li>
             </ul>
@@ -180,7 +204,7 @@ export default function BotTodayProposal({
         )}
 
         {/* ACTIONS */}
-        <div className="flex gap-2 mt-6">
+        <div className="flex flex-wrap gap-2 mt-6">
           <button
             onClick={onExecute}
             className="btn-primary flex items-center gap-2"
@@ -196,6 +220,17 @@ export default function BotTodayProposal({
             <SkipForward size={16} />
             Skip
           </button>
+
+          {onGenerate && (
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="btn-ghost flex items-center gap-2"
+            >
+              <RotateCcw size={14} />
+              Laat bot opnieuw kijken
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Wallet } from "lucide-react";
+import { Wallet, Plus } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
 import { useStrategyData } from "@/hooks/useStrategyData";
@@ -12,13 +12,13 @@ import BotScores from "@/components/bot/BotScores";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
- * BotPage — Trading Bots v2.1 (CLEAN)
+ * BotPage — Trading Bots v2.2 (FINAL)
  *
- * Principes:
- * - 1 bot = 1 agent surface
- * - Beslissing + order proposal per bot
- * - Geen globale order preview meer
- * - Alles loopt via BotAgentCard
+ * Layout-principes:
+ * - Scores = context (bovenaan)
+ * - Bots = actie
+ * - Nieuwe bot = beheer (header)
+ * - Geen globale order preview
  */
 export default function BotPage() {
   /* =====================================================
@@ -133,7 +133,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧮 GLOBAL PORTFOLIO
+     🧮 GLOBAL PORTFOLIO SUMMARY
   ===================================================== */
   const totalValue = portfolios.reduce(
     (sum, p) => sum + (p.portfolio?.cost_basis_eur ?? 0),
@@ -162,6 +162,14 @@ export default function BotPage() {
       </div>
 
       {/* =====================================================
+         SCORES — CONTEXT
+      ===================================================== */}
+      <BotScores
+        scores={dailyScores}
+        loading={loading.today}
+      />
+
+      {/* =====================================================
          GLOBAL PORTFOLIO SUMMARY
       ===================================================== */}
       <div className="card-surface p-7 space-y-1">
@@ -184,9 +192,32 @@ export default function BotPage() {
       </div>
 
       {/* =====================================================
+         BOTS HEADER
+      ===================================================== */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">
+          Bots
+        </h2>
+
+        <button
+          onClick={handleAddBot}
+          className="btn-primary flex items-center gap-2"
+        >
+          <Plus size={16} />
+          Nieuwe bot
+        </button>
+      </div>
+
+      {/* =====================================================
          BOT AGENTS — PER BOT
       ===================================================== */}
       <div className="space-y-6">
+        {bots.length === 0 && (
+          <div className="card-surface p-6 text-sm text-[var(--text-muted)]">
+            Nog geen bots aangemaakt.
+          </div>
+        )}
+
         {bots.map((bot) => {
           const portfolio = portfolios.find(
             (p) => p.bot_id === bot.id
@@ -209,23 +240,7 @@ export default function BotPage() {
             />
           );
         })}
-
-        {/* ➕ ADD BOT */}
-        <button
-          onClick={handleAddBot}
-          className="card-surface text-sm text-[var(--text-muted)] flex items-center justify-center py-6"
-        >
-          ➕ Nieuwe bot toevoegen
-        </button>
       </div>
-
-      {/* =====================================================
-         SCORES (GLOBAL CONTEXT)
-      ===================================================== */}
-      <BotScores
-        scores={dailyScores}
-        loading={loading.today}
-      />
     </div>
   );
 }

@@ -1,40 +1,30 @@
 "use client";
 
 import CardLoader from "@/components/ui/CardLoader";
-import { Play, SkipForward, Wand2, Brain } from "lucide-react";
+import {
+  Play,
+  SkipForward,
+  ShoppingCart,
+  AlertTriangle,
+} from "lucide-react";
 
 /**
- * BotDecisionSection — TradeLayer 2.0
+ * BotTodayProposal — TradeLayer 2.0
  * --------------------------------------------------
- * Toont de intent + huidige staat van een bot
- *
- * GEEN card / GEEN wrapper
- * → onderdeel van BotAgentSurface
- *
- * Filosofie:
- * - Laat zien WAT de bot kan beslissen
- * - Laat zien WAT hij nu denkt / doet
- * - Eén duidelijke actie
+ * ÉÉN waarheid voor vandaag:
+ * - Geen order → duidelijke reden
+ * - Wel order → volledige preview + execute
  */
-export default function BotDecisionSection({
+export default function BotTodayProposal({
   bot,
   decision = null,
+  order = null,
   loading = false,
   isGenerating = false,
   onGenerate,
   onExecute,
   onSkip,
 }) {
-  const actionColor = {
-    buy: "text-green-600",
-    sell: "text-red-600",
-    hold: "text-yellow-600",
-    observe: "text-[var(--text-muted)]",
-  };
-
-  /* =====================================================
-     LOADING
-  ===================================================== */
   if (loading) {
     return (
       <div className="py-6">
@@ -44,55 +34,54 @@ export default function BotDecisionSection({
   }
 
   /* =====================================================
-     BOT INTENT (ALTIJD ZICHTBAAR)
+     INTENT (KLEIN, CONTEXT)
   ===================================================== */
   const intent = (
-    <div className="flex items-start gap-3 text-sm">
-      <Brain size={16} className="mt-0.5 text-[var(--text-muted)]" />
-      <div className="text-[var(--text-muted)] leading-relaxed">
-        Deze bot voert automatisch een{" "}
+    <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
+      <ShoppingCart size={16} className="mt-0.5" />
+      <div>
+        Deze bot voert automatisch de{" "}
         <span className="font-medium text-[var(--text)]">
           {bot.strategy?.name ?? "strategie"}
         </span>{" "}
-        uit en kan per dag één van de volgende acties voorstellen:
-        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-          <span>• Accumulate</span>
-          <span>• Wait</span>
-          <span>• Skip</span>
-        </div>
+        uit en doet maximaal één voorstel per dag.
       </div>
     </div>
   );
 
   /* =====================================================
-     GEEN BESLISSING — OBSERVING STATE
+     GEEN ORDER VANDAAG
   ===================================================== */
-  if (!decision) {
+  if (!order) {
     return (
       <div className="space-y-5 py-4">
         {intent}
 
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-xs text-[var(--text-muted)]">
-              Huidige staat
-            </div>
-            <div className="font-medium text-sm">
-              Observing market conditions
-            </div>
+        <div className="bg-[var(--surface-2)] rounded-xl p-5">
+          <div className="text-sm font-medium mb-2">
+            Geen order gepland voor vandaag
           </div>
 
+          {decision?.reasons?.length > 0 && (
+            <ul className="text-sm text-[var(--text-muted)] space-y-1">
+              {decision.reasons.map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          )}
+
           {onGenerate && (
-            <button
-              onClick={onGenerate}
-              disabled={isGenerating}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Wand2 size={16} />
-              {isGenerating
-                ? "Analyse loopt…"
-                : "Laat bot beslissen"}
-            </button>
+            <div className="mt-4">
+              <button
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className="btn-secondary"
+              >
+                {isGenerating
+                  ? "Analyse loopt…"
+                  : "Laat bot opnieuw kijken"}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -100,7 +89,7 @@ export default function BotDecisionSection({
   }
 
   /* =====================================================
-     BESLISSING — INTENT + ACTIE
+     ORDER PREVIEW (DE BESLISSING)
   ===================================================== */
   return (
     <div className="space-y-5 py-4">
@@ -113,68 +102,100 @@ export default function BotDecisionSection({
             <div className="text-xs text-[var(--text-muted)]">
               Voorstel
             </div>
-            <div
-              className={`text-2xl font-semibold ${
-                actionColor[decision.action] ??
-                "text-[var(--text-muted)]"
-              }`}
-            >
-              {decision.action.toUpperCase()}
+            <div className="text-2xl font-semibold">
+              {order.side?.toUpperCase()} {order.symbol}
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="text-xs text-[var(--text-muted)]">
+          <div className="text-right text-sm">
+            <div className="text-[var(--text-muted)]">
               Confidence
             </div>
             <div className="font-semibold">
-              {decision.confidence.toUpperCase()}
+              {decision?.confidence?.toUpperCase() ?? "—"}
             </div>
           </div>
         </div>
 
-        {/* REDENEN */}
-        {decision.reasons?.length > 0 && (
-          <ul className="text-sm space-y-1 mb-4">
-            {decision.reasons.map((r, i) => (
-              <li key={i} className="text-[var(--text-muted)]">
-                • {r}
+        {/* ⚠️ PAPER NOTICE */}
+        <div className="flex items-center gap-2 mb-4 text-xs icon-warning">
+          <AlertTriangle size={14} />
+          <span>
+            Dit is een <b>paper trade</b>. Er wordt niets live verhandeld.
+          </span>
+        </div>
+
+        {/* ORDER DETAILS */}
+        <div className="grid md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div className="text-[var(--text-muted)]">Bedrag</div>
+            <div className="font-medium">
+              €{order.quote_amount_eur}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[var(--text-muted)]">
+              Geschatte prijs
+            </div>
+            <div className="font-medium">
+              €{order.estimated_price ?? "—"}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[var(--text-muted)]">
+              Hoeveelheid
+            </div>
+            <div className="font-medium">
+              {order.estimated_qty ?? "—"} BTC
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[var(--text-muted)]">
+              Status
+            </div>
+            <div className="font-medium">
+              {order.status}
+            </div>
+          </div>
+        </div>
+
+        {/* BUDGET IMPACT */}
+        {order.budget_after && (
+          <div className="mt-4 text-sm text-[var(--text-muted)]">
+            <div>Na deze trade:</div>
+            <ul className="mt-1 space-y-1">
+              <li>
+                • Daglimiet: €
+                {order.budget_after.daily_remaining}
               </li>
-            ))}
-          </ul>
+              <li>
+                • Totaal budget: €
+                {order.budget_after.total_remaining}
+              </li>
+            </ul>
+          </div>
         )}
 
-        {/* ACTIES */}
-        <div className="flex gap-2">
-          {onExecute && (
-            <button
-              onClick={() =>
-                onExecute({
-                  bot_id: decision.bot_id,
-                  report_date: decision.date,
-                })
-              }
-              className="btn-primary flex items-center gap-2"
-            >
-              <Play size={16} />
-              Execute
-            </button>
-          )}
+        {/* ACTIONS */}
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={onExecute}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Play size={16} />
+            Execute trade
+          </button>
 
-          {onSkip && (
-            <button
-              onClick={() =>
-                onSkip({
-                  bot_id: decision.bot_id,
-                  report_date: decision.date,
-                })
-              }
-              className="btn-secondary flex items-center gap-2"
-            >
-              <SkipForward size={16} />
-              Skip
-            </button>
-          )}
+          <button
+            onClick={onSkip}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <SkipForward size={16} />
+            Skip
+          </button>
         </div>
       </div>
     </div>

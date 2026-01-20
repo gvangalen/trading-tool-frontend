@@ -9,17 +9,16 @@ import { useModal } from "@/components/modal/ModalProvider";
 
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
-import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
- * BotPage — Trading Bots v2.1
+ * BotPage — Trading Bots v2.1 (CLEAN)
  *
  * Principes:
- * - 1 bot = 1 horizontale card
- * - Decision | Portfolio | History in tabs
- * - Bots onder elkaar (geen grid-chaos)
- * - Schaalbaar bij veel bots
+ * - 1 bot = 1 agent surface
+ * - Beslissing + order proposal per bot
+ * - Geen globale order preview meer
+ * - Alles loopt via BotAgentCard
  */
 export default function BotPage() {
   /* =====================================================
@@ -41,8 +40,7 @@ export default function BotPage() {
     today,
     history = [],
     portfolios = [],
-    decisionsByBot,
-    ordersByBot,
+    decisionsByBot = {},
     loading,
 
     createBot,
@@ -74,24 +72,24 @@ export default function BotPage() {
     setup: 10,
   };
 
-  const activeOrder =
-    Object.values(ordersByBot || {})[0] ?? null;
-
   /* =====================================================
      🔁 GENERATE DECISION (per bot)
   ===================================================== */
   const handleGenerateDecision = async (bot) => {
     try {
       setGeneratingBotId(bot.id);
-      await generateDecisionForBot({ bot_id: bot.id });
+
+      await generateDecisionForBot({
+        bot_id: bot.id,
+      });
 
       showSnackbar(
-        `Decision gegenereerd voor ${bot.name}`,
+        `Voorstel gegenereerd voor ${bot.name}`,
         "success"
       );
     } catch {
       showSnackbar(
-        `Fout bij genereren decision voor ${bot.name}`,
+        `Fout bij genereren voorstel voor ${bot.name}`,
         "danger"
       );
     } finally {
@@ -168,7 +166,7 @@ export default function BotPage() {
       ===================================================== */}
       <div className="card-surface p-7 space-y-1">
         <div className="text-sm text-[var(--text-muted)]">
-          Total Portfolio Value
+          Totale portfolio waarde
         </div>
 
         <div className="text-4xl font-bold">
@@ -186,7 +184,7 @@ export default function BotPage() {
       </div>
 
       {/* =====================================================
-         BOT AGENTS — HORIZONTAAL (🔥 BELANGRIJK)
+         BOT AGENTS — PER BOT
       ===================================================== */}
       <div className="space-y-6">
         {bots.map((bot) => {
@@ -212,7 +210,7 @@ export default function BotPage() {
           );
         })}
 
-        {/* ➕ ADD BOT ROW */}
+        {/* ➕ ADD BOT */}
         <button
           onClick={handleAddBot}
           className="card-surface text-sm text-[var(--text-muted)] flex items-center justify-center py-6"
@@ -227,32 +225,6 @@ export default function BotPage() {
       <BotScores
         scores={dailyScores}
         loading={loading.today}
-      />
-
-      {/* =====================================================
-         ORDER PREVIEW (OPTIONEEL / GLOBAL)
-      ===================================================== */}
-      <BotOrderPreview
-        order={activeOrder}
-        loading={loading.action}
-        onExecute={
-          activeOrder
-            ? () =>
-                executeBot({
-                  bot_id: activeOrder.bot_id,
-                  report_date: activeOrder.date,
-                })
-            : null
-        }
-        onSkip={
-          activeOrder
-            ? () =>
-                skipBot({
-                  bot_id: activeOrder.bot_id,
-                  report_date: activeOrder.date,
-                })
-            : null
-        }
       />
     </div>
   );

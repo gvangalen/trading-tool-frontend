@@ -49,7 +49,7 @@ export default function BotTodayProposal({
         <div>
           Deze bot voert automatisch de{" "}
           <span className="font-medium text-[var(--text)]">
-            {bot.strategy?.name ?? "strategie"}
+            {bot?.strategy?.name ?? "strategie"}
           </span>{" "}
           uit en doet maximaal één voorstel per dag.
         </div>
@@ -137,7 +137,7 @@ export default function BotTodayProposal({
             Actie
           </div>
           <div className="text-2xl font-semibold">
-            {order.side?.toUpperCase()} {order.symbol}
+            {(order.side ?? "buy").toUpperCase()} {order.symbol}
           </div>
         </div>
 
@@ -175,14 +175,18 @@ export default function BotTodayProposal({
               Impact na trade
             </div>
             <ul className="space-y-1">
-              <li>
-                • Daglimiet: €
-                {order.budget_after.daily_remaining} resterend
-              </li>
-              <li>
-                • Totaal budget: €
-                {order.budget_after.total_remaining} resterend
-              </li>
+              {order.budget_after.daily_remaining !== null && (
+                <li>
+                  • Daglimiet: €
+                  {order.budget_after.daily_remaining} resterend
+                </li>
+              )}
+              {order.budget_after.total_remaining !== null && (
+                <li>
+                  • Totaal budget: €
+                  {order.budget_after.total_remaining} resterend
+                </li>
+              )}
             </ul>
           </div>
         )}

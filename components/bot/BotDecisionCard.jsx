@@ -4,19 +4,16 @@ import CardLoader from "@/components/ui/CardLoader";
 import {
   Play,
   SkipForward,
-  ShoppingCart,
-  AlertTriangle,
   RotateCcw,
+  ShoppingCart,
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.0
+ * BotTodayProposal — TradeLayer 2.0 (FINAL)
  * --------------------------------------------------
- * ÉÉN waarheid voor vandaag:
- * - Dit IS de decision
- * - Execute = bevestigen (ook bij OBSERVE)
- * - Skip = bewust niets doen
- * - Opnieuw kijken = AI her-evaluatie
+ * Dit IS de decision voor vandaag.
+ * - Geen order = expliciet voorstel met reden
+ * - Wel order = volledige trade preview + impact
  */
 export default function BotTodayProposal({
   bot,
@@ -40,50 +37,64 @@ export default function BotTodayProposal({
   }
 
   /* =====================================================
-     INTENT (KLEIN & CONTEXTUEEL)
+     HEADER / CONTEXT
   ===================================================== */
-  const intent = (
+  const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
       <ShoppingCart size={16} className="mt-0.5" />
       <div>
-        Deze bot voert automatisch de{" "}
-        <span className="font-medium text-[var(--text)]">
-          {bot.strategy?.name ?? "strategie"}
-        </span>{" "}
-        uit en doet maximaal één voorstel per dag.
+        <div className="font-medium text-[var(--text)]">
+          Vandaag – voorstel van de bot
+        </div>
+        <div>
+          Deze bot voert automatisch de{" "}
+          <span className="font-medium text-[var(--text)]">
+            {bot.strategy?.name ?? "strategie"}
+          </span>{" "}
+          uit en doet maximaal één voorstel per dag.
+        </div>
       </div>
     </div>
   );
 
   /* =====================================================
-     GEEN ORDER VANDAAG (OBSERVE / HOLD)
+     GEEN ORDER VANDAAG
   ===================================================== */
   if (!order) {
     return (
       <div className="space-y-5 py-4">
-        {intent}
+        {header}
 
-        <div className="bg-[var(--surface-2)] rounded-xl p-5">
-          <div className="text-sm font-medium mb-2">
+        <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-3">
+          <div className="font-medium">
             Geen order gepland voor vandaag
           </div>
 
-          {decision?.reasons?.length > 0 && (
-            <ul className="text-sm text-[var(--text-muted)] space-y-1">
-              {decision.reasons.map((r, i) => (
+          <div className="text-sm text-[var(--text-muted)]">
+            Reden:
+          </div>
+
+          <ul className="text-sm text-[var(--text-muted)] space-y-1">
+            {decision?.reasons?.length > 0 ? (
+              decision.reasons.map((r, i) => (
                 <li key={i}>• {r}</li>
-              ))}
-            </ul>
-          )}
+              ))
+            ) : (
+              <>
+                <li>• Confidence te laag</li>
+                <li>• Bot observeert marktcondities</li>
+              </>
+            )}
+          </ul>
 
           {/* ACTIONS */}
-          <div className="flex flex-wrap gap-2 mt-5">
+          <div className="flex flex-wrap gap-3 pt-4">
             <button
               onClick={onExecute}
               className="btn-primary flex items-center gap-2"
             >
               <Play size={16} />
-              Execute
+              Bevestig (geen trade)
             </button>
 
             <button
@@ -91,7 +102,7 @@ export default function BotTodayProposal({
               className="btn-secondary flex items-center gap-2"
             >
               <SkipForward size={16} />
-              Skip
+              Sla vandaag over
             </button>
 
             {onGenerate && (
@@ -102,8 +113,8 @@ export default function BotTodayProposal({
               >
                 <RotateCcw size={14} />
                 {isGenerating
-                  ? "Analyse loopt…"
-                  : "Laat bot opnieuw kijken"}
+                  ? "Analyse opnieuw uitvoeren…"
+                  : "Analyse opnieuw uitvoeren"}
               </button>
             )}
           </div>
@@ -113,44 +124,24 @@ export default function BotTodayProposal({
   }
 
   /* =====================================================
-     ORDER PREVIEW = DE BESLISSING
+     ORDER / TRADE VOORSTEL
   ===================================================== */
   return (
     <div className="space-y-5 py-4">
-      {intent}
+      {header}
 
-      <div className="bg-[var(--surface-2)] rounded-xl p-5">
-        {/* HEADER */}
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <div className="text-xs text-[var(--text-muted)]">
-              Voorstel
-            </div>
-            <div className="text-2xl font-semibold">
-              {order.side?.toUpperCase()} {order.symbol}
-            </div>
+      <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
+        {/* ORDER INFO */}
+        <div className="space-y-1">
+          <div className="text-sm text-[var(--text-muted)]">
+            Actie
           </div>
-
-          <div className="text-right text-sm">
-            <div className="text-[var(--text-muted)]">
-              Confidence
-            </div>
-            <div className="font-semibold">
-              {decision?.confidence?.toUpperCase() ?? "—"}
-            </div>
+          <div className="text-2xl font-semibold">
+            {order.side?.toUpperCase()} {order.symbol}
           </div>
         </div>
 
-        {/* ⚠️ PAPER NOTICE */}
-        <div className="flex items-center gap-2 mb-4 text-xs icon-warning">
-          <AlertTriangle size={14} />
-          <span>
-            Dit is een <b>paper trade</b>. Er wordt niets live verhandeld.
-          </span>
-        </div>
-
-        {/* ORDER DETAILS */}
-        <div className="grid md:grid-cols-4 gap-4 text-sm">
+        <div className="grid md:grid-cols-3 gap-4 text-sm">
           <div>
             <div className="text-[var(--text-muted)]">Bedrag</div>
             <div className="font-medium">
@@ -169,48 +160,41 @@ export default function BotTodayProposal({
 
           <div>
             <div className="text-[var(--text-muted)]">
-              Hoeveelheid
+              Geschatte hoeveelheid
             </div>
             <div className="font-medium">
               {order.estimated_qty ?? "—"} BTC
             </div>
           </div>
-
-          <div>
-            <div className="text-[var(--text-muted)]">
-              Status
-            </div>
-            <div className="font-medium">
-              {order.status}
-            </div>
-          </div>
         </div>
 
-        {/* BUDGET IMPACT */}
+        {/* IMPACT */}
         {order.budget_after && (
-          <div className="mt-4 text-sm text-[var(--text-muted)]">
-            <div>Na deze trade:</div>
-            <ul className="mt-1 space-y-1">
+          <div className="pt-2 text-sm text-[var(--text-muted)]">
+            <div className="font-medium text-[var(--text)] mb-1">
+              Impact na trade
+            </div>
+            <ul className="space-y-1">
               <li>
-                • Daglimiet resterend: €
-                {order.budget_after.daily_remaining}
+                • Daglimiet: €
+                {order.budget_after.daily_remaining} resterend
               </li>
               <li>
-                • Totaal budget resterend: €
-                {order.budget_after.total_remaining}
+                • Totaal budget: €
+                {order.budget_after.total_remaining} resterend
               </li>
             </ul>
           </div>
         )}
 
         {/* ACTIONS */}
-        <div className="flex flex-wrap gap-2 mt-6">
+        <div className="flex flex-wrap gap-3 pt-4">
           <button
             onClick={onExecute}
             className="btn-primary flex items-center gap-2"
           >
             <Play size={16} />
-            Execute trade
+            Voer trade uit
           </button>
 
           <button
@@ -218,7 +202,7 @@ export default function BotTodayProposal({
             className="btn-secondary flex items-center gap-2"
           >
             <SkipForward size={16} />
-            Skip
+            Sla trade over
           </button>
 
           {onGenerate && (
@@ -228,7 +212,7 @@ export default function BotTodayProposal({
               className="btn-ghost flex items-center gap-2"
             >
               <RotateCcw size={14} />
-              Laat bot opnieuw kijken
+              Analyse opnieuw uitvoeren
             </button>
           )}
         </div>

@@ -11,6 +11,9 @@ import {
   MoreVertical,
   ChevronDown,
   Clock,
+  Shield,
+  Scale,
+  Rocket,
 } from "lucide-react";
 
 /**
@@ -19,7 +22,7 @@ import {
  * ÉÉN bot = ÉÉN agent surface
  *
  * Principes:
- * - Strategy + mode altijd zichtbaar
+ * - Strategy + mode + risk profile altijd zichtbaar
  * - Decision = voorstel van vandaag (incl. order preview)
  * - State bar = context (geen actie)
  * - Portfolio = rustig, secundair
@@ -68,7 +71,35 @@ export default function BotAgentCard({
   const modeClass = (mode) =>
     bot.mode === mode
       ? "bg-blue-600 text-white"
-      : "bg-gray-100 text-gray-600 hover:bg-gray-200";
+      : "bg-gray-100 text-gray-600";
+
+  /* =====================================================
+     RISK PROFILE UI
+  ===================================================== */
+  const riskProfile = bot.risk_profile ?? "balanced";
+
+  const riskConfig = {
+    conservative: {
+      label: "Conservative",
+      icon: <Shield size={12} />,
+      className:
+        "bg-green-100 text-green-700 border-green-200",
+    },
+    balanced: {
+      label: "Balanced",
+      icon: <Scale size={12} />,
+      className:
+        "bg-yellow-100 text-yellow-700 border-yellow-200",
+    },
+    aggressive: {
+      label: "Aggressive",
+      icon: <Rocket size={12} />,
+      className:
+        "bg-red-100 text-red-700 border-red-200",
+    },
+  };
+
+  const risk = riskConfig[riskProfile] ?? riskConfig.balanced;
 
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6">
@@ -100,7 +131,7 @@ export default function BotAgentCard({
               </span>
             </div>
 
-            {/* MODE SELECTOR (VISUEEL / READ-ONLY) */}
+            {/* MODE (READ-ONLY) */}
             <div className="flex gap-2 mt-2">
               {MODES.map((m) => (
                 <button
@@ -113,6 +144,17 @@ export default function BotAgentCard({
                   {modeLabel[m]}
                 </button>
               ))}
+            </div>
+
+            {/* RISK PROFILE */}
+            <div className="mt-2">
+              <span
+                className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
+                title="Risk profile bepaalt hoe agressief de bot handelt"
+              >
+                {risk.icon}
+                {risk.label}
+              </span>
             </div>
           </div>
         </div>
@@ -150,7 +192,7 @@ export default function BotAgentCard({
          MAIN GRID
       ===================================================== */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* DECISION — ACTIE */}
+        {/* DECISION */}
         <div className="space-y-2">
           <div className="text-xs font-medium text-[var(--text-muted)]">
             Decision
@@ -175,7 +217,7 @@ export default function BotAgentCard({
           />
         </div>
 
-        {/* PORTFOLIO — CONTEXT */}
+        {/* PORTFOLIO */}
         <div className="space-y-2">
           <div className="text-xs font-medium text-[var(--text-muted)]">
             Portfolio

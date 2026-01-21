@@ -162,8 +162,16 @@ export default function BotAgentCard({
             order={decision?.order ?? null}
             loading={loadingDecision}
             onGenerate={onGenerate}
-            onExecute={onExecute}
-            onSkip={onSkip}
+            onExecute={() =>
+              onExecute({
+                bot_id: bot.id,
+              })
+            }
+            onSkip={() =>
+              onSkip({
+                bot_id: bot.id,
+              })
+            }
           />
         </div>
 

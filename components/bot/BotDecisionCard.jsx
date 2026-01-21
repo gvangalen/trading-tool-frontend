@@ -6,14 +6,19 @@ import {
   SkipForward,
   RotateCcw,
   ShoppingCart,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.0 (FINAL)
+ * BotTodayProposal — TradeLayer 2.2 (FINAL, LOCKED FLOW)
  * --------------------------------------------------
  * Dit IS de decision voor vandaag.
- * - Geen order = expliciet voorstel met reden
- * - Wel order = volledige trade preview + impact
+ *
+ * States:
+ * - planned   → actie mogelijk
+ * - executed  → read-only (uitgevoerd)
+ * - skipped   → read-only (overgeslagen)
  */
 export default function BotTodayProposal({
   bot,
@@ -35,6 +40,12 @@ export default function BotTodayProposal({
       </div>
     );
   }
+
+  /* =====================================================
+     STATE
+  ===================================================== */
+  const status = decision?.status ?? "planned";
+  const isFinal = status === "executed" || status === "skipped";
 
   /* =====================================================
      HEADER / CONTEXT
@@ -87,37 +98,55 @@ export default function BotTodayProposal({
             )}
           </ul>
 
-          {/* ACTIONS */}
-          <div className="flex flex-wrap gap-3 pt-4">
-            <button
-              onClick={onExecute}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Play size={16} />
-              Bevestig (geen trade)
-            </button>
+          {/* FINAL STATE FEEDBACK */}
+          {isFinal && (
+            <div className="pt-3 text-sm font-medium">
+              {status === "executed" && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle size={16} />
+                  Vandaag afgerond
+                </div>
+              )}
+              {status === "skipped" && (
+                <div className="flex items-center gap-2 text-orange-600">
+                  <XCircle size={16} />
+                  Vandaag overgeslagen
+                </div>
+              )}
+            </div>
+          )}
 
-            <button
-              onClick={onSkip}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <SkipForward size={16} />
-              Sla vandaag over
-            </button>
-
-            {onGenerate && (
+          {/* ACTIONS (alleen als nog niet afgehandeld) */}
+          {!isFinal && (
+            <div className="flex flex-wrap gap-3 pt-4">
               <button
-                onClick={onGenerate}
-                disabled={isGenerating}
-                className="btn-ghost flex items-center gap-2"
+                onClick={onExecute}
+                className="btn-primary flex items-center gap-2"
               >
-                <RotateCcw size={14} />
-                {isGenerating
-                  ? "Analyse opnieuw uitvoeren…"
-                  : "Analyse opnieuw uitvoeren"}
+                <Play size={16} />
+                Bevestig (geen trade)
               </button>
-            )}
-          </div>
+
+              <button
+                onClick={onSkip}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <SkipForward size={16} />
+                Sla vandaag over
+              </button>
+
+              {onGenerate && (
+                <button
+                  onClick={onGenerate}
+                  disabled={isGenerating}
+                  className="btn-ghost flex items-center gap-2"
+                >
+                  <RotateCcw size={14} />
+                  Analyse opnieuw uitvoeren
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -191,35 +220,55 @@ export default function BotTodayProposal({
           </div>
         )}
 
-        {/* ACTIONS */}
-        <div className="flex flex-wrap gap-3 pt-4">
-          <button
-            onClick={onExecute}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Play size={16} />
-            Voer trade uit
-          </button>
+        {/* FINAL STATE FEEDBACK */}
+        {isFinal && (
+          <div className="pt-3 text-sm font-medium">
+            {status === "executed" && (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle size={16} />
+                Trade uitgevoerd
+              </div>
+            )}
+            {status === "skipped" && (
+              <div className="flex items-center gap-2 text-orange-600">
+                <XCircle size={16} />
+                Trade overgeslagen
+              </div>
+            )}
+          </div>
+        )}
 
-          <button
-            onClick={onSkip}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <SkipForward size={16} />
-            Sla trade over
-          </button>
-
-          {onGenerate && (
+        {/* ACTIONS (alleen als nog niet afgehandeld) */}
+        {!isFinal && (
+          <div className="flex flex-wrap gap-3 pt-4">
             <button
-              onClick={onGenerate}
-              disabled={isGenerating}
-              className="btn-ghost flex items-center gap-2"
+              onClick={onExecute}
+              className="btn-primary flex items-center gap-2"
             >
-              <RotateCcw size={14} />
-              Analyse opnieuw uitvoeren
+              <Play size={16} />
+              Voer trade uit
             </button>
-          )}
-        </div>
+
+            <button
+              onClick={onSkip}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <SkipForward size={16} />
+              Sla trade over
+            </button>
+
+            {onGenerate && (
+              <button
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className="btn-ghost flex items-center gap-2"
+              >
+                <RotateCcw size={14} />
+                Analyse opnieuw uitvoeren
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

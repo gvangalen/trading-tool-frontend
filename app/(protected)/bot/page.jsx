@@ -14,11 +14,10 @@ import AddBotForm from "@/components/bot/AddBotForm";
 /**
  * BotPage — Trading Bots v2.2 (FINAL)
  *
- * Layout-principes:
- * - Scores = context (bovenaan)
- * - Bots = actie
- * - Nieuwe bot = beheer
- * - UX feedback altijd via snackbar
+ * Backend aligned:
+ * - Decision lifecycle: planned → executed / skipped
+ * - 409 conflicts netjes afgehandeld
+ * - Auto-mode backend driven
  */
 export default function BotPage() {
   /* =====================================================
@@ -45,7 +44,6 @@ export default function BotPage() {
     loading,
 
     createBot,
-
     updateBudgetForBot,
     generateDecisionForBot,
     executeBot,
@@ -62,7 +60,7 @@ export default function BotPage() {
   }, [loadStrategies]);
 
   /* =====================================================
-     🌍 GLOBAL CONTEXT
+     🌍 GLOBAL SCORES
   ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -78,17 +76,17 @@ export default function BotPage() {
     try {
       setGeneratingBotId(bot.id);
 
-      await generateDecisionForBot({
-        bot_id: bot.id,
-      });
+      await generateDecisionForBot({ bot_id: bot.id });
 
       showSnackbar(
-        `Voorstel gegenereerd voor ${bot.name}`,
+        `Nieuw voorstel gegenereerd voor ${bot.name}`,
         "success"
       );
     } catch (err) {
       showSnackbar(
-        `Fout bij genereren voorstel voor ${bot.name}`,
+        err?.status === 409
+          ? "Beslissing is al afgehandeld"
+          : "Fout bij genereren voorstel",
         "danger"
       );
     } finally {
@@ -112,7 +110,9 @@ export default function BotPage() {
       );
     } catch (err) {
       showSnackbar(
-        "Fout bij uitvoeren van bot",
+        err?.status === 409
+          ? "Deze beslissing is al afgerond"
+          : "Uitvoeren mislukt",
         "danger"
       );
     } finally {
@@ -136,7 +136,9 @@ export default function BotPage() {
       );
     } catch (err) {
       showSnackbar(
-        "Fout bij overslaan van bot",
+        err?.status === 409
+          ? "Deze beslissing is al afgerond"
+          : "Overslaan mislukt",
         "danger"
       );
     } finally {
@@ -165,10 +167,7 @@ export default function BotPage() {
       ),
       confirmText: "Opslaan",
       onConfirm: async () => {
-        if (
-          !formRef.current.name ||
-          !formRef.current.strategy_id
-        ) {
+        if (!formRef.current.name || !formRef.current.strategy_id) {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
@@ -180,7 +179,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧮 GLOBAL PORTFOLIO SUMMARY
+     🧮 GLOBAL PORTFOLIO
   ===================================================== */
   const totalValue = portfolios.reduce(
     (sum, p) => sum + (p.portfolio?.cost_basis_eur ?? 0),
@@ -222,11 +221,7 @@ export default function BotPage() {
           €{totalValue.toFixed(2)}
         </div>
 
-        <div
-          className={
-            totalPnl >= 0 ? "icon-success" : "icon-danger"
-          }
-        >
+        <div className={totalPnl >= 0 ? "icon-success" : "icon-danger"}>
           {totalPnl >= 0 ? "+" : ""}
           €{totalPnl.toFixed(2)}
         </div>
@@ -269,9 +264,7 @@ export default function BotPage() {
                 generatingBotId === bot.id ||
                 executingBotId === bot.id
               }
-              onGenerate={() =>
-                handleGenerateDecision(bot)
-              }
+              onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}
               onUpdateBudget={updateBudgetForBot}

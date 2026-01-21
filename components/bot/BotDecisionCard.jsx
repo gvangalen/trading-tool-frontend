@@ -8,17 +8,15 @@ import {
   ShoppingCart,
   CheckCircle,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.3 (FINAL)
+ * BotTodayProposal — TradeLayer 2.4
  * --------------------------------------------------
- * Dit IS de decision voor vandaag.
- *
- * States:
- * - planned   → execute / skip / regenerate
- * - executed  → read-only + regenerate
- * - skipped   → read-only + regenerate
+ * Transparante decision layer:
+ * - Laat zien WAAROM wel / geen trade
+ * - Score breakdown + confidence context
  */
 export default function BotTodayProposal({
   bot,
@@ -47,6 +45,9 @@ export default function BotTodayProposal({
   const status = decision?.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
 
+  const scores = decision?.scores ?? {};
+  const confidence = decision?.confidence ?? "low";
+
   /* =====================================================
      HEADER
   ===================================================== */
@@ -58,11 +59,11 @@ export default function BotTodayProposal({
           Vandaag – voorstel van de bot
         </div>
         <div>
-          Deze bot voert automatisch de{" "}
+          Deze bot volgt automatisch de{" "}
           <span className="font-medium text-[var(--text)]">
             {bot?.strategy?.name ?? "strategie"}
           </span>{" "}
-          uit en doet maximaal één voorstel per dag.
+          en doet maximaal één voorstel per dag.
         </div>
       </div>
     </div>
@@ -76,15 +77,49 @@ export default function BotTodayProposal({
       {status === "executed" && (
         <div className="flex items-center gap-2 text-green-600">
           <CheckCircle size={16} />
-          Vandaag afgerond
+          Vandaag uitgevoerd
         </div>
       )}
       {status === "skipped" && (
         <div className="flex items-center gap-2 text-orange-600">
           <XCircle size={16} />
-          Vandaag overgeslagen
+          Vandaag bewust overgeslagen
         </div>
       )}
+    </div>
+  );
+
+  /* =====================================================
+     SCORE BREAKDOWN (STEP 1 CORE)
+  ===================================================== */
+  const scoreBreakdown = (
+    <div className="bg-[var(--surface-1)] rounded-lg p-4 space-y-2 text-sm">
+      <div className="flex items-center gap-2 font-medium">
+        <AlertTriangle size={14} />
+        Besliscontext
+      </div>
+
+      <ul className="space-y-1 text-[var(--text-muted)]">
+        <li>• Macro score: <b>{scores.macro ?? "—"}</b></li>
+        <li>• Technical score: <b>{scores.technical ?? "—"}</b></li>
+        <li>• Market score: <b>{scores.market ?? "—"}</b></li>
+        <li>• Setup score: <b>{scores.setup ?? "—"}</b></li>
+        <li>
+          • Confidence:{" "}
+          <b className="uppercase">{confidence}</b>
+        </li>
+        {bot?.risk_profile && (
+          <li>
+            • Risk profile:{" "}
+            <b className="capitalize">{bot.risk_profile}</b>
+          </li>
+        )}
+      </ul>
+
+      <div className="pt-2 text-xs text-[var(--text-muted)]">
+        De bot opent alleen trades wanneer de combinatie van scores
+        past binnen het gekozen risk profile.
+      </div>
     </div>
   );
 
@@ -96,15 +131,16 @@ export default function BotTodayProposal({
       <div className="space-y-5 py-4">
         {header}
 
-        <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-3">
+        <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
           <div className="font-medium">
-            Geen order gepland voor vandaag
+            Geen trade gepland voor vandaag
           </div>
 
           <div className="text-sm text-[var(--text-muted)]">
-            Reden:
+            Dit is een bewuste beslissing op basis van de huidige marktcondities.
           </div>
 
+          {/* REASONS */}
           <ul className="text-sm text-[var(--text-muted)] space-y-1">
             {decision?.reasons?.length > 0 ? (
               decision.reasons.map((r, i) => (
@@ -113,10 +149,13 @@ export default function BotTodayProposal({
             ) : (
               <>
                 <li>• Confidence te laag</li>
-                <li>• Bot observeert marktcondities</li>
+                <li>• Setup niet actief of onvoldoende bevestigd</li>
               </>
             )}
           </ul>
+
+          {/* 🔍 STEP 1: TRANSPARENCY */}
+          {scoreBreakdown}
 
           {finalStatus}
 
@@ -225,6 +264,9 @@ export default function BotTodayProposal({
             </ul>
           </div>
         )}
+
+        {/* 🔍 CONTEXT OOK BIJ TRADE */}
+        {scoreBreakdown}
 
         {finalStatus}
 

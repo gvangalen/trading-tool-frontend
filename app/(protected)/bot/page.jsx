@@ -17,12 +17,12 @@ import AddBotForm from "@/components/bot/AddBotForm";
  * Layout-principes:
  * - Scores = context (bovenaan)
  * - Bots = actie
- * - Nieuwe bot = beheer (header)
- * - Geen globale order preview
+ * - Nieuwe bot = beheer
+ * - UX feedback altijd via snackbar
  */
 export default function BotPage() {
   /* =====================================================
-     🧠 MODAL / FORM
+     🧠 MODAL / FEEDBACK
   ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
   const formRef = useRef({});
@@ -31,6 +31,7 @@ export default function BotPage() {
      🧠 UI STATE
   ===================================================== */
   const [generatingBotId, setGeneratingBotId] = useState(null);
+  const [executingBotId, setExecutingBotId] = useState(null);
 
   /* =====================================================
      🤖 BOT DATA (single source of truth)
@@ -44,8 +45,6 @@ export default function BotPage() {
     loading,
 
     createBot,
-    updateBot,
-    deleteBot,
 
     updateBudgetForBot,
     generateDecisionForBot,
@@ -73,7 +72,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🔁 GENERATE DECISION (per bot)
+     🔁 GENERATE DECISION
   ===================================================== */
   const handleGenerateDecision = async (bot) => {
     try {
@@ -87,13 +86,61 @@ export default function BotPage() {
         `Voorstel gegenereerd voor ${bot.name}`,
         "success"
       );
-    } catch {
+    } catch (err) {
       showSnackbar(
         `Fout bij genereren voorstel voor ${bot.name}`,
         "danger"
       );
     } finally {
       setGeneratingBotId(null);
+    }
+  };
+
+  /* =====================================================
+     ▶️ EXECUTE BOT
+  ===================================================== */
+  const handleExecuteBot = async ({ bot_id }) => {
+    try {
+      setExecutingBotId(bot_id);
+
+      await executeBot({ bot_id });
+
+      const bot = bots.find((b) => b.id === bot_id);
+      showSnackbar(
+        `${bot?.name ?? "Bot"} uitgevoerd`,
+        "success"
+      );
+    } catch (err) {
+      showSnackbar(
+        "Fout bij uitvoeren van bot",
+        "danger"
+      );
+    } finally {
+      setExecutingBotId(null);
+    }
+  };
+
+  /* =====================================================
+     ⏭️ SKIP BOT
+  ===================================================== */
+  const handleSkipBot = async ({ bot_id }) => {
+    try {
+      setExecutingBotId(bot_id);
+
+      await skipBot({ bot_id });
+
+      const bot = bots.find((b) => b.id === bot_id);
+      showSnackbar(
+        `${bot?.name ?? "Bot"} overgeslagen`,
+        "success"
+      );
+    } catch (err) {
+      showSnackbar(
+        "Fout bij overslaan van bot",
+        "danger"
+      );
+    } finally {
+      setExecutingBotId(null);
     }
   };
 
@@ -151,9 +198,7 @@ export default function BotPage() {
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-      {/* =====================================================
-         TITLE
-      ===================================================== */}
+      {/* TITLE */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
         <h1 className="text-2xl font-semibold">
@@ -161,17 +206,13 @@ export default function BotPage() {
         </h1>
       </div>
 
-      {/* =====================================================
-         SCORES — CONTEXT
-      ===================================================== */}
+      {/* SCORES */}
       <BotScores
         scores={dailyScores}
         loading={loading.today}
       />
 
-      {/* =====================================================
-         GLOBAL PORTFOLIO SUMMARY
-      ===================================================== */}
+      {/* GLOBAL PORTFOLIO */}
       <div className="card-surface p-7 space-y-1">
         <div className="text-sm text-[var(--text-muted)]">
           Totale portfolio waarde
@@ -191,13 +232,9 @@ export default function BotPage() {
         </div>
       </div>
 
-      {/* =====================================================
-         BOTS HEADER
-      ===================================================== */}
+      {/* BOTS HEADER */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          Bots
-        </h2>
+        <h2 className="text-lg font-semibold">Bots</h2>
 
         <button
           onClick={handleAddBot}
@@ -208,9 +245,7 @@ export default function BotPage() {
         </button>
       </div>
 
-      {/* =====================================================
-         BOT AGENTS — PER BOT
-      ===================================================== */}
+      {/* BOT AGENTS */}
       <div className="space-y-6">
         {bots.length === 0 && (
           <div className="card-surface p-6 text-sm text-[var(--text-muted)]">
@@ -230,12 +265,15 @@ export default function BotPage() {
               decision={decisionsByBot[bot.id] ?? null}
               portfolio={portfolio}
               history={history}
-              loadingDecision={generatingBotId === bot.id}
+              loadingDecision={
+                generatingBotId === bot.id ||
+                executingBotId === bot.id
+              }
               onGenerate={() =>
                 handleGenerateDecision(bot)
               }
-              onExecute={executeBot}
-              onSkip={skipBot}
+              onExecute={handleExecuteBot}
+              onSkip={handleSkipBot}
               onUpdateBudget={updateBudgetForBot}
             />
           );

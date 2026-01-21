@@ -11,14 +11,14 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.2 (FINAL, LOCKED FLOW)
+ * BotTodayProposal — TradeLayer 2.3 (FINAL)
  * --------------------------------------------------
  * Dit IS de decision voor vandaag.
  *
  * States:
- * - planned   → actie mogelijk
- * - executed  → read-only (uitgevoerd)
- * - skipped   → read-only (overgeslagen)
+ * - planned   → execute / skip / regenerate
+ * - executed  → read-only + regenerate
+ * - skipped   → read-only + regenerate
  */
 export default function BotTodayProposal({
   bot,
@@ -48,7 +48,7 @@ export default function BotTodayProposal({
   const isFinal = status === "executed" || status === "skipped";
 
   /* =====================================================
-     HEADER / CONTEXT
+     HEADER
   ===================================================== */
   const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
@@ -65,6 +65,26 @@ export default function BotTodayProposal({
           uit en doet maximaal één voorstel per dag.
         </div>
       </div>
+    </div>
+  );
+
+  /* =====================================================
+     FINAL STATUS BADGE
+  ===================================================== */
+  const finalStatus = isFinal && (
+    <div className="pt-3 text-sm font-medium">
+      {status === "executed" && (
+        <div className="flex items-center gap-2 text-green-600">
+          <CheckCircle size={16} />
+          Vandaag afgerond
+        </div>
+      )}
+      {status === "skipped" && (
+        <div className="flex items-center gap-2 text-orange-600">
+          <XCircle size={16} />
+          Vandaag overgeslagen
+        </div>
+      )}
     </div>
   );
 
@@ -98,55 +118,41 @@ export default function BotTodayProposal({
             )}
           </ul>
 
-          {/* FINAL STATE FEEDBACK */}
-          {isFinal && (
-            <div className="pt-3 text-sm font-medium">
-              {status === "executed" && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle size={16} />
-                  Vandaag afgerond
-                </div>
-              )}
-              {status === "skipped" && (
-                <div className="flex items-center gap-2 text-orange-600">
-                  <XCircle size={16} />
-                  Vandaag overgeslagen
-                </div>
-              )}
-            </div>
-          )}
+          {finalStatus}
 
-          {/* ACTIONS (alleen als nog niet afgehandeld) */}
-          {!isFinal && (
-            <div className="flex flex-wrap gap-3 pt-4">
-              <button
-                onClick={onExecute}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Play size={16} />
-                Bevestig (geen trade)
-              </button>
-
-              <button
-                onClick={onSkip}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <SkipForward size={16} />
-                Sla vandaag over
-              </button>
-
-              {onGenerate && (
+          {/* ACTIONS */}
+          <div className="flex flex-wrap gap-3 pt-4">
+            {!isFinal && (
+              <>
                 <button
-                  onClick={onGenerate}
-                  disabled={isGenerating}
-                  className="btn-ghost flex items-center gap-2"
+                  onClick={onExecute}
+                  className="btn-primary flex items-center gap-2"
                 >
-                  <RotateCcw size={14} />
-                  Analyse opnieuw uitvoeren
+                  <Play size={16} />
+                  Bevestig (geen trade)
                 </button>
-              )}
-            </div>
-          )}
+
+                <button
+                  onClick={onSkip}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  <SkipForward size={16} />
+                  Sla vandaag over
+                </button>
+              </>
+            )}
+
+            {onGenerate && (
+              <button
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className="btn-ghost flex items-center gap-2"
+              >
+                <RotateCcw size={14} />
+                Analyse opnieuw uitvoeren
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -220,55 +226,41 @@ export default function BotTodayProposal({
           </div>
         )}
 
-        {/* FINAL STATE FEEDBACK */}
-        {isFinal && (
-          <div className="pt-3 text-sm font-medium">
-            {status === "executed" && (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle size={16} />
-                Trade uitgevoerd
-              </div>
-            )}
-            {status === "skipped" && (
-              <div className="flex items-center gap-2 text-orange-600">
-                <XCircle size={16} />
-                Trade overgeslagen
-              </div>
-            )}
-          </div>
-        )}
+        {finalStatus}
 
-        {/* ACTIONS (alleen als nog niet afgehandeld) */}
-        {!isFinal && (
-          <div className="flex flex-wrap gap-3 pt-4">
-            <button
-              onClick={onExecute}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Play size={16} />
-              Voer trade uit
-            </button>
-
-            <button
-              onClick={onSkip}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <SkipForward size={16} />
-              Sla trade over
-            </button>
-
-            {onGenerate && (
+        {/* ACTIONS */}
+        <div className="flex flex-wrap gap-3 pt-4">
+          {!isFinal && (
+            <>
               <button
-                onClick={onGenerate}
-                disabled={isGenerating}
-                className="btn-ghost flex items-center gap-2"
+                onClick={onExecute}
+                className="btn-primary flex items-center gap-2"
               >
-                <RotateCcw size={14} />
-                Analyse opnieuw uitvoeren
+                <Play size={16} />
+                Voer trade uit
               </button>
-            )}
-          </div>
-        )}
+
+              <button
+                onClick={onSkip}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <SkipForward size={16} />
+                Sla trade over
+              </button>
+            </>
+          )}
+
+          {onGenerate && (
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="btn-ghost flex items-center gap-2"
+            >
+              <RotateCcw size={14} />
+              Analyse opnieuw uitvoeren
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

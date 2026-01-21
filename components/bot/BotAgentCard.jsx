@@ -20,10 +20,10 @@ import {
  *
  * Principes:
  * - Strategy + mode altijd zichtbaar
- * - Decision = voorstel van vandaag
- * - Order preview zit IN decision
+ * - Decision = voorstel van vandaag (incl. order preview)
  * - State bar = context (geen actie)
  * - Portfolio = rustig, secundair
+ * - Acties lopen via BotPage (snackbar / UX feedback)
  */
 export default function BotAgentCard({
   bot,
@@ -100,7 +100,7 @@ export default function BotAgentCard({
               </span>
             </div>
 
-            {/* MODE SELECTOR (VISUEEL) */}
+            {/* MODE SELECTOR (VISUEEL / READ-ONLY) */}
             <div className="flex gap-2 mt-2">
               {MODES.map((m) => (
                 <button

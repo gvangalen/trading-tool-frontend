@@ -2,6 +2,24 @@
 
 import { useEffect, useState } from "react";
 
+const RISK_PROFILES = [
+  {
+    value: "conservative",
+    label: "🛡️ Conservative",
+    description: "Alleen trades bij hoge confidence, lage frequentie",
+  },
+  {
+    value: "balanced",
+    label: "⚖️ Balanced",
+    description: "Standaard profiel met gebalanceerde trade-frequentie",
+  },
+  {
+    value: "aggressive",
+    label: "🚀 Aggressive",
+    description: "Sneller trades, hogere exposure en risico",
+  },
+];
+
 export default function AddBotForm({
   initialForm,
   onChange,
@@ -13,6 +31,7 @@ export default function AddBotForm({
     name: "",
     strategy_id: null,
     mode: "manual",
+    risk_profile: "balanced",
   });
 
   /* =====================================================
@@ -28,6 +47,7 @@ export default function AddBotForm({
           ? initialForm.strategy_id
           : initialForm.strategy?.id ?? null,
       mode: initialForm.mode ?? "manual",
+      risk_profile: initialForm.risk_profile ?? "balanced",
     });
   }, [initialForm]);
 
@@ -48,6 +68,10 @@ export default function AddBotForm({
     strategies.find((s) => s.id === local.strategy_id) ??
     initialForm?.strategy ??
     null;
+
+  const selectedRisk =
+    RISK_PROFILES.find((r) => r.value === local.risk_profile) ??
+    RISK_PROFILES[1];
 
   /* =====================================================
      🧠 RENDER
@@ -76,7 +100,6 @@ export default function AddBotForm({
         </label>
 
         {isEdit ? (
-          /* 🔒 READ-ONLY BIJ EDIT */
           <div className="input w-full bg-[var(--surface-2)] cursor-not-allowed">
             {selectedStrategy
               ? `${selectedStrategy.name} · ${String(
@@ -87,7 +110,6 @@ export default function AddBotForm({
               : "—"}
           </div>
         ) : (
-          /* ✅ SELECTEERBAAR BIJ CREATE */
           <select
             className="input w-full"
             value={local.strategy_id ?? ""}
@@ -153,6 +175,34 @@ export default function AddBotForm({
           <option value="semi">Semi-auto</option>
           <option value="auto">Auto</option>
         </select>
+      </div>
+
+      {/* ================= RISK PROFILE ================= */}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Risk profile
+        </label>
+
+        <select
+          className="input w-full"
+          value={local.risk_profile}
+          onChange={(e) =>
+            setLocal((s) => ({
+              ...s,
+              risk_profile: e.target.value,
+            }))
+          }
+        >
+          {RISK_PROFILES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+
+        <div className="mt-1 text-xs text-[var(--text-muted)]">
+          {selectedRisk.description}
+        </div>
       </div>
     </div>
   );

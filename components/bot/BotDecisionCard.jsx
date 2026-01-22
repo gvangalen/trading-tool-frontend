@@ -8,15 +8,16 @@ import {
   ShoppingCart,
   CheckCircle,
   XCircle,
-  AlertTriangle,
+  Layers,
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.4
+ * BotTodayProposal — TradeLayer 2.5
  * --------------------------------------------------
- * Transparante decision layer:
- * - Laat zien WAAROM wel / geen trade
- * - Score breakdown + confidence context
+ * Intentie-gedreven decision layer:
+ * - Wat zoekt de bot?
+ * - Past dit binnen het risk profile?
+ * - Wel / geen trade = logisch gevolg
  */
 export default function BotTodayProposal({
   bot,
@@ -45,7 +46,7 @@ export default function BotTodayProposal({
   const status = decision?.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
 
-  const scores = decision?.scores ?? {};
+  const setup = decision?.setup_match ?? null; // { name, symbol, timeframe, score }
   const confidence = decision?.confidence ?? "low";
 
   /* =====================================================
@@ -77,7 +78,7 @@ export default function BotTodayProposal({
       {status === "executed" && (
         <div className="flex items-center gap-2 text-green-600">
           <CheckCircle size={16} />
-          Vandaag uitgevoerd
+          Vandaag afgerond
         </div>
       )}
       {status === "skipped" && (
@@ -90,35 +91,31 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     SCORE BREAKDOWN (STEP 1 CORE)
+     MINI SETUP CARD (CORE CONTEXT)
   ===================================================== */
-  const scoreBreakdown = (
-    <div className="bg-[var(--surface-1)] rounded-lg p-4 space-y-2 text-sm">
+  const setupCard = setup && (
+    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
-        <AlertTriangle size={14} />
-        Besliscontext
+        <Layers size={14} />
+        Bot zoekt vandaag
       </div>
 
-      <ul className="space-y-1 text-[var(--text-muted)]">
-        <li>• Macro score: <b>{scores.macro ?? "—"}</b></li>
-        <li>• Technical score: <b>{scores.technical ?? "—"}</b></li>
-        <li>• Market score: <b>{scores.market ?? "—"}</b></li>
-        <li>• Setup score: <b>{scores.setup ?? "—"}</b></li>
-        <li>
-          • Confidence:{" "}
-          <b className="uppercase">{confidence}</b>
-        </li>
-        {bot?.risk_profile && (
-          <li>
-            • Risk profile:{" "}
-            <b className="capitalize">{bot.risk_profile}</b>
-          </li>
-        )}
-      </ul>
+      <div className="font-semibold">
+        {setup.name} · {setup.symbol} · {setup.timeframe}
+      </div>
 
-      <div className="pt-2 text-xs text-[var(--text-muted)]">
-        De bot opent alleen trades wanneer de combinatie van scores
-        past binnen het gekozen risk profile.
+      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+        <div
+          className="h-full bg-red-500"
+          style={{ width: `${Math.min(setup.score, 100)}%` }}
+        />
+      </div>
+
+      <div className="text-xs text-[var(--text-muted)]">
+        Score: {setup.score} / 100 · Confidence{" "}
+        <span className="uppercase font-medium">
+          {confidence}
+        </span>
       </div>
     </div>
   );
@@ -137,25 +134,21 @@ export default function BotTodayProposal({
           </div>
 
           <div className="text-sm text-[var(--text-muted)]">
-            Dit is een bewuste beslissing op basis van de huidige marktcondities.
+            De huidige marktcondities passen niet binnen het gekozen risk profile.
           </div>
 
-          {/* REASONS */}
-          <ul className="text-sm text-[var(--text-muted)] space-y-1">
-            {decision?.reasons?.length > 0 ? (
-              decision.reasons.map((r, i) => (
-                <li key={i}>• {r}</li>
-              ))
-            ) : (
-              <>
-                <li>• Confidence te laag</li>
-                <li>• Setup niet actief of onvoldoende bevestigd</li>
-              </>
-            )}
-          </ul>
+          {/* SETUP MATCH */}
+          {setupCard}
 
-          {/* 🔍 STEP 1: TRANSPARENCY */}
-          {scoreBreakdown}
+          {/* RISK PROFILE */}
+          {bot?.risk_profile && (
+            <div className="text-sm text-[var(--text-muted)]">
+              Risk profile bot:{" "}
+              <span className="font-medium capitalize text-[var(--text)]">
+                {bot.risk_profile}
+              </span>
+            </div>
+          )}
 
           {finalStatus}
 
@@ -205,72 +198,15 @@ export default function BotTodayProposal({
       {header}
 
       <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
-        {/* ORDER INFO */}
-        <div className="space-y-1">
-          <div className="text-sm text-[var(--text-muted)]">
-            Actie
-          </div>
-          <div className="text-2xl font-semibold">
-            {(order.side ?? "buy").toUpperCase()} {order.symbol}
-          </div>
+        <div className="text-2xl font-semibold">
+          {(order.side ?? "buy").toUpperCase()} {order.symbol}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <div className="text-[var(--text-muted)]">Bedrag</div>
-            <div className="font-medium">
-              €{order.quote_amount_eur}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[var(--text-muted)]">
-              Geschatte prijs
-            </div>
-            <div className="font-medium">
-              €{order.estimated_price ?? "—"}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[var(--text-muted)]">
-              Geschatte hoeveelheid
-            </div>
-            <div className="font-medium">
-              {order.estimated_qty ?? "—"} BTC
-            </div>
-          </div>
-        </div>
-
-        {/* IMPACT */}
-        {order.budget_after && (
-          <div className="pt-2 text-sm text-[var(--text-muted)]">
-            <div className="font-medium text-[var(--text)] mb-1">
-              Impact na trade
-            </div>
-            <ul className="space-y-1">
-              {order.budget_after.daily_remaining !== null && (
-                <li>
-                  • Daglimiet: €
-                  {order.budget_after.daily_remaining} resterend
-                </li>
-              )}
-              {order.budget_after.total_remaining !== null && (
-                <li>
-                  • Totaal budget: €
-                  {order.budget_after.total_remaining} resterend
-                </li>
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* 🔍 CONTEXT OOK BIJ TRADE */}
-        {scoreBreakdown}
+        {/* SETUP MATCH OOK BIJ TRADE */}
+        {setupCard}
 
         {finalStatus}
 
-        {/* ACTIONS */}
         <div className="flex flex-wrap gap-3 pt-4">
           {!isFinal && (
             <>

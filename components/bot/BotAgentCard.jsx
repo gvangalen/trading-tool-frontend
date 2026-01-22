@@ -14,10 +14,11 @@ import {
   Shield,
   Scale,
   Rocket,
+  Bot,
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.2
+ * BotAgentCard — TradeLayer 2.3 (AUTO MODE READY)
  * --------------------------------------------------
  * ÉÉN bot = ÉÉN agent surface
  *
@@ -25,6 +26,7 @@ import {
  * - Strategy + mode + risk profile altijd zichtbaar
  * - Decision = voorstel van vandaag
  * - Portfolio = context
+ * - AUTO = read-only
  */
 export default function BotAgentCard({
   bot,
@@ -42,6 +44,9 @@ export default function BotAgentCard({
 
   const [showHistory, setShowHistory] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  const isAuto = bot.mode === "auto";
+  const executedByAuto = decision?.executed_by === "auto";
 
   /* =====================================================
      RESPONSIVE CHECK
@@ -75,7 +80,7 @@ export default function BotAgentCard({
       : "bg-gray-100 text-gray-600";
 
   /* =====================================================
-     RISK PROFILE (EXPLICIET & DUIDELIJK)
+     RISK PROFILE
   ===================================================== */
   const riskProfile = bot.risk_profile ?? "balanced";
 
@@ -98,6 +103,20 @@ export default function BotAgentCard({
   };
 
   const risk = riskConfig[riskProfile] ?? riskConfig.balanced;
+
+  /* =====================================================
+     STATE LABEL
+  ===================================================== */
+  const stateLabel = () => {
+    if (!decision) return "GEEN VOORSTEL";
+    if (decision.status === "executed") {
+      return executedByAuto
+        ? "AUTOMATISCH UITGEVOERD"
+        : "UITGEVOERD";
+    }
+    if (decision.status === "skipped") return "OVERGESLAGEN";
+    return decision.action.toUpperCase();
+  };
 
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6">
@@ -129,7 +148,7 @@ export default function BotAgentCard({
               </span>
             </div>
 
-            {/* MODE (READ-ONLY) */}
+            {/* MODE (READ ONLY) */}
             <div className="flex gap-2 mt-2">
               {MODES.map((m) => (
                 <button
@@ -144,18 +163,24 @@ export default function BotAgentCard({
               ))}
             </div>
 
-            {/* ✅ RISK PROFILE — EXPLICIETE TEKST */}
-            <div className="mt-2">
+            {/* RISK PROFILE */}
+            <div className="mt-2 flex items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
-                title="Risk profile bepaalt hoe agressief de bot handelt"
               >
                 {risk.icon}
                 <span className="font-medium">
-                  Risk profile bot:
+                  Risk profile:
                 </span>
                 {risk.label}
               </span>
+
+              {isAuto && (
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
+                  <Bot size={12} />
+                  Auto mode
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -166,17 +191,13 @@ export default function BotAgentCard({
       </div>
 
       {/* =====================================================
-         STATE BAR — CONTEXT
+         STATE BAR
       ===================================================== */}
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">
           Huidige status:
         </span>{" "}
-        <span className="font-semibold">
-          {decision
-            ? decision.action.toUpperCase()
-            : "GEEN VOORSTEL"}
-        </span>
+        <span className="font-semibold">{stateLabel()}</span>
 
         {decision?.confidence && (
           <>
@@ -204,12 +225,17 @@ export default function BotAgentCard({
             decision={decision}
             order={decision?.order ?? null}
             loading={loadingDecision}
+            isAuto={isAuto}              // ✅ KEY ADDITION
             onGenerate={onGenerate}
-            onExecute={() =>
-              onExecute({ bot_id: bot.id })
+            onExecute={
+              !isAuto
+                ? () => onExecute({ bot_id: bot.id })
+                : undefined
             }
-            onSkip={() =>
-              onSkip({ bot_id: bot.id })
+            onSkip={
+              !isAuto
+                ? () => onSkip({ bot_id: bot.id })
+                : undefined
             }
           />
         </div>

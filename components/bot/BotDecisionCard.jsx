@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.5
+ * BotTodayProposal — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
  * Intentie-gedreven decision layer:
  * - Wat zoekt de bot?
@@ -46,8 +46,11 @@ export default function BotTodayProposal({
   const status = decision?.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
 
-  const setup = decision?.setup_match ?? null; // { name, symbol, timeframe, score }
+  // Verwacht vanuit backend:
+  // decision.setup_match = { name, symbol, timeframe, score }
+  const setup = decision?.setup_match ?? null;
   const confidence = decision?.confidence ?? "low";
+  const riskProfile = bot?.risk_profile ?? null;
 
   /* =====================================================
      HEADER
@@ -78,7 +81,7 @@ export default function BotTodayProposal({
       {status === "executed" && (
         <div className="flex items-center gap-2 text-green-600">
           <CheckCircle size={16} />
-          Vandaag afgerond
+          Vandaag uitgevoerd
         </div>
       )}
       {status === "skipped" && (
@@ -91,7 +94,8 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     MINI SETUP CARD (CORE CONTEXT)
+     MINI SETUP CARD — CORE CONTEXT
+     (zelfde UX-principe als "Setup Match Vandaag")
   ===================================================== */
   const setupCard = setup && (
     <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
@@ -137,15 +141,15 @@ export default function BotTodayProposal({
             De huidige marktcondities passen niet binnen het gekozen risk profile.
           </div>
 
-          {/* SETUP MATCH */}
+          {/* INTENTIE / MATCH */}
           {setupCard}
 
-          {/* RISK PROFILE */}
-          {bot?.risk_profile && (
+          {/* RISK PROFILE (EXPLICIET & DUIDELIJK) */}
+          {riskProfile && (
             <div className="text-sm text-[var(--text-muted)]">
               Risk profile bot:{" "}
               <span className="font-medium capitalize text-[var(--text)]">
-                {bot.risk_profile}
+                {riskProfile}
               </span>
             </div>
           )}
@@ -202,7 +206,7 @@ export default function BotTodayProposal({
           {(order.side ?? "buy").toUpperCase()} {order.symbol}
         </div>
 
-        {/* SETUP MATCH OOK BIJ TRADE */}
+        {/* ZELFDE INTENTIE CARD BIJ TRADE */}
         {setupCard}
 
         {finalStatus}

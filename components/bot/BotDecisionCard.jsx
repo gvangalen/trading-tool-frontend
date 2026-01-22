@@ -16,7 +16,7 @@ import {
  * --------------------------------------------------
  * Decision card = UITKOMST VAN VANDAAG
  *
- * - Bot score vs markt
+ * - Bot score vs markt (strategy ↔ setup match)
  * - Wel / geen trade
  * - Auto uitgevoerd of niet
  *
@@ -53,6 +53,7 @@ export default function BotTodayProposal({
   const executedByAuto = decision?.executed_by === "auto";
 
   const confidence = decision?.confidence ?? "low";
+  const setupMatch = decision?.setup_match ?? null;
 
   /* =====================================================
      HEADER (NEUTRAAL)
@@ -96,8 +97,9 @@ export default function BotTodayProposal({
 
   /* =====================================================
      BOT SCORE CARD — STRATEGY vs MARKT
+     (ALTIJD TONEN, OOK BIJ GEEN TRADE)
   ===================================================== */
-  const botScoreCard = decision ? (
+  const botScoreCard = setupMatch ? (
     <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
         <Layers size={14} />
@@ -105,15 +107,14 @@ export default function BotTodayProposal({
       </div>
 
       <div className="font-semibold">
-        {decision.strategy_name ?? "Strategy"} ·{" "}
-        {decision.symbol} · {decision.timeframe}
+        {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
       </div>
 
       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
         <div
           className="h-full bg-red-500"
           style={{
-            width: `${Math.min(decision.score ?? 0, 100)}%`,
+            width: `${Math.min(setupMatch.score ?? 0, 100)}%`,
           }}
         />
       </div>
@@ -121,18 +122,25 @@ export default function BotTodayProposal({
       <div className="text-xs text-[var(--text-muted)]">
         Bot score:{" "}
         <span className="font-medium">
-          {decision.score ?? "–"} / 100
+          {setupMatch.score} / 100
         </span>{" "}
         · Confidence{" "}
         <span className="uppercase font-medium">
           {confidence}
         </span>
       </div>
+
+      {setupMatch.thresholds && (
+        <div className="text-xs text-[var(--text-muted)]">
+          Drempels: buy ≥ {setupMatch.thresholds.buy} · hold ≥{" "}
+          {setupMatch.thresholds.hold}
+        </div>
+      )}
     </div>
   ) : (
     <div className="rounded-lg border bg-white p-4 text-sm text-gray-600 flex items-center gap-2">
       <XCircle size={14} />
-      Geen bot score beschikbaar voor vandaag
+      Geen strategy match beschikbaar voor vandaag
     </div>
   );
 
@@ -153,7 +161,9 @@ export default function BotTodayProposal({
             De huidige marktscore voldoet niet aan de voorwaarden voor een trade.
           </div>
 
+          {/* 👇 HIEROM dus geen trade */}
           {botScoreCard}
+
           {finalStatus}
 
           {/* ACTIONS */}

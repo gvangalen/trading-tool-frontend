@@ -17,16 +17,14 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.2 (FINAL)
+ * BotAgentCard — TradeLayer 2.2
  * --------------------------------------------------
  * ÉÉN bot = ÉÉN agent surface
  *
  * Principes:
  * - Strategy + mode + risk profile altijd zichtbaar
- * - Decision = voorstel van vandaag (incl. order preview)
- * - State bar = context (geen actie)
- * - Portfolio = rustig, secundair
- * - Acties lopen via BotPage (snackbar / UX feedback)
+ * - Decision = voorstel van vandaag
+ * - Portfolio = context
  */
 export default function BotAgentCard({
   bot,
@@ -60,6 +58,9 @@ export default function BotAgentCard({
       window.removeEventListener("resize", check);
   }, []);
 
+  /* =====================================================
+     MODE UI
+  ===================================================== */
   const MODES = ["auto", "semi", "manual"];
 
   const modeLabel = {
@@ -74,7 +75,7 @@ export default function BotAgentCard({
       : "bg-gray-100 text-gray-600";
 
   /* =====================================================
-     RISK PROFILE UI
+     RISK PROFILE (EXPLICIET & DUIDELIJK)
   ===================================================== */
   const riskProfile = bot.risk_profile ?? "balanced";
 
@@ -82,20 +83,17 @@ export default function BotAgentCard({
     conservative: {
       label: "Conservative",
       icon: <Shield size={12} />,
-      className:
-        "bg-green-100 text-green-700 border-green-200",
+      className: "bg-green-100 text-green-700 border-green-200",
     },
     balanced: {
       label: "Balanced",
       icon: <Scale size={12} />,
-      className:
-        "bg-yellow-100 text-yellow-700 border-yellow-200",
+      className: "bg-yellow-100 text-yellow-700 border-yellow-200",
     },
     aggressive: {
       label: "Aggressive",
       icon: <Rocket size={12} />,
-      className:
-        "bg-red-100 text-red-700 border-red-200",
+      className: "bg-red-100 text-red-700 border-red-200",
     },
   };
 
@@ -146,13 +144,16 @@ export default function BotAgentCard({
               ))}
             </div>
 
-            {/* RISK PROFILE */}
+            {/* ✅ RISK PROFILE — EXPLICIETE TEKST */}
             <div className="mt-2">
               <span
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
                 title="Risk profile bepaalt hoe agressief de bot handelt"
               >
                 {risk.icon}
+                <span className="font-medium">
+                  Risk profile bot:
+                </span>
                 {risk.label}
               </span>
             </div>
@@ -205,14 +206,10 @@ export default function BotAgentCard({
             loading={loadingDecision}
             onGenerate={onGenerate}
             onExecute={() =>
-              onExecute({
-                bot_id: bot.id,
-              })
+              onExecute({ bot_id: bot.id })
             }
             onSkip={() =>
-              onSkip({
-                bot_id: bot.id,
-              })
+              onSkip({ bot_id: bot.id })
             }
           />
         </div>
@@ -270,9 +267,7 @@ export default function BotAgentCard({
             className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
           >
             <Clock size={14} />
-            {showHistory
-              ? "Verberg history"
-              : "Toon history"}
+            {showHistory ? "Verberg history" : "Toon history"}
           </button>
 
           {showHistory && (

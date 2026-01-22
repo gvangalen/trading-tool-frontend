@@ -15,8 +15,8 @@ import {
  * BotTodayProposal — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
  * Decision card = UITKOMST VAN VANDAAG
- * - Beste setup
- * - Score
+ *
+ * - Bot score vs markt
  * - Wel / geen trade
  * - Auto uitgevoerd of niet
  *
@@ -52,7 +52,6 @@ export default function BotTodayProposal({
   const isFinal = status === "executed" || status === "skipped";
   const executedByAuto = decision?.executed_by === "auto";
 
-  const setup = decision?.setup_match ?? null;
   const confidence = decision?.confidence ?? "low";
 
   /* =====================================================
@@ -96,46 +95,46 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-   BOT SCORE CARD — STRATEGY vs MARKT
-===================================================== */
-const botScoreCard = decision ? (
-  <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
-    <div className="flex items-center gap-2 font-medium">
-      <Layers size={14} />
-      Strategy match vandaag
-    </div>
+     BOT SCORE CARD — STRATEGY vs MARKT
+  ===================================================== */
+  const botScoreCard = decision ? (
+    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
+      <div className="flex items-center gap-2 font-medium">
+        <Layers size={14} />
+        Strategy match vandaag
+      </div>
 
-    <div className="font-semibold">
-      {decision.strategy_name ?? "Strategy"} ·{" "}
-      {decision.symbol} · {decision.timeframe}
-    </div>
+      <div className="font-semibold">
+        {decision.strategy_name ?? "Strategy"} ·{" "}
+        {decision.symbol} · {decision.timeframe}
+      </div>
 
-    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-      <div
-        className="h-full bg-red-500"
-        style={{
-          width: `${Math.min(decision.score ?? 0, 100)}%`,
-        }}
-      />
-    </div>
+      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+        <div
+          className="h-full bg-red-500"
+          style={{
+            width: `${Math.min(decision.score ?? 0, 100)}%`,
+          }}
+        />
+      </div>
 
-    <div className="text-xs text-[var(--text-muted)]">
-      Bot score:{" "}
-      <span className="font-medium">
-        {decision.score ?? "–"} / 100
-      </span>{" "}
-      · Confidence{" "}
-      <span className="uppercase font-medium">
-        {decision.confidence ?? "low"}
-      </span>
+      <div className="text-xs text-[var(--text-muted)]">
+        Bot score:{" "}
+        <span className="font-medium">
+          {decision.score ?? "–"} / 100
+        </span>{" "}
+        · Confidence{" "}
+        <span className="uppercase font-medium">
+          {confidence}
+        </span>
+      </div>
     </div>
-  </div>
-) : (
-  <div className="rounded-lg border bg-white p-4 text-sm text-gray-600 flex items-center gap-2">
-    <XCircle size={14} />
-    Geen bot score beschikbaar voor vandaag
-  </div>
-);
+  ) : (
+    <div className="rounded-lg border bg-white p-4 text-sm text-gray-600 flex items-center gap-2">
+      <XCircle size={14} />
+      Geen bot score beschikbaar voor vandaag
+    </div>
+  );
 
   /* =====================================================
      GEEN TRADE VANDAAG
@@ -154,7 +153,7 @@ const botScoreCard = decision ? (
             De huidige marktscore voldoet niet aan de voorwaarden voor een trade.
           </div>
 
-          {setupCard}
+          {botScoreCard}
           {finalStatus}
 
           {/* ACTIONS */}
@@ -207,7 +206,7 @@ const botScoreCard = decision ? (
           {(order.side ?? "buy").toUpperCase()} {order.symbol}
         </div>
 
-        {setupCard}
+        {botScoreCard}
         {finalStatus}
 
         <div className="flex flex-wrap gap-3 pt-4">

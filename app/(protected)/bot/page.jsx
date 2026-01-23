@@ -246,6 +246,8 @@ export default function BotPage() {
           const decision =
             decisionsByBot[bot.id] ?? {
               status: "planned",
+              action: "observe",
+              confidence: "low",
               setup_match: null,
             };
 

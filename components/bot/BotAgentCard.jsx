@@ -18,16 +18,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5 (CLEAN)
+ * BotAgentCard — TradeLayer 2.5 (CLEAN + SAFE)
  * --------------------------------------------------
- * ÉÉN bot = ÉÉN agent surface
- *
- * Principes:
- * - Strategy + risk profile + auto-mode zichtbaar
- * - Decision = voorstel van vandaag
- * - Strategy-match card altijd zichtbaar
- * - AUTO = read-only
  * - Geen legacy mode toggles
+ * - Auto badge alleen als bot.mode === "auto"
+ * - SSR-safe matchMedia
+ * - Handlers veilig (alleen callen als function)
  */
 export default function BotAgentCard({
   bot,
@@ -46,28 +42,34 @@ export default function BotAgentCard({
   const [showHistory, setShowHistory] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  const isAuto = bot.mode === "auto";
-  const executedByAuto = decision?.executed_by === "auto";
+  const isAuto = bot?.mode === "auto";
 
   /* =====================================================
-     RESPONSIVE CHECK
+     RESPONSIVE CHECK (SSR SAFE)
   ===================================================== */
   useEffect(() => {
-    const check = () =>
-      setIsMobile(
-        window.matchMedia("(max-width: 768px)").matches
-      );
+    if (typeof window === "undefined") return;
 
-    check();
-    window.addEventListener("resize", check);
-    return () =>
-      window.removeEventListener("resize", check);
+    const mq = window.matchMedia("(max-width: 768px)");
+
+    const apply = () => setIsMobile(!!mq.matches);
+    apply();
+
+    // Safari/older support
+    const handler = () => apply();
+    if (mq.addEventListener) mq.addEventListener("change", handler);
+    else mq.addListener(handler);
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", handler);
+      else mq.removeListener(handler);
+    };
   }, []);
 
   /* =====================================================
      RISK PROFILE
   ===================================================== */
-  const riskProfile = bot.risk_profile ?? "balanced";
+  const riskProfile = (bot?.risk_profile ?? "balanced").toLowerCase();
 
   const riskConfig = {
     conservative: {
@@ -90,17 +92,17 @@ export default function BotAgentCard({
   const risk = riskConfig[riskProfile] ?? riskConfig.balanced;
 
   /* =====================================================
-     STATE LABEL
+     STATE LABEL (NO CRASH)
   ===================================================== */
   const stateLabel = () => {
     if (!decision) return "GEEN VOORSTEL";
     if (decision.status === "executed") {
-      return executedByAuto
+      return decision.executed_by === "auto"
         ? "AUTOMATISCH UITGEVOERD"
         : "UITGEVOERD";
     }
     if (decision.status === "skipped") return "OVERGESLAGEN";
-    return decision.action?.toUpperCase() ?? "—";
+    return (decision.action || "—").toUpperCase();
   };
 
   return (
@@ -116,20 +118,18 @@ export default function BotAgentCard({
 
           <div>
             <div className="font-semibold leading-tight">
-              {bot.name}
+              {bot?.name ?? "Bot"}
             </div>
 
             <div className="text-xs text-[var(--text-muted)]">
-              {bot.symbol} · {bot.timeframe ?? "—"}
+              {bot?.symbol ?? "—"} · {bot?.timeframe ?? "—"}
             </div>
 
             {/* STRATEGY */}
             <div className="mt-2 text-xs">
-              <span className="text-[var(--text-muted)]">
-                Strategy:
-              </span>{" "}
+              <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
               <span className="font-medium">
-                {bot.strategy?.name ?? "—"}
+                {bot?.strategy?.name ?? "—"}
               </span>
             </div>
 
@@ -140,9 +140,7 @@ export default function BotAgentCard({
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
               >
                 {risk.icon}
-                <span className="font-medium">
-                  Risk:
-                </span>
+                <span className="font-medium">Risk:</span>
                 {risk.label}
               </span>
 
@@ -157,7 +155,7 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        <button className="icon-muted hover:icon-primary">
+        <button className="icon-muted hover:icon-primary" type="button">
           <MoreVertical size={16} />
         </button>
       </div>
@@ -166,19 +164,15 @@ export default function BotAgentCard({
          STATE BAR
       ===================================================== */}
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
-        <span className="text-[var(--text-muted)]">
-          Huidige status:
-        </span>{" "}
-        <span className="font-semibold">
-          {stateLabel()}
-        </span>
+        <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
+        <span className="font-semibold">{stateLabel()}</span>
 
         {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
             <span className="font-semibold">
-              {decision.confidence.toUpperCase()}
+              {String(decision.confidence).toUpperCase()}
             </span>
           </>
         )}
@@ -202,12 +196,12 @@ export default function BotAgentCard({
             isAuto={isAuto}
             onGenerate={onGenerate}
             onExecute={
-              !isAuto
+              !isAuto && typeof onExecute === "function"
                 ? () => onExecute({ bot_id: bot.id })
                 : undefined
             }
             onSkip={
-              !isAuto
+              !isAuto && typeof onSkip === "function"
                 ? () => onSkip({ bot_id: bot.id })
                 : undefined
             }
@@ -220,10 +214,7 @@ export default function BotAgentCard({
             Portfolio
           </div>
 
-          <BotPortfolioCard
-            bot={portfolio}
-            onUpdateBudget={onUpdateBudget}
-          />
+          <BotPortfolioCard bot={portfolio} onUpdateBudget={onUpdateBudget} />
         </div>
       </div>
 
@@ -233,6 +224,7 @@ export default function BotAgentCard({
       {isMobile ? (
         <div className="border rounded-xl overflow-hidden">
           <button
+            type="button"
             onClick={() => setShowHistory(!showHistory)}
             className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
           >
@@ -252,9 +244,7 @@ export default function BotAgentCard({
           {showHistory && (
             <div className="p-4 bg-[var(--bg-soft)]">
               <BotHistoryTable
-                history={history.filter(
-                  (h) => h.bot_id === bot.id
-                )}
+                history={history.filter((h) => h.bot_id === bot.id)}
                 compact
               />
             </div>
@@ -263,21 +253,18 @@ export default function BotAgentCard({
       ) : (
         <div className="pt-2 border-t">
           <button
+            type="button"
             onClick={() => setShowHistory(!showHistory)}
             className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
           >
             <Clock size={14} />
-            {showHistory
-              ? "Verberg history"
-              : "Toon history"}
+            {showHistory ? "Verberg history" : "Toon history"}
           </button>
 
           {showHistory && (
             <div className="pt-4">
               <BotHistoryTable
-                history={history.filter(
-                  (h) => h.bot_id === bot.id
-                )}
+                history={history.filter((h) => h.bot_id === bot.id)}
                 compact
               />
             </div>

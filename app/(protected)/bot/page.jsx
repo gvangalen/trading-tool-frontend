@@ -189,16 +189,11 @@ export default function BotPage() {
       {/* TITLE */}
       <div className="flex items-center gap-3">
         <Wallet className="icon icon-primary" />
-        <h1 className="text-2xl font-semibold">
-          Portfolio Management
-        </h1>
+        <h1 className="text-2xl font-semibold">Portfolio Management</h1>
       </div>
 
       {/* SCORES */}
-      <BotScores
-        scores={dailyScores}
-        loading={loading.today}
-      />
+      <BotScores scores={dailyScores} loading={loading.today} />
 
       {/* GLOBAL PORTFOLIO */}
       <div className="card-surface p-7 space-y-1">
@@ -206,13 +201,10 @@ export default function BotPage() {
           Totale portfolio waarde
         </div>
 
-        <div className="text-4xl font-bold">
-          €{totalValue.toFixed(2)}
-        </div>
+        <div className="text-4xl font-bold">€{totalValue.toFixed(2)}</div>
 
         <div className={totalPnl >= 0 ? "icon-success" : "icon-danger"}>
-          {totalPnl >= 0 ? "+" : ""}
-          €{totalPnl.toFixed(2)}
+          {totalPnl >= 0 ? "+" : ""}€{totalPnl.toFixed(2)}
         </div>
       </div>
 
@@ -238,17 +230,23 @@ export default function BotPage() {
         )}
 
         {bots.map((bot) => {
-          const portfolio = portfolios.find(
-            (p) => p.bot_id === bot.id
-          );
+          const portfolio = portfolios.find((p) => p.bot_id === bot.id);
 
-          // 🔥 CRUCIALE FIX: decision ALTIJD aanwezig
+          // ✅ CRUCIALE FIX:
+          // Decision bestaat altijd + setup_match bestaat altijd
+          // zodat BotTodayProposal de strategy-match card altijd kan tonen.
           const decision =
             decisionsByBot[bot.id] ?? {
               status: "planned",
               action: "observe",
               confidence: "low",
-              setup_match: null,
+              setup_match: {
+                name: bot.strategy?.name ?? "Strategy",
+                symbol: bot.symbol,
+                timeframe: bot.timeframe ?? "—",
+                score: 0,
+                thresholds: null,
+              },
             };
 
           return (
@@ -258,10 +256,7 @@ export default function BotPage() {
               decision={decision}
               portfolio={portfolio}
               history={history}
-              loadingDecision={
-                generatingBotId === bot.id ||
-                executingBotId === bot.id
-              }
+              loadingDecision={generatingBotId === bot.id || executingBotId === bot.id}
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}

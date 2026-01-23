@@ -54,6 +54,7 @@ export default function BotTodayProposal({
 
   const confidence = decision?.confidence ?? "low";
   const setupMatch = decision?.setup_match ?? null;
+  const score = Number(setupMatch?.score ?? 0);
 
   /* =====================================================
      HEADER (NEUTRAAL)
@@ -107,22 +108,22 @@ export default function BotTodayProposal({
       </div>
 
       <div className="font-semibold">
-        {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
+        {setupMatch.name ?? "Strategy"} ·{" "}
+        {setupMatch.symbol ?? "—"} ·{" "}
+        {setupMatch.timeframe ?? "—"}
       </div>
 
       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
         <div
           className="h-full bg-red-500"
-          style={{
-            width: `${Math.min(setupMatch.score ?? 0, 100)}%`,
-          }}
+          style={{ width: `${Math.min(score, 100)}%` }}
         />
       </div>
 
       <div className="text-xs text-[var(--text-muted)]">
         Bot score:{" "}
         <span className="font-medium">
-          {setupMatch.score} / 100
+          {score} / 100
         </span>{" "}
         · Confidence{" "}
         <span className="uppercase font-medium">
@@ -161,15 +162,13 @@ export default function BotTodayProposal({
             De huidige marktscore voldoet niet aan de voorwaarden voor een trade.
           </div>
 
-          {/* 👇 HIEROM dus geen trade */}
           {botScoreCard}
-
           {finalStatus}
 
-          {/* ACTIONS */}
           <div className="flex flex-wrap gap-3 pt-4">
-            {!isAuto && !isFinal && (
-              <>
+            {!isAuto &&
+              !isFinal &&
+              typeof onExecute === "function" && (
                 <button
                   onClick={onExecute}
                   className="btn-primary flex items-center gap-2"
@@ -177,7 +176,11 @@ export default function BotTodayProposal({
                   <Play size={16} />
                   Bevestig
                 </button>
+              )}
 
+            {!isAuto &&
+              !isFinal &&
+              typeof onSkip === "function" && (
                 <button
                   onClick={onSkip}
                   className="btn-secondary flex items-center gap-2"
@@ -185,10 +188,9 @@ export default function BotTodayProposal({
                   <SkipForward size={16} />
                   Sla over
                 </button>
-              </>
-            )}
+              )}
 
-            {onGenerate && (
+            {typeof onGenerate === "function" && (
               <button
                 onClick={onGenerate}
                 disabled={isGenerating}
@@ -213,15 +215,17 @@ export default function BotTodayProposal({
 
       <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
         <div className="text-2xl font-semibold">
-          {(order.side ?? "buy").toUpperCase()} {order.symbol}
+          {(order?.side ?? "buy").toUpperCase()}{" "}
+          {order?.symbol ?? "—"}
         </div>
 
         {botScoreCard}
         {finalStatus}
 
         <div className="flex flex-wrap gap-3 pt-4">
-          {!isAuto && !isFinal && (
-            <>
+          {!isAuto &&
+            !isFinal &&
+            typeof onExecute === "function" && (
               <button
                 onClick={onExecute}
                 className="btn-primary flex items-center gap-2"
@@ -229,7 +233,11 @@ export default function BotTodayProposal({
                 <Play size={16} />
                 Voer trade uit
               </button>
+            )}
 
+          {!isAuto &&
+            !isFinal &&
+            typeof onSkip === "function" && (
               <button
                 onClick={onSkip}
                 className="btn-secondary flex items-center gap-2"
@@ -237,10 +245,9 @@ export default function BotTodayProposal({
                 <SkipForward size={16} />
                 Sla trade over
               </button>
-            </>
-          )}
+            )}
 
-          {onGenerate && (
+          {typeof onGenerate === "function" && (
             <button
               onClick={onGenerate}
               disabled={isGenerating}

@@ -12,12 +12,11 @@ import BotScores from "@/components/bot/BotScores";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
- * BotPage — Trading Bots v2.2 (FINAL)
+ * BotPage — Trading Bots v2.2 (FINAL, FIXED)
  *
- * Backend aligned:
- * - Decision lifecycle: planned → executed / skipped
- * - 409 conflicts netjes afgehandeld
- * - Auto-mode backend driven
+ * ✔ Backend is single source of truth
+ * ✔ Decision card ALTIJD zichtbaar
+ * ✔ Auto-mode volledig backend-driven
  */
 export default function BotPage() {
   /* =====================================================
@@ -60,7 +59,7 @@ export default function BotPage() {
   }, [loadStrategies]);
 
   /* =====================================================
-     🌍 GLOBAL SCORES
+     🌍 GLOBAL SCORES (ALLEEN VOOR OVERZICHT)
   ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -75,7 +74,6 @@ export default function BotPage() {
   const handleGenerateDecision = async (bot) => {
     try {
       setGeneratingBotId(bot.id);
-
       await generateDecisionForBot({ bot_id: bot.id });
 
       showSnackbar(
@@ -100,14 +98,10 @@ export default function BotPage() {
   const handleExecuteBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
-
       await executeBot({ bot_id });
 
       const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(
-        `${bot?.name ?? "Bot"} uitgevoerd`,
-        "success"
-      );
+      showSnackbar(`${bot?.name ?? "Bot"} uitgevoerd`, "success");
     } catch (err) {
       showSnackbar(
         err?.status === 409
@@ -126,14 +120,10 @@ export default function BotPage() {
   const handleSkipBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
-
       await skipBot({ bot_id });
 
       const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(
-        `${bot?.name ?? "Bot"} overgeslagen`,
-        "success"
-      );
+      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "success");
     } catch (err) {
       showSnackbar(
         err?.status === 409
@@ -187,8 +177,7 @@ export default function BotPage() {
   );
 
   const totalPnl = portfolios.reduce(
-    (sum, p) =>
-      sum + (p.portfolio?.unrealized_pnl_eur ?? 0),
+    (sum, p) => sum + (p.portfolio?.unrealized_pnl_eur ?? 0),
     0
   );
 
@@ -253,11 +242,18 @@ export default function BotPage() {
             (p) => p.bot_id === bot.id
           );
 
+          // 🔥 CRUCIALE FIX: decision ALTIJD aanwezig
+          const decision =
+            decisionsByBot[bot.id] ?? {
+              status: "planned",
+              setup_match: null,
+            };
+
           return (
             <BotAgentCard
               key={bot.id}
               bot={bot}
-              decision={decisionsByBot[bot.id] ?? null}
+              decision={decision}
               portfolio={portfolio}
               history={history}
               loadingDecision={

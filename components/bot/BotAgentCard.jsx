@@ -18,15 +18,16 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.3 (AUTO MODE READY)
+ * BotAgentCard — TradeLayer 2.5 (CLEAN)
  * --------------------------------------------------
  * ÉÉN bot = ÉÉN agent surface
  *
  * Principes:
- * - Strategy + mode + risk profile altijd zichtbaar
+ * - Strategy + risk profile + auto-mode zichtbaar
  * - Decision = voorstel van vandaag
- * - Portfolio = context
+ * - Strategy-match card altijd zichtbaar
  * - AUTO = read-only
+ * - Geen legacy mode toggles
  */
 export default function BotAgentCard({
   bot,
@@ -64,22 +65,6 @@ export default function BotAgentCard({
   }, []);
 
   /* =====================================================
-     MODE UI
-  ===================================================== */
-  const MODES = ["auto", "semi", "manual"];
-
-  const modeLabel = {
-    auto: "Auto",
-    semi: "Semi",
-    manual: "Manual",
-  };
-
-  const modeClass = (mode) =>
-    bot.mode === mode
-      ? "bg-blue-600 text-white"
-      : "bg-gray-100 text-gray-600";
-
-  /* =====================================================
      RISK PROFILE
   ===================================================== */
   const riskProfile = bot.risk_profile ?? "balanced";
@@ -115,7 +100,7 @@ export default function BotAgentCard({
         : "UITGEVOERD";
     }
     if (decision.status === "skipped") return "OVERGESLAGEN";
-    return decision.action.toUpperCase();
+    return decision.action?.toUpperCase() ?? "—";
   };
 
   return (
@@ -148,33 +133,20 @@ export default function BotAgentCard({
               </span>
             </div>
 
-            {/* MODE (READ ONLY) */}
-            <div className="flex gap-2 mt-2">
-              {MODES.map((m) => (
-                <button
-                  key={m}
-                  className={`px-3 py-1 rounded-md text-xs transition ${modeClass(
-                    m
-                  )}`}
-                  disabled
-                >
-                  {modeLabel[m]}
-                </button>
-              ))}
-            </div>
-
-            {/* RISK PROFILE */}
-            <div className="mt-2 flex items-center gap-2">
+            {/* META BADGES */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {/* RISK PROFILE */}
               <span
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
               >
                 {risk.icon}
                 <span className="font-medium">
-                  Risk profile:
+                  Risk:
                 </span>
                 {risk.label}
               </span>
 
+              {/* AUTO MODE */}
               {isAuto && (
                 <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
                   <Bot size={12} />
@@ -197,7 +169,9 @@ export default function BotAgentCard({
         <span className="text-[var(--text-muted)]">
           Huidige status:
         </span>{" "}
-        <span className="font-semibold">{stateLabel()}</span>
+        <span className="font-semibold">
+          {stateLabel()}
+        </span>
 
         {decision?.confidence && (
           <>
@@ -225,7 +199,7 @@ export default function BotAgentCard({
             decision={decision}
             order={decision?.order ?? null}
             loading={loadingDecision}
-            isAuto={isAuto}              // ✅ KEY ADDITION
+            isAuto={isAuto}
             onGenerate={onGenerate}
             onExecute={
               !isAuto
@@ -293,7 +267,9 @@ export default function BotAgentCard({
             className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
           >
             <Clock size={14} />
-            {showHistory ? "Verberg history" : "Toon history"}
+            {showHistory
+              ? "Verberg history"
+              : "Toon history"}
           </button>
 
           {showHistory && (

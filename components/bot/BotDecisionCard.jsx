@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.5 (FINAL / FAILSAFE)
+ * BotTodayProposal — TradeLayer 2.5 (FINAL)
  *
  * - Strategy vs markt card is ALTIJD zichtbaar
- * - Nooit score = 0
- * - setup_match frontend-failsafe
- * - Geen mode / risk / strategie ruis
+ * - Strategy ≠ trade (belangrijk!)
+ * - Geen valse "geen strategy" meldingen
+ * - Backend is leidend, frontend is alleen interpretatie
  */
 export default function BotTodayProposal({
   decision = null,
@@ -41,18 +41,16 @@ export default function BotTodayProposal({
   }
 
   /* =====================================================
-     SAFE STATE
+     STATE
   ===================================================== */
   const status = decision?.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
   const executedByAuto = decision?.executed_by === "auto";
-
   const confidence = decision?.confidence ?? "low";
 
-  /**
-   * 🔒 FAILSAFE setup_match
-   * Backend is leidend, frontend garandeert aanwezigheid
-   */
+  /* =====================================================
+     FAILSAFE setup_match (backend blijft leidend)
+  ===================================================== */
   const setupMatch =
     decision?.setup_match ?? {
       name: "Strategy",
@@ -64,8 +62,8 @@ export default function BotTodayProposal({
           : 10,
       confidence,
       thresholds: null,
-      status: "no_data",
-      reason: "Nog geen strategy match beschikbaar",
+      status: "no_snapshot",
+      reason: "Geen strategy context beschikbaar voor vandaag",
     };
 
   const score =
@@ -147,11 +145,20 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      {setupMatch.reason && (
-        <div className="text-xs text-gray-500 italic">
-          {setupMatch.reason}
-        </div>
-      )}
+      {/* 🔑 JUISTE INTERPRETATIE */}
+      <div className="text-xs text-gray-500 italic">
+        {setupMatch.status === "no_snapshot" &&
+          "Geen strategy context beschikbaar voor vandaag"}
+
+        {setupMatch.status === "below_threshold" &&
+          "Strategy actief, maar score te laag voor trade"}
+
+        {setupMatch.status === "match_hold" &&
+          "Strategy valide, maar geen koopmoment"}
+
+        {setupMatch.status === "match_buy" &&
+          "Voldoet aan voorwaarden voor trade"}
+      </div>
     </div>
   );
 

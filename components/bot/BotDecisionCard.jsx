@@ -12,17 +12,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.5 (FINAL)
- * --------------------------------------------------
- * Decision card = UITKOMST VAN VANDAAG
+ * BotTodayProposal — TradeLayer 2.5 (FINAL / FAILSAFE)
  *
- * - Bot score vs markt (strategy ↔ setup match)
- * - Wel / geen trade
- * - Auto uitgevoerd of niet
- *
- * ❌ GEEN bot mode
- * ❌ GEEN risk profile
- * ❌ GEEN strategy context
+ * - Strategy vs markt card is ALTIJD zichtbaar
+ * - Nooit score = 0
+ * - setup_match frontend-failsafe
+ * - Geen mode / risk / strategie ruis
  */
 export default function BotTodayProposal({
   decision = null,
@@ -46,18 +41,40 @@ export default function BotTodayProposal({
   }
 
   /* =====================================================
-     STATE
+     SAFE STATE
   ===================================================== */
   const status = decision?.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
   const executedByAuto = decision?.executed_by === "auto";
 
   const confidence = decision?.confidence ?? "low";
-  const setupMatch = decision?.setup_match ?? null;
-  const score = Number(setupMatch?.score ?? 0);
+
+  /**
+   * 🔒 FAILSAFE setup_match
+   * Backend is leidend, frontend garandeert aanwezigheid
+   */
+  const setupMatch =
+    decision?.setup_match ?? {
+      name: "Strategy",
+      symbol: decision?.symbol ?? "BTC",
+      timeframe: "—",
+      score:
+        typeof decision?.scores?.combined === "number"
+          ? decision.scores.combined
+          : 10,
+      confidence,
+      thresholds: null,
+      status: "no_data",
+      reason: "Nog geen strategy match beschikbaar",
+    };
+
+  const score =
+    typeof setupMatch.score === "number" && setupMatch.score > 0
+      ? setupMatch.score
+      : 10;
 
   /* =====================================================
-     HEADER (NEUTRAAL)
+     HEADER
   ===================================================== */
   const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
@@ -97,10 +114,9 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     BOT SCORE CARD — STRATEGY vs MARKT
-     (ALTIJD TONEN, OOK BIJ GEEN TRADE)
+     STRATEGY vs MARKT CARD (ALTIJD)
   ===================================================== */
-  const botScoreCard = setupMatch ? (
+  const botScoreCard = (
     <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
         <Layers size={14} />
@@ -108,27 +124,20 @@ export default function BotTodayProposal({
       </div>
 
       <div className="font-semibold">
-        {setupMatch.name ?? "Strategy"} ·{" "}
-        {setupMatch.symbol ?? "—"} ·{" "}
-        {setupMatch.timeframe ?? "—"}
+        {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
       </div>
 
       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
         <div
-          className="h-full bg-red-500"
+          className="h-full bg-red-500 transition-all"
           style={{ width: `${Math.min(score, 100)}%` }}
         />
       </div>
 
       <div className="text-xs text-[var(--text-muted)]">
         Bot score:{" "}
-        <span className="font-medium">
-          {score} / 100
-        </span>{" "}
-        · Confidence{" "}
-        <span className="uppercase font-medium">
-          {confidence}
-        </span>
+        <span className="font-medium">{score} / 100</span> · Confidence{" "}
+        <span className="uppercase font-medium">{confidence}</span>
       </div>
 
       {setupMatch.thresholds && (
@@ -137,11 +146,12 @@ export default function BotTodayProposal({
           {setupMatch.thresholds.hold}
         </div>
       )}
-    </div>
-  ) : (
-    <div className="rounded-lg border bg-white p-4 text-sm text-gray-600 flex items-center gap-2">
-      <XCircle size={14} />
-      Geen strategy match beschikbaar voor vandaag
+
+      {setupMatch.reason && (
+        <div className="text-xs text-gray-500 italic">
+          {setupMatch.reason}
+        </div>
+      )}
     </div>
   );
 
@@ -166,29 +176,25 @@ export default function BotTodayProposal({
           {finalStatus}
 
           <div className="flex flex-wrap gap-3 pt-4">
-            {!isAuto &&
-              !isFinal &&
-              typeof onExecute === "function" && (
-                <button
-                  onClick={onExecute}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <Play size={16} />
-                  Bevestig
-                </button>
-              )}
+            {!isAuto && !isFinal && typeof onExecute === "function" && (
+              <button
+                onClick={onExecute}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Play size={16} />
+                Bevestig
+              </button>
+            )}
 
-            {!isAuto &&
-              !isFinal &&
-              typeof onSkip === "function" && (
-                <button
-                  onClick={onSkip}
-                  className="btn-secondary flex items-center gap-2"
-                >
-                  <SkipForward size={16} />
-                  Sla over
-                </button>
-              )}
+            {!isAuto && !isFinal && typeof onSkip === "function" && (
+              <button
+                onClick={onSkip}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <SkipForward size={16} />
+                Sla over
+              </button>
+            )}
 
             {typeof onGenerate === "function" && (
               <button
@@ -223,29 +229,25 @@ export default function BotTodayProposal({
         {finalStatus}
 
         <div className="flex flex-wrap gap-3 pt-4">
-          {!isAuto &&
-            !isFinal &&
-            typeof onExecute === "function" && (
-              <button
-                onClick={onExecute}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Play size={16} />
-                Voer trade uit
-              </button>
-            )}
+          {!isAuto && !isFinal && typeof onExecute === "function" && (
+            <button
+              onClick={onExecute}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Play size={16} />
+              Voer trade uit
+            </button>
+          )}
 
-          {!isAuto &&
-            !isFinal &&
-            typeof onSkip === "function" && (
-              <button
-                onClick={onSkip}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <SkipForward size={16} />
-                Sla trade over
-              </button>
-            )}
+          {!isAuto && !isFinal && typeof onSkip === "function" && (
+            <button
+              onClick={onSkip}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <SkipForward size={16} />
+              Sla trade over
+            </button>
+          )}
 
           {typeof onGenerate === "function" && (
             <button

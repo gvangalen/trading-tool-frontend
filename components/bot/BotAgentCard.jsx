@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
+import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
 import {
   Brain,
@@ -18,12 +19,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5 (CLEAN + SAFE)
+ * BotAgentCard — TradeLayer 2.5
  * --------------------------------------------------
- * - Geen legacy mode toggles
- * - Auto badge alleen als bot.mode === "auto"
- * - SSR-safe matchMedia
- * - Handlers veilig (alleen callen als function)
+ * - Settings via 3-dot menu
+ * - Menu opent bestaande modals
+ * - Geen duplicate state
+ * - Mobile & desktop safe
  */
 export default function BotAgentCard({
   bot,
@@ -36,11 +37,17 @@ export default function BotAgentCard({
   onExecute,
   onSkip,
   onUpdateBudget,
+
+  // 🔑 nieuwe callbacks
+  onOpenSettings, // (type) => void
 }) {
   if (!bot || !portfolio) return null;
 
   const [showHistory, setShowHistory] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const settingsRef = useRef(null);
 
   const isAuto = bot?.mode === "auto";
 
@@ -51,20 +58,33 @@ export default function BotAgentCard({
     if (typeof window === "undefined") return;
 
     const mq = window.matchMedia("(max-width: 768px)");
-
     const apply = () => setIsMobile(!!mq.matches);
     apply();
 
-    // Safari/older support
-    const handler = () => apply();
-    if (mq.addEventListener) mq.addEventListener("change", handler);
-    else mq.addListener(handler);
-
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", handler);
-      else mq.removeListener(handler);
-    };
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
   }, []);
+
+  /* =====================================================
+     CLICK OUTSIDE (SETTINGS MENU)
+  ===================================================== */
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        settingsRef.current &&
+        !settingsRef.current.contains(e.target)
+      ) {
+        setShowSettings(false);
+      }
+    }
+
+    if (showSettings) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSettings]);
 
   /* =====================================================
      RISK PROFILE
@@ -92,7 +112,7 @@ export default function BotAgentCard({
   const risk = riskConfig[riskProfile] ?? riskConfig.balanced;
 
   /* =====================================================
-     STATE LABEL (NO CRASH)
+     STATE LABEL
   ===================================================== */
   const stateLabel = () => {
     if (!decision) return "GEEN VOORSTEL";
@@ -106,9 +126,9 @@ export default function BotAgentCard({
   };
 
   return (
-    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6">
+    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
       {/* =====================================================
-         HEADER — IDENTITEIT
+         HEADER
       ===================================================== */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
@@ -117,15 +137,11 @@ export default function BotAgentCard({
           </div>
 
           <div>
-            <div className="font-semibold leading-tight">
-              {bot?.name ?? "Bot"}
-            </div>
-
+            <div className="font-semibold">{bot?.name}</div>
             <div className="text-xs text-[var(--text-muted)]">
-              {bot?.symbol ?? "—"} · {bot?.timeframe ?? "—"}
+              {bot?.symbol} · {bot?.timeframe}
             </div>
 
-            {/* STRATEGY */}
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
               <span className="font-medium">
@@ -133,18 +149,14 @@ export default function BotAgentCard({
               </span>
             </div>
 
-            {/* META BADGES */}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {/* RISK PROFILE */}
+            <div className="mt-2 flex gap-2 flex-wrap">
               <span
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
               >
                 {risk.icon}
-                <span className="font-medium">Risk:</span>
-                {risk.label}
+                Risk: {risk.label}
               </span>
 
-              {/* AUTO MODE */}
               {isAuto && (
                 <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
                   <Bot size={12} />
@@ -155,9 +167,28 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        <button className="icon-muted hover:icon-primary" type="button">
-          <MoreVertical size={16} />
-        </button>
+        {/* SETTINGS MENU */}
+        <div className="relative" ref={settingsRef}>
+          <button
+            type="button"
+            onClick={() => setShowSettings((v) => !v)}
+            className="icon-muted hover:icon-primary"
+          >
+            <MoreVertical size={18} />
+          </button>
+
+          {showSettings && (
+            <div className="absolute right-0 mt-2 z-50">
+              <BotSettingsMenu
+                onOpen={(type) => {
+                  setShowSettings(false);
+                  typeof onOpenSettings === "function" &&
+                    onOpenSettings(type, bot);
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* =====================================================
@@ -166,13 +197,12 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">{stateLabel()}</span>
-
         {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
-            <span className="font-semibold">
-              {String(decision.confidence).toUpperCase()}
+            <span className="font-semibold uppercase">
+              {decision.confidence}
             </span>
           </>
         )}
@@ -182,95 +212,44 @@ export default function BotAgentCard({
          MAIN GRID
       ===================================================== */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* DECISION */}
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            Decision
-          </div>
+        <BotDecisionCard
+          bot={bot}
+          decision={decision}
+          order={decision?.order ?? null}
+          loading={loadingDecision}
+          isAuto={isAuto}
+          onGenerate={onGenerate}
+          onExecute={!isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined}
+          onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
+        />
 
-          <BotDecisionCard
-            bot={bot}
-            decision={decision}
-            order={decision?.order ?? null}
-            loading={loadingDecision}
-            isAuto={isAuto}
-            onGenerate={onGenerate}
-            onExecute={
-              !isAuto && typeof onExecute === "function"
-                ? () => onExecute({ bot_id: bot.id })
-                : undefined
-            }
-            onSkip={
-              !isAuto && typeof onSkip === "function"
-                ? () => onSkip({ bot_id: bot.id })
-                : undefined
-            }
-          />
-        </div>
-
-        {/* PORTFOLIO */}
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            Portfolio
-          </div>
-
-          <BotPortfolioCard bot={portfolio} onUpdateBudget={onUpdateBudget} />
-        </div>
+        <BotPortfolioCard
+          bot={portfolio}
+          onUpdateBudget={onUpdateBudget}
+        />
       </div>
 
       {/* =====================================================
          HISTORY
       ===================================================== */}
-      {isMobile ? (
-        <div className="border rounded-xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowHistory(!showHistory)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
-          >
-            <span className="flex items-center gap-2">
-              <Clock size={14} />
-              History
-            </span>
+      <div className="pt-2 border-t">
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
+        >
+          <Clock size={14} />
+          {showHistory ? "Verberg history" : "Toon history"}
+        </button>
 
-            <ChevronDown
-              size={16}
-              className={`transition-transform ${
-                showHistory ? "rotate-180" : ""
-              }`}
+        {showHistory && (
+          <div className="pt-4">
+            <BotHistoryTable
+              history={history.filter((h) => h.bot_id === bot.id)}
+              compact
             />
-          </button>
-
-          {showHistory && (
-            <div className="p-4 bg-[var(--bg-soft)]">
-              <BotHistoryTable
-                history={history.filter((h) => h.bot_id === bot.id)}
-                compact
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="pt-2 border-t">
-          <button
-            type="button"
-            onClick={() => setShowHistory(!showHistory)}
-            className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
-          >
-            <Clock size={14} />
-            {showHistory ? "Verberg history" : "Toon history"}
-          </button>
-
-          {showHistory && (
-            <div className="pt-4">
-              <BotHistoryTable
-                history={history.filter((h) => h.bot_id === bot.id)}
-                compact
-              />
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -17,7 +17,7 @@ import {
  * - Strategy vs markt card is ALTIJD zichtbaar
  * - Strategy ≠ trade (belangrijk!)
  * - Backend is single source of truth
- * - Laatste analyse = updated_at (of created_at fallback)
+ * - Laatste analyse timestamp zichtbaar (updated_at leidend)
  */
 export default function BotTodayProposal({
   decision = null,
@@ -49,19 +49,26 @@ export default function BotTodayProposal({
   const confidence = decision?.confidence ?? "low";
 
   /* =====================================================
-     ⏱️ LAATSTE ANALYSE (UPDATED_AT IS LEIDEND)
+     ⏱️ LAATSTE ANALYSE (backend is source of truth)
+     Volgorde:
+     1. updated_at (re-run / nacht-run)
+     2. decision_ts (initiële analyse)
+     3. created_at (fallback)
   ===================================================== */
-  const analysisTs =
-    decision?.updated_at || decision?.created_at || null;
+  const decisionTime = decision?.updated_at
+    ? new Date(decision.updated_at)
+    : decision?.decision_ts
+    ? new Date(decision.decision_ts)
+    : decision?.created_at
+    ? new Date(decision.created_at)
+    : null;
 
-  const analysisTime = analysisTs ? new Date(analysisTs) : null;
-
-  const formattedAnalysisTime = analysisTime
-    ? `${analysisTime.toLocaleDateString("nl-NL", {
+  const formattedDecisionTime = decisionTime
+    ? `${decisionTime.toLocaleDateString("nl-NL", {
         day: "2-digit",
         month: "short",
         year: "numeric",
-      })} · ${analysisTime.toLocaleTimeString("nl-NL", {
+      })} · ${decisionTime.toLocaleTimeString("nl-NL", {
         hour: "2-digit",
         minute: "2-digit",
       })}`
@@ -144,9 +151,9 @@ export default function BotTodayProposal({
         {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
       </div>
 
-      {formattedAnalysisTime && (
+      {formattedDecisionTime && (
         <div className="text-xs text-[var(--text-muted)]">
-          Laatste analyse: {formattedAnalysisTime}
+          Laatste analyse: {formattedDecisionTime}
         </div>
       )}
 

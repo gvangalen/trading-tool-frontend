@@ -407,3 +407,29 @@ textarea:focus {
 .score-bar-strong-sell {
   background-color: var(--score-strong-sell);
 }
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+
+  color: var(--text-dark);
+  background: transparent;
+
+  font-weight: 500;
+  transition: background var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.settings-item:hover {
+  background: var(--surface-2);
+  transform: translateX(2px);
+}
+
+.settings-item svg {
+  color: var(--icon-muted);
+}

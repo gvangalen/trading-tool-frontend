@@ -378,3 +378,32 @@ textarea:focus {
 .animate-fade-slide {
   animation: fade-slide 0.12s ease-out;
 }
+
+/* ===========================================
+   SCORE BARS (progress / meters)
+=========================================== */
+.score-bar {
+  height: 100%;
+  transition: width var(--transition-medium),
+              background-color var(--transition-medium);
+}
+
+.score-bar-strong-buy {
+  background-color: var(--score-strong-buy);
+}
+
+.score-bar-buy {
+  background-color: var(--score-buy);
+}
+
+.score-bar-neutral {
+  background-color: var(--score-neutral);
+}
+
+.score-bar-sell {
+  background-color: var(--score-sell);
+}
+
+.score-bar-strong-sell {
+  background-color: var(--score-strong-sell);
+}

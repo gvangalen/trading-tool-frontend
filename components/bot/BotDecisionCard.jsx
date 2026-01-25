@@ -16,8 +16,8 @@ import {
  *
  * - Strategy vs markt card is ALTIJD zichtbaar
  * - Strategy ≠ trade (belangrijk!)
- * - Geen valse "geen strategy" meldingen
- * - Backend is leidend, frontend is alleen interpretatie
+ * - Backend is single source of truth
+ * - Laatste analyse timestamp zichtbaar
  */
 export default function BotTodayProposal({
   decision = null,
@@ -49,7 +49,24 @@ export default function BotTodayProposal({
   const confidence = decision?.confidence ?? "low";
 
   /* =====================================================
-     FAILSAFE setup_match (backend blijft leidend)
+     ⏱️ LAATSTE ANALYSE (backend decision_ts)
+  ===================================================== */
+  const decisionTime =
+    decision?.decision_ts ? new Date(decision.decision_ts) : null;
+
+  const formattedDecisionTime = decisionTime
+    ? `${decisionTime.toLocaleDateString("nl-NL", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })} · ${decisionTime.toLocaleTimeString("nl-NL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`
+    : null;
+
+  /* =====================================================
+     SETUP MATCH (backend leidend)
   ===================================================== */
   const setupMatch =
     decision?.setup_match ?? {
@@ -125,6 +142,12 @@ export default function BotTodayProposal({
         {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
       </div>
 
+      {formattedDecisionTime && (
+        <div className="text-xs text-[var(--text-muted)]">
+          Laatste analyse: {formattedDecisionTime}
+        </div>
+      )}
+
       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
         <div
           className="h-full bg-red-500 transition-all"
@@ -145,7 +168,6 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      {/* 🔑 JUISTE INTERPRETATIE */}
       <div className="text-xs text-gray-500 italic">
         {setupMatch.status === "no_snapshot" &&
           "Geen strategy context beschikbaar voor vandaag"}

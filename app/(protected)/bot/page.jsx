@@ -12,11 +12,11 @@ import BotScores from "@/components/bot/BotScores";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
- * BotPage — Trading Bots v2.3 (CLEAN)
+ * BotPage — Trading Bots v2.5
  *
  * ✔ Backend = single source of truth
- * ✔ Geen frontend fallback decisions
- * ✔ setup_match komt ALTIJD uit backend
+ * ✔ Settings via BotSettingsMenu (3-dot)
+ * ✔ Modals blijven centraal
  */
 export default function BotPage() {
   /* =====================================================
@@ -32,7 +32,7 @@ export default function BotPage() {
   const [executingBotId, setExecutingBotId] = useState(null);
 
   /* =====================================================
-     🤖 BOT DATA (single source of truth)
+     🤖 BOT DATA
   ===================================================== */
   const {
     configs: bots = [],
@@ -59,7 +59,7 @@ export default function BotPage() {
   }, [loadStrategies]);
 
   /* =====================================================
-     🌍 GLOBAL SCORES (alleen overzicht)
+     🌍 GLOBAL SCORES
   ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -75,18 +75,9 @@ export default function BotPage() {
     try {
       setGeneratingBotId(bot.id);
       await generateDecisionForBot({ bot_id: bot.id });
-
-      showSnackbar(
-        `Nieuw voorstel gegenereerd voor ${bot.name}`,
-        "success"
-      );
+      showSnackbar(`Nieuw voorstel voor ${bot.name}`, "success");
     } catch (err) {
-      showSnackbar(
-        err?.status === 409
-          ? "Beslissing is al afgehandeld"
-          : "Fout bij genereren voorstel",
-        "danger"
-      );
+      showSnackbar("Fout bij genereren voorstel", "danger");
     } finally {
       setGeneratingBotId(null);
     }
@@ -103,12 +94,7 @@ export default function BotPage() {
       const bot = bots.find((b) => b.id === bot_id);
       showSnackbar(`${bot?.name ?? "Bot"} uitgevoerd`, "success");
     } catch (err) {
-      showSnackbar(
-        err?.status === 409
-          ? "Deze beslissing is al afgerond"
-          : "Uitvoeren mislukt",
-        "danger"
-      );
+      showSnackbar("Uitvoeren mislukt", "danger");
     } finally {
       setExecutingBotId(null);
     }
@@ -125,12 +111,7 @@ export default function BotPage() {
       const bot = bots.find((b) => b.id === bot_id);
       showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "success");
     } catch (err) {
-      showSnackbar(
-        err?.status === 409
-          ? "Deze beslissing is al afgerond"
-          : "Overslaan mislukt",
-        "danger"
-      );
+      showSnackbar("Overslaan mislukt", "danger");
     } finally {
       setExecutingBotId(null);
     }
@@ -140,11 +121,7 @@ export default function BotPage() {
      ➕ ADD BOT
   ===================================================== */
   const handleAddBot = () => {
-    formRef.current = {
-      name: "",
-      strategy_id: "",
-      mode: "manual",
-    };
+    formRef.current = { name: "", strategy_id: "", mode: "manual" };
 
     openConfirm({
       title: "➕ Nieuwe bot",
@@ -166,6 +143,50 @@ export default function BotPage() {
         showSnackbar("Bot toegevoegd", "success");
       },
     });
+  };
+
+  /* =====================================================
+     ⚙️ BOT SETTINGS ROUTER
+  ===================================================== */
+  const handleOpenBotSettings = (type, bot) => {
+    if (!bot) return;
+
+    switch (type) {
+      case "general":
+        openConfirm({
+          title: "Bot instellingen – Algemeen",
+          description: "Algemene bot instellingen (naam, timeframe, symbol)",
+          confirmText: "Opslaan",
+        });
+        break;
+
+      case "strategy":
+        openConfirm({
+          title: "Bot instellingen – Strategie",
+          description: "Strategie & setup configuratie",
+          confirmText: "Opslaan",
+        });
+        break;
+
+      case "portfolio":
+        openConfirm({
+          title: "Bot instellingen – Portfolio & budget",
+          description: "Budget, daglimiet en max per trade",
+          confirmText: "Opslaan",
+        });
+        break;
+
+      case "automation":
+        openConfirm({
+          title: "Bot instellingen – Automatisering",
+          description: "Auto mode, regels en veiligheid",
+          confirmText: "Opslaan",
+        });
+        break;
+
+      default:
+        break;
+    }
   };
 
   /* =====================================================
@@ -200,9 +221,7 @@ export default function BotPage() {
         <div className="text-sm text-[var(--text-muted)]">
           Totale portfolio waarde
         </div>
-
         <div className="text-4xl font-bold">€{totalValue.toFixed(2)}</div>
-
         <div className={totalPnl >= 0 ? "icon-success" : "icon-danger"}>
           {totalPnl >= 0 ? "+" : ""}€{totalPnl.toFixed(2)}
         </div>
@@ -211,7 +230,6 @@ export default function BotPage() {
       {/* BOTS HEADER */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Bots</h2>
-
         <button
           onClick={handleAddBot}
           className="btn-primary flex items-center gap-2"
@@ -223,17 +241,10 @@ export default function BotPage() {
 
       {/* BOT AGENTS */}
       <div className="space-y-6">
-        {bots.length === 0 && (
-          <div className="card-surface p-6 text-sm text-[var(--text-muted)]">
-            Nog geen bots aangemaakt.
-          </div>
-        )}
-
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
           const decision = decisionsByBot[bot.id];
 
-          // 🚨 Geen decision = backend bug → zichtbaar maken
           if (!decision) {
             return (
               <div
@@ -259,6 +270,7 @@ export default function BotPage() {
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}
               onUpdateBudget={updateBudgetForBot}
+              onOpenSettings={handleOpenBotSettings}
             />
           );
         })}

@@ -22,7 +22,7 @@ import {
  * BotAgentCard — TradeLayer 2.5
  * --------------------------------------------------
  * - Settings via 3-dot menu
- * - Menu opent bestaande modals
+ * - Menu opent bestaande modals (single source of truth)
  * - Geen duplicate state
  * - Mobile & desktop safe
  */
@@ -38,8 +38,8 @@ export default function BotAgentCard({
   onSkip,
   onUpdateBudget,
 
-  // 🔑 nieuwe callbacks
-  onOpenSettings, // (type) => void
+  // 🔑 settings router (general | strategy | portfolio | automation)
+  onOpenSettings,
 }) {
   if (!bot || !portfolio) return null;
 
@@ -48,32 +48,40 @@ export default function BotAgentCard({
   const [showSettings, setShowSettings] = useState(false);
 
   const settingsRef = useRef(null);
-
   const isAuto = bot?.mode === "auto";
 
   /* =====================================================
-     RESPONSIVE CHECK (SSR SAFE)
+     RESPONSIVE CHECK (SSR + SAFARI SAFE)
   ===================================================== */
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const mq = window.matchMedia("(max-width: 768px)");
+
     const apply = () => setIsMobile(!!mq.matches);
     apply();
 
-    mq.addEventListener?.("change", apply);
-    return () => mq.removeEventListener?.("change", apply);
+    if (mq.addEventListener) {
+      mq.addEventListener("change", apply);
+    } else {
+      mq.addListener(apply);
+    }
+
+    return () => {
+      if (mq.removeEventListener) {
+        mq.removeEventListener("change", apply);
+      } else {
+        mq.removeListener(apply);
+      }
+    };
   }, []);
 
   /* =====================================================
-     CLICK OUTSIDE (SETTINGS MENU)
+     CLICK OUTSIDE — SETTINGS MENU
   ===================================================== */
   useEffect(() => {
     function handleClickOutside(e) {
-      if (
-        settingsRef.current &&
-        !settingsRef.current.contains(e.target)
-      ) {
+      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
         setShowSettings(false);
       }
     }
@@ -137,9 +145,10 @@ export default function BotAgentCard({
           </div>
 
           <div>
-            <div className="font-semibold">{bot?.name}</div>
+            <div className="font-semibold">{bot?.name ?? "Bot"}</div>
+
             <div className="text-xs text-[var(--text-muted)]">
-              {bot?.symbol} · {bot?.timeframe}
+              {bot?.symbol ?? "—"} · {bot?.timeframe ?? "—"}
             </div>
 
             <div className="mt-2 text-xs">
@@ -197,6 +206,7 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">{stateLabel()}</span>
+
         {decision?.confidence && (
           <>
             {" "}
@@ -219,8 +229,16 @@ export default function BotAgentCard({
           loading={loadingDecision}
           isAuto={isAuto}
           onGenerate={onGenerate}
-          onExecute={!isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined}
-          onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
+          onExecute={
+            !isAuto && typeof onExecute === "function"
+              ? () => onExecute({ bot_id: bot.id })
+              : undefined
+          }
+          onSkip={
+            !isAuto && typeof onSkip === "function"
+              ? () => onSkip({ bot_id: bot.id })
+              : undefined
+          }
         />
 
         <BotPortfolioCard

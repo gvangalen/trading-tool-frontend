@@ -2,9 +2,9 @@
 
 import {
   Settings,
-  Sliders,
   Wallet,
   Zap,
+  PauseCircle,
 } from "lucide-react";
 
 /**
@@ -12,10 +12,16 @@ import {
  *
  * Doel:
  * - Centrale ingang voor alle bot-instellingen
- * - Opent bestaande modals (single source of truth)
+ * - Geen strategy-wissels (strategy = vaste bot-identiteit)
+ * - Veilige plek voor pauze & verwijderen
  *
  * Verwacht:
- * onOpen(type: "general" | "strategy" | "portfolio" | "automation")
+ * onOpen(type:
+ *   | "general"
+ *   | "portfolio"
+ *   | "automation"
+ *   | "status"
+ * )
  */
 export default function BotSettingsMenu({ onOpen }) {
   return (
@@ -24,6 +30,7 @@ export default function BotSettingsMenu({ onOpen }) {
         Bot instellingen
       </div>
 
+      {/* Algemeen gedrag */}
       <button
         onClick={() => onOpen("general")}
         className="settings-item"
@@ -32,14 +39,7 @@ export default function BotSettingsMenu({ onOpen }) {
         <span>Algemeen</span>
       </button>
 
-      <button
-        onClick={() => onOpen("strategy")}
-        className="settings-item"
-      >
-        <Sliders size={16} />
-        <span>Strategie</span>
-      </button>
-
+      {/* Budget & limieten */}
       <button
         onClick={() => onOpen("portfolio")}
         className="settings-item"
@@ -48,12 +48,25 @@ export default function BotSettingsMenu({ onOpen }) {
         <span>Portfolio & budget</span>
       </button>
 
+      {/* Automatisering */}
       <button
         onClick={() => onOpen("automation")}
         className="settings-item"
       >
         <Zap size={16} />
         <span>Automatisering</span>
+      </button>
+
+      {/* Divider */}
+      <div className="my-2 border-t" />
+
+      {/* Status & beheer */}
+      <button
+        onClick={() => onOpen("status")}
+        className="settings-item text-[var(--text-muted)]"
+      >
+        <PauseCircle size={16} />
+        <span>Status & beheer</span>
       </button>
     </div>
   );

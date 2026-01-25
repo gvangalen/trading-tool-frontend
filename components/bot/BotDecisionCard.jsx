@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.5 (FINAL)
+ * BotTodayProposal — TradeLayer 2.5
  *
  * - Strategy vs markt card is ALTIJD zichtbaar
  * - Strategy ≠ trade
@@ -53,9 +53,9 @@ export default function BotTodayProposal({
   /* =====================================================
      ⏱️ LAATSTE ANALYSE (BACKEND LEIDEND)
      Volgorde:
-     1. updated_at (re-run / nacht-run)
-     2. decision_ts (initiële analyse)
-     3. created_at (fallback)
+     1. updated_at
+     2. decision_ts
+     3. created_at
   ===================================================== */
   const decisionTime = decision?.updated_at
     ? new Date(decision.updated_at)
@@ -140,7 +140,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     STRATEGY vs MARKT CARD (ALTIJD)
+     STRATEGY vs MARKT CARD
   ===================================================== */
   const botScoreCard = (
     <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
@@ -159,7 +159,6 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      {/* ✅ UNIVERSELE SCORE BAR */}
       <ScoreBar score={score} />
 
       <div className="text-xs text-[var(--text-muted)]">
@@ -233,10 +232,10 @@ export default function BotTodayProposal({
               <button
                 onClick={onGenerate}
                 disabled={isGenerating}
-                className="btn-ghost flex items-center gap-2"
+                className="btn-outline flex items-center gap-2"
               >
-                <RotateCcw size={14} />
-                Analyse opnieuw uitvoeren
+                <RotateCcw size={16} />
+                Nieuwe analyse uitvoeren
               </button>
             )}
           </div>
@@ -286,10 +285,10 @@ export default function BotTodayProposal({
             <button
               onClick={onGenerate}
               disabled={isGenerating}
-              className="btn-ghost flex items-center gap-2"
+              className="btn-outline flex items-center gap-2"
             >
-              <RotateCcw size={14} />
-              Analyse opnieuw uitvoeren
+              <RotateCcw size={16} />
+              Nieuwe analyse uitvoeren
             </button>
           )}
         </div>

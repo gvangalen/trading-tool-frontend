@@ -12,11 +12,11 @@ import BotScores from "@/components/bot/BotScores";
 import AddBotForm from "@/components/bot/AddBotForm";
 
 /**
- * BotPage — Trading Bots v2.2 (FINAL, FIXED)
+ * BotPage — Trading Bots v2.3 (CLEAN)
  *
- * ✔ Backend is single source of truth
- * ✔ Decision card ALTIJD zichtbaar
- * ✔ Auto-mode volledig backend-driven
+ * ✔ Backend = single source of truth
+ * ✔ Geen frontend fallback decisions
+ * ✔ setup_match komt ALTIJD uit backend
  */
 export default function BotPage() {
   /* =====================================================
@@ -59,7 +59,7 @@ export default function BotPage() {
   }, [loadStrategies]);
 
   /* =====================================================
-     🌍 GLOBAL SCORES (ALLEEN VOOR OVERZICHT)
+     🌍 GLOBAL SCORES (alleen overzicht)
   ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -231,23 +231,19 @@ export default function BotPage() {
 
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
+          const decision = decisionsByBot[bot.id];
 
-          // ✅ CRUCIALE FIX:
-          // Decision bestaat altijd + setup_match bestaat altijd
-          // zodat BotTodayProposal de strategy-match card altijd kan tonen.
-          const decision =
-            decisionsByBot[bot.id] ?? {
-              status: "planned",
-              action: "observe",
-              confidence: "low",
-              setup_match: {
-                name: bot.strategy?.name ?? "Strategy",
-                symbol: bot.symbol,
-                timeframe: bot.timeframe ?? "—",
-                score: 0,
-                thresholds: null,
-              },
-            };
+          // 🚨 Geen decision = backend bug → zichtbaar maken
+          if (!decision) {
+            return (
+              <div
+                key={bot.id}
+                className="card-surface p-6 text-sm text-red-600"
+              >
+                ⚠️ Geen decision ontvangen voor bot <b>{bot.name}</b>
+              </div>
+            );
+          }
 
           return (
             <BotAgentCard
@@ -256,7 +252,9 @@ export default function BotPage() {
               decision={decision}
               portfolio={portfolio}
               history={history}
-              loadingDecision={generatingBotId === bot.id || executingBotId === bot.id}
+              loadingDecision={
+                generatingBotId === bot.id || executingBotId === bot.id
+              }
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}

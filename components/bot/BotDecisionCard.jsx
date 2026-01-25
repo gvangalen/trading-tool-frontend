@@ -1,6 +1,8 @@
 "use client";
 
 import CardLoader from "@/components/ui/CardLoader";
+import ScoreBar from "@/components/ui/ScoreBar";
+
 import {
   Play,
   SkipForward,
@@ -15,7 +17,7 @@ import {
  * BotTodayProposal — TradeLayer 2.5 (FINAL)
  *
  * - Strategy vs markt card is ALTIJD zichtbaar
- * - Strategy ≠ trade (belangrijk!)
+ * - Strategy ≠ trade
  * - Backend is single source of truth
  * - Laatste analyse timestamp zichtbaar (updated_at leidend)
  */
@@ -49,7 +51,7 @@ export default function BotTodayProposal({
   const confidence = decision?.confidence ?? "low";
 
   /* =====================================================
-     ⏱️ LAATSTE ANALYSE (backend is source of truth)
+     ⏱️ LAATSTE ANALYSE (BACKEND LEIDEND)
      Volgorde:
      1. updated_at (re-run / nacht-run)
      2. decision_ts (initiële analyse)
@@ -75,7 +77,7 @@ export default function BotTodayProposal({
     : null;
 
   /* =====================================================
-     SETUP MATCH (backend leidend)
+     SETUP MATCH (BACKEND LEIDEND)
   ===================================================== */
   const setupMatch =
     decision?.setup_match ?? {
@@ -94,7 +96,7 @@ export default function BotTodayProposal({
 
   const score =
     typeof setupMatch.score === "number" && setupMatch.score > 0
-      ? setupMatch.score
+      ? Math.min(setupMatch.score, 100)
       : 10;
 
   /* =====================================================
@@ -157,12 +159,8 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div
-          className="h-full bg-red-500 transition-all"
-          style={{ width: `${Math.min(score, 100)}%` }}
-        />
-      </div>
+      {/* ✅ UNIVERSELE SCORE BAR */}
+      <ScoreBar score={score} />
 
       <div className="text-xs text-[var(--text-muted)]">
         Bot score:{" "}

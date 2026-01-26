@@ -20,14 +20,26 @@ const RISK_PROFILES = [
   },
 ];
 
-export default function AddBotForm({
-  initialForm,
-  onChange,
+/**
+ * BotForm
+ * --------------------------------------------------
+ * Universeel formulier voor:
+ * - ➕ nieuwe bot
+ * - ✏️ bot bewerken
+ *
+ * Props:
+ * - initialData?: bot | null
+ * - strategies: []
+ * - onSubmit: (payload) => Promise | void
+ */
+export default function BotForm({
+  initialData = null,
   strategies = [],
+  onSubmit,
 }) {
-  const isEdit = Boolean(initialForm?.id);
+  const isEdit = Boolean(initialData?.id);
 
-  const [local, setLocal] = useState({
+  const [form, setForm] = useState({
     name: "",
     strategy_id: null,
     mode: "manual",
@@ -35,43 +47,55 @@ export default function AddBotForm({
   });
 
   /* =====================================================
-     🔁 SYNC BIJ EDIT / INIT
+     🔁 INIT / PREFILL
   ===================================================== */
   useEffect(() => {
-    if (!initialForm) return;
+    if (!initialData) return;
 
-    setLocal({
-      name: initialForm.name ?? "",
+    setForm({
+      name: initialData.name ?? "",
       strategy_id:
-        typeof initialForm.strategy_id === "number"
-          ? initialForm.strategy_id
-          : initialForm.strategy?.id ?? null,
-      mode: initialForm.mode ?? "manual",
-      risk_profile: initialForm.risk_profile ?? "balanced",
+        typeof initialData.strategy_id === "number"
+          ? initialData.strategy_id
+          : initialData.strategy?.id ?? null,
+      mode: initialData.mode ?? "manual",
+      risk_profile: initialData.risk_profile ?? "balanced",
     });
-  }, [initialForm]);
+  }, [initialData]);
 
   /* =====================================================
-     📤 PUSH NAAR PARENT (alleen geldig)
-  ===================================================== */
-  useEffect(() => {
-    if (!local.name?.trim()) return;
-    if (!local.strategy_id) return;
-
-    onChange?.(local);
-  }, [local, onChange]);
-
-  /* =====================================================
-     🧠 AFGELEIDE DATA
+     🧠 DERIVED
   ===================================================== */
   const selectedStrategy =
-    strategies.find((s) => s.id === local.strategy_id) ??
-    initialForm?.strategy ??
+    strategies.find((s) => s.id === form.strategy_id) ??
+    initialData?.strategy ??
     null;
 
   const selectedRisk =
-    RISK_PROFILES.find((r) => r.value === local.risk_profile) ??
+    RISK_PROFILES.find((r) => r.value === form.risk_profile) ??
     RISK_PROFILES[1];
+
+  const isValid =
+    form.name.trim().length > 0 &&
+    (isEdit || Boolean(form.strategy_id));
+
+  /* =====================================================
+     🧠 SUBMIT
+  ===================================================== */
+  const handleSubmit = async () => {
+    if (!isValid) return;
+
+    const payload = {
+      name: form.name.trim(),
+      mode: form.mode,
+      risk_profile: form.risk_profile,
+      ...(isEdit
+        ? {}
+        : { strategy_id: form.strategy_id }),
+    };
+
+    await onSubmit?.(payload);
+  };
 
   /* =====================================================
      🧠 RENDER
@@ -86,9 +110,9 @@ export default function AddBotForm({
         <input
           className="input w-full"
           placeholder="DCA BTC Bot"
-          value={local.name}
+          value={form.name}
           onChange={(e) =>
-            setLocal((s) => ({ ...s, name: e.target.value }))
+            setForm((s) => ({ ...s, name: e.target.value }))
           }
         />
       </div>
@@ -112,9 +136,9 @@ export default function AddBotForm({
         ) : (
           <select
             className="input w-full"
-            value={local.strategy_id ?? ""}
+            value={form.strategy_id ?? ""}
             onChange={(e) =>
-              setLocal((s) => ({
+              setForm((s) => ({
                 ...s,
                 strategy_id: e.target.value
                   ? Number(e.target.value)
@@ -163,9 +187,9 @@ export default function AddBotForm({
         </label>
         <select
           className="input w-full"
-          value={local.mode}
+          value={form.mode}
           onChange={(e) =>
-            setLocal((s) => ({
+            setForm((s) => ({
               ...s,
               mode: e.target.value,
             }))
@@ -185,9 +209,9 @@ export default function AddBotForm({
 
         <select
           className="input w-full"
-          value={local.risk_profile}
+          value={form.risk_profile}
           onChange={(e) =>
-            setLocal((s) => ({
+            setForm((s) => ({
               ...s,
               risk_profile: e.target.value,
             }))
@@ -203,6 +227,17 @@ export default function AddBotForm({
         <div className="mt-1 text-xs text-[var(--text-muted)]">
           {selectedRisk.description}
         </div>
+      </div>
+
+      {/* ================= ACTION ================= */}
+      <div className="pt-2 flex justify-end">
+        <button
+          onClick={handleSubmit}
+          disabled={!isValid}
+          className="btn-primary"
+        >
+          {isEdit ? "Opslaan" : "Bot toevoegen"}
+        </button>
       </div>
     </div>
   );

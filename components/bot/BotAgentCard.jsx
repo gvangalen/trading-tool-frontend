@@ -18,13 +18,13 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5 (FINAL / FIXED)
+ * BotAgentCard — TradeLayer 2.5 (FINAL / STABLE)
  * --------------------------------------------------
  * - Settings via 3-dot menu
  * - GEEN eigen modals
  * - GEEN budget logic
  * - Alles via BotPage (single source of truth)
- * - FIXED click handling (menu bleef niet open)
+ * - FIXED: menu is altijd klikbaar (z-index + overflow)
  */
 export default function BotAgentCard({
   bot,
@@ -49,26 +49,25 @@ export default function BotAgentCard({
   const isAuto = bot?.mode === "auto";
 
   /* =====================================================
-     CLICK OUTSIDE — SETTINGS MENU (DESKTOP + MOBILE)
-     ✔ voorkomt instant close
+     CLICK OUTSIDE — SETTINGS MENU
   ===================================================== */
   useEffect(() => {
     if (!showSettings) return;
 
-    const handlePointerDown = (e) => {
+    const handleClickOutside = (e) => {
       if (!settingsRef.current) return;
       if (settingsRef.current.contains(e.target)) return;
       setShowSettings(false);
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown, {
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, {
       passive: true,
     });
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [showSettings]);
 
@@ -112,7 +111,7 @@ export default function BotAgentCard({
   };
 
   return (
-    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
+    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative overflow-visible">
       {/* =====================================================
          HEADER
       ===================================================== */}
@@ -123,16 +122,16 @@ export default function BotAgentCard({
           </div>
 
           <div>
-            <div className="font-semibold">{bot?.name ?? "Bot"}</div>
+            <div className="font-semibold">{bot.name}</div>
 
             <div className="text-xs text-[var(--text-muted)]">
-              {bot?.symbol ?? "—"} · {bot?.timeframe ?? "—"}
+              {bot.symbol} · {bot.timeframe}
             </div>
 
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
               <span className="font-medium">
-                {bot?.strategy?.name ?? "—"}
+                {bot.strategy?.name ?? "—"}
               </span>
             </div>
 
@@ -141,7 +140,7 @@ export default function BotAgentCard({
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
               >
                 {risk.icon}
-                <span className="font-medium">Risk:</span> {risk.label}
+                Risk: {risk.label}
               </span>
 
               {isAuto && (
@@ -155,23 +154,23 @@ export default function BotAgentCard({
         </div>
 
         {/* ================= SETTINGS MENU ================= */}
-        <div className="relative" ref={settingsRef}>
+        <div className="relative z-[10000]" ref={settingsRef}>
           <button
             type="button"
             aria-label="Open bot instellingen"
+            className="icon-muted hover:icon-primary relative z-[10001]"
             onClick={(e) => {
-              e.stopPropagation(); // 🔑 CRUCIAAL
+              e.stopPropagation();
               setShowSettings((v) => !v);
             }}
-            className="icon-muted hover:icon-primary"
           >
             <MoreVertical size={18} />
           </button>
 
           {showSettings && (
             <div
-              className="absolute right-0 mt-2 z-50 pointer-events-auto"
-              onClick={(e) => e.stopPropagation()} // 🔑 voorkomt sluiten
+              className="absolute right-0 mt-2 z-[10002]"
+              onClick={(e) => e.stopPropagation()}
             >
               <BotSettingsMenu
                 onOpen={(type) => {
@@ -190,13 +189,12 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">{stateLabel()}</span>
-
         {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
             <span className="font-semibold uppercase">
-              {String(decision.confidence)}
+              {decision.confidence}
             </span>
           </>
         )}
@@ -214,18 +212,14 @@ export default function BotAgentCard({
           isAuto={isAuto}
           onGenerate={onGenerate}
           onExecute={
-            !isAuto && typeof onExecute === "function"
-              ? () => onExecute({ bot_id: bot.id })
-              : undefined
+            !isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined
           }
           onSkip={
-            !isAuto && typeof onSkip === "function"
-              ? () => onSkip({ bot_id: bot.id })
-              : undefined
+            !isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined
           }
         />
 
-        {/* READ-ONLY portfolio (GEEN Wijzigen knop) */}
+        {/* READ ONLY portfolio */}
         <BotPortfolioCard bot={portfolio} />
       </div>
 

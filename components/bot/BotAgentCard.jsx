@@ -7,10 +7,11 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
+import { useModal } from "@/components/modal/ModalProvider";
+
 import {
   Brain,
   MoreVertical,
-  ChevronDown,
   Clock,
   Shield,
   Scale,
@@ -19,12 +20,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5
+ * BotAgentCard — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
  * - Settings via 3-dot menu
- * - Menu opent bestaande modals (single source of truth)
- * - Geen duplicate state
- * - Mobile & desktop safe
+ * - Portfolio & budget opent DIRECT bestaande budget modal
+ * - Geen lege / tussen-modals
+ * - Single source of truth
  */
 export default function BotAgentCard({
   bot,
@@ -37,44 +38,16 @@ export default function BotAgentCard({
   onExecute,
   onSkip,
   onUpdateBudget,
-
-  // 🔑 settings router (general | strategy | portfolio | automation)
-  onOpenSettings,
 }) {
   if (!bot || !portfolio) return null;
 
+  const { openConfirm, showSnackbar } = useModal();
+
   const [showHistory, setShowHistory] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const settingsRef = useRef(null);
   const isAuto = bot?.mode === "auto";
-
-  /* =====================================================
-     RESPONSIVE CHECK (SSR + SAFARI SAFE)
-  ===================================================== */
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const mq = window.matchMedia("(max-width: 768px)");
-
-    const apply = () => setIsMobile(!!mq.matches);
-    apply();
-
-    if (mq.addEventListener) {
-      mq.addEventListener("change", apply);
-    } else {
-      mq.addListener(apply);
-    }
-
-    return () => {
-      if (mq.removeEventListener) {
-        mq.removeEventListener("change", apply);
-      } else {
-        mq.removeListener(apply);
-      }
-    };
-  }, []);
 
   /* =====================================================
      CLICK OUTSIDE — SETTINGS MENU
@@ -133,6 +106,84 @@ export default function BotAgentCard({
     return (decision.action || "—").toUpperCase();
   };
 
+  /* =====================================================
+     🔑 OPEN EXISTING BUDGET MODAL (SINGLE SOURCE)
+  ===================================================== */
+  const openBudgetModal = () => {
+    const budget = portfolio.budget ?? {};
+
+    const form = {
+      total_eur: budget.total_eur ?? 0,
+      daily_limit_eur: budget.daily_limit_eur ?? 0,
+      min_order_eur: budget.min_order_eur ?? 0,
+      max_order_eur: budget.max_order_eur ?? 0,
+    };
+
+    openConfirm({
+      title: `💰 Bot budget – ${bot.name}`,
+      description: (
+        <div className="space-y-4 text-sm">
+          <p className="text-[var(--text-muted)]">
+            Dit budget begrenst wat deze bot maximaal mag uitvoeren.
+            De strategy doet voorstellen, maar dit budget is altijd leidend.
+          </p>
+
+          <Field label="Totaal budget (€)" hint="0 = geen limiet">
+            <input
+              type="number"
+              defaultValue={form.total_eur}
+              onChange={(e) => (form.total_eur = Number(e.target.value))}
+              className="input"
+            />
+          </Field>
+
+          <Field label="Daglimiet (€)">
+            <input
+              type="number"
+              defaultValue={form.daily_limit_eur}
+              onChange={(e) =>
+                (form.daily_limit_eur = Number(e.target.value))
+              }
+              className="input"
+            />
+          </Field>
+
+          <Field label="Per trade (€)">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                defaultValue={form.min_order_eur}
+                onChange={(e) =>
+                  (form.min_order_eur = Number(e.target.value))
+                }
+                className="input"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                defaultValue={form.max_order_eur}
+                onChange={(e) =>
+                  (form.max_order_eur = Number(e.target.value))
+                }
+                className="input"
+              />
+            </div>
+          </Field>
+        </div>
+      ),
+      confirmText: "Opslaan",
+      onConfirm: async () => {
+        try {
+          await onUpdateBudget(portfolio.bot_id, form);
+          showSnackbar("Bot budget bijgewerkt", "success");
+        } catch {
+          showSnackbar("Budget opslaan mislukt", "danger");
+        }
+      },
+    });
+  };
+
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
       {/* =====================================================
@@ -145,16 +196,16 @@ export default function BotAgentCard({
           </div>
 
           <div>
-            <div className="font-semibold">{bot?.name ?? "Bot"}</div>
+            <div className="font-semibold">{bot.name}</div>
 
             <div className="text-xs text-[var(--text-muted)]">
-              {bot?.symbol ?? "—"} · {bot?.timeframe ?? "—"}
+              {bot.symbol} · {bot.timeframe}
             </div>
 
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
               <span className="font-medium">
-                {bot?.strategy?.name ?? "—"}
+                {bot.strategy?.name ?? "—"}
               </span>
             </div>
 
@@ -191,8 +242,9 @@ export default function BotAgentCard({
               <BotSettingsMenu
                 onOpen={(type) => {
                   setShowSettings(false);
-                  typeof onOpenSettings === "function" &&
-                    onOpenSettings(type, bot);
+                  if (type === "portfolio") {
+                    openBudgetModal();
+                  }
                 }}
               />
             </div>
@@ -206,7 +258,6 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">{stateLabel()}</span>
-
         {decision?.confidence && (
           <>
             {" "}
@@ -230,15 +281,9 @@ export default function BotAgentCard({
           isAuto={isAuto}
           onGenerate={onGenerate}
           onExecute={
-            !isAuto && typeof onExecute === "function"
-              ? () => onExecute({ bot_id: bot.id })
-              : undefined
+            !isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined
           }
-          onSkip={
-            !isAuto && typeof onSkip === "function"
-              ? () => onSkip({ bot_id: bot.id })
-              : undefined
-          }
+          onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
         />
 
         <BotPortfolioCard
@@ -268,6 +313,23 @@ export default function BotAgentCard({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* =====================================================
+   UI HELPERS
+===================================================== */
+function Field({ label, hint, children }) {
+  return (
+    <div>
+      <label className="block font-medium mb-1">{label}</label>
+      {hint && (
+        <p className="text-xs text-[var(--text-muted)] mb-1">
+          {hint}
+        </p>
+      )}
+      {children}
     </div>
   );
 }

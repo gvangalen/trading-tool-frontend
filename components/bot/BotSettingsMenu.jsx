@@ -11,18 +11,14 @@ import {
 } from "lucide-react";
 
 /**
- * BotSettingsMenu — TradeLayer 2.5
+ * BotSettingsMenu — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
- * Centrale settings entry per bot
+ * ❌ kent GEEN bot
+ * ❌ GEEN state
+ * ❌ GEEN business logic
  *
- * Verantwoordelijkheden:
- * - Openen van bestaande modals (single source of truth)
- * - Pauzeren / hervatten
- * - Veilig verwijderen
- *
- * Props:
- * - bot (verplicht)
- * - onOpen(type, bot)
+ * ✅ dom menu
+ * ✅ roept alleen onOpen(type)
  *
  * Types:
  * - "general"
@@ -32,12 +28,7 @@ import {
  * - "resume"
  * - "delete"
  */
-export default function BotSettingsMenu({ bot, onOpen }) {
-  if (!bot) return null;
-
-  const isPaused = bot.status === "paused";
-  const isAuto = bot.mode === "auto";
-
+export default function BotSettingsMenu({ onOpen }) {
   return (
     <div className="w-64 rounded-xl border bg-white shadow-md p-2 text-sm">
       {/* ================= HEADER ================= */}
@@ -47,7 +38,8 @@ export default function BotSettingsMenu({ bot, onOpen }) {
 
       {/* ================= ALGEMEEN ================= */}
       <button
-        onClick={() => onOpen("general", bot)}
+        type="button"
+        onClick={() => onOpen("general")}
         className="settings-item"
       >
         <Settings size={16} />
@@ -56,7 +48,8 @@ export default function BotSettingsMenu({ bot, onOpen }) {
 
       {/* ================= PORTFOLIO ================= */}
       <button
-        onClick={() => onOpen("portfolio", bot)}
+        type="button"
+        onClick={() => onOpen("portfolio")}
         className="settings-item"
       >
         <Wallet size={16} />
@@ -65,7 +58,8 @@ export default function BotSettingsMenu({ bot, onOpen }) {
 
       {/* ================= AUTOMATION ================= */}
       <button
-        onClick={() => onOpen("automation", bot)}
+        type="button"
+        onClick={() => onOpen("automation")}
         className="settings-item"
       >
         <Zap size={16} />
@@ -75,43 +69,35 @@ export default function BotSettingsMenu({ bot, onOpen }) {
       {/* ================= DIVIDER ================= */}
       <div className="my-2 border-t" />
 
-      {/* ================= PAUSE / RESUME ================= */}
-      {isPaused ? (
-        <button
-          onClick={() => onOpen("resume", bot)}
-          className="settings-item text-green-600"
-        >
-          <PlayCircle size={16} />
-          <span>Bot hervatten</span>
-        </button>
-      ) : (
-        <button
-          onClick={() => onOpen("pause", bot)}
-          className="settings-item text-orange-600"
-        >
-          <PauseCircle size={16} />
-          <span>Bot pauzeren</span>
-        </button>
-      )}
+      {/* ================= PAUSE ================= */}
+      <button
+        type="button"
+        onClick={() => onOpen("pause")}
+        className="settings-item text-orange-600"
+      >
+        <PauseCircle size={16} />
+        <span>Bot pauzeren</span>
+      </button>
+
+      {/* ================= RESUME ================= */}
+      <button
+        type="button"
+        onClick={() => onOpen("resume")}
+        className="settings-item text-green-600"
+      >
+        <PlayCircle size={16} />
+        <span>Bot hervatten</span>
+      </button>
 
       {/* ================= DELETE ================= */}
       <button
-        onClick={() => onOpen("delete", bot)}
+        type="button"
+        onClick={() => onOpen("delete")}
         className="settings-item text-red-600"
       >
         <Trash2 size={16} />
         <span>Bot verwijderen</span>
       </button>
-
-      {/* ================= SAFETY NOTE ================= */}
-      {isAuto && (
-        <div className="mt-2 px-3 py-2 text-xs rounded-md bg-red-50 text-red-700 flex gap-2">
-          <AlertTriangle size={14} className="mt-0.5" />
-          <span>
-            Auto-bot kan niet worden verwijderd terwijl hij actief is.
-          </span>
-        </div>
-      )}
     </div>
   );
 }

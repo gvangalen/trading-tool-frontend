@@ -10,7 +10,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
 import AddBotForm from "@/components/bot/AddBotForm";
-import BotPortfolioSection from "@/components/bot/BotPortfolioSection";
+import BotPortfolioSection from "@/components/bot/BotPortfolioCard";
 
 /**
  * BotPage — Trading Bots v2.5 (FINAL)

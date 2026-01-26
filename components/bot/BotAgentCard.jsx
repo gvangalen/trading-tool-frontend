@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
@@ -35,7 +35,9 @@ export default function BotAgentCard({
   onGenerate,
   onExecute,
   onSkip,
-  onOpenSettings, // 🔑 enige settings-ingang
+
+  // 🔑 enige settings-ingang
+  onOpenSettings, // (type, bot) => void
 }) {
   if (!bot || !portfolio) return null;
 
@@ -46,27 +48,32 @@ export default function BotAgentCard({
   const isAuto = bot?.mode === "auto";
 
   /* =====================================================
-     CLICK OUTSIDE — SETTINGS MENU
+     CLICK OUTSIDE — SETTINGS MENU (DESKTOP + MOBILE)
   ===================================================== */
   useEffect(() => {
-    function handleClickOutside(e) {
+    if (!showSettings) return;
+
+    const handlePointerDown = (e) => {
       if (settingsRef.current && !settingsRef.current.contains(e.target)) {
         setShowSettings(false);
       }
-    }
+    };
 
-    if (showSettings) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown, {
+      passive: true,
+    });
 
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
   }, [showSettings]);
 
   /* =====================================================
      RISK PROFILE
   ===================================================== */
-  const riskProfile = (bot?.risk_profile ?? "balanced").toLowerCase();
+  const riskProfile = String(bot?.risk_profile ?? "balanced").toLowerCase();
 
   const riskConfig = {
     conservative: {
@@ -99,7 +106,7 @@ export default function BotAgentCard({
         : "UITGEVOERD";
     }
     if (decision.status === "skipped") return "OVERGESLAGEN";
-    return (decision.action || "—").toUpperCase();
+    return String(decision.action || "—").toUpperCase();
   };
 
   return (
@@ -114,17 +121,15 @@ export default function BotAgentCard({
           </div>
 
           <div>
-            <div className="font-semibold">{bot.name}</div>
+            <div className="font-semibold">{bot?.name ?? "Bot"}</div>
 
             <div className="text-xs text-[var(--text-muted)]">
-              {bot.symbol} · {bot.timeframe}
+              {bot?.symbol ?? "—"} · {bot?.timeframe ?? "—"}
             </div>
 
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
-              <span className="font-medium">
-                {bot.strategy?.name ?? "—"}
-              </span>
+              <span className="font-medium">{bot?.strategy?.name ?? "—"}</span>
             </div>
 
             <div className="mt-2 flex gap-2 flex-wrap">
@@ -132,7 +137,7 @@ export default function BotAgentCard({
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
               >
                 {risk.icon}
-                Risk: {risk.label}
+                <span className="font-medium">Risk:</span> {risk.label}
               </span>
 
               {isAuto && (
@@ -149,6 +154,7 @@ export default function BotAgentCard({
         <div className="relative" ref={settingsRef}>
           <button
             type="button"
+            aria-label="Open bot instellingen"
             onClick={() => setShowSettings((v) => !v)}
             className="icon-muted hover:icon-primary"
           >
@@ -160,7 +166,9 @@ export default function BotAgentCard({
               <BotSettingsMenu
                 onOpen={(type) => {
                   setShowSettings(false);
-                  onOpenSettings?.(type, bot);
+                  if (typeof onOpenSettings === "function") {
+                    onOpenSettings(type, bot);
+                  }
                 }}
               />
             </div>
@@ -174,12 +182,13 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">{stateLabel()}</span>
+
         {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
             <span className="font-semibold uppercase">
-              {decision.confidence}
+              {String(decision.confidence)}
             </span>
           </>
         )}
@@ -197,13 +206,18 @@ export default function BotAgentCard({
           isAuto={isAuto}
           onGenerate={onGenerate}
           onExecute={
-            !isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined
+            !isAuto && typeof onExecute === "function"
+              ? () => onExecute({ bot_id: bot.id })
+              : undefined
           }
           onSkip={
-            !isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined
+            !isAuto && typeof onSkip === "function"
+              ? () => onSkip({ bot_id: bot.id })
+              : undefined
           }
         />
 
+        {/* ⚠️ Dit component moet read-only worden (geen 'Wijzigen' knop). */}
         <BotPortfolioCard bot={portfolio} />
       </div>
 
@@ -212,7 +226,8 @@ export default function BotAgentCard({
       ===================================================== */}
       <div className="pt-2 border-t">
         <button
-          onClick={() => setShowHistory(!showHistory)}
+          type="button"
+          onClick={() => setShowHistory((v) => !v)}
           className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
         >
           <Clock size={14} />

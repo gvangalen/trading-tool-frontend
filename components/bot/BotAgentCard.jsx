@@ -18,12 +18,13 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5 (FINAL)
+ * BotAgentCard — TradeLayer 2.5 (FINAL / FIXED)
  * --------------------------------------------------
  * - Settings via 3-dot menu
  * - GEEN eigen modals
  * - GEEN budget logic
  * - Alles via BotPage (single source of truth)
+ * - FIXED click handling (menu bleef niet open)
  */
 export default function BotAgentCard({
   bot,
@@ -49,14 +50,15 @@ export default function BotAgentCard({
 
   /* =====================================================
      CLICK OUTSIDE — SETTINGS MENU (DESKTOP + MOBILE)
+     ✔ voorkomt instant close
   ===================================================== */
   useEffect(() => {
     if (!showSettings) return;
 
     const handlePointerDown = (e) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
-        setShowSettings(false);
-      }
+      if (!settingsRef.current) return;
+      if (settingsRef.current.contains(e.target)) return;
+      setShowSettings(false);
     };
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -129,7 +131,9 @@ export default function BotAgentCard({
 
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
-              <span className="font-medium">{bot?.strategy?.name ?? "—"}</span>
+              <span className="font-medium">
+                {bot?.strategy?.name ?? "—"}
+              </span>
             </div>
 
             <div className="mt-2 flex gap-2 flex-wrap">
@@ -150,25 +154,29 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* SETTINGS MENU */}
+        {/* ================= SETTINGS MENU ================= */}
         <div className="relative" ref={settingsRef}>
           <button
             type="button"
             aria-label="Open bot instellingen"
-            onClick={() => setShowSettings((v) => !v)}
+            onClick={(e) => {
+              e.stopPropagation(); // 🔑 CRUCIAAL
+              setShowSettings((v) => !v);
+            }}
             className="icon-muted hover:icon-primary"
           >
             <MoreVertical size={18} />
           </button>
 
           {showSettings && (
-            <div className="absolute right-0 mt-2 z-50">
+            <div
+              className="absolute right-0 mt-2 z-50 pointer-events-auto"
+              onClick={(e) => e.stopPropagation()} // 🔑 voorkomt sluiten
+            >
               <BotSettingsMenu
                 onOpen={(type) => {
                   setShowSettings(false);
-                  if (typeof onOpenSettings === "function") {
-                    onOpenSettings(type, bot);
-                  }
+                  onOpenSettings?.(type, bot);
                 }}
               />
             </div>
@@ -217,7 +225,7 @@ export default function BotAgentCard({
           }
         />
 
-        {/* ⚠️ Dit component moet read-only worden (geen 'Wijzigen' knop). */}
+        {/* READ-ONLY portfolio (GEEN Wijzigen knop) */}
         <BotPortfolioCard bot={portfolio} />
       </div>
 

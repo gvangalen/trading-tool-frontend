@@ -2,28 +2,24 @@
 
 import BotBudgetBar from "./BotBudgetBar";
 import BotPnLBadge from "./BotPnLBadge";
-import { useModal } from "@/components/modal/ModalProvider";
 import { Info } from "lucide-react";
 
 /**
- * BotPortfolioSection
+ * BotPortfolioSection — READ ONLY
  * --------------------------------------------------
- * Portfolio + Budget section van een bot
+ * Portfolio + Budget info van een bot
  *
- * ⚠️ GEEN card / GEEN wrapper
- * → bedoeld als section binnen BotAgentSurface
+ * ❌ GEEN modals
+ * ❌ GEEN wijzigen / instellen knop
+ * ✅ Alleen tonen van actuele status
  *
- * Props:
- * - bot: bot portfolio object (uit /api/bot/portfolios)
- * - onUpdateBudget: (bot_id, payload) => Promise
+ * Budget aanpassen gebeurt via:
+ * BotSettingsMenu → Portfolio & budget
  */
-export default function BotPortfolioSection({ bot, onUpdateBudget }) {
-  const { openConfirm, showSnackbar } = useModal();
+export default function BotPortfolioSection({ bot }) {
   if (!bot) return null;
 
   const {
-    bot_id,
-    bot_name,
     symbol,
     status,
     budget = {},
@@ -35,124 +31,20 @@ export default function BotPortfolioSection({ bot, onUpdateBudget }) {
     (budget.daily_limit_eur ?? 0) > 0 ||
     (budget.max_order_eur ?? 0) > 0;
 
-  /* =====================================================
-     EDIT BUDGET
-  ===================================================== */
-  const handleEditBudget = () => {
-    const form = {
-      total_eur: budget.total_eur ?? 0,
-      daily_limit_eur: budget.daily_limit_eur ?? 0,
-      min_order_eur: budget.min_order_eur ?? 0,
-      max_order_eur: budget.max_order_eur ?? 0,
-    };
-
-    openConfirm({
-      title: `💰 Bot budget – ${bot_name}`,
-      description: (
-        <div className="space-y-4 text-sm">
-          <p className="text-[var(--text-muted)]">
-            Dit budget begrenst wat deze bot maximaal mag uitvoeren.
-            De strategy doet voorstellen, maar dit budget is altijd leidend.
-          </p>
-
-          <Field
-            label="Totaal budget (€)"
-            hint="Maximale totale investering (0 = geen limiet)"
-          >
-            <input
-              type="number"
-              defaultValue={form.total_eur}
-              onChange={(e) =>
-                (form.total_eur = Number(e.target.value))
-              }
-              className="input"
-            />
-          </Field>
-
-          <Field
-            label="Daglimiet (€)"
-            hint="Maximaal bedrag per dag"
-          >
-            <input
-              type="number"
-              defaultValue={form.daily_limit_eur}
-              onChange={(e) =>
-                (form.daily_limit_eur = Number(e.target.value))
-              }
-              className="input"
-            />
-          </Field>
-
-          <Field
-            label="Per trade (€)"
-            hint="Minimum en maximum per order"
-          >
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                defaultValue={form.min_order_eur}
-                onChange={(e) =>
-                  (form.min_order_eur = Number(e.target.value))
-                }
-                className="input"
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                defaultValue={form.max_order_eur}
-                onChange={(e) =>
-                  (form.max_order_eur = Number(e.target.value))
-                }
-                className="input"
-              />
-            </div>
-          </Field>
-        </div>
-      ),
-      confirmText: "Opslaan",
-      onConfirm: async () => {
-        try {
-          if (!onUpdateBudget) {
-            throw new Error("onUpdateBudget niet gekoppeld");
-          }
-
-          await onUpdateBudget(bot_id, form);
-          showSnackbar("Bot budget bijgewerkt", "success");
-        } catch (err) {
-          console.error("❌ Budget update fout:", err);
-          showSnackbar("Budget opslaan mislukt", "danger");
-        }
-      },
-    });
-  };
-
-  /* =====================================================
-     RENDER
-  ===================================================== */
   return (
     <div className="space-y-5">
       {/* ===================== */}
-      {/* BUDGET */}
+      {/* BUDGET (READ ONLY) */}
       {/* ===================== */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-            💰 Bot budget
-            <span
-              title="Zonder budget mag deze bot geen trades uitvoeren"
-              className="cursor-help"
-            >
-              <Info size={13} className="icon-muted" />
-            </span>
-          </div>
-
-          <button
-            onClick={handleEditBudget}
-            className="btn-outline text-xs px-3 py-1"
+        <div className="flex items-center gap-1 mb-2 text-xs text-[var(--text-muted)]">
+          💰 Bot budget
+          <span
+            title="Budget wordt ingesteld via bot-instellingen"
+            className="cursor-help"
           >
-            {hasBudget ? "Wijzigen" : "Instellen"}
-          </button>
+            <Info size={13} className="icon-muted" />
+          </span>
         </div>
 
         {hasBudget ? (
@@ -179,7 +71,7 @@ export default function BotPortfolioSection({ bot, onUpdateBudget }) {
           </>
         ) : (
           <div className="text-xs text-[var(--text-muted)]">
-            Nog geen budget ingesteld
+            Geen budget ingesteld
           </div>
         )}
       </div>
@@ -212,9 +104,7 @@ export default function BotPortfolioSection({ bot, onUpdateBudget }) {
       {/* STATUS */}
       {/* ===================== */}
       <div className="pt-3 border-t text-xs flex justify-between">
-        <span className="text-[var(--text-muted)]">
-          Status
-        </span>
+        <span className="text-[var(--text-muted)]">Status</span>
         <span
           className={
             status === "active"
@@ -232,22 +122,6 @@ export default function BotPortfolioSection({ bot, onUpdateBudget }) {
 /* =====================================================
    UI HELPERS
 ===================================================== */
-function Field({ label, hint, children }) {
-  return (
-    <div>
-      <label className="block font-medium mb-1">
-        {label}
-      </label>
-      {hint && (
-        <p className="text-xs text-[var(--text-muted)] mb-1">
-          {hint}
-        </p>
-      )}
-      {children}
-    </div>
-  );
-}
-
 function Stat({ label, children }) {
   return (
     <div>

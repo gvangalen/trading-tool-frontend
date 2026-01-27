@@ -128,12 +128,13 @@ export default function useBotData() {
         const res = await createBotConfig(payload);
         await loadConfigs();
         await loadPortfolios();
+        await loadToday();
         return res;
       } finally {
         setLoading((l) => ({ ...l, create: false }));
       }
     },
-    [loadConfigs, loadPortfolios]
+    [loadConfigs, loadPortfolios, loadToday]
   );
 
   const updateBot = useCallback(
@@ -143,12 +144,13 @@ export default function useBotData() {
         const res = await updateBotConfig(bot_id, payload);
         await loadConfigs();
         await loadPortfolios();
+        await loadToday(); // 🔑 CRUCIAAL
         return res;
       } finally {
         setLoading((l) => ({ ...l, update: false }));
       }
     },
-    [loadConfigs, loadPortfolios]
+    [loadConfigs, loadPortfolios, loadToday]
   );
 
   const deleteBot = useCallback(
@@ -158,16 +160,17 @@ export default function useBotData() {
         const res = await deleteBotConfig(bot_id);
         await loadConfigs();
         await loadPortfolios();
+        await loadToday(); // 🔑 CRUCIAAL
         return res;
       } finally {
         setLoading((l) => ({ ...l, delete: false }));
       }
     },
-    [loadConfigs, loadPortfolios]
+    [loadConfigs, loadPortfolios, loadToday]
   );
 
   /* =====================================================
-     💰 BOT BUDGET (✅ CORRECT)
+     💰 BOT BUDGET
   ===================================================== */
   const updateBudgetForBot = useCallback(
     async (bot_id, budgetPayload) => {
@@ -275,7 +278,7 @@ export default function useBotData() {
     updateBot,
     deleteBot,
 
-    updateBudgetForBot, // ✅ nu correct
+    updateBudgetForBot,
     generateDecisionForBot,
     executeBot,
     skipBot,

@@ -15,16 +15,16 @@ import {
   Scale,
   Rocket,
   Bot,
+  PauseCircle,
+  PlayCircle,
 } from "lucide-react";
 
 /**
  * BotAgentCard — TradeLayer 2.5 (FINAL / STABLE)
  * --------------------------------------------------
  * - Settings via 3-dot menu
- * - GEEN eigen modals
- * - GEEN budget logic
- * - Alles via BotPage (single source of truth)
- * - FIXED: menu is altijd klikbaar (z-index + overflow)
+ * - Single source of truth via BotPage
+ * - Status (Risk / Mode / Active-Paused) duidelijk zichtbaar
  */
 export default function BotAgentCard({
   bot,
@@ -36,9 +36,7 @@ export default function BotAgentCard({
   onGenerate,
   onExecute,
   onSkip,
-
-  // 🔑 enige settings-ingang
-  onOpenSettings, // (type, bot) => void
+  onOpenSettings, // (type, bot)
 }) {
   if (!bot || !portfolio) return null;
 
@@ -46,7 +44,8 @@ export default function BotAgentCard({
   const [showSettings, setShowSettings] = useState(false);
 
   const settingsRef = useRef(null);
-  const isAuto = bot?.mode === "auto";
+  const isAuto = bot.mode === "auto";
+  const isPaused = bot.status === "paused";
 
   /* =====================================================
      CLICK OUTSIDE — SETTINGS MENU
@@ -72,9 +71,9 @@ export default function BotAgentCard({
   }, [showSettings]);
 
   /* =====================================================
-     RISK PROFILE
+     RISK CONFIG
   ===================================================== */
-  const riskProfile = String(bot?.risk_profile ?? "balanced").toLowerCase();
+  const riskProfile = String(bot.risk_profile ?? "balanced").toLowerCase();
 
   const riskConfig = {
     conservative: {
@@ -97,18 +96,19 @@ export default function BotAgentCard({
   const risk = riskConfig[riskProfile] ?? riskConfig.balanced;
 
   /* =====================================================
-     STATE LABEL
+     STATUS CONFIG
   ===================================================== */
-  const stateLabel = () => {
-    if (!decision) return "GEEN VOORSTEL";
-    if (decision.status === "executed") {
-      return decision.executed_by === "auto"
-        ? "AUTOMATISCH UITGEVOERD"
-        : "UITGEVOERD";
-    }
-    if (decision.status === "skipped") return "OVERGESLAGEN";
-    return String(decision.action || "—").toUpperCase();
-  };
+  const statusConfig = isPaused
+    ? {
+        label: "Paused",
+        icon: <PauseCircle size={12} />,
+        className: "bg-gray-100 text-gray-600 border-gray-300",
+      }
+    : {
+        label: "Active",
+        icon: <PlayCircle size={12} />,
+        className: "bg-green-100 text-green-700 border-green-200",
+      };
 
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative overflow-visible">
@@ -135,20 +135,29 @@ export default function BotAgentCard({
               </span>
             </div>
 
-            <div className="mt-2 flex gap-2 flex-wrap">
+            {/* ================= BADGES (ONDER ELKAAR) ================= */}
+            <div className="mt-3 flex flex-col gap-2">
+              {/* Risk */}
               <span
-                className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}
+                className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${risk.className}`}
               >
                 {risk.icon}
                 Risk: {risk.label}
               </span>
 
-              {isAuto && (
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
-                  <Bot size={12} />
-                  Auto mode
-                </span>
-              )}
+              {/* Mode */}
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700 w-fit">
+                <Bot size={12} />
+                Mode: {isAuto ? "Auto" : "Manual"}
+              </span>
+
+              {/* Status */}
+              <span
+                className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${statusConfig.className}`}
+              >
+                {statusConfig.icon}
+                Status: {statusConfig.label}
+              </span>
             </div>
           </div>
         </div>
@@ -184,11 +193,14 @@ export default function BotAgentCard({
       </div>
 
       {/* =====================================================
-         STATE BAR
+         STATE BAR (decision)
       ===================================================== */}
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
-        <span className="font-semibold">{stateLabel()}</span>
+        <span className="font-semibold">
+          {decision?.action?.toUpperCase() ?? "—"}
+        </span>
+
         {decision?.confidence && (
           <>
             {" "}
@@ -211,15 +223,10 @@ export default function BotAgentCard({
           loading={loadingDecision}
           isAuto={isAuto}
           onGenerate={onGenerate}
-          onExecute={
-            !isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined
-          }
-          onSkip={
-            !isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined
-          }
+          onExecute={!isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined}
+          onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
         />
 
-        {/* READ ONLY portfolio */}
         <BotPortfolioCard bot={portfolio} />
       </div>
 

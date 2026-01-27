@@ -10,15 +10,15 @@ import { useModal } from "@/components/modal/ModalProvider";
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
 import BotForm from "@/components/bot/AddBotForm";
-import BotPortfolioSection from "@/components/bot/BotPortfolioCard";
+import BotBudgetForm from "@/components/bot/BotBudgetForm";
 
 /**
- * BotPage — Trading Bots v2.5 (FINAL / CORRECT)
+ * BotPage — TradeLayer 2.5 (FINAL / WORKING)
  *
  * ✔ Single source of truth
- * ✔ BotForm = live sync (GEEN submit knop)
- * ✔ Opslaan gebeurt ALLEEN via modal confirm
- * ✔ Settings menu volledig werkend
+ * ✔ BotForm & BotBudgetForm = live sync
+ * ✔ Opslaan ALLEEN via modal confirm
+ * ✔ Settings menu volledig functioneel
  */
 export default function BotPage() {
   /* =====================================================
@@ -26,6 +26,7 @@ export default function BotPage() {
   ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
   const formRef = useRef({});
+  const budgetRef = useRef({});
 
   /* =====================================================
      🧠 UI STATE
@@ -47,6 +48,7 @@ export default function BotPage() {
     createBot,
     updateBot,
     deleteBot,
+    updateBudgetForBot,
     generateDecisionForBot,
     executeBot,
     skipBot,
@@ -93,7 +95,6 @@ export default function BotPage() {
     try {
       setExecutingBotId(bot_id);
       await executeBot({ bot_id });
-
       const bot = bots.find((b) => b.id === bot_id);
       showSnackbar(`${bot?.name ?? "Bot"} uitgevoerd`, "success");
     } catch {
@@ -110,7 +111,6 @@ export default function BotPage() {
     try {
       setExecutingBotId(bot_id);
       await skipBot({ bot_id });
-
       const bot = bots.find((b) => b.id === bot_id);
       showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "success");
     } catch {
@@ -140,7 +140,6 @@ export default function BotPage() {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
-
         await createBot(formRef.current);
         showSnackbar("Bot toegevoegd", "success");
       },
@@ -152,10 +151,8 @@ export default function BotPage() {
   ===================================================== */
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;
-
     const isAuto = bot.mode === "auto";
 
-    /* ================= SAFETY ================= */
     if (isAuto && ["pause", "delete"].includes(type)) {
       showSnackbar(
         "Auto-bots kunnen niet gepauzeerd of verwijderd worden. Zet de bot eerst op manual.",
@@ -165,7 +162,7 @@ export default function BotPage() {
     }
 
     switch (type) {
-      /* ============ ALGEMEEN ============ */
+      /* ---------- ALGEMEEN ---------- */
       case "general": {
         formRef.current = {};
 
@@ -187,21 +184,35 @@ export default function BotPage() {
         break;
       }
 
-      /* ============ PORTFOLIO (READ ONLY) ============ */
+      /* ---------- PORTFOLIO & BUDGET ---------- */
       case "portfolio": {
         const portfolio = portfolios.find((p) => p.bot_id === bot.id);
         if (!portfolio) return;
 
+        budgetRef.current = {
+          total_eur: portfolio.budget?.total_eur ?? 0,
+          daily_limit_eur: portfolio.budget?.daily_limit_eur ?? 0,
+          max_order_eur: portfolio.budget?.max_order_eur ?? 0,
+        };
+
         openConfirm({
           title: `💰 Bot budget – ${bot.name}`,
-          description: <BotPortfolioSection bot={portfolio} />,
-          hideConfirm: true,
-          hideCancel: true,
+          description: (
+            <BotBudgetForm
+              initialBudget={budgetRef.current}
+              onChange={(v) => (budgetRef.current = v)}
+            />
+          ),
+          confirmText: "Opslaan",
+          onConfirm: async () => {
+            await updateBudgetForBot(portfolio.bot_id, budgetRef.current);
+            showSnackbar("Bot budget bijgewerkt", "success");
+          },
         });
         break;
       }
 
-      /* ============ PAUSE ============ */
+      /* ---------- PAUSE ---------- */
       case "pause":
         openConfirm({
           title: "⏸️ Bot pauzeren",
@@ -218,7 +229,7 @@ export default function BotPage() {
         });
         break;
 
-      /* ============ RESUME ============ */
+      /* ---------- RESUME ---------- */
       case "resume":
         openConfirm({
           title: "▶️ Bot hervatten",
@@ -235,7 +246,7 @@ export default function BotPage() {
         });
         break;
 
-      /* ============ DELETE ============ */
+      /* ---------- DELETE ---------- */
       case "delete":
         openConfirm({
           title: "🗑️ Bot verwijderen",
@@ -266,19 +277,6 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧮 GLOBAL PORTFOLIO
-  ===================================================== */
-  const totalValue = portfolios.reduce(
-    (sum, p) => sum + (p.portfolio?.cost_basis_eur ?? 0),
-    0
-  );
-
-  const totalPnl = portfolios.reduce(
-    (sum, p) => sum + (p.portfolio?.unrealized_pnl_eur ?? 0),
-    0
-  );
-
-  /* =====================================================
      🧠 PAGE
   ===================================================== */
   return (
@@ -289,16 +287,6 @@ export default function BotPage() {
       </div>
 
       <BotScores scores={dailyScores} loading={loading.today} />
-
-      <div className="card-surface p-7 space-y-1">
-        <div className="text-sm text-[var(--text-muted)]">
-          Totale portfolio waarde
-        </div>
-        <div className="text-4xl font-bold">€{totalValue.toFixed(2)}</div>
-        <div className={totalPnl >= 0 ? "icon-success" : "icon-danger"}>
-          {totalPnl >= 0 ? "+" : ""}€{totalPnl.toFixed(2)}
-        </div>
-      </div>
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Bots</h2>
@@ -318,10 +306,7 @@ export default function BotPage() {
 
           if (!decision) {
             return (
-              <div
-                key={bot.id}
-                className="card-surface p-6 text-sm text-red-600"
-              >
+              <div key={bot.id} className="card-surface p-6 text-sm text-red-600">
                 ⚠️ Geen decision ontvangen voor bot <b>{bot.name}</b>
               </div>
             );
@@ -335,8 +320,7 @@ export default function BotPage() {
               portfolio={portfolio}
               history={history}
               loadingDecision={
-                generatingBotId === bot.id ||
-                executingBotId === bot.id
+                generatingBotId === bot.id || executingBotId === bot.id
               }
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}

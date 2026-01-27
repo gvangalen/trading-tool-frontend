@@ -9,7 +9,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
-import BotForm from "@/components/bot/BotForm";
+import BotForm from "@/components/bot/AddBotForm";
 import BotPortfolioSection from "@/components/bot/BotPortfolioCard";
 
 /**

@@ -18,7 +18,7 @@ import BotBudgetForm from "@/components/bot/BotBudgetForm";
  * ✔ Single source of truth
  * ✔ BotForm & BotBudgetForm = live sync
  * ✔ Opslaan ALLEEN via modal confirm
- * ✔ Settings menu volledig functioneel
+ * ✔ Pause / resume / delete werken + refreshen UI
  */
 export default function BotPage() {
   /* =====================================================
@@ -52,6 +52,7 @@ export default function BotPage() {
     generateDecisionForBot,
     executeBot,
     skipBot,
+    loadConfigs, // 🔑 CRUCIAAL
   } = useBotData();
 
   /* =====================================================
@@ -80,6 +81,7 @@ export default function BotPage() {
     try {
       setGeneratingBotId(bot.id);
       await generateDecisionForBot({ bot_id: bot.id });
+      await loadConfigs();
       showSnackbar(`Nieuw voorstel voor ${bot.name}`, "success");
     } catch {
       showSnackbar("Fout bij genereren voorstel", "danger");
@@ -95,6 +97,8 @@ export default function BotPage() {
     try {
       setExecutingBotId(bot_id);
       await executeBot({ bot_id });
+      await loadConfigs();
+
       const bot = bots.find((b) => b.id === bot_id);
       showSnackbar(`${bot?.name ?? "Bot"} uitgevoerd`, "success");
     } catch {
@@ -111,8 +115,10 @@ export default function BotPage() {
     try {
       setExecutingBotId(bot_id);
       await skipBot({ bot_id });
+      await loadConfigs();
+
       const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "success");
+      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "info");
     } catch {
       showSnackbar("Overslaan mislukt", "danger");
     } finally {
@@ -140,23 +146,26 @@ export default function BotPage() {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
+
         await createBot(formRef.current);
+        await loadConfigs();
         showSnackbar("Bot toegevoegd", "success");
       },
     });
   };
 
   /* =====================================================
-     ⚙️ BOT SETTINGS ROUTER (DEFINITIEF)
+     ⚙️ BOT SETTINGS ROUTER
   ===================================================== */
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;
+
     const isAuto = bot.mode === "auto";
 
     if (isAuto && ["pause", "delete"].includes(type)) {
       showSnackbar(
         "Auto-bots kunnen niet gepauzeerd of verwijderd worden. Zet de bot eerst op manual.",
-        "warning"
+        "info"
       );
       return;
     }
@@ -178,6 +187,7 @@ export default function BotPage() {
           confirmText: "Opslaan",
           onConfirm: async () => {
             await updateBot(bot.id, formRef.current);
+            await loadConfigs();
             showSnackbar("Bot bijgewerkt", "success");
           },
         });
@@ -205,7 +215,8 @@ export default function BotPage() {
           ),
           confirmText: "Opslaan",
           onConfirm: async () => {
-            await updateBudgetForBot(portfolio.bot_id, budgetRef.current);
+            await updateBudgetForBot(bot.id, budgetRef.current);
+            await loadConfigs();
             showSnackbar("Bot budget bijgewerkt", "success");
           },
         });
@@ -224,7 +235,8 @@ export default function BotPage() {
           confirmText: "Pauzeren",
           onConfirm: async () => {
             await updateBot(bot.id, { status: "paused" });
-            showSnackbar("Bot gepauzeerd", "success");
+            await loadConfigs();
+            showSnackbar("Bot gepauzeerd", "info");
           },
         });
         break;
@@ -241,6 +253,7 @@ export default function BotPage() {
           confirmText: "Hervatten",
           onConfirm: async () => {
             await updateBot(bot.id, { status: "active" });
+            await loadConfigs();
             showSnackbar("Bot hervat", "success");
           },
         });
@@ -266,7 +279,8 @@ export default function BotPage() {
           confirmVariant: "danger",
           onConfirm: async () => {
             await deleteBot(bot.id);
-            showSnackbar("Bot verwijderd", "success");
+            await loadConfigs();
+            showSnackbar("Bot verwijderd", "danger");
           },
         });
         break;
@@ -306,7 +320,10 @@ export default function BotPage() {
 
           if (!decision) {
             return (
-              <div key={bot.id} className="card-surface p-6 text-sm text-red-600">
+              <div
+                key={bot.id}
+                className="card-surface p-6 text-sm text-red-600"
+              >
                 ⚠️ Geen decision ontvangen voor bot <b>{bot.name}</b>
               </div>
             );
@@ -320,7 +337,8 @@ export default function BotPage() {
               portfolio={portfolio}
               history={history}
               loadingDecision={
-                generatingBotId === bot.id || executingBotId === bot.id
+                generatingBotId === bot.id ||
+                executingBotId === bot.id
               }
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}

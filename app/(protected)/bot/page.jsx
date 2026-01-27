@@ -13,12 +13,12 @@ import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
 
 /**
- * BotPage — TradeLayer 2.5
+ * BotPage — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
- * ✅ Single source of truth (backend)
- * ✅ Live forms (BotForm / BotBudgetForm)
- * ✅ Pause / resume / delete werken echt
- * ❌ Geen dubbele reloads
+ * ✅ Backend = single source of truth
+ * ✅ Pause / resume = is_active (ECHT)
+ * ✅ Delete = bot verdwijnt direct
+ * ❌ Geen status-magic
  * ❌ Geen UI business logic
  */
 export default function BotPage() {
@@ -36,7 +36,7 @@ export default function BotPage() {
   const [executingBotId, setExecutingBotId] = useState(null);
 
   /* =====================================================
-     🤖 BOT DATA (SINGLE SOURCE OF TRUTH)
+     🤖 BOT DATA (BACKEND IS LEIDEND)
   ===================================================== */
   const {
     configs: bots = [],
@@ -213,12 +213,12 @@ export default function BotPage() {
           title: "⏸️ Bot pauzeren",
           description: (
             <p className="text-sm">
-              De bot stopt met het genereren en uitvoeren van nieuwe beslissingen.
+              De bot stopt volledig met genereren en uitvoeren.
             </p>
           ),
           confirmText: "Pauzeren",
           onConfirm: async () => {
-            await updateBot(bot.id, { status: "paused" });
+            await updateBot(bot.id, { is_active: false });
             showSnackbar("Bot gepauzeerd", "info");
           },
         });
@@ -230,12 +230,12 @@ export default function BotPage() {
           title: "▶️ Bot hervatten",
           description: (
             <p className="text-sm">
-              De bot wordt weer actief en doet opnieuw dagelijkse checks.
+              De bot wordt weer actief en draait opnieuw mee.
             </p>
           ),
           confirmText: "Hervatten",
           onConfirm: async () => {
-            await updateBot(bot.id, { status: "active" });
+            await updateBot(bot.id, { is_active: true });
             showSnackbar("Bot hervat", "success");
           },
         });
@@ -253,7 +253,7 @@ export default function BotPage() {
               <p className="text-[var(--text-muted)]">
                 • Historie blijft bewaard<br />
                 • Portfolio blijft intact<br />
-                • Actie is niet ongedaan te maken
+                • Actie is definitief
               </p>
             </div>
           ),

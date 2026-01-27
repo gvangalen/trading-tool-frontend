@@ -21,7 +21,7 @@ const RISK_PROFILES = [
 ];
 
 /**
- * BotForm — TradeLayer 2.5 (FINAL)
+ * AddBotForm — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
  * ✔ Create + Edit
  * ✔ GEEN submit knop
@@ -33,7 +33,7 @@ const RISK_PROFILES = [
  * - strategies: []
  * - onChange: (formState) => void
  */
-export default function BotForm({
+export default function AddBotForm({
   initialData = null,
   strategies = [],
   onChange,
@@ -71,6 +71,7 @@ export default function BotForm({
 
   /* =====================================================
      📤 LIVE SYNC NAAR PARENT (CRUCIAAL)
+     → DIT is waarom risk_profile nu wél werkt
   ===================================================== */
   useEffect(() => {
     onChange?.(form);
@@ -111,7 +112,7 @@ export default function BotForm({
         />
       </div>
 
-      {/* ================= STRATEGY ================= */}
+      {/* ================= STRATEGIE ================= */}
       <div>
         <label className="block text-sm font-medium mb-1">
           Strategie
@@ -140,9 +141,7 @@ export default function BotForm({
               }))
             }
           >
-            <option value="">
-              — Selecteer een strategie —
-            </option>
+            <option value="">— Selecteer een strategie —</option>
             {strategies.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} · {String(s.type).toUpperCase()} ·{" "}
@@ -197,7 +196,6 @@ export default function BotForm({
         <label className="block text-sm font-medium mb-1">
           Risk profile
         </label>
-
         <select
           className="input w-full"
           value={form.risk_profile}

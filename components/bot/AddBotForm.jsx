@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const RISK_PROFILES = [
   {
@@ -21,25 +21,29 @@ const RISK_PROFILES = [
 ];
 
 /**
- * BotForm
+ * BotForm — TradeLayer 2.5 (FINAL)
  * --------------------------------------------------
- * Universeel formulier voor:
- * - ➕ nieuwe bot
- * - ✏️ bot bewerken
+ * ✔ Create + Edit
+ * ✔ GEEN submit knop
+ * ✔ GEEN eigen submit logica
+ * ✔ ALTIJD live sync naar parent
  *
  * Props:
  * - initialData?: bot | null
  * - strategies: []
- * - onSubmit: (payload) => Promise | void
+ * - onChange: (formState) => void
  */
 export default function BotForm({
   initialData = null,
   strategies = [],
-  onSubmit,
+  onChange,
 }) {
-  const isEdit = Boolean(initialData?.id);
+  // robuust: backend kan id of bot_id gebruiken
+  const isEdit = Boolean(initialData?.id ?? initialData?.bot_id);
 
   const [form, setForm] = useState({
+    id: undefined,
+    bot_id: undefined,
     name: "",
     strategy_id: null,
     mode: "manual",
@@ -53,6 +57,8 @@ export default function BotForm({
     if (!initialData) return;
 
     setForm({
+      id: initialData.id,
+      bot_id: initialData.bot_id,
       name: initialData.name ?? "",
       strategy_id:
         typeof initialData.strategy_id === "number"
@@ -64,38 +70,26 @@ export default function BotForm({
   }, [initialData]);
 
   /* =====================================================
+     📤 LIVE SYNC NAAR PARENT (CRUCIAAL)
+  ===================================================== */
+  useEffect(() => {
+    onChange?.(form);
+  }, [form, onChange]);
+
+  /* =====================================================
      🧠 DERIVED
   ===================================================== */
-  const selectedStrategy =
-    strategies.find((s) => s.id === form.strategy_id) ??
-    initialData?.strategy ??
-    null;
+  const selectedStrategy = useMemo(() => {
+    return (
+      strategies.find((s) => s.id === form.strategy_id) ??
+      initialData?.strategy ??
+      null
+    );
+  }, [strategies, form.strategy_id, initialData]);
 
   const selectedRisk =
     RISK_PROFILES.find((r) => r.value === form.risk_profile) ??
     RISK_PROFILES[1];
-
-  const isValid =
-    form.name.trim().length > 0 &&
-    (isEdit || Boolean(form.strategy_id));
-
-  /* =====================================================
-     🧠 SUBMIT
-  ===================================================== */
-  const handleSubmit = async () => {
-    if (!isValid) return;
-
-    const payload = {
-      name: form.name.trim(),
-      mode: form.mode,
-      risk_profile: form.risk_profile,
-      ...(isEdit
-        ? {}
-        : { strategy_id: form.strategy_id }),
-    };
-
-    await onSubmit?.(payload);
-  };
 
   /* =====================================================
      🧠 RENDER
@@ -189,10 +183,7 @@ export default function BotForm({
           className="input w-full"
           value={form.mode}
           onChange={(e) =>
-            setForm((s) => ({
-              ...s,
-              mode: e.target.value,
-            }))
+            setForm((s) => ({ ...s, mode: e.target.value }))
           }
         >
           <option value="manual">Manual</option>
@@ -227,17 +218,6 @@ export default function BotForm({
         <div className="mt-1 text-xs text-[var(--text-muted)]">
           {selectedRisk.description}
         </div>
-      </div>
-
-      {/* ================= ACTION ================= */}
-      <div className="pt-2 flex justify-end">
-        <button
-          onClick={handleSubmit}
-          disabled={!isValid}
-          className="btn-primary"
-        >
-          {isEdit ? "Opslaan" : "Bot toevoegen"}
-        </button>
       </div>
     </div>
   );

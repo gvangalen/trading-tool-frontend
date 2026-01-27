@@ -9,16 +9,16 @@ import { useModal } from "@/components/modal/ModalProvider";
 
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
-import AddBotForm from "@/components/bot/AddBotForm";
+import BotForm from "@/components/bot/BotForm";
 import BotPortfolioSection from "@/components/bot/BotPortfolioCard";
 
 /**
- * BotPage — Trading Bots v2.5 (FINAL)
+ * BotPage — Trading Bots v2.5 (FINAL / CORRECT)
  *
- * ✔ Backend = single source of truth
- * ✔ Settings via 3-dot menu
- * ✔ Modals hergebruiken bestaande flows
- * ✔ Pause / resume / delete inclusief safety checks
+ * ✔ Single source of truth
+ * ✔ BotForm = live sync (GEEN submit knop)
+ * ✔ Opslaan gebeurt ALLEEN via modal confirm
+ * ✔ Settings menu volledig werkend
  */
 export default function BotPage() {
   /* =====================================================
@@ -47,7 +47,6 @@ export default function BotPage() {
     createBot,
     updateBot,
     deleteBot,
-    updateBudgetForBot,
     generateDecisionForBot,
     executeBot,
     skipBot,
@@ -125,25 +124,19 @@ export default function BotPage() {
      ➕ ADD BOT
   ===================================================== */
   const handleAddBot = () => {
-    formRef.current = {
-      name: "",
-      strategy_id: "",
-      mode: "manual",
-      risk_profile: "balanced",
-    };
+    formRef.current = {};
 
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
-        <AddBotForm
-          initialForm={formRef.current}
+        <BotForm
           strategies={strategies}
           onChange={(v) => (formRef.current = v)}
         />
       ),
-      confirmText: "Opslaan",
+      confirmText: "Bot toevoegen",
       onConfirm: async () => {
-        if (!formRef.current.name || !formRef.current.strategy_id) {
+        if (!formRef.current?.name || !formRef.current?.strategy_id) {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
@@ -174,13 +167,13 @@ export default function BotPage() {
     switch (type) {
       /* ============ ALGEMEEN ============ */
       case "general": {
-        formRef.current = { ...bot };
+        formRef.current = {};
 
         openConfirm({
           title: `⚙️ Bot instellingen – ${bot.name}`,
           description: (
-            <AddBotForm
-              initialForm={formRef.current}
+            <BotForm
+              initialData={bot}
               strategies={strategies}
               onChange={(v) => (formRef.current = v)}
             />
@@ -194,19 +187,14 @@ export default function BotPage() {
         break;
       }
 
-      /* ============ PORTFOLIO ============ */
+      /* ============ PORTFOLIO (READ ONLY) ============ */
       case "portfolio": {
         const portfolio = portfolios.find((p) => p.bot_id === bot.id);
         if (!portfolio) return;
 
         openConfirm({
           title: `💰 Bot budget – ${bot.name}`,
-          description: (
-            <BotPortfolioSection
-              bot={portfolio}
-              onUpdateBudget={updateBudgetForBot}
-            />
-          ),
+          description: <BotPortfolioSection bot={portfolio} />,
           hideConfirm: true,
           hideCancel: true,
         });
@@ -353,7 +341,6 @@ export default function BotPage() {
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}
-              onUpdateBudget={updateBudgetForBot}
               onOpenSettings={handleOpenBotSettings}
             />
           );

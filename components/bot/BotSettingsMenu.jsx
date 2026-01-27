@@ -3,11 +3,9 @@
 import {
   Settings,
   Wallet,
-  Zap,
   PauseCircle,
   PlayCircle,
   Trash2,
-  AlertTriangle,
 } from "lucide-react";
 
 /**
@@ -23,7 +21,6 @@ import {
  * Types:
  * - "general"
  * - "portfolio"
- * - "automation"
  * - "pause"
  * - "resume"
  * - "delete"
@@ -54,16 +51,6 @@ export default function BotSettingsMenu({ onOpen }) {
       >
         <Wallet size={16} />
         <span>Portfolio & budget</span>
-      </button>
-
-      {/* ================= AUTOMATION ================= */}
-      <button
-        type="button"
-        onClick={() => onOpen("automation")}
-        className="settings-item"
-      >
-        <Zap size={16} />
-        <span>Automatisering</span>
       </button>
 
       {/* ================= DIVIDER ================= */}

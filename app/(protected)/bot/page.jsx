@@ -13,12 +13,12 @@ import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
 
 /**
- * BotPage — TradeLayer 2.5 (FINAL)
+ * BotPage — TradeLayer 2.5 (STABLE)
  * --------------------------------------------------
  * ✅ Backend = single source of truth
- * ✅ Pause / resume = is_active (ECHT)
- * ✅ Delete = bot verdwijnt direct
- * ❌ Geen status-magic
+ * ✅ Pause / resume = is_active
+ * ✅ Delete = hard delete
+ * ✅ Cards renderen altijd (ook zonder decision)
  * ❌ Geen UI business logic
  */
 export default function BotPage() {
@@ -26,17 +26,17 @@ export default function BotPage() {
      🧠 MODAL / FEEDBACK
   ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
-  const formRef = useRef({});
-  const budgetRef = useRef({});
+  const formRef = useRef<any>({});
+  const budgetRef = useRef<any>({});
 
   /* =====================================================
      🧠 UI STATE
   ===================================================== */
-  const [generatingBotId, setGeneratingBotId] = useState(null);
-  const [executingBotId, setExecutingBotId] = useState(null);
+  const [generatingBotId, setGeneratingBotId] = useState<number | null>(null);
+  const [executingBotId, setExecutingBotId] = useState<number | null>(null);
 
   /* =====================================================
-     🤖 BOT DATA (BACKEND IS LEIDEND)
+     🤖 BOT DATA (BACKEND LEIDEND)
   ===================================================== */
   const {
     configs: bots = [],
@@ -77,7 +77,7 @@ export default function BotPage() {
   /* =====================================================
      🔁 GENERATE DECISION
   ===================================================== */
-  const handleGenerateDecision = async (bot) => {
+  const handleGenerateDecision = async (bot: any) => {
     try {
       setGeneratingBotId(bot.id);
       await generateDecisionForBot({ bot_id: bot.id });
@@ -92,7 +92,7 @@ export default function BotPage() {
   /* =====================================================
      ▶️ EXECUTE BOT
   ===================================================== */
-  const handleExecuteBot = async ({ bot_id }) => {
+  const handleExecuteBot = async ({ bot_id }: { bot_id: number }) => {
     try {
       setExecutingBotId(bot_id);
       await executeBot({ bot_id });
@@ -109,13 +109,13 @@ export default function BotPage() {
   /* =====================================================
      ⏭️ SKIP BOT
   ===================================================== */
-  const handleSkipBot = async ({ bot_id }) => {
+  const handleSkipBot = async ({ bot_id }: { bot_id: number }) => {
     try {
       setExecutingBotId(bot_id);
       await skipBot({ bot_id });
 
       const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "info");
+      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen", "info");
     } catch {
       showSnackbar("Overslaan mislukt", "danger");
     } finally {
@@ -151,14 +151,14 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ⚙️ BOT SETTINGS ROUTER (DEFINITIEF)
+     ⚙️ BOT SETTINGS ROUTER
   ===================================================== */
-  const handleOpenBotSettings = (type, bot) => {
+  const handleOpenBotSettings = (type: string, bot: any) => {
     if (!bot) return;
 
     switch (type) {
       /* ---------- ALGEMEEN ---------- */
-      case "general": {
+      case "general":
         formRef.current = {};
 
         openConfirm({
@@ -177,7 +177,6 @@ export default function BotPage() {
           },
         });
         break;
-      }
 
       /* ---------- PORTFOLIO & BUDGET ---------- */
       case "portfolio": {
@@ -187,6 +186,7 @@ export default function BotPage() {
         budgetRef.current = {
           total_eur: portfolio.budget?.total_eur ?? 0,
           daily_limit_eur: portfolio.budget?.daily_limit_eur ?? 0,
+          min_order_eur: portfolio.budget?.min_order_eur ?? 0,
           max_order_eur: portfolio.budget?.max_order_eur ?? 0,
         };
 
@@ -265,9 +265,6 @@ export default function BotPage() {
           },
         });
         break;
-
-      default:
-        break;
     }
   };
 
@@ -297,7 +294,18 @@ export default function BotPage() {
       <div className="space-y-6">
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
-          const decision = decisionsByBot[bot.id] ?? null;
+          const decision = decisionsByBot[bot.id];
+
+          if (!decision) {
+            return (
+              <div
+                key={bot.id}
+                className="card-surface p-6 text-sm text-orange-600"
+              >
+                ⏳ Geen beslissing beschikbaar voor <b>{bot.name}</b>
+              </div>
+            );
+          }
 
           return (
             <BotAgentCard

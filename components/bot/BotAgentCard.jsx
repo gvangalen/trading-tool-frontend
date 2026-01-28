@@ -25,6 +25,7 @@ import {
  * ✅ Rendert altijd (ook zonder portfolio of decision)
  * ✅ Pause/Resume op basis van is_active (backend truth)
  * ✅ Symbol/timeframe fallback via bot.strategy
+ * ✅ Portfolio fallback is HARD SAFE (no crashes)
  */
 export default function BotAgentCard({
   bot,
@@ -46,25 +47,55 @@ export default function BotAgentCard({
   const settingsRef = useRef(null);
 
   const isAuto = bot?.mode === "auto";
-  const isPaused = bot?.is_active === false; // ✅ FIX
+  const isPaused = bot?.is_active === false; // ✅ FIX: backend truth
 
-  // symbol/timeframe staan meestal onder strategy (backend)
+  // backend: configs endpoint heeft strategy object
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
   const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
 
-  // Portfolio fallback: als portfolios endpoint ontbreekt, pak budget uit bot.config
-  const portfolioFallback = {
+  /* =====================================================
+     ✅ HARD SAFE PORTFOLIO FALLBACK
+     - voorkomt crashes in BotPortfolioCard
+     - shape matcht (budget + stats + symbol)
+  ===================================================== */
+  const safePortfolioFallback = {
     bot_id: bot.id,
+    name: bot?.name ?? "Bot",
+    is_active: bot?.is_active ?? true,
+    mode: bot?.mode ?? "manual",
+    risk_profile: bot?.risk_profile ?? "balanced",
+    symbol,
+
     budget: bot?.budget || {
       total_eur: 0,
       daily_limit_eur: 0,
       min_order_eur: 0,
       max_order_eur: 0,
     },
+
+    // stats verwacht je portfolios API ook
+    stats: {
+      net_cash_delta_eur: 0,
+      net_qty: 0,
+      today_spent_eur: 0,
+      today_reserved_eur: 0,
+      today_executed_eur: 0,
+      last_price: null,
+      position_value_eur: null,
+    },
   };
 
-  const effectivePortfolio = portfolio || portfolioFallback;
+  // Als portfolio van /bot/portfolios bestaat: merge veilig
+  const effectivePortfolio = portfolio
+    ? {
+        ...safePortfolioFallback,
+        ...portfolio,
+        budget: { ...safePortfolioFallback.budget, ...(portfolio.budget || {}) },
+        stats: { ...safePortfolioFallback.stats, ...(portfolio.stats || {}) },
+        symbol: portfolio.symbol || safePortfolioFallback.symbol,
+      }
+    : safePortfolioFallback;
 
   /* =====================================================
      CLICK OUTSIDE — SETTINGS MENU
@@ -237,7 +268,7 @@ export default function BotAgentCard({
           onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
         />
 
-        {/* ✅ Fallback portfolio zodat card ALTIJD rendert */}
+        {/* ✅ altijd veilige shape */}
         <BotPortfolioCard bot={effectivePortfolio} />
       </div>
 

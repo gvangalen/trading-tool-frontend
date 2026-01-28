@@ -20,11 +20,11 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5 (FINAL / STABLE)
+ * BotAgentCard — TradeLayer 2.5 (STABLE)
  * --------------------------------------------------
- * - Settings via 3-dot menu
- * - Single source of truth via BotPage
- * - Status (Risk / Mode / Active-Paused) duidelijk zichtbaar
+ * ✅ Rendert altijd (ook zonder portfolio of decision)
+ * ✅ Pause/Resume op basis van is_active (backend truth)
+ * ✅ Symbol/timeframe fallback via bot.strategy
  */
 export default function BotAgentCard({
   bot,
@@ -38,14 +38,33 @@ export default function BotAgentCard({
   onSkip,
   onOpenSettings, // (type, bot)
 }) {
-  if (!bot || !portfolio) return null;
+  if (!bot) return null;
 
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const settingsRef = useRef(null);
-  const isAuto = bot.mode === "auto";
-  const isPaused = bot.status === "paused";
+
+  const isAuto = bot?.mode === "auto";
+  const isPaused = bot?.is_active === false; // ✅ FIX
+
+  // symbol/timeframe staan meestal onder strategy (backend)
+  const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
+  const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
+  const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
+
+  // Portfolio fallback: als portfolios endpoint ontbreekt, pak budget uit bot.config
+  const portfolioFallback = {
+    bot_id: bot.id,
+    budget: bot?.budget || {
+      total_eur: 0,
+      daily_limit_eur: 0,
+      min_order_eur: 0,
+      max_order_eur: 0,
+    },
+  };
+
+  const effectivePortfolio = portfolio || portfolioFallback;
 
   /* =====================================================
      CLICK OUTSIDE — SETTINGS MENU
@@ -60,9 +79,7 @@ export default function BotAgentCard({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside, {
-      passive: true,
-    });
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -73,7 +90,7 @@ export default function BotAgentCard({
   /* =====================================================
      RISK CONFIG
   ===================================================== */
-  const riskProfile = String(bot.risk_profile ?? "balanced").toLowerCase();
+  const riskProfile = String(bot?.risk_profile ?? "balanced").toLowerCase();
 
   const riskConfig = {
     conservative: {
@@ -122,22 +139,19 @@ export default function BotAgentCard({
           </div>
 
           <div>
-            <div className="font-semibold">{bot.name}</div>
+            <div className="font-semibold">{bot?.name ?? "Bot"}</div>
 
             <div className="text-xs text-[var(--text-muted)]">
-              {bot.symbol} · {bot.timeframe}
+              {symbol} · {timeframe}
             </div>
 
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
-              <span className="font-medium">
-                {bot.strategy?.name ?? "—"}
-              </span>
+              <span className="font-medium">{strategyName}</span>
             </div>
 
-            {/* ================= BADGES (ONDER ELKAAR) ================= */}
+            {/* BADGES */}
             <div className="mt-3 flex flex-col gap-2">
-              {/* Risk */}
               <span
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${risk.className}`}
               >
@@ -145,13 +159,11 @@ export default function BotAgentCard({
                 Risk: {risk.label}
               </span>
 
-              {/* Mode */}
               <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700 w-fit">
                 <Bot size={12} />
                 Mode: {isAuto ? "Auto" : "Manual"}
               </span>
 
-              {/* Status */}
               <span
                 className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${statusConfig.className}`}
               >
@@ -162,7 +174,7 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* ================= SETTINGS MENU ================= */}
+        {/* SETTINGS MENU */}
         <div className="relative z-[10000]" ref={settingsRef}>
           <button
             type="button"
@@ -198,16 +210,14 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">
-          {decision?.action?.toUpperCase() ?? "—"}
+          {decision?.action ? decision.action.toUpperCase() : "—"}
         </span>
 
         {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
-            <span className="font-semibold uppercase">
-              {decision.confidence}
-            </span>
+            <span className="font-semibold uppercase">{decision.confidence}</span>
           </>
         )}
       </div>
@@ -218,7 +228,7 @@ export default function BotAgentCard({
       <div className="grid lg:grid-cols-2 gap-6">
         <BotDecisionCard
           bot={bot}
-          decision={decision}
+          decision={decision || null}
           order={decision?.order ?? null}
           loading={loadingDecision}
           isAuto={isAuto}
@@ -227,7 +237,8 @@ export default function BotAgentCard({
           onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
         />
 
-        <BotPortfolioCard bot={portfolio} />
+        {/* ✅ Fallback portfolio zodat card ALTIJD rendert */}
+        <BotPortfolioCard bot={effectivePortfolio} />
       </div>
 
       {/* =====================================================

@@ -5,31 +5,32 @@ import BotPnLBadge from "./BotPnLBadge";
 import { Info } from "lucide-react";
 
 /**
- * BotPortfolioSection — READ ONLY
+ * BotPortfolioSection — READ ONLY (FIXED)
  * --------------------------------------------------
- * Portfolio + Budget info van een bot
- *
- * ❌ GEEN modals
- * ❌ GEEN wijzigen / instellen knop
- * ✅ Alleen tonen van actuele status
- *
- * Budget aanpassen gebeurt via:
- * BotSettingsMenu → Portfolio & budget
+ * ✅ Gebaseerd op /bot/portfolios API
+ * ✅ Geen aannames
+ * ✅ Geen crashes
+ * ✅ Backend = single source of truth
  */
 export default function BotPortfolioSection({ bot }) {
   if (!bot) return null;
 
   const {
-    symbol,
-    status,
+    symbol = "—",
+    is_active,
     budget = {},
-    portfolio,
+    stats = {},
   } = bot;
 
   const hasBudget =
     (budget.total_eur ?? 0) > 0 ||
     (budget.daily_limit_eur ?? 0) > 0 ||
     (budget.max_order_eur ?? 0) > 0;
+
+  const netQty = stats.net_qty ?? 0;
+  const positionValue = stats.position_value_eur ?? 0;
+  const spentTotal = Math.abs(stats.net_cash_delta_eur ?? 0);
+  const todaySpent = stats.today_spent_eur ?? 0;
 
   return (
     <div className="space-y-5">
@@ -50,17 +51,13 @@ export default function BotPortfolioSection({ bot }) {
         {hasBudget ? (
           <>
             <BotBudgetBar
-              label="Budget"
-              total={budget.total_eur}
-              spent={
-                budget.total_eur -
-                (budget.remaining_eur ?? 0)
-              }
+              label="Totaal budget"
+              total={budget.total_eur ?? 0}
+              spent={spentTotal}
             />
 
             <div className="text-xs text-[var(--text-muted)] mt-2">
-              Beschikbaar €
-              {budget.remaining_eur?.toFixed(0) ?? 0}
+              Vandaag besteed €{todaySpent.toFixed(0)}
               {budget.daily_limit_eur
                 ? ` · Daglimiet €${budget.daily_limit_eur}`
                 : ""}
@@ -81,21 +78,25 @@ export default function BotPortfolioSection({ bot }) {
       {/* ===================== */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t">
         <Stat label="Holdings">
-          {portfolio.units.toFixed(4)} {symbol}
+          {netQty.toFixed(6)} {symbol}
         </Stat>
 
-        <Stat label="Avg entry">
-          €{portfolio.avg_entry.toFixed(0)}
+        <Stat label="Waarde">
+          €{positionValue.toFixed(0)}
         </Stat>
 
-        <Stat label="Cost basis">
-          €{portfolio.cost_basis_eur.toFixed(0)}
+        <Stat label="Net cash">
+          €{spentTotal.toFixed(0)}
         </Stat>
 
         <Stat label="PnL">
           <BotPnLBadge
-            pnlEur={portfolio.unrealized_pnl_eur}
-            pnlPct={portfolio.unrealized_pnl_pct}
+            pnlEur={positionValue - spentTotal}
+            pnlPct={
+              spentTotal > 0
+                ? ((positionValue - spentTotal) / spentTotal) * 100
+                : 0
+            }
           />
         </Stat>
       </div>
@@ -107,12 +108,12 @@ export default function BotPortfolioSection({ bot }) {
         <span className="text-[var(--text-muted)]">Status</span>
         <span
           className={
-            status === "active"
+            is_active
               ? "icon-success"
               : "text-[var(--text-muted)]"
           }
         >
-          {status.toUpperCase()}
+          {is_active ? "ACTIVE" : "PAUSED"}
         </span>
       </div>
     </div>

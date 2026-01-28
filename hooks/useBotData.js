@@ -20,9 +20,9 @@ import {
  * --------------------------------------------------
  * Centrale hook voor Trading Bots
  *
- * ❌ geen business logic
- * ❌ geen interpretatie
- * ✅ backend is single source of truth
+ * - Backend = single source of truth
+ * - Geen business logic
+ * - Volledig deterministisch
  */
 export default function useBotData() {
   /* =====================================================
@@ -54,10 +54,9 @@ export default function useBotData() {
   const loadConfigs = useCallback(async () => {
     setLoading((l) => ({ ...l, configs: true }));
     try {
+      setError(null);
       const data = await fetchBotConfigs();
       setConfigs(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e?.message ?? "Load configs failed");
     } finally {
       setLoading((l) => ({ ...l, configs: false }));
     }
@@ -66,10 +65,9 @@ export default function useBotData() {
   const loadToday = useCallback(async () => {
     setLoading((l) => ({ ...l, today: true }));
     try {
+      setError(null);
       const data = await fetchBotToday();
       setToday(data ?? null);
-    } catch (e) {
-      setError(e?.message ?? "Load today failed");
     } finally {
       setLoading((l) => ({ ...l, today: false }));
     }
@@ -78,10 +76,9 @@ export default function useBotData() {
   const loadHistory = useCallback(async (days = 30) => {
     setLoading((l) => ({ ...l, history: true }));
     try {
+      setError(null);
       const data = await fetchBotHistory(days);
       setHistory(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e?.message ?? "Load history failed");
     } finally {
       setLoading((l) => ({ ...l, history: false }));
     }
@@ -90,10 +87,9 @@ export default function useBotData() {
   const loadPortfolios = useCallback(async () => {
     setLoading((l) => ({ ...l, portfolios: true }));
     try {
+      setError(null);
       const data = await fetchBotPortfolios();
       setPortfolios(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e?.message ?? "Load portfolios failed");
     } finally {
       setLoading((l) => ({ ...l, portfolios: false }));
     }
@@ -142,9 +138,12 @@ export default function useBotData() {
       setLoading((l) => ({ ...l, update: true }));
       try {
         const res = await updateBotConfig(bot_id, payload);
+
+        // 🔑 CRUCIAAL: ALLES opnieuw laden
         await loadConfigs();
         await loadPortfolios();
-        await loadToday(); // 🔑 CRUCIAAL
+        await loadToday();
+
         return res;
       } finally {
         setLoading((l) => ({ ...l, update: false }));
@@ -158,9 +157,11 @@ export default function useBotData() {
       setLoading((l) => ({ ...l, delete: true }));
       try {
         const res = await deleteBotConfig(bot_id);
+
         await loadConfigs();
         await loadPortfolios();
-        await loadToday(); // 🔑 CRUCIAAL
+        await loadToday();
+
         return res;
       } finally {
         setLoading((l) => ({ ...l, delete: false }));
@@ -173,16 +174,16 @@ export default function useBotData() {
      💰 BOT BUDGET
   ===================================================== */
   const updateBudgetForBot = useCallback(
-    async (bot_id, budgetPayload) => {
+    async (bot_id, budget) => {
       if (!bot_id) return;
 
       setLoading((l) => ({ ...l, budget: true }));
       try {
         const res = await updateBotConfig(bot_id, {
-          budget_total_eur: budgetPayload.total_eur,
-          budget_daily_limit_eur: budgetPayload.daily_limit_eur,
-          budget_min_order_eur: budgetPayload.min_order_eur,
-          budget_max_order_eur: budgetPayload.max_order_eur,
+          budget_total_eur: budget.total_eur,
+          budget_daily_limit_eur: budget.daily_limit_eur,
+          budget_min_order_eur: budget.min_order_eur,
+          budget_max_order_eur: budget.max_order_eur,
         });
 
         await loadConfigs();
@@ -207,9 +208,11 @@ export default function useBotData() {
       setLoading((l) => ({ ...l, generate: true }));
       try {
         const res = await generateBotDecision({ bot_id, report_date });
+
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
+
         return res;
       } finally {
         setLoading((l) => ({ ...l, generate: false }));
@@ -223,9 +226,11 @@ export default function useBotData() {
       setLoading((l) => ({ ...l, action: true }));
       try {
         const res = await markBotExecuted({ bot_id, report_date });
+
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
+
         return res;
       } finally {
         setLoading((l) => ({ ...l, action: false }));
@@ -239,14 +244,17 @@ export default function useBotData() {
       setLoading((l) => ({ ...l, action: true }));
       try {
         const res = await skipBotToday({ bot_id, report_date });
+
         await loadToday();
         await loadHistory(30);
+        await loadPortfolios();
+
         return res;
       } finally {
         setLoading((l) => ({ ...l, action: false }));
       }
     },
-    [loadToday, loadHistory]
+    [loadToday, loadHistory, loadPortfolios]
   );
 
   /* =====================================================

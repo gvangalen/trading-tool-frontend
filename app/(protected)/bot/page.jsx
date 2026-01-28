@@ -13,27 +13,21 @@ import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
 
 /**
- * BotPage — TradeLayer 2.5 (STABLE)
- * --------------------------------------------------
- * ✅ Backend = single source of truth
- * ✅ Pause / resume = is_active
- * ✅ Delete = hard delete
- * ✅ Cards renderen altijd (ook zonder decision)
- * ❌ Geen UI business logic
+ * BotPage — TradeLayer 2.5 (STABLE JSX)
  */
 export default function BotPage() {
   /* =====================================================
      🧠 MODAL / FEEDBACK
   ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
-  const formRef = useRef<any>({});
-  const budgetRef = useRef<any>({});
+  const formRef = useRef({});
+  const budgetRef = useRef({});
 
   /* =====================================================
      🧠 UI STATE
   ===================================================== */
-  const [generatingBotId, setGeneratingBotId] = useState<number | null>(null);
-  const [executingBotId, setExecutingBotId] = useState<number | null>(null);
+  const [generatingBotId, setGeneratingBotId] = useState(null);
+  const [executingBotId, setExecutingBotId] = useState(null);
 
   /* =====================================================
      🤖 BOT DATA (BACKEND LEIDEND)
@@ -77,7 +71,7 @@ export default function BotPage() {
   /* =====================================================
      🔁 GENERATE DECISION
   ===================================================== */
-  const handleGenerateDecision = async (bot: any) => {
+  const handleGenerateDecision = async (bot) => {
     try {
       setGeneratingBotId(bot.id);
       await generateDecisionForBot({ bot_id: bot.id });
@@ -92,7 +86,7 @@ export default function BotPage() {
   /* =====================================================
      ▶️ EXECUTE BOT
   ===================================================== */
-  const handleExecuteBot = async ({ bot_id }: { bot_id: number }) => {
+  const handleExecuteBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
       await executeBot({ bot_id });
@@ -109,13 +103,13 @@ export default function BotPage() {
   /* =====================================================
      ⏭️ SKIP BOT
   ===================================================== */
-  const handleSkipBot = async ({ bot_id }: { bot_id: number }) => {
+  const handleSkipBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
       await skipBot({ bot_id });
 
       const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen", "info");
+      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "info");
     } catch {
       showSnackbar("Overslaan mislukt", "danger");
     } finally {
@@ -153,14 +147,12 @@ export default function BotPage() {
   /* =====================================================
      ⚙️ BOT SETTINGS ROUTER
   ===================================================== */
-  const handleOpenBotSettings = (type: string, bot: any) => {
+  const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;
 
     switch (type) {
-      /* ---------- ALGEMEEN ---------- */
       case "general":
         formRef.current = {};
-
         openConfirm({
           title: `⚙️ Bot instellingen – ${bot.name}`,
           description: (
@@ -178,7 +170,6 @@ export default function BotPage() {
         });
         break;
 
-      /* ---------- PORTFOLIO & BUDGET ---------- */
       case "portfolio": {
         const portfolio = portfolios.find((p) => p.bot_id === bot.id);
         if (!portfolio) return;
@@ -207,15 +198,9 @@ export default function BotPage() {
         break;
       }
 
-      /* ---------- PAUSE ---------- */
       case "pause":
         openConfirm({
           title: "⏸️ Bot pauzeren",
-          description: (
-            <p className="text-sm">
-              De bot stopt volledig met genereren en uitvoeren.
-            </p>
-          ),
           confirmText: "Pauzeren",
           onConfirm: async () => {
             await updateBot(bot.id, { is_active: false });
@@ -224,15 +209,9 @@ export default function BotPage() {
         });
         break;
 
-      /* ---------- RESUME ---------- */
       case "resume":
         openConfirm({
           title: "▶️ Bot hervatten",
-          description: (
-            <p className="text-sm">
-              De bot wordt weer actief en draait opnieuw mee.
-            </p>
-          ),
           confirmText: "Hervatten",
           onConfirm: async () => {
             await updateBot(bot.id, { is_active: true });
@@ -241,22 +220,9 @@ export default function BotPage() {
         });
         break;
 
-      /* ---------- DELETE ---------- */
       case "delete":
         openConfirm({
           title: "🗑️ Bot verwijderen",
-          description: (
-            <div className="space-y-2 text-sm">
-              <p>
-                Weet je zeker dat je bot <b>{bot.name}</b> wilt verwijderen?
-              </p>
-              <p className="text-[var(--text-muted)]">
-                • Historie blijft bewaard<br />
-                • Portfolio blijft intact<br />
-                • Actie is definitief
-              </p>
-            </div>
-          ),
           confirmText: "Verwijderen",
           confirmVariant: "danger",
           onConfirm: async () => {
@@ -264,6 +230,9 @@ export default function BotPage() {
             showSnackbar("Bot verwijderd", "danger");
           },
         });
+        break;
+
+      default:
         break;
     }
   };
@@ -296,22 +265,11 @@ export default function BotPage() {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
           const decision = decisionsByBot[bot.id];
 
-          if (!decision) {
-            return (
-              <div
-                key={bot.id}
-                className="card-surface p-6 text-sm text-orange-600"
-              >
-                ⏳ Geen beslissing beschikbaar voor <b>{bot.name}</b>
-              </div>
-            );
-          }
-
           return (
             <BotAgentCard
               key={bot.id}
               bot={bot}
-              decision={decision}
+              decision={decision ?? null}
               portfolio={portfolio}
               history={history}
               loadingDecision={

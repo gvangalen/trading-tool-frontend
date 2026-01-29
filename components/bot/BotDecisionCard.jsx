@@ -52,10 +52,6 @@ export default function BotTodayProposal({
 
   /* =====================================================
      ⏱️ LAATSTE ANALYSE (BACKEND LEIDEND)
-     Volgorde:
-     1. updated_at
-     2. decision_ts
-     3. created_at
   ===================================================== */
   const decisionTime = decision?.updated_at
     ? new Date(decision.updated_at)
@@ -84,11 +80,7 @@ export default function BotTodayProposal({
       name: "Strategy",
       symbol: decision?.symbol ?? "BTC",
       timeframe: "—",
-      score:
-        typeof decision?.scores?.combined === "number"
-          ? decision.scores.combined
-          : 10,
-      confidence,
+      score: 10,
       thresholds: null,
       status: "no_snapshot",
       reason: "Geen strategy context beschikbaar voor vandaag",
@@ -98,6 +90,19 @@ export default function BotTodayProposal({
     typeof setupMatch.score === "number" && setupMatch.score > 0
       ? Math.min(setupMatch.score, 100)
       : 10;
+
+  /* =====================================================
+     🎨 SCORE KLEUR LOGICA (UX FIX)
+     Groen pas vanaf 75+
+  ===================================================== */
+  const scoreLevel =
+    score >= 75
+      ? "positive"
+      : score >= 60
+      ? "warning"
+      : score >= 40
+      ? "neutral"
+      : "negative";
 
   /* =====================================================
      HEADER
@@ -159,12 +164,29 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      <ScoreBar score={score} />
+      <ScoreBar score={score} level={scoreLevel} />
 
-      <div className="text-xs text-[var(--text-muted)]">
-        Bot score:{" "}
-        <span className="font-medium">{score} / 100</span> · Confidence{" "}
-        <span className="uppercase font-medium">{confidence}</span>
+      {/* 👇 EXPLICIET SPLITSEN */}
+      <div className="text-xs text-[var(--text-muted)] space-y-1">
+        <div>
+          Marktscore:{" "}
+          <span className="font-medium">{score} / 100</span>
+        </div>
+
+        <div>
+          Strategy discipline:{" "}
+          <span
+            className={`font-medium ${
+              confidence === "high"
+                ? "text-green-600"
+                : confidence === "medium"
+                ? "text-yellow-600"
+                : "text-red-600"
+            }`}
+          >
+            {confidence.toUpperCase()}
+          </span>
+        </div>
       </div>
 
       {setupMatch.thresholds && (
@@ -175,14 +197,14 @@ export default function BotTodayProposal({
       )}
 
       <div className="text-xs text-gray-500 italic">
-        {setupMatch.status === "no_snapshot" &&
-          "Geen strategy context beschikbaar voor vandaag"}
+        {setupMatch.status === "match_buy" &&
+          "Markt en strategy discipline zijn voldoende voor een trade."}
 
         {setupMatch.status === "no_match" &&
-          "Strategy actief, maar geen koopmoment"}
+          "Markt is positief, maar strategy discipline is onvoldoende voor actie."}
 
-        {setupMatch.status === "match_buy" &&
-          "Voldoet aan voorwaarden voor trade"}
+        {setupMatch.status === "no_snapshot" &&
+          "Geen actueel strategy-plan beschikbaar voor vandaag."}
       </div>
     </div>
   );
@@ -201,7 +223,8 @@ export default function BotTodayProposal({
           </div>
 
           <div className="text-sm text-[var(--text-muted)]">
-            De huidige marktscore voldoet niet aan de voorwaarden voor een trade.
+            De markt is positief, maar de strategie wordt vandaag onvoldoende
+            consistent uitgevoerd om een trade te verantwoorden.
           </div>
 
           {botScoreCard}

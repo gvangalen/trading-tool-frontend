@@ -5,11 +5,12 @@ import BotPnLBadge from "./BotPnLBadge";
 import { Info } from "lucide-react";
 
 /**
- * BotPortfolioSection — READ ONLY (FIXED)
+ * BotPortfolioSection — READ ONLY (FINAL)
  * --------------------------------------------------
  * ✅ Gebaseerd op /bot/portfolios API
- * ✅ Geen aannames
- * ✅ Geen crashes
+ * ✅ Alleen financiële / portfolio data
+ * ❌ GEEN status (active / paused)
+ * ❌ GEEN acties
  * ✅ Backend = single source of truth
  */
 export default function BotPortfolioSection({ bot }) {
@@ -17,7 +18,6 @@ export default function BotPortfolioSection({ bot }) {
 
   const {
     symbol = "—",
-    is_active,
     budget = {},
     stats = {},
   } = bot;
@@ -99,22 +99,6 @@ export default function BotPortfolioSection({ bot }) {
             }
           />
         </Stat>
-      </div>
-
-      {/* ===================== */}
-      {/* STATUS */}
-      {/* ===================== */}
-      <div className="pt-3 border-t text-xs flex justify-between">
-        <span className="text-[var(--text-muted)]">Status</span>
-        <span
-          className={
-            is_active
-              ? "icon-success"
-              : "text-[var(--text-muted)]"
-          }
-        >
-          {is_active ? "ACTIVE" : "PAUSED"}
-        </span>
       </div>
     </div>
   );

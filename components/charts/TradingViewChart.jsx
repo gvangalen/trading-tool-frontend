@@ -8,13 +8,14 @@ export default function TradingViewChart({
   theme = "light",
   height = 500,
 }) {
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
+    if (initializedRef.current) return; // 🔒 CRUCIAAL
 
-    // voorkom dubbele injectie
-    containerRef.current.innerHTML = "";
+    initializedRef.current = true;
 
     const script = document.createElement("script");
     script.src =
@@ -38,7 +39,7 @@ export default function TradingViewChart({
     });
 
     containerRef.current.appendChild(script);
-  }, [symbol, interval, theme]);
+  }, []); // ⛔️ GEEN dependencies
 
   return (
     <div

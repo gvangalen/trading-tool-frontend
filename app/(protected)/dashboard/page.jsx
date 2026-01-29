@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 import {
   BarChart3,
@@ -20,20 +20,21 @@ import DashboardHighlights from "@/components/dashboard/DashboardHighlights";
 import RightSidebarCard from "@/components/cards/RightSidebarCard";
 import CardWrapper from "@/components/ui/CardWrapper";
 import MarketSummaryForDashboard from "@/components/market/MarketSummaryForDashboard";
+import TradingViewChart from "@/components/charts/TradingViewChart";
 
 import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";
 import { useMarketData } from "@/hooks/useMarketData";
 
+// 🔥 PageLoader overlay
 import PageLoader from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
-  const tvContainerRef = useRef<HTMLDivElement | null>(null);
 
-  /* --------------------------------------------------------
-     📡 DATA HOOKS
-  -------------------------------------------------------- */
+  // --------------------------------------------------------
+  // 📡 DATA HOOKS
+  // --------------------------------------------------------
   const {
     technicalData,
     removeTechnicalIndicator: handleRemove,
@@ -49,48 +50,18 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
+  // --------------------------------------------------------
+  // 🔥 PAGE LOADING OVERLAY
+  // --------------------------------------------------------
   const pageLoading =
     technicalLoading ||
     macroLoading ||
     sevenDayData == null ||
     btcLive == null;
 
-  /* --------------------------------------------------------
-     📈 TradingView Widget
-  -------------------------------------------------------- */
-  useEffect(() => {
-    if (!tvContainerRef.current) return;
-
-    tvContainerRef.current.innerHTML = "";
-
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/tv.js";
-    script.async = true;
-
-    script.onload = () => {
-      // @ts-ignore
-      new window.TradingView.widget({
-        autosize: true,
-        symbol: "BINANCE:BTCUSDT",
-        interval: "D",
-        timezone: "Europe/Amsterdam",
-        theme: "light",
-        style: "1",
-        locale: "nl",
-        toolbar_bg: "#f1f3f6",
-        enable_publishing: false,
-        hide_side_toolbar: false,
-        allow_symbol_change: true,
-        container_id: "tradingview_chart",
-      });
-    };
-
-    tvContainerRef.current.appendChild(script);
-  }, []);
-
-  /* --------------------------------------------------------
-     Scroll handling
-  -------------------------------------------------------- */
+  // --------------------------------------------------------
+  // ⬆️ Scroll-to-top
+  // --------------------------------------------------------
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -102,6 +73,7 @@ export default function DashboardPage() {
 
   return (
     <div className="relative max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
+      {/* 🔵 Loader overlay */}
       {pageLoading && <PageLoader text="Dashboard wordt geladen…" />}
 
       {/* PAGE TITLE */}
@@ -127,18 +99,20 @@ export default function DashboardPage() {
             title={
               <div className="flex items-center gap-2">
                 <LineChart className="w-4 h-4 icon-primary" />
-                Market Chart (TradingView)
+                Market Chart
               </div>
             }
           >
-            <div
-              ref={tvContainerRef}
-              id="tradingview_chart"
-              className="w-full h-[520px]"
+            <TradingViewChart
+              key="btc-d"
+              symbol="BINANCE:BTCUSDT"
+              interval="D"
+              theme="light"
+              height={520}
             />
           </CardWrapper>
 
-          {/* MARKET SUMMARY */}
+          {/* MARKET DATA */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -193,7 +167,7 @@ export default function DashboardPage() {
           </CardWrapper>
         </main>
 
-        {/* SIDEBAR */}
+        {/* RIGHT SIDEBAR */}
         <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />
@@ -211,6 +185,7 @@ export default function DashboardPage() {
             p-3 rounded-full shadow-lg
             hover:bg-[var(--primary-strong)]
             transition-all
+            focus:ring-2 focus:ring-[var(--primary)]
           "
         >
           <ChevronsUp className="w-5 h-5" />

@@ -2,20 +2,26 @@
 
 import { useEffect, useRef } from "react";
 
+type TradingViewChartProps = {
+  symbol?: string;
+  interval?: string;
+  theme?: "light" | "dark";
+  height?: number;
+};
+
 export default function TradingViewChart({
   symbol = "BINANCE:BTCUSDT",
   interval = "D",
   theme = "light",
-  height = 500,
-}) {
+  height = 520,
+}: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    if (initializedRef.current) return; // 🔒 CRUCIAAL
 
-    initializedRef.current = true;
+    // 🔒 Reset container om dubbele widgets te voorkomen
+    containerRef.current.innerHTML = "";
 
     const script = document.createElement("script");
     script.src =
@@ -39,7 +45,14 @@ export default function TradingViewChart({
     });
 
     containerRef.current.appendChild(script);
-  }, []); // ⛔️ GEEN dependencies
+
+    // cleanup (veilig bij unmount)
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
+    };
+  }, [symbol, interval, theme]);
 
   return (
     <div

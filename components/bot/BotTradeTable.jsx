@@ -1,45 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Clock } from "lucide-react";
 
-export default function BotTradeTable({ botId }) {
-  const [trades, setTrades] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+import useBotData from "@/hooks/useBotData";
 
+/**
+ * BotTradeTable
+ * --------------------------------------------------
+ * - Toont ECHTE uitgevoerde trades (ledger execute)
+ * - Gebruikt centrale useBotData hook
+ * - Geen directe API calls
+ * - Backend = single source of truth
+ */
+export default function BotTradeTable({ botId }) {
+  const {
+    tradesByBot,
+    loadTradesForBot,
+    loading,
+  } = useBotData();
+
+  const trades = tradesByBot?.[botId] || [];
+  const isLoading = loading?.trades;
+
+  /* =====================================================
+     🔁 LOAD TRADES (lazy per bot)
+  ===================================================== */
   useEffect(() => {
     if (!botId) return;
+    loadTradesForBot(botId, 20);
+  }, [botId, loadTradesForBot]);
 
-    async function fetchTrades() {
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/bot/trades?bot_id=${botId}&limit=20`);
-        if (!res.ok) throw new Error("Failed to fetch trades");
-        const data = await res.json();
-        setTrades(data || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchTrades();
-  }, [botId]);
-
-  if (loading) {
+  /* =====================================================
+     STATES
+  ===================================================== */
+  if (isLoading) {
     return (
       <div className="mt-4 text-sm text-[var(--text-muted)]">
         Trades laden…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mt-4 text-sm text-red-500">
-        {error}
       </div>
     );
   }
@@ -53,6 +51,9 @@ export default function BotTradeTable({ botId }) {
     );
   }
 
+  /* =====================================================
+     TABLE
+  ===================================================== */
   return (
     <div className="mt-6">
       <h4 className="text-sm font-semibold mb-2">
@@ -76,27 +77,29 @@ export default function BotTradeTable({ botId }) {
             {trades.map((t) => (
               <tr key={t.id} className="border-t">
                 <td className="px-3 py-2">
-                  {new Date(t.executed_at).toLocaleString()}
+                  {t.executed_at
+                    ? new Date(t.executed_at).toLocaleString()
+                    : "—"}
                 </td>
 
                 <td className="px-3 py-2 font-medium text-green-600">
-                  {t.side.toUpperCase()}
+                  {(t.side || "buy").toUpperCase()}
                 </td>
 
                 <td className="px-3 py-2">
-                  {t.qty.toFixed(6)} {t.symbol}
+                  {Number(t.qty || 0).toFixed(6)} {t.symbol || "BTC"}
                 </td>
 
                 <td className="px-3 py-2">
-                  {t.price ? `€${t.price}` : "—"}
+                  {t.price != null ? `€${t.price}` : "—"}
                 </td>
 
                 <td className="px-3 py-2">
-                  {t.amount_eur ? `€${t.amount_eur}` : "—"}
+                  {t.amount_eur != null ? `€${t.amount_eur}` : "—"}
                 </td>
 
                 <td className="px-3 py-2 capitalize text-[var(--text-muted)]">
-                  {t.mode}
+                  {t.mode || "manual"}
                 </td>
               </tr>
             ))}

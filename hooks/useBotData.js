@@ -7,6 +7,7 @@ import {
   fetchBotToday,
   fetchBotHistory,
   fetchBotPortfolios,
+  fetchBotTrades,          // ✅ NIEUW
   generateBotDecision,
   markBotExecuted,
   skipBotToday,
@@ -33,11 +34,15 @@ export default function useBotData() {
   const [history, setHistory] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
 
+  // ✅ ECHTE TRADES (per bot)
+  const [tradesByBot, setTradesByBot] = useState({});
+
   const [loading, setLoading] = useState({
     configs: false,
     today: false,
     history: false,
     portfolios: false,
+    trades: false,          // ✅
     generate: false,
     action: false,
     create: false,
@@ -96,6 +101,32 @@ export default function useBotData() {
   }, []);
 
   /* =====================================================
+     📈 TRADES (ECHTE FILLS)
+     - Ledger execute entries
+     - Lazy per bot
+  ===================================================== */
+  const loadTradesForBot = useCallback(
+    async (bot_id, limit = 50) => {
+      if (!bot_id) return;
+
+      setLoading((l) => ({ ...l, trades: true }));
+      try {
+        const data = await fetchBotTrades({ bot_id, limit });
+
+        setTradesByBot((prev) => ({
+          ...prev,
+          [bot_id]: Array.isArray(data) ? data : [],
+        }));
+      } catch (err) {
+        console.error("❌ loadTradesForBot error:", err);
+      } finally {
+        setLoading((l) => ({ ...l, trades: false }));
+      }
+    },
+    []
+  );
+
+  /* =====================================================
      🧠 DERIVED DATA
   ===================================================== */
   const decisionsByBot = useMemo(() => {
@@ -139,7 +170,6 @@ export default function useBotData() {
       try {
         const res = await updateBotConfig(bot_id, payload);
 
-        // 🔑 CRUCIAAL: ALLES opnieuw laden
         await loadConfigs();
         await loadPortfolios();
         await loadToday();
@@ -212,13 +242,14 @@ export default function useBotData() {
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
+        await loadTradesForBot(bot_id);     // ✅
 
         return res;
       } finally {
         setLoading((l) => ({ ...l, generate: false }));
       }
     },
-    [loadToday, loadHistory, loadPortfolios]
+    [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
   );
 
   const executeBot = useCallback(
@@ -230,13 +261,14 @@ export default function useBotData() {
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
+        await loadTradesForBot(bot_id);     // ✅
 
         return res;
       } finally {
         setLoading((l) => ({ ...l, action: false }));
       }
     },
-    [loadToday, loadHistory, loadPortfolios]
+    [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
   );
 
   const skipBot = useCallback(
@@ -276,6 +308,8 @@ export default function useBotData() {
     history,
     portfolios,
 
+    tradesByBot,          // ✅ ECHTE TRADES
+
     decisionsByBot,
     ordersByBot,
 
@@ -290,5 +324,7 @@ export default function useBotData() {
     generateDecisionForBot,
     executeBot,
     skipBot,
+
+    loadTradesForBot,     // ✅ lazy load in UI
   };
 }

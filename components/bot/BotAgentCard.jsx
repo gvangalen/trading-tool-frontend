@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
+import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
@@ -22,10 +23,9 @@ import {
 /**
  * BotAgentCard — TradeLayer 2.5 (STABLE)
  * --------------------------------------------------
- * ✅ Rendert altijd (ook zonder portfolio of decision)
- * ✅ Pause/Resume op basis van is_active (backend truth)
- * ✅ Symbol/timeframe fallback via bot.strategy
- * ✅ Portfolio fallback is HARD SAFE (no crashes)
+ * ✅ Portfolio + echte trades (ledger-based)
+ * ✅ Decisions ≠ trades (duidelijk gescheiden)
+ * ✅ Volledig backend-truth
  */
 export default function BotAgentCard({
   bot,
@@ -37,27 +37,23 @@ export default function BotAgentCard({
   onGenerate,
   onExecute,
   onSkip,
-  onOpenSettings, // (type, bot)
+  onOpenSettings,
 }) {
   if (!bot) return null;
 
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-
   const settingsRef = useRef(null);
 
   const isAuto = bot?.mode === "auto";
-  const isPaused = bot?.is_active === false; // ✅ FIX: backend truth
+  const isPaused = bot?.is_active === false;
 
-  // backend: configs endpoint heeft strategy object
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
   const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
 
   /* =====================================================
-     ✅ HARD SAFE PORTFOLIO FALLBACK
-     - voorkomt crashes in BotPortfolioCard
-     - shape matcht (budget + stats + symbol)
+     SAFE PORTFOLIO FALLBACK
   ===================================================== */
   const safePortfolioFallback = {
     bot_id: bot.id,
@@ -74,7 +70,6 @@ export default function BotAgentCard({
       max_order_eur: 0,
     },
 
-    // stats verwacht je portfolios API ook
     stats: {
       net_cash_delta_eur: 0,
       net_qty: 0,
@@ -86,7 +81,6 @@ export default function BotAgentCard({
     },
   };
 
-  // Als portfolio van /bot/portfolios bestaat: merge veilig
   const effectivePortfolio = portfolio
     ? {
         ...safePortfolioFallback,
@@ -121,8 +115,6 @@ export default function BotAgentCard({
   /* =====================================================
      RISK CONFIG
   ===================================================== */
-  const riskProfile = String(bot?.risk_profile ?? "balanced").toLowerCase();
-
   const riskConfig = {
     conservative: {
       label: "Conservative",
@@ -141,11 +133,10 @@ export default function BotAgentCard({
     },
   };
 
-  const risk = riskConfig[riskProfile] ?? riskConfig.balanced;
+  const risk =
+    riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
+    riskConfig.balanced;
 
-  /* =====================================================
-     STATUS CONFIG
-  ===================================================== */
   const statusConfig = isPaused
     ? {
         label: "Paused",
@@ -159,10 +150,8 @@ export default function BotAgentCard({
       };
 
   return (
-    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative overflow-visible">
-      {/* =====================================================
-         HEADER
-      ===================================================== */}
+    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
+      {/* HEADER */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <div className="icon-primary">
@@ -181,36 +170,26 @@ export default function BotAgentCard({
               <span className="font-medium">{strategyName}</span>
             </div>
 
-            {/* BADGES */}
             <div className="mt-3 flex flex-col gap-2">
-              <span
-                className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${risk.className}`}
-              >
-                {risk.icon}
-                Risk: {risk.label}
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${risk.className}`}>
+                {risk.icon} Risk: {risk.label}
               </span>
 
               <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700 w-fit">
-                <Bot size={12} />
-                Mode: {isAuto ? "Auto" : "Manual"}
+                <Bot size={12} /> Mode: {isAuto ? "Auto" : "Manual"}
               </span>
 
-              <span
-                className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${statusConfig.className}`}
-              >
-                {statusConfig.icon}
-                Status: {statusConfig.label}
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${statusConfig.className}`}>
+                {statusConfig.icon} Status: {statusConfig.label}
               </span>
             </div>
           </div>
         </div>
 
-        {/* SETTINGS MENU */}
-        <div className="relative z-[10000]" ref={settingsRef}>
+        {/* SETTINGS */}
+        <div className="relative" ref={settingsRef}>
           <button
-            type="button"
-            aria-label="Open bot instellingen"
-            className="icon-muted hover:icon-primary relative z-[10001]"
+            className="icon-muted hover:icon-primary"
             onClick={(e) => {
               e.stopPropagation();
               setShowSettings((v) => !v);
@@ -220,10 +199,7 @@ export default function BotAgentCard({
           </button>
 
           {showSettings && (
-            <div
-              className="absolute right-0 mt-2 z-[10002]"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="absolute right-0 mt-2 z-50">
               <BotSettingsMenu
                 onOpen={(type) => {
                   setShowSettings(false);
@@ -235,27 +211,24 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* =====================================================
-         STATE BAR (decision)
-      ===================================================== */}
+      {/* STATUS BAR */}
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">
           {decision?.action ? decision.action.toUpperCase() : "—"}
         </span>
-
         {decision?.confidence && (
           <>
             {" "}
             · Confidence{" "}
-            <span className="font-semibold uppercase">{decision.confidence}</span>
+            <span className="font-semibold uppercase">
+              {decision.confidence}
+            </span>
           </>
         )}
       </div>
 
-      {/* =====================================================
-         MAIN GRID
-      ===================================================== */}
+      {/* MAIN GRID */}
       <div className="grid lg:grid-cols-2 gap-6">
         <BotDecisionCard
           bot={bot}
@@ -268,16 +241,15 @@ export default function BotAgentCard({
           onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
         />
 
-        {/* ✅ altijd veilige shape */}
-        <BotPortfolioCard bot={effectivePortfolio} />
+        <div className="space-y-4">
+          <BotPortfolioCard bot={effectivePortfolio} />
+          <BotTradeTable botId={bot.id} />
+        </div>
       </div>
 
-      {/* =====================================================
-         HISTORY
-      ===================================================== */}
+      {/* HISTORY */}
       <div className="pt-2 border-t">
         <button
-          type="button"
           onClick={() => setShowHistory((v) => !v)}
           className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
         >

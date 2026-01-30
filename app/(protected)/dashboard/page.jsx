@@ -50,13 +50,47 @@ export default function DashboardPage() {
   const { sevenDayData, btcLive } = useMarketData();
 
   /* --------------------------------------------------------
-     🔥 PAGE LOADING (overlay only, NO unmount)
+     🔥 PAGE LOADING (overlay only)
   -------------------------------------------------------- */
   const pageLoading =
     technicalLoading ||
     macroLoading ||
     sevenDayData == null ||
     btcLive == null;
+
+  /* --------------------------------------------------------
+     🧠 ACTIEVE SETUP (placeholder)
+     → later vervangen door echte active-setup hook / API
+  -------------------------------------------------------- */
+  const activeSetup = {
+    symbol: "BTC",
+    timeframe: "1D", // 1D | 1W | 1H etc
+  };
+
+  /* --------------------------------------------------------
+     🔁 SETUP → TRADINGVIEW MAPPING
+     (startcontext, geen lock)
+  -------------------------------------------------------- */
+  const mapSetupToTradingView = (setup) => {
+    const symbolMap = {
+      BTC: "BINANCE:BTCUSDT",
+      ETH: "BINANCE:ETHUSDT",
+    };
+
+    const intervalMap = {
+      "1D": "D",
+      "1W": "W",
+      "1H": "60",
+      "4H": "240",
+    };
+
+    return {
+      symbol: symbolMap[setup.symbol] ?? "BINANCE:BTCUSDT",
+      interval: intervalMap[setup.timeframe] ?? "D",
+    };
+  };
+
+  const tvConfig = mapSetupToTradingView(activeSetup);
 
   /* --------------------------------------------------------
      ⬆️ Scroll-to-top
@@ -72,7 +106,7 @@ export default function DashboardPage() {
 
   return (
     <div className="relative max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
-      {/* 🔵 Loader OVERLAY — nooit unmounten */}
+      {/* 🔵 Loader overlay — NO unmount */}
       <PageLoader
         text="Dashboard wordt geladen…"
         visible={pageLoading}
@@ -106,8 +140,8 @@ export default function DashboardPage() {
             }
           >
             <TradingViewChart
-              symbol="BINANCE:BTCUSDT"
-              interval="D"
+              symbol={tvConfig.symbol}
+              interval={tvConfig.interval}
               theme="light"
               height={520}
             />

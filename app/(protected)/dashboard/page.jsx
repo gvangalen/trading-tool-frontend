@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import {
   BarChart3,
   Coins,
@@ -27,7 +26,6 @@ import { useMacroData } from "@/hooks/useMacroData";
 import { useMarketData } from "@/hooks/useMarketData";
 
 import { fetchLastSetup } from "@/lib/api/setups";
-
 import PageLoader from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
@@ -45,11 +43,8 @@ export default function DashboardPage() {
     error: technicalError,
   } = useTechnicalData("Dag");
 
-  const {
-    macroData,
-    loading: macroLoading,
-    error: macroError,
-  } = useMacroData();
+  const { macroData, loading: macroLoading, error: macroError } =
+    useMacroData();
 
   const { sevenDayData, btcLive } = useMarketData();
 
@@ -71,7 +66,7 @@ export default function DashboardPage() {
   }, []);
 
   /* --------------------------------------------------------
-     🔥 PAGE LOADING (overlay only, NO unmount)
+     🔥 PAGE LOADING (overlay only)
   -------------------------------------------------------- */
   const pageLoading =
     technicalLoading ||
@@ -83,7 +78,7 @@ export default function DashboardPage() {
   /* --------------------------------------------------------
      🔁 SETUP → TRADINGVIEW MAPPING
   -------------------------------------------------------- */
-  const mapSetupToTradingView = (setup) => {
+  function mapSetupToTradingView(setup) {
     if (!setup) {
       return {
         symbol: "BINANCE:BTCUSDT",
@@ -97,17 +92,17 @@ export default function DashboardPage() {
     };
 
     const intervalMap = {
-      "1D": "D",
       "1W": "W",
-      "1H": "60",
+      "1D": "D",
       "4H": "240",
+      "1H": "60",
     };
 
     return {
       symbol: symbolMap[setup.symbol] ?? "BINANCE:BTCUSDT",
       interval: intervalMap[setup.timeframe] ?? "D",
     };
-  };
+  }
 
   const tvConfig = mapSetupToTradingView(activeSetup);
 
@@ -125,11 +120,7 @@ export default function DashboardPage() {
 
   return (
     <div className="relative max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
-      {/* 🔵 Loader overlay — NO unmount */}
-      <PageLoader
-        text="Dashboard wordt geladen…"
-        visible={pageLoading}
-      />
+      <PageLoader text="Dashboard wordt geladen…" visible={pageLoading} />
 
       {/* PAGE TITLE */}
       <div className="flex items-center gap-2 mb-4">
@@ -139,17 +130,13 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      {/* HIGHLIGHTS */}
       <DashboardHighlights />
 
-      {/* MAIN CONTENT */}
       <div className="flex flex-col xl:flex-row gap-12">
-        {/* MAIN COLUMN */}
         <main className="flex-1 space-y-12">
-          {/* GAUGES */}
           <DashboardGauges />
 
-          {/* 📈 TRADINGVIEW CHART */}
+          {/* 📈 TRADINGVIEW CHART — HARD SYNC MET SETUP */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -159,6 +146,7 @@ export default function DashboardPage() {
             }
           >
             <TradingViewChart
+              key={`${tvConfig.symbol}-${tvConfig.interval}`} // 🔥 CRUCIAAL
               symbol={tvConfig.symbol}
               interval={tvConfig.interval}
               theme="light"
@@ -166,7 +154,6 @@ export default function DashboardPage() {
             />
           </CardWrapper>
 
-          {/* MARKET DATA */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -181,7 +168,6 @@ export default function DashboardPage() {
             />
           </CardWrapper>
 
-          {/* TECHNICAL */}
           <TechnicalDayTableForDashboard
             data={technicalData}
             loading={technicalLoading}
@@ -189,14 +175,12 @@ export default function DashboardPage() {
             onRemove={handleRemove}
           />
 
-          {/* MACRO */}
           <MacroSummaryTableForDashboard
             data={macroData}
             loading={macroLoading}
             error={macroError}
           />
 
-          {/* AI TRADING ADVICE */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -208,7 +192,6 @@ export default function DashboardPage() {
             <TradingAdvice />
           </CardWrapper>
 
-          {/* TOP SETUPS */}
           <CardWrapper
             title={
               <div className="flex items-center gap-2">
@@ -221,7 +204,6 @@ export default function DashboardPage() {
           </CardWrapper>
         </main>
 
-        {/* SIDEBAR */}
         <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />
@@ -229,18 +211,10 @@ export default function DashboardPage() {
         </aside>
       </div>
 
-      {/* SCROLL TO TOP */}
       {showScroll && (
         <button
           onClick={scrollToTop}
-          className="
-            fixed bottom-6 right-6
-            bg-[var(--primary)] text-white
-            p-3 rounded-full shadow-lg
-            hover:bg-[var(--primary-strong)]
-            transition-all
-            focus:ring-2 focus:ring-[var(--primary)]
-          "
+          className="fixed bottom-6 right-6 bg-[var(--primary)] text-white p-3 rounded-full shadow-lg hover:bg-[var(--primary-strong)] transition-all"
         >
           <ChevronsUp className="w-5 h-5" />
         </button>

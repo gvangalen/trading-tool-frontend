@@ -26,15 +26,14 @@ import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";
 import { useMarketData } from "@/hooks/useMarketData";
 
-// 🔥 PageLoader overlay
 import PageLoader from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
 
-  // --------------------------------------------------------
-  // 📡 DATA HOOKS
-  // --------------------------------------------------------
+  /* --------------------------------------------------------
+     📡 DATA HOOKS
+  -------------------------------------------------------- */
   const {
     technicalData,
     removeTechnicalIndicator: handleRemove,
@@ -50,18 +49,18 @@ export default function DashboardPage() {
 
   const { sevenDayData, btcLive } = useMarketData();
 
-  // --------------------------------------------------------
-  // 🔥 PAGE LOADING OVERLAY
-  // --------------------------------------------------------
+  /* --------------------------------------------------------
+     🔥 PAGE LOADING (overlay only, NO unmount)
+  -------------------------------------------------------- */
   const pageLoading =
     technicalLoading ||
     macroLoading ||
     sevenDayData == null ||
     btcLive == null;
 
-  // --------------------------------------------------------
-  // ⬆️ Scroll-to-top
-  // --------------------------------------------------------
+  /* --------------------------------------------------------
+     ⬆️ Scroll-to-top
+  -------------------------------------------------------- */
   useEffect(() => {
     const handler = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handler);
@@ -73,8 +72,11 @@ export default function DashboardPage() {
 
   return (
     <div className="relative max-w-screen-xl mx-auto pt-6 px-6 pb-14 space-y-12 animate-fade-slide">
-      {/* 🔵 Loader overlay */}
-      {pageLoading && <PageLoader text="Dashboard wordt geladen…" />}
+      {/* 🔵 Loader OVERLAY — nooit unmounten */}
+      <PageLoader
+        text="Dashboard wordt geladen…"
+        visible={pageLoading}
+      />
 
       {/* PAGE TITLE */}
       <div className="flex items-center gap-2 mb-4">
@@ -104,7 +106,6 @@ export default function DashboardPage() {
             }
           >
             <TradingViewChart
-              key="btc-d"
               symbol="BINANCE:BTCUSDT"
               interval="D"
               theme="light"
@@ -167,7 +168,7 @@ export default function DashboardPage() {
           </CardWrapper>
         </main>
 
-        {/* RIGHT SIDEBAR */}
+        {/* SIDEBAR */}
         <aside className="w-full xl:w-[320px] shrink-0">
           <div className="sticky top-28">
             <RightSidebarCard />

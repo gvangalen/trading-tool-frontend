@@ -26,10 +26,14 @@ import { useTechnicalData } from "@/hooks/useTechnicalData";
 import { useMacroData } from "@/hooks/useMacroData";
 import { useMarketData } from "@/hooks/useMarketData";
 
+import { fetchLastSetup } from "@/lib/api/setups";
+
 import PageLoader from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
   const [showScroll, setShowScroll] = useState(false);
+  const [activeSetup, setActiveSetup] = useState(null);
+  const [setupLoading, setSetupLoading] = useState(true);
 
   /* --------------------------------------------------------
      📡 DATA HOOKS
@@ -50,28 +54,43 @@ export default function DashboardPage() {
   const { sevenDayData, btcLive } = useMarketData();
 
   /* --------------------------------------------------------
-     🔥 PAGE LOADING (overlay only)
+     🧠 ACTIEVE SETUP — SINGLE SOURCE OF TRUTH
+  -------------------------------------------------------- */
+  useEffect(() => {
+    async function loadActiveSetup() {
+      try {
+        const setup = await fetchLastSetup();
+        setActiveSetup(setup || null);
+      } catch (err) {
+        console.error("❌ Dashboard active setup error:", err);
+      } finally {
+        setSetupLoading(false);
+      }
+    }
+    loadActiveSetup();
+  }, []);
+
+  /* --------------------------------------------------------
+     🔥 PAGE LOADING (overlay only, NO unmount)
   -------------------------------------------------------- */
   const pageLoading =
     technicalLoading ||
     macroLoading ||
+    setupLoading ||
     sevenDayData == null ||
     btcLive == null;
 
   /* --------------------------------------------------------
-     🧠 ACTIEVE SETUP (placeholder)
-     → later vervangen door echte active-setup hook / API
-  -------------------------------------------------------- */
-  const activeSetup = {
-    symbol: "BTC",
-    timeframe: "1D", // 1D | 1W | 1H etc
-  };
-
-  /* --------------------------------------------------------
      🔁 SETUP → TRADINGVIEW MAPPING
-     (startcontext, geen lock)
   -------------------------------------------------------- */
   const mapSetupToTradingView = (setup) => {
+    if (!setup) {
+      return {
+        symbol: "BINANCE:BTCUSDT",
+        interval: "D",
+      };
+    }
+
     const symbolMap = {
       BTC: "BINANCE:BTCUSDT",
       ETH: "BINANCE:ETHUSDT",

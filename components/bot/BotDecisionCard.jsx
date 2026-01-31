@@ -41,21 +41,25 @@ export default function BotTodayProposal({
     );
   }
 
+  if (!decision) return null;
+
   /* =====================================================
-     STATE
+     CORE STATE
   ===================================================== */
-  const status = decision?.status ?? "planned";
+  const botId = decision.bot_id;
+
+  const status = decision.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
-  const executedByAuto = decision?.executed_by === "auto";
-  const confidence = decision?.confidence ?? "low";
+  const executedByAuto = decision.executed_by === "auto";
+  const confidence = decision.confidence ?? "low";
 
   /* =====================================================
      TIMESTAMP (BACKEND LEIDEND)
   ===================================================== */
   const decisionTime =
-    decision?.updated_at ||
-    decision?.decision_ts ||
-    decision?.created_at ||
+    decision.updated_at ||
+    decision.decision_ts ||
+    decision.created_at ||
     null;
 
   const formattedDecisionTime = decisionTime
@@ -71,11 +75,8 @@ export default function BotTodayProposal({
   /* =====================================================
      SETUP MATCH (⭐ BACKEND TRUTH)
   ===================================================== */
-  const setupMatch = decision?.setup_match;
-
-  if (!setupMatch) {
-    return null; // UI-contract: mag nooit gebeuren
-  }
+  const setupMatch = decision.setup_match;
+  if (!setupMatch) return null;
 
   const score =
     typeof setupMatch.score === "number" && setupMatch.score > 0
@@ -148,9 +149,7 @@ export default function BotTodayProposal({
 
       <div className="text-xs text-[var(--text-muted)]">
         Strategy discipline:{" "}
-        <span className="font-medium uppercase">
-          {confidence}
-        </span>
+        <span className="font-medium uppercase">{confidence}</span>
       </div>
 
       {setupMatch.thresholds && (
@@ -160,7 +159,6 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      {/* ⭐ ENIGE STRATEGY COPY */}
       <div className="text-xs italic text-gray-500">
         <div className="font-medium">{setupMatch.summary}</div>
         <div>{setupMatch.detail}</div>
@@ -191,7 +189,7 @@ export default function BotTodayProposal({
           <div className="flex flex-wrap gap-3 pt-4">
             {!isAuto && !isFinal && onExecute && (
               <button
-                onClick={onExecute}
+                onClick={() => onExecute({ bot_id: botId })}
                 className="btn-primary flex items-center gap-2"
               >
                 <Play size={16} />
@@ -201,7 +199,7 @@ export default function BotTodayProposal({
 
             {!isAuto && !isFinal && onSkip && (
               <button
-                onClick={onSkip}
+                onClick={() => onSkip({ bot_id: botId })}
                 className="btn-secondary flex items-center gap-2"
               >
                 <SkipForward size={16} />
@@ -234,7 +232,7 @@ export default function BotTodayProposal({
 
       <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
         <div className="text-2xl font-semibold">
-          {(order?.side ?? "buy").toUpperCase()} {order?.symbol ?? "—"}
+          {(order.side ?? "buy").toUpperCase()} {order.symbol ?? "—"}
         </div>
 
         {botScoreCard}
@@ -243,7 +241,7 @@ export default function BotTodayProposal({
         <div className="flex flex-wrap gap-3 pt-4">
           {!isAuto && !isFinal && onExecute && (
             <button
-              onClick={onExecute}
+              onClick={() => onExecute({ bot_id: botId })}
               className="btn-primary flex items-center gap-2"
             >
               <Play size={16} />
@@ -253,7 +251,7 @@ export default function BotTodayProposal({
 
           {!isAuto && !isFinal && onSkip && (
             <button
-              onClick={onSkip}
+              onClick={() => onSkip({ bot_id: botId })}
               className="btn-secondary flex items-center gap-2"
             >
               <SkipForward size={16} />

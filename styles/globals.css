@@ -78,12 +78,12 @@
   --avatar-border: rgba(26, 71, 255, 0.25);
   --avatar-text: #0f172a;
 
-  /* Scores */
+    /* Scores */
   --score-strong-buy: #16a34a;  /* groen */
-   --score-buy:        #eab308;  /* GEEL ✅ */
-   --score-neutral:    #f59e0b;  /* ORANJE */
-   --score-sell:       #ef4444;  /* rood */
-   --score-strong-sell:#dc2626;
+  --score-buy:        #eab308;  /* GEEL */
+  --score-neutral:    #f59e0b;  /* ORANJE */
+  --score-sell:       #ef4444;  /* rood */
+  --score-strong-sell:#dc2626;
 
   /* Icons */
   --icon-primary: var(--primary);
@@ -128,9 +128,9 @@
   --avatar-border: rgba(255, 255, 255, 0.18);
   --avatar-text: #E6EDF3;
 
-  /* Scores */
+   /* Scores */
   --score-strong-buy: #4ade80;
-  --score-buy:        #86efac;
+  --score-buy:        #fde047;  /* GEEL */
   --score-neutral:    #facc15;
   --score-sell:       #f87171;
   --score-strong-sell:#ef4444;

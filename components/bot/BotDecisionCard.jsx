@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.5
+ * BotTodayProposal — TradeLayer 2.5 (STABLE)
  *
  * - Strategy vs markt card is ALTIJD zichtbaar
  * - Strategy ≠ trade
  * - Backend is single source of truth
- * - Laatste analyse timestamp zichtbaar (updated_at leidend)
+ * - Score kleur-logica komt UITSLUITEND uit ScoreBar / scoreUtils
  */
 export default function BotTodayProposal({
   decision = null,
@@ -92,19 +92,6 @@ export default function BotTodayProposal({
       : 10;
 
   /* =====================================================
-     🎨 SCORE KLEUR LOGICA (UX FIX)
-     Groen pas vanaf 75+
-  ===================================================== */
-  const scoreLevel =
-    score >= 75
-      ? "positive"
-      : score >= 60
-      ? "warning"
-      : score >= 40
-      ? "neutral"
-      : "negative";
-
-  /* =====================================================
      HEADER
   ===================================================== */
   const header = (
@@ -164,9 +151,9 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      <ScoreBar score={score} level={scoreLevel} />
+      {/* ✅ ENIGE SCORE-KLEUR BRON */}
+      <ScoreBar score={score} />
 
-      {/* 👇 EXPLICIET SPLITSEN */}
       <div className="text-xs text-[var(--text-muted)] space-y-1">
         <div>
           Marktscore:{" "}

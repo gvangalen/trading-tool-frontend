@@ -14,12 +14,11 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.5 (STABLE)
+ * BotTodayProposal — TradeLayer 2.6 (BACKEND-LED)
  *
- * - Strategy vs markt card is ALTIJD zichtbaar
- * - Strategy ≠ trade
- * - Backend is single source of truth
- * - Score kleur-logica komt UITSLUITEND uit ScoreBar / scoreUtils
+ * - Backend is SINGLE SOURCE OF TRUTH
+ * - Frontend rendert alleen backend-data
+ * - GEEN frontend logica voor strategy-tekst
  */
 export default function BotTodayProposal({
   decision = null,
@@ -51,40 +50,32 @@ export default function BotTodayProposal({
   const confidence = decision?.confidence ?? "low";
 
   /* =====================================================
-     ⏱️ LAATSTE ANALYSE (BACKEND LEIDEND)
+     TIMESTAMP (BACKEND LEIDEND)
   ===================================================== */
-  const decisionTime = decision?.updated_at
-    ? new Date(decision.updated_at)
-    : decision?.decision_ts
-    ? new Date(decision.decision_ts)
-    : decision?.created_at
-    ? new Date(decision.created_at)
-    : null;
+  const decisionTime =
+    decision?.updated_at ||
+    decision?.decision_ts ||
+    decision?.created_at ||
+    null;
 
   const formattedDecisionTime = decisionTime
-    ? `${decisionTime.toLocaleDateString("nl-NL", {
+    ? new Date(decisionTime).toLocaleString("nl-NL", {
         day: "2-digit",
         month: "short",
         year: "numeric",
-      })} · ${decisionTime.toLocaleTimeString("nl-NL", {
         hour: "2-digit",
         minute: "2-digit",
-      })}`
+      })
     : null;
 
   /* =====================================================
-     SETUP MATCH (BACKEND LEIDEND)
+     SETUP MATCH (⭐ BACKEND TRUTH)
   ===================================================== */
-  const setupMatch =
-    decision?.setup_match ?? {
-      name: "Strategy",
-      symbol: decision?.symbol ?? "BTC",
-      timeframe: "—",
-      score: 10,
-      thresholds: null,
-      status: "no_snapshot",
-      reason: "Geen strategy context beschikbaar voor vandaag",
-    };
+  const setupMatch = decision?.setup_match;
+
+  if (!setupMatch) {
+    return null; // UI-contract: mag nooit gebeuren
+  }
 
   const score =
     typeof setupMatch.score === "number" && setupMatch.score > 0
@@ -101,9 +92,7 @@ export default function BotTodayProposal({
         <div className="font-medium text-[var(--text)]">
           Vandaag – voorstel van de bot
         </div>
-        <div>
-          Maximaal één beslissing per dag op basis van de huidige marktscore.
-        </div>
+        <div>Maximaal één beslissing per dag.</div>
       </div>
     </div>
   );
@@ -132,7 +121,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     STRATEGY vs MARKT CARD
+     STRATEGY MATCH CARD (100% BACKEND)
   ===================================================== */
   const botScoreCard = (
     <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
@@ -151,29 +140,17 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      {/* ✅ ENIGE SCORE-KLEUR BRON */}
       <ScoreBar score={score} />
 
-      <div className="text-xs text-[var(--text-muted)] space-y-1">
-        <div>
-          Marktscore:{" "}
-          <span className="font-medium">{score} / 100</span>
-        </div>
+      <div className="text-xs text-[var(--text-muted)]">
+        Marktscore: <span className="font-medium">{score} / 100</span>
+      </div>
 
-        <div>
-          Strategy discipline:{" "}
-          <span
-            className={`font-medium ${
-              confidence === "high"
-                ? "text-green-600"
-                : confidence === "medium"
-                ? "text-yellow-600"
-                : "text-red-600"
-            }`}
-          >
-            {confidence.toUpperCase()}
-          </span>
-        </div>
+      <div className="text-xs text-[var(--text-muted)]">
+        Strategy discipline:{" "}
+        <span className="font-medium uppercase">
+          {confidence}
+        </span>
       </div>
 
       {setupMatch.thresholds && (
@@ -183,15 +160,10 @@ export default function BotTodayProposal({
         </div>
       )}
 
-      <div className="text-xs text-gray-500 italic">
-        {setupMatch.status === "match_buy" &&
-          "Markt en strategy discipline zijn voldoende voor een trade."}
-
-        {setupMatch.status === "no_match" &&
-          "Markt is positief, maar strategy discipline is onvoldoende voor actie."}
-
-        {setupMatch.status === "no_snapshot" &&
-          "Geen actueel strategy-plan beschikbaar voor vandaag."}
+      {/* ⭐ ENIGE STRATEGY COPY */}
+      <div className="text-xs italic text-gray-500">
+        <div className="font-medium">{setupMatch.summary}</div>
+        <div>{setupMatch.detail}</div>
       </div>
     </div>
   );
@@ -210,15 +182,14 @@ export default function BotTodayProposal({
           </div>
 
           <div className="text-sm text-[var(--text-muted)]">
-            De markt is positief, maar de strategie wordt vandaag onvoldoende
-            consistent uitgevoerd om een trade te verantwoorden.
+            {setupMatch.detail}
           </div>
 
           {botScoreCard}
           {finalStatus}
 
           <div className="flex flex-wrap gap-3 pt-4">
-            {!isAuto && !isFinal && typeof onExecute === "function" && (
+            {!isAuto && !isFinal && onExecute && (
               <button
                 onClick={onExecute}
                 className="btn-primary flex items-center gap-2"
@@ -228,7 +199,7 @@ export default function BotTodayProposal({
               </button>
             )}
 
-            {!isAuto && !isFinal && typeof onSkip === "function" && (
+            {!isAuto && !isFinal && onSkip && (
               <button
                 onClick={onSkip}
                 className="btn-secondary flex items-center gap-2"
@@ -238,7 +209,7 @@ export default function BotTodayProposal({
               </button>
             )}
 
-            {typeof onGenerate === "function" && (
+            {onGenerate && (
               <button
                 onClick={onGenerate}
                 disabled={isGenerating}
@@ -263,15 +234,14 @@ export default function BotTodayProposal({
 
       <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
         <div className="text-2xl font-semibold">
-          {(order?.side ?? "buy").toUpperCase()}{" "}
-          {order?.symbol ?? "—"}
+          {(order?.side ?? "buy").toUpperCase()} {order?.symbol ?? "—"}
         </div>
 
         {botScoreCard}
         {finalStatus}
 
         <div className="flex flex-wrap gap-3 pt-4">
-          {!isAuto && !isFinal && typeof onExecute === "function" && (
+          {!isAuto && !isFinal && onExecute && (
             <button
               onClick={onExecute}
               className="btn-primary flex items-center gap-2"
@@ -281,7 +251,7 @@ export default function BotTodayProposal({
             </button>
           )}
 
-          {!isAuto && !isFinal && typeof onSkip === "function" && (
+          {!isAuto && !isFinal && onSkip && (
             <button
               onClick={onSkip}
               className="btn-secondary flex items-center gap-2"
@@ -291,7 +261,7 @@ export default function BotTodayProposal({
             </button>
           )}
 
-          {typeof onGenerate === "function" && (
+          {onGenerate && (
             <button
               onClick={onGenerate}
               disabled={isGenerating}

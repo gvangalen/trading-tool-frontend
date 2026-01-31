@@ -124,23 +124,26 @@ export default function ReportSectionAnalysis({ report }) {
       </div>
 
       {/* =================================================
-          6️⃣ BOTBESLISSING
-          🔹 Links: uitleg report agent
-          🔹 Rechts: FEITELIJKE bot decision card
-      ================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        <div className="md:col-span-2">
-          <NarrativeBlock
-            title="Botbeslissing"
-            field="bot_strategy"
-            report={report}
-          />
-        </div>
+    6️⃣ BOTBESLISSING
+    🔹 Links: uitleg report agent
+    🔹 Rechts: FEITELIJKE bot decision card
+================================================= */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+  <div className="md:col-span-2">
+    <NarrativeBlock
+      title="Botbeslissing"
+      field="bot_strategy"
+      report={report}
+    />
+  </div>
 
-        <SectionAlignedAside>
-          <BotDecisionCard />
-        </SectionAlignedAside>
-      </div>
-    </div>
+  <SectionAlignedAside>
+    <BotDecisionCard
+      snapshot={report.bot_snapshot}
+      readOnly
+      compact
+    />
+  </SectionAlignedAside>
+</div>
   );
 }

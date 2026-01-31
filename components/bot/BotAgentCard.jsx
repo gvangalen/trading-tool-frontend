@@ -21,15 +21,16 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.5 (STABLE)
+ * BotAgentCard — TradeLayer 2.6 (FIXED)
  * --------------------------------------------------
- * ✅ Portfolio + echte trades (ledger-based)
- * ✅ Decisions ≠ trades (duidelijk gescheiden)
- * ✅ Volledig backend-truth
+ * ✅ Orders ≠ decisions (juist gescheiden)
+ * ✅ Manual execute werkt betrouwbaar
+ * ✅ Backend = single source of truth
  */
 export default function BotAgentCard({
   bot,
   decision,
+  order,                 // ✅ EXPLICIET BINNEN
   portfolio,
   history = [],
   loadingDecision = false,
@@ -232,13 +233,13 @@ export default function BotAgentCard({
       <div className="grid lg:grid-cols-2 gap-6">
         <BotDecisionCard
           bot={bot}
-          decision={decision || null}
-          order={decision?.order ?? null}
+          decision={decision ?? null}
+          order={order ?? null}          // ✅ JUISTE BRON
           loading={loadingDecision}
           isAuto={isAuto}
           onGenerate={onGenerate}
-          onExecute={!isAuto ? () => onExecute?.({ bot_id: bot.id }) : undefined}
-          onSkip={!isAuto ? () => onSkip?.({ bot_id: bot.id }) : undefined}
+          onExecute={!isAuto ? onExecute : undefined}
+          onSkip={!isAuto ? onSkip : undefined}
         />
 
         <div className="space-y-4">

@@ -79,11 +79,11 @@
   --avatar-text: #0f172a;
 
   /* Scores */
-  --score-strong-buy: #16a34a;
-  --score-buy:        #22c55e;
-  --score-neutral:    #eab308;
-  --score-sell:       #ef4444;
-  --score-strong-sell:#dc2626;
+  --score-strong-buy: #16a34a;  /* groen */
+   --score-buy:        #eab308;  /* GEEL ✅ */
+   --score-neutral:    #f59e0b;  /* ORANJE */
+   --score-sell:       #ef4444;  /* rood */
+   --score-strong-sell:#dc2626;
 
   /* Icons */
   --icon-primary: var(--primary);

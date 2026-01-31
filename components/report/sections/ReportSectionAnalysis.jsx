@@ -2,8 +2,10 @@ import NarrativeBlock from "../blocks/NarrativeBlock";
 import DataListBlock from "../blocks/DataListBlock";
 import SetupMatchCard from "../blocks/SetupMatchReportCard";
 import ActiveStrategyReportCard from "../blocks/ActiveStrategyReportCard";
-import BotStrategyReportCard from "../blocks/BotStrategyReportCard";
 import SectionAlignedAside from "../layout/SectionAlignedAside";
+
+// 🔥 BOT DECISION CARD (zelfde als bot page)
+import BotDecisionCard from "@/components/bot/BotDecisionCard";
 
 /*
 =====================================================
@@ -19,7 +21,6 @@ export default function ReportSectionAnalysis({ report }) {
 
   return (
     <div className="space-y-16">
-
       {/* =================================================
           1️⃣ MARKET ANALYSE
           Tekst links, card rechts
@@ -124,7 +125,8 @@ export default function ReportSectionAnalysis({ report }) {
 
       {/* =================================================
           6️⃣ BOTBESLISSING
-          Tekst links, card rechts
+          🔹 Links: uitleg report agent
+          🔹 Rechts: FEITELIJKE bot decision card
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -136,13 +138,9 @@ export default function ReportSectionAnalysis({ report }) {
         </div>
 
         <SectionAlignedAside>
-          <BotStrategyReportCard
-            botStrategy={report.bot_strategy}
-            botSnapshot={report.bot_snapshot}
-          />
+          <BotDecisionCard />
         </SectionAlignedAside>
       </div>
-
     </div>
   );
 }

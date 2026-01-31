@@ -19,6 +19,10 @@ import {
  * - Backend is SINGLE SOURCE OF TRUTH
  * - Frontend rendert alleen backend-data
  * - GEEN frontend logica voor strategy-tekst
+ *
+ * OPTIE A FIX:
+ * - Manual execute kan ALLEEN als er een echte trade/order is.
+ * - Dus: in "geen trade gepland" state -> geen "Bevestig" knop.
  */
 export default function BotTodayProposal({
   decision = null,
@@ -57,10 +61,7 @@ export default function BotTodayProposal({
      TIMESTAMP (BACKEND LEIDEND)
   ===================================================== */
   const decisionTime =
-    decision.updated_at ||
-    decision.decision_ts ||
-    decision.created_at ||
-    null;
+    decision.updated_at || decision.decision_ts || decision.created_at || null;
 
   const formattedDecisionTime = decisionTime
     ? new Date(decisionTime).toLocaleString("nl-NL", {
@@ -82,6 +83,15 @@ export default function BotTodayProposal({
     typeof setupMatch.score === "number" && setupMatch.score > 0
       ? Math.min(setupMatch.score, 100)
       : 10;
+
+  /* =====================================================
+     EXECUTE GUARD (OPTIE A)
+     - Alleen executen als er een echte order bestaat
+     - En alleen als nog niet final
+     - En alleen manual mode
+  ===================================================== */
+  const hasTrade = !!order;
+  const canExecute = !isAuto && !isFinal && hasTrade && !!onExecute;
 
   /* =====================================================
      HEADER
@@ -106,9 +116,7 @@ export default function BotTodayProposal({
       {status === "executed" && (
         <div className="flex items-center gap-2 text-green-600">
           <CheckCircle size={16} />
-          {executedByAuto
-            ? "Automatisch uitgevoerd"
-            : "Handmatig uitgevoerd"}
+          {executedByAuto ? "Automatisch uitgevoerd" : "Handmatig uitgevoerd"}
         </div>
       )}
 
@@ -168,6 +176,7 @@ export default function BotTodayProposal({
 
   /* =====================================================
      GEEN TRADE VANDAAG
+     ✅ OPTIE A: geen execute knop tonen
   ===================================================== */
   if (!order) {
     return (
@@ -175,9 +184,7 @@ export default function BotTodayProposal({
         {header}
 
         <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
-          <div className="font-medium">
-            Geen trade gepland voor vandaag
-          </div>
+          <div className="font-medium">Geen trade gepland voor vandaag</div>
 
           <div className="text-sm text-[var(--text-muted)]">
             {setupMatch.detail}
@@ -187,16 +194,6 @@ export default function BotTodayProposal({
           {finalStatus}
 
           <div className="flex flex-wrap gap-3 pt-4">
-            {!isAuto && !isFinal && onExecute && (
-              <button
-                onClick={() => onExecute({ bot_id: botId })}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Play size={16} />
-                Bevestig
-              </button>
-            )}
-
             {!isAuto && !isFinal && onSkip && (
               <button
                 onClick={() => onSkip({ bot_id: botId })}
@@ -239,7 +236,7 @@ export default function BotTodayProposal({
         {finalStatus}
 
         <div className="flex flex-wrap gap-3 pt-4">
-          {!isAuto && !isFinal && onExecute && (
+          {canExecute && (
             <button
               onClick={() => onExecute({ bot_id: botId })}
               className="btn-primary flex items-center gap-2"

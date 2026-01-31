@@ -7,7 +7,7 @@ import {
   fetchBotToday,
   fetchBotHistory,
   fetchBotPortfolios,
-  fetchBotTrades,          // ✅ NIEUW
+  fetchBotTrades, // ✅
   generateBotDecision,
   markBotExecuted,
   skipBotToday,
@@ -42,7 +42,7 @@ export default function useBotData() {
     today: false,
     history: false,
     portfolios: false,
-    trades: false,          // ✅
+    trades: false, // ✅
     generate: false,
     action: false,
     create: false,
@@ -105,26 +105,23 @@ export default function useBotData() {
      - Ledger execute entries
      - Lazy per bot
   ===================================================== */
-  const loadTradesForBot = useCallback(
-    async (bot_id, limit = 50) => {
-      if (!bot_id) return;
+  const loadTradesForBot = useCallback(async (bot_id, limit = 50) => {
+    if (!bot_id) return;
 
-      setLoading((l) => ({ ...l, trades: true }));
-      try {
-        const data = await fetchBotTrades({ bot_id, limit });
+    setLoading((l) => ({ ...l, trades: true }));
+    try {
+      const data = await fetchBotTrades({ bot_id, limit });
 
-        setTradesByBot((prev) => ({
-          ...prev,
-          [bot_id]: Array.isArray(data) ? data : [],
-        }));
-      } catch (err) {
-        console.error("❌ loadTradesForBot error:", err);
-      } finally {
-        setLoading((l) => ({ ...l, trades: false }));
-      }
-    },
-    []
-  );
+      setTradesByBot((prev) => ({
+        ...prev,
+        [bot_id]: Array.isArray(data) ? data : [],
+      }));
+    } catch (err) {
+      console.error("❌ loadTradesForBot error:", err);
+    } finally {
+      setLoading((l) => ({ ...l, trades: false }));
+    }
+  }, []);
 
   /* =====================================================
      🧠 DERIVED DATA
@@ -242,7 +239,7 @@ export default function useBotData() {
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
-        await loadTradesForBot(bot_id);     // ✅
+        await loadTradesForBot(bot_id); // ✅
 
         return res;
       } finally {
@@ -252,16 +249,23 @@ export default function useBotData() {
     [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
   );
 
+  // ✅ FIX: manual execute moet qty kunnen doorgeven (anders faalt het vaak)
   const executeBot = useCallback(
-    async ({ bot_id, report_date }) => {
+    async ({ bot_id, report_date, qty = null, price = null, notes = null }) => {
       setLoading((l) => ({ ...l, action: true }));
       try {
-        const res = await markBotExecuted({ bot_id, report_date });
+        const res = await markBotExecuted({
+          bot_id,
+          report_date,
+          ...(qty != null && { qty }), // ✅ NEW
+          ...(price != null && { price }), // (optioneel)
+          ...(notes != null && { notes }), // (optioneel)
+        });
 
         await loadToday();
         await loadHistory(30);
         await loadPortfolios();
-        await loadTradesForBot(bot_id);     // ✅
+        await loadTradesForBot(bot_id); // ✅
 
         return res;
       } finally {
@@ -308,7 +312,7 @@ export default function useBotData() {
     history,
     portfolios,
 
-    tradesByBot,          // ✅ ECHTE TRADES
+    tradesByBot, // ✅ ECHTE TRADES
 
     decisionsByBot,
     ordersByBot,
@@ -325,6 +329,6 @@ export default function useBotData() {
     executeBot,
     skipBot,
 
-    loadTradesForBot,     // ✅ lazy load in UI
+    loadTradesForBot, // ✅ lazy load in UI
   };
 }

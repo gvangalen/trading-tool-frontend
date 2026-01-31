@@ -2,6 +2,7 @@ import NarrativeBlock from "../blocks/NarrativeBlock";
 import DataListBlock from "../blocks/DataListBlock";
 import SetupMatchCard from "../blocks/SetupMatchReportCard";
 import ActiveStrategyReportCard from "../blocks/ActiveStrategyReportCard";
+import BotStrategyReportCard from "../blocks/BotStrategyReportCard";
 import SectionAlignedAside from "../layout/SectionAlignedAside";
 
 /*
@@ -118,6 +119,27 @@ export default function ReportSectionAnalysis({ report }) {
 
         <SectionAlignedAside>
           <ActiveStrategyReportCard report={report} />
+        </SectionAlignedAside>
+      </div>
+
+      {/* =================================================
+          6️⃣ BOTBESLISSING
+          Tekst links, card rechts
+      ================================================= */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="md:col-span-2">
+          <NarrativeBlock
+            title="Botbeslissing"
+            field="bot_strategy"
+            report={report}
+          />
+        </div>
+
+        <SectionAlignedAside>
+          <BotStrategyReportCard
+            botStrategy={report.bot_strategy}
+            botSnapshot={report.bot_snapshot}
+          />
         </SectionAlignedAside>
       </div>
 

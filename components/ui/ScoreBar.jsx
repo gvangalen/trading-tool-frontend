@@ -7,14 +7,15 @@ export default function ScoreBar({
   height = "h-2",
   showLabel = false,
 }) {
+  const numericScore = Number(score);
   const safeScore =
-    typeof score === "number" && score > 0 ? Math.min(score, 100) : 10;
+    Number.isFinite(numericScore) && numericScore > 0
+      ? Math.min(numericScore, 100)
+      : 10;
 
   return (
     <div className="space-y-1">
-      <div
-        className={`w-full bg-gray-100 rounded-full overflow-hidden ${height}`}
-      >
+      <div className={`w-full bg-gray-100 rounded-full overflow-hidden ${height}`}>
         <div
           className={`${getScoreBarClass(safeScore)} h-full transition-all duration-300`}
           style={{ width: `${safeScore}%` }}

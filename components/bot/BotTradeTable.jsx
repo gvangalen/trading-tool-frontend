@@ -12,6 +12,7 @@ import useBotData from "@/hooks/useBotData";
  * - Gebruikt centrale useBotData hook
  * - Geen directe API calls
  * - Backend = single source of truth
+ * - Volgt GLOBAL THEME (globals.css)
  */
 export default function BotTradeTable({ botId }) {
   const {
@@ -62,7 +63,7 @@ export default function BotTradeTable({ botId }) {
 
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+          <thead className="bg-[var(--surface-2)] text-left">
             <tr>
               <th className="px-3 py-2">Datum</th>
               <th className="px-3 py-2">Actie</th>
@@ -82,7 +83,8 @@ export default function BotTradeTable({ botId }) {
                     : "—"}
                 </td>
 
-                <td className="px-3 py-2 font-medium text-green-600">
+                {/* ACTIE — via GLOBAL SCORE KLEUREN */}
+                <td className="px-3 py-2 font-medium score-buy">
                   {(t.side || "buy").toUpperCase()}
                 </td>
 

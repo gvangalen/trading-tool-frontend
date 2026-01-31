@@ -29,7 +29,7 @@ import ReportContainer from '@/components/report/layout/ReportContainer';
 import ReportLayout from '@/components/report/layout/ReportLayout';
 
 import CardWrapper from '@/components/ui/CardWrapper';
-import AILoader from '@/components/ui/AILoader';
+import ReportGenerateOverlay from '@/components/ui/ReportGenerateOverlay';
 import { useModal } from '@/components/modal/ModalProvider';
 
 import {
@@ -96,7 +96,6 @@ export default function ReportPage() {
   const [error, setError] = useState('');
 
   const pollTokenRef = useRef(0);
-  const loadTokenRef = useRef(0);
   const lastSignatureRef = useRef('');
 
   const fallbackLabel = REPORT_TYPES[reportType] || 'Rapport';
@@ -174,68 +173,59 @@ export default function ReportPage() {
     loadData('latest');
   }, [reportType]);
 
-  
   /* =====================================================
-     GENERATE
-  ===================================================== */
-  
-  const pollUntilNewReport = async (preferDate = 'latest') => {
-  pollTokenRef.current += 1;
-  const token = pollTokenRef.current;
-
-  let attempts = 0;
-
-  while (attempts < POLL_MAX_ATTEMPTS) {
-    if (pollTokenRef.current !== token) return;
-
-    await sleep(POLL_INTERVAL_MS);
-
-    const data =
-      preferDate === 'latest'
-        ? await current.getLatest()
-        : await current.getByDate(preferDate);
-
-    const sig = getReportSignature(data);
-
-    if (sig && sig !== lastSignatureRef.current) {
-      lastSignatureRef.current = sig;
-      setReport(data);
-      return;
-    }
-
-    attempts++;
-  }
-
-  throw new Error('Polling timeout: rapport niet verschenen');
-};
-
-/* =====================================================
      GENERATE
 ===================================================== */
 
+  const pollUntilNewReport = async (preferDate = 'latest') => {
+    pollTokenRef.current += 1;
+    const token = pollTokenRef.current;
+
+    let attempts = 0;
+
+    while (attempts < POLL_MAX_ATTEMPTS) {
+      if (pollTokenRef.current !== token) return;
+
+      await sleep(POLL_INTERVAL_MS);
+
+      const data =
+        preferDate === 'latest'
+          ? await current.getLatest()
+          : await current.getByDate(preferDate);
+
+      const sig = getReportSignature(data);
+
+      if (sig && sig !== lastSignatureRef.current) {
+        lastSignatureRef.current = sig;
+        setReport(data);
+        return;
+      }
+
+      attempts++;
+    }
+
+    throw new Error('Polling timeout: rapport niet verschenen');
+  };
+
   const handleGenerate = async (fromAuto = false, preferDate = 'latest') => {
-  setGenerating(true);
-  setGenerateInfo(
-    fromAuto
-      ? `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig…`
-      : `AI genereert het ${fallbackLabel.toLowerCase()}rapport…`
-  );
+    setGenerating(true);
+    setGenerateInfo(
+      fromAuto
+        ? `Nog geen ${fallbackLabel.toLowerCase()}rapport. AI is bezig…`
+        : `AI genereert het ${fallbackLabel.toLowerCase()}rapport…`
+    );
 
-  try {
-    // 🔥 Trigger async generatie
-    await current.generate();
-
-    // 🧠 Wacht tot er écht een nieuw rapport is
-    await pollUntilNewReport(preferDate);
-
-    showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
-  } catch (err) {
-    console.error(err);
-    setError('Rapport genereren mislukt of duurde te lang.');
-  } finally {
-    setGenerating(false);
-  }
-};
+    try {
+      await current.generate();
+      await pollUntilNewReport(preferDate);
+      showSnackbar(`${fallbackLabel}rapport is gereed`, 'success');
+    } catch (err) {
+      console.error(err);
+      setError('Rapport genereren mislukt of duurde te lang.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   /* =====================================================
      PDF
@@ -255,108 +245,104 @@ export default function ReportPage() {
     }
   };
 
- /* =====================================================
-   RENDER
+  /* =====================================================
+     RENDER
 ===================================================== */
 
-return (
-  <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
-    {/* HEADER */}
-    <header className="flex justify-between items-center">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-[var(--primary-light)] rounded-xl flex items-center justify-center">
-          <FileText size={20} />
-        </div>
-        <div>
-          <h1 className="text-3xl font-semibold">
-            Rapportage ({fallbackLabel})
-          </h1>
-          <p className="text-sm text-[var(--text-light)]">
-            AI-gegenereerde markt- en tradingrapporten
-          </p>
-        </div>
-      </div>
-
-      {report?.report_date && (
-        <div className="text-xs bg-[var(--bg-soft)] px-3 py-1 rounded-full flex items-center gap-2">
-          <CalendarRange size={14} />
-          {report.report_date}
-        </div>
+  return (
+    <>
+      {/* 🔥 FULLSCREEN GENERATE LOADER */}
+      {generating && (
+        <ReportGenerateOverlay text={generateInfo} />
       )}
-    </header>
 
-    {/* CONTROLS */}
-    <CardWrapper>
-      <div className="space-y-4">
-        <ReportTabs selected={reportType} onChange={setReportType} />
+      <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
+        {/* HEADER */}
+        <header className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[var(--primary-light)] rounded-xl flex items-center justify-center">
+              <FileText size={20} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-semibold">
+                Rapportage ({fallbackLabel})
+              </h1>
+              <p className="text-sm text-[var(--text-light)]">
+                AI-gegenereerde markt- en tradingrapporten
+              </p>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* DATE SELECT (smal) */}
-          <select
-            value={selectedDate}
-            onChange={(e) => loadData(e.target.value)}
-            className="max-w-[160px]"
-            style={{ width: '160px' }}   // ⬅️ override global width: 100%
-          >
-            <option value="latest">Laatste</option>
-            {dates.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+          {report?.report_date && (
+            <div className="text-xs bg-[var(--bg-soft)] px-3 py-1 rounded-full flex items-center gap-2">
+              <CalendarRange size={14} />
+              {report.report_date}
+            </div>
+          )}
+        </header>
 
-          <div className="flex-1" />
+        {/* CONTROLS */}
+        <CardWrapper>
+          <div className="space-y-4">
+            <ReportTabs selected={reportType} onChange={setReportType} />
 
-          {/* PDF BUTTON */}
-          <button
-            onClick={handleDownload}
-            disabled={pdfLoading}
-            className="btn-secondary h-10"
-          >
-            {pdfLoading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Download size={16} />
-            )}
-            PDF
-          </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                value={selectedDate}
+                onChange={(e) => loadData(e.target.value)}
+                className="max-w-[160px]"
+                style={{ width: '160px' }}
+              >
+                <option value="latest">Laatste</option>
+                {dates.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
 
-          {/* GENERATE BUTTON — THEME PRIMARY */}
-          <button
-            onClick={() => handleGenerate(false, selectedDate)}
-            disabled={generating}
-            className="btn-primary h-10"
-          >
-            <RefreshCw size={16} />
-            Genereer rapport
-          </button>
-        </div>
+              <div className="flex-1" />
+
+              <button
+                onClick={handleDownload}
+                disabled={pdfLoading}
+                className="btn-secondary h-10"
+              >
+                {pdfLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                PDF
+              </button>
+
+              <button
+                onClick={() => handleGenerate(false, selectedDate)}
+                disabled={generating}
+                className="btn-primary h-10"
+              >
+                <RefreshCw size={16} />
+                Genereer rapport
+              </button>
+            </div>
+          </div>
+        </CardWrapper>
+
+        {/* ERROR */}
+        {error && (
+          <div className="bg-yellow-50 border p-3 rounded-xl flex gap-2">
+            <AlertTriangle size={16} />
+            {error}
+          </div>
+        )}
+
+        {/* REPORT */}
+        {!loading && report && (
+          <ReportContainer>
+            <ReportLayout report={report} />
+          </ReportContainer>
+        )}
       </div>
-    </CardWrapper>
-
-    {/* AI LOADER */}
-    {generating && (
-      <CardWrapper>
-        <AILoader text={generateInfo} />
-      </CardWrapper>
-    )}
-
-    {/* ERROR */}
-    {error && (
-      <div className="bg-yellow-50 border p-3 rounded-xl flex gap-2">
-        <AlertTriangle size={16} />
-        {error}
-      </div>
-    )}
-
-    {/* REPORT */}
-    {!loading && report && (
-      <ReportContainer>
-        <ReportLayout report={report} />
-      </ReportContainer>
-    )}
-  </div>
-);
+    </>
+  );
 }
-

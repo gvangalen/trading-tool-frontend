@@ -1,8 +1,9 @@
 "use client";
 
+import { Wallet, Info } from "lucide-react";
+
 import BotBudgetBar from "./BotBudgetBar";
 import BotPnLBadge from "./BotPnLBadge";
-import { Info } from "lucide-react";
 
 /**
  * BotPortfolioSection — READ ONLY (FINAL)
@@ -33,13 +34,16 @@ export default function BotPortfolioSection({ bot }) {
   const todaySpent = stats.today_spent_eur ?? 0;
 
   return (
-    <div className="space-y-5">
-      {/* ===================== */}
-      {/* BUDGET (READ ONLY) */}
-      {/* ===================== */}
+    <div className="space-y-6">
+
+      {/* =====================
+         BUDGET (READ ONLY)
+      ===================== */}
       <div>
-        <div className="flex items-center gap-1 mb-2 text-xs text-[var(--text-muted)]">
-          💰 Bot budget
+        <div className="flex items-center gap-2 mb-2 text-xs text-[var(--text-muted)]">
+          <Wallet size={14} className="icon-muted" />
+          <span className="font-medium">Bot budget</span>
+
           <span
             title="Budget wordt ingesteld via bot-instellingen"
             className="cursor-help"
@@ -73,10 +77,10 @@ export default function BotPortfolioSection({ bot }) {
         )}
       </div>
 
-      {/* ===================== */}
-      {/* PORTFOLIO */}
-      {/* ===================== */}
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+      {/* =====================
+         PORTFOLIO
+      ===================== */}
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border-subtle)]">
         <Stat label="Holdings">
           {netQty.toFixed(6)} {symbol}
         </Stat>
@@ -113,7 +117,9 @@ function Stat({ label, children }) {
       <div className="text-xs text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="font-medium">{children}</div>
+      <div className="font-medium">
+        {children}
+      </div>
     </div>
   );
 }

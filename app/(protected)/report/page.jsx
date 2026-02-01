@@ -56,18 +56,18 @@ const AUTO_GENERATE_IF_EMPTY = true;
 const POLL_INTERVAL_MS = 4000;
 const POLL_MAX_ATTEMPTS = 60;
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /* =====================================================
    HELPERS
 ===================================================== */
 
-function sortDatesDesc(list) {
+function sortDatesDesc(list: string[]) {
   if (!Array.isArray(list)) return [];
   return [...list].sort((a, b) => (a < b ? 1 : -1));
 }
 
-function getReportSignature(report) {
+function getReportSignature(report: any) {
   if (!report) return '';
   return (
     report.generated_at ||
@@ -84,10 +84,10 @@ function getReportSignature(report) {
 export default function ReportPage() {
   const { showSnackbar } = useModal();
 
-  const [reportType, setReportType] = useState('daily');
-  const [report, setReport] = useState(null);
-  const [dates, setDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState('latest');
+  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly'>('daily');
+  const [report, setReport] = useState<any>(null);
+  const [dates, setDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('latest');
 
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -136,47 +136,46 @@ export default function ReportPage() {
 
   const current = reportFns[reportType];
 
-
   /* =====================================================
-   LOAD
+     LOAD (STABIEL)
 ===================================================== */
-const loadData = async (date = 'latest') => {
-  setLoading(true);
-  setError('');
-  setSelectedDate(date);
 
-  try {
-    const rawDates = await current.getDates();
-    const sorted = sortDatesDesc(rawDates || []);
-    setDates(sorted);
+  const loadData = async (date: string = 'latest') => {
+    setLoading(true);
+    setError('');
+    setSelectedDate(date);
 
-    const data =
-      date === 'latest'
-        ? await current.getLatest()
-        : await current.getByDate(date);
+    try {
+      const rawDates = await current.getDates();
+      setDates(sortDatesDesc(rawDates || []));
 
-    // 🔥 FIX: auto-generate mag NIET awaiten
-    if (!data && AUTO_GENERATE_IF_EMPTY) {
-      setLoading(false);           // 👈 load-state netjes afsluiten
-      handleGenerate(true, date);  // 👈 NIET awaiten
-      return;
+      const data =
+        date === 'latest'
+          ? await current.getLatest()
+          : await current.getByDate(date);
+
+      if (!data && AUTO_GENERATE_IF_EMPTY) {
+        // 👇 BELANGRIJK: loader UIT, generate AAN
+        setLoading(false);
+        handleGenerate(true, date);
+        return;
+      }
+
+      setReport(data || null);
+      lastSignatureRef.current = getReportSignature(data);
+    } catch {
+      setError('Rapport kon niet geladen worden.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setReport(data || null);
-    lastSignatureRef.current = getReportSignature(data);
-  } catch {
-    setError('Rapport kon niet geladen worden.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-useEffect(() => {
-  loadData('latest');
-}, [reportType]);
+  useEffect(() => {
+    loadData('latest');
+  }, [reportType]);
 
   /* =====================================================
-     GENERATE
+     GENERATE (FULLSCREEN LOADER)
 ===================================================== */
 
   const pollUntilNewReport = async (preferDate = 'latest') => {
@@ -206,7 +205,7 @@ useEffect(() => {
       attempts++;
     }
 
-    throw new Error('Polling timeout: rapport niet verschenen');
+    throw new Error('Polling timeout');
   };
 
   const handleGenerate = async (fromAuto = false, preferDate = 'latest') => {
@@ -254,9 +253,7 @@ useEffect(() => {
   return (
     <>
       {/* 🔥 FULLSCREEN GENERATE LOADER */}
-      {generating && (
-        <ReportGenerateOverlay text={generateInfo} />
-      )}
+      {generating && <ReportGenerateOverlay text={generateInfo} />}
 
       <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
         {/* HEADER */}
@@ -293,13 +290,10 @@ useEffect(() => {
                 value={selectedDate}
                 onChange={(e) => loadData(e.target.value)}
                 className="max-w-[160px]"
-                style={{ width: '160px' }}
               >
                 <option value="latest">Laatste</option>
                 {dates.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
+                  <option key={d} value={d}>{d}</option>
                 ))}
               </select>
 
@@ -310,11 +304,7 @@ useEffect(() => {
                 disabled={pdfLoading}
                 className="btn-secondary h-10"
               >
-                {pdfLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Download size={16} />
-                )}
+                {pdfLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 PDF
               </button>
 

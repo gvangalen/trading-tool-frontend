@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export default function ReportGenerateOverlay({
-  text = 'AI genereert het rapport…',
-}: {
-  text?: string;
-}) {
+export default function ReportGenerateOverlay({ text = 'AI genereert het rapport…' }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -49,12 +45,11 @@ export default function ReportGenerateOverlay({
               strokeWidth="6"
               fill="none"
               strokeDasharray={2 * Math.PI * 34}
-              strokeDashoffset={
-                2 * Math.PI * 34 * (1 - progress / 100)
-              }
+              strokeDashoffset={2 * Math.PI * 34 * (1 - progress / 100)}
               strokeLinecap="round"
             />
           </svg>
+
           <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold">
             {Math.floor(progress)}%
           </div>

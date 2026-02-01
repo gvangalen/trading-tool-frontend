@@ -56,7 +56,7 @@ const AUTO_GENERATE_IF_EMPTY = true;
 const POLL_INTERVAL_MS = 4000;
 const POLL_MAX_ATTEMPTS = 60;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* =====================================================
    HELPERS

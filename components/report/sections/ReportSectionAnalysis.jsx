@@ -134,7 +134,7 @@ export default function ReportSectionAnalysis({ report }) {
         </div>
 
         <SectionAlignedAside>
-          <BotDecisionReportCard snapshot={report.bot_snapshot} />
+          <BotDecisionReportCard snapshot={report?.bot_snapshot} />
         </SectionAlignedAside>
       </div>
 

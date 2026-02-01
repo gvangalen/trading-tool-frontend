@@ -1,37 +1,81 @@
+import Card from "@/components/ui/Card";
+
+/*
+=====================================================
+ BOT DECISION – REPORT CARD
+ - Read-only snapshot
+ - Exacte stijl als andere report cards
+ - Geen live bot logica
+=====================================================
+*/
+
 export default function BotDecisionReportCard({ snapshot }) {
-  if (!snapshot) {
-    return (
-      <div className="text-sm text-muted italic">
-        Geen botbeslissing voor deze dag
-      </div>
-    );
-  }
+  if (!snapshot) return null;
+
+  const {
+    bot_name,
+    action,
+    confidence,
+    amount_eur,
+    setup_match,
+  } = snapshot;
 
   return (
-    <div className="rounded-xl border bg-white p-4 space-y-3">
-      <div className="text-sm font-medium">
-        🤖 {snapshot.bot_name || "Trading Bot"}
-      </div>
+    <Card>
+      <div className="space-y-4">
 
-      <div className="text-sm">
-        Actie: <strong>{snapshot.action}</strong>
-      </div>
-
-      <div className="text-sm">
-        Confidence: {snapshot.confidence}%
-      </div>
-
-      {snapshot.amount_eur && (
-        <div className="text-sm">
-          Bedrag: €{snapshot.amount_eur}
+        {/* Header */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900">
+            Botbeslissing
+          </h4>
+          <p className="text-xs text-gray-500">
+            Feitelijke bot output (snapshot)
+          </p>
         </div>
-      )}
 
-      {snapshot.setup_match && (
-        <div className="text-xs text-muted">
-          Setup match: {snapshot.setup_match}
+        {/* Content */}
+        <div className="space-y-2 text-sm">
+
+          <Row label="Bot">
+            {bot_name || "–"}
+          </Row>
+
+          <Row label="Actie">
+            {action || "–"}
+          </Row>
+
+          <Row label="Confidence">
+            {confidence != null ? `${confidence}%` : "–"}
+          </Row>
+
+          <Row label="Bedrag">
+            {amount_eur != null ? `€${amount_eur}` : "–"}
+          </Row>
+
+          {setup_match && (
+            <Row label="Setup match">
+              {setup_match}
+            </Row>
+          )}
+
         </div>
-      )}
+      </div>
+    </Card>
+  );
+}
+
+/* ---------------------------------------------
+   Helper
+--------------------------------------------- */
+
+function Row({ label, children }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-gray-500">{label}</span>
+      <span className="font-medium text-gray-900 text-right">
+        {children}
+      </span>
     </div>
   );
 }

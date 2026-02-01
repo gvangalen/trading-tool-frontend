@@ -2,19 +2,27 @@
 
 import { useEffect, useState } from 'react';
 
-export default function ReportGenerateOverlay({ text = 'AI genereert het rapport…' }) {
+export default function ReportGenerateOverlay({
+  text = 'AI genereert het rapport…',
+}) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     setProgress(0);
 
-    // UX-progress: langzaam naar ~90%
     const interval = setInterval(() => {
       setProgress((p) => {
-        if (p >= 90) return p;
-        return p + Math.random() * 4 + 2;
+        if (p >= 92) return p;
+
+        // Langzamer naarmate we hoger komen (UX smoothing)
+        const baseIncrement = p < 60 ? 3 : p < 80 ? 2 : 1;
+
+        return Math.min(
+          92,
+          p + Math.random() * baseIncrement + 0.5
+        );
       });
-    }, 1200);
+    }, 1800); // ⏱️ 2x zo rustig
 
     return () => clearInterval(interval);
   }, []);
@@ -45,11 +53,12 @@ export default function ReportGenerateOverlay({ text = 'AI genereert het rapport
               strokeWidth="6"
               fill="none"
               strokeDasharray={2 * Math.PI * 34}
-              strokeDashoffset={2 * Math.PI * 34 * (1 - progress / 100)}
+              strokeDashoffset={
+                2 * Math.PI * 34 * (1 - progress / 100)
+              }
               strokeLinecap="round"
             />
           </svg>
-
           <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold">
             {Math.floor(progress)}%
           </div>

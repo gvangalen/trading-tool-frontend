@@ -1,19 +1,26 @@
 import CardWrapper from "@/components/ui/CardWrapper";
-import { Bot, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+  Bot,
+  ArrowUpRight,
+  ArrowDownRight,
+  PauseCircle,
+} from "lucide-react";
 
 /* =======================================================
-   Bot Decision — REPORT (snapshot-only)
+   Bot Decision — REPORT (ALWAYS VISIBLE)
+   - BUY / SELL / HOLD zijn allemaal geldige beslissingen
+   - HOLD = bewuste keuze met uitleg
 ======================================================= */
 export default function BotDecisionReportCard({ snapshot }) {
-  if (!snapshot) {
-    return (
-      <CardWrapper>
-        <p className="text-sm text-[var(--text-light)]">
-          Geen botbeslissing voor deze rapportdag.
-        </p>
-      </CardWrapper>
-    );
-  }
+  // Fallback om card altijd te tonen (defensief, maar stabiel)
+  const safeSnapshot = snapshot || {
+    bot_name: "Bot",
+    action: "hold",
+    confidence: null,
+    amount_eur: null,
+    setup_match: null,
+    reason: "Geen expliciete botdata beschikbaar voor deze dag.",
+  };
 
   const {
     bot_name,
@@ -21,12 +28,13 @@ export default function BotDecisionReportCard({ snapshot }) {
     confidence,
     amount_eur,
     setup_match,
-    reason, // 👈 belangrijk voor HOLD / no-trade uitleg
-  } = snapshot;
+    reason,
+  } = safeSnapshot;
 
   const normalizedAction = action?.toLowerCase() || "hold";
   const isBuy = normalizedAction === "buy";
   const isSell = normalizedAction === "sell";
+  const isHold = !isBuy && !isSell;
 
   return (
     <CardWrapper>
@@ -40,16 +48,21 @@ export default function BotDecisionReportCard({ snapshot }) {
 
       {/* Bot naam */}
       <p className="text-sm text-[var(--text-light)] mb-4">
-        {bot_name || "Onbekende bot"}
+        {bot_name}
       </p>
 
       {/* Actie */}
-      <div className="flex items-center gap-2 mb-2">
-        {isBuy ? (
+      <div className="flex items-center gap-2 mb-3">
+        {isBuy && (
           <ArrowUpRight className="w-4 h-4 text-green-600" />
-        ) : (
-          <ArrowDownRight className="w-4 h-4 text-orange-500" />
         )}
+        {isSell && (
+          <ArrowDownRight className="w-4 h-4 text-red-600" />
+        )}
+        {isHold && (
+          <PauseCircle className="w-4 h-4 text-orange-500" />
+        )}
+
         <span className="text-sm text-[var(--text-dark)]">
           <strong>Actie:</strong>{" "}
           {normalizedAction.toUpperCase()}
@@ -74,7 +87,7 @@ export default function BotDecisionReportCard({ snapshot }) {
         )}
 
       {/* HOLD / NO TRADE uitleg */}
-      {!isBuy && !isSell && reason && (
+      {isHold && reason && (
         <p className="text-sm text-[var(--text-light)] mt-3">
           <strong>Waarom geen trade:</strong> {reason}
         </p>
@@ -83,7 +96,7 @@ export default function BotDecisionReportCard({ snapshot }) {
       {/* Confidence */}
       {confidence !== null &&
         confidence !== undefined && (
-          <p className="text-xs text-[var(--text-light)] mt-3">
+          <p className="text-xs text-[var(--text-light)] mt-4">
             Confidence score:{" "}
             <strong className="text-[var(--text-dark)]">
               {confidence}%

@@ -136,42 +136,44 @@ export default function ReportPage() {
 
   const current = reportFns[reportType];
 
+
   /* =====================================================
-     LOAD
+   LOAD
 ===================================================== */
+const loadData = async (date = 'latest') => {
+  setLoading(true);
+  setError('');
+  setSelectedDate(date);
 
-  const loadData = async (date = 'latest') => {
-    setLoading(true);
-    setError('');
-    setSelectedDate(date);
+  try {
+    const rawDates = await current.getDates();
+    const sorted = sortDatesDesc(rawDates || []);
+    setDates(sorted);
 
-    try {
-      const rawDates = await current.getDates();
-      const sorted = sortDatesDesc(rawDates || []);
-      setDates(sorted);
+    const data =
+      date === 'latest'
+        ? await current.getLatest()
+        : await current.getByDate(date);
 
-      const data =
-        date === 'latest'
-          ? await current.getLatest()
-          : await current.getByDate(date);
-
-      if (!data && AUTO_GENERATE_IF_EMPTY) {
-        await handleGenerate(true, date);
-        return;
-      }
-
-      setReport(data || null);
-      lastSignatureRef.current = getReportSignature(data);
-    } catch {
-      setError('Rapport kon niet geladen worden.');
-    } finally {
-      setLoading(false);
+    // 🔥 FIX: auto-generate mag NIET awaiten
+    if (!data && AUTO_GENERATE_IF_EMPTY) {
+      setLoading(false);           // 👈 load-state netjes afsluiten
+      handleGenerate(true, date);  // 👈 NIET awaiten
+      return;
     }
-  };
 
-  useEffect(() => {
-    loadData('latest');
-  }, [reportType]);
+    setReport(data || null);
+    lastSignatureRef.current = getReportSignature(data);
+  } catch {
+    setError('Rapport kon niet geladen worden.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  loadData('latest');
+}, [reportType]);
 
   /* =====================================================
      GENERATE

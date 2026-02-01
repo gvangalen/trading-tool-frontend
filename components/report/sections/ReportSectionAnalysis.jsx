@@ -4,8 +4,8 @@ import SetupMatchCard from "../blocks/SetupMatchReportCard";
 import ActiveStrategyReportCard from "../blocks/ActiveStrategyReportCard";
 import SectionAlignedAside from "../layout/SectionAlignedAside";
 
-// 🔥 BOT DECISION CARD (zelfde als bot page)
-import BotDecisionCard from "@/components/bot/BotDecisionCard";
+// ✅ REPORT-SPECIFIEKE BOT CARD (snapshot only)
+import BotDecisionReportCard from "../blocks/BotDecisionReportCard";
 
 /*
 =====================================================
@@ -122,7 +122,7 @@ export default function ReportSectionAnalysis({ report }) {
       {/* =================================================
           6️⃣ BOTBESLISSING
           🔹 Links: uitleg report agent
-          🔹 Rechts: FEITELIJKE bot decision card
+          🔹 Rechts: FEITELIJKE bot snapshot (report-only)
       ================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         <div className="md:col-span-2">
@@ -134,11 +134,7 @@ export default function ReportSectionAnalysis({ report }) {
         </div>
 
         <SectionAlignedAside>
-          <BotDecisionCard
-            snapshot={report.bot_snapshot}
-            readOnly
-            compact
-          />
+          <BotDecisionReportCard snapshot={report.bot_snapshot} />
         </SectionAlignedAside>
       </div>
 

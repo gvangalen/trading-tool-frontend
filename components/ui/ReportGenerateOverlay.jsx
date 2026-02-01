@@ -3,18 +3,16 @@
 import { useEffect, useState } from 'react';
 
 export default function ReportGenerateOverlay({
-  visible,
-  label = 'AI genereert het rapport…',
+  text = 'AI genereert het rapport…',
+}: {
+  text?: string;
 }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (!visible) {
-      setProgress(0);
-      return;
-    }
+    setProgress(0);
 
-    // UX-progress: langzaam naar ~90%, laatste stuk bij completion
+    // UX-progress: langzaam naar ~90%
     const interval = setInterval(() => {
       setProgress((p) => {
         if (p >= 90) return p;
@@ -23,17 +21,15 @@ export default function ReportGenerateOverlay({
     }, 1200);
 
     return () => clearInterval(interval);
-  }, [visible]);
-
-  if (!visible) return null;
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
-      {/* backdrop – subtiel */}
+    <div className="fixed inset-0 z-40 flex items-center justify-center">
+      {/* backdrop */}
       <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
 
       {/* card */}
-      <div className="relative z-50 bg-white rounded-2xl shadow-xl px-10 py-8 flex flex-col items-center gap-4 pointer-events-auto">
+      <div className="relative z-50 bg-white rounded-2xl shadow-xl px-10 py-8 flex flex-col items-center gap-4">
         {/* progress circle */}
         <div className="relative w-20 h-20">
           <svg className="w-full h-full rotate-[-90deg]">
@@ -66,7 +62,7 @@ export default function ReportGenerateOverlay({
 
         {/* text */}
         <div className="text-sm text-center">
-          <div className="font-medium">{label}</div>
+          <div className="font-medium">{text}</div>
           <div className="text-[var(--text-muted)] mt-1">
             Dit kan ± 1 minuut duren
           </div>

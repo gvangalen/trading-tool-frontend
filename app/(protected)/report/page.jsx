@@ -62,12 +62,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
    HELPERS
 ===================================================== */
 
-function sortDatesDesc(list: string[]) {
+function sortDatesDesc(list) {
   if (!Array.isArray(list)) return [];
   return [...list].sort((a, b) => (a < b ? 1 : -1));
 }
 
-function getReportSignature(report: any) {
+function getReportSignature(report) {
   if (!report) return '';
   return (
     report.generated_at ||
@@ -84,10 +84,10 @@ function getReportSignature(report: any) {
 export default function ReportPage() {
   const { showSnackbar } = useModal();
 
-  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly'>('daily');
-  const [report, setReport] = useState<any>(null);
-  const [dates, setDates] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>('latest');
+  const [reportType, setReportType] = useState('daily');
+  const [report, setReport] = useState(null);
+  const [dates, setDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('latest');
 
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -137,10 +137,10 @@ export default function ReportPage() {
   const current = reportFns[reportType];
 
   /* =====================================================
-     LOAD (STABIEL)
+     LOAD (STABIEL + LOADER CORRECT)
 ===================================================== */
 
-  const loadData = async (date: string = 'latest') => {
+  const loadData = async (date = 'latest') => {
     setLoading(true);
     setError('');
     setSelectedDate(date);
@@ -155,7 +155,7 @@ export default function ReportPage() {
           : await current.getByDate(date);
 
       if (!data && AUTO_GENERATE_IF_EMPTY) {
-        // 👇 BELANGRIJK: loader UIT, generate AAN
+        // ❗ load-loader UIT, generate-overlay AAN
         setLoading(false);
         handleGenerate(true, date);
         return;
@@ -175,7 +175,7 @@ export default function ReportPage() {
   }, [reportType]);
 
   /* =====================================================
-     GENERATE (FULLSCREEN LOADER)
+     GENERATE (FULLSCREEN OVERLAY)
 ===================================================== */
 
   const pollUntilNewReport = async (preferDate = 'latest') => {
@@ -252,7 +252,7 @@ export default function ReportPage() {
 
   return (
     <>
-      {/* 🔥 FULLSCREEN GENERATE LOADER */}
+      {/* 🔥 FULLSCREEN GENERATE OVERLAY */}
       {generating && <ReportGenerateOverlay text={generateInfo} />}
 
       <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
@@ -304,7 +304,10 @@ export default function ReportPage() {
                 disabled={pdfLoading}
                 className="btn-secondary h-10"
               >
-                {pdfLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {pdfLoading
+                  ? <Loader2 size={16} className="animate-spin" />
+                  : <Download size={16} />
+                }
                 PDF
               </button>
 

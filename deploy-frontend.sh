@@ -4,13 +4,13 @@ set -e
 echo "📦 Start frontend deploy op $(date)"
 
 # -------------------------
-# 1. Load NVM + export PM2 path
+# 1. Load NVM
 # -------------------------
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
 
-export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
-echo "🔧 PM2 pad: $(which pm2 || echo '❌ Niet gevonden')"
+nvm use 20 || { echo "❌ Node 20 niet beschikbaar"; exit 1; }
+echo "Node: $(node -v)"
 
 # -------------------------
 # 2. Ga naar project
@@ -18,63 +18,44 @@ echo "🔧 PM2 pad: $(which pm2 || echo '❌ Niet gevonden')"
 cd ~/trading-tool-frontend || { echo "❌ Map niet gevonden"; exit 1; }
 
 # -------------------------
-# 3. PM2 volledig verwijderen
+# 3. Stop frontend (safe)
 # -------------------------
 if pm2 list | grep -q frontend; then
-  echo "🧹 Verwijder PM2 proces 'frontend'..."
-  pm2 delete frontend || true
+  echo "🧹 Stop frontend..."
+  pm2 stop frontend
+  pm2 delete frontend
 fi
 
 # -------------------------
-# 4. Pull code
+# 4. Pull exact GitHub state
 # -------------------------
-echo "⬇️ Pull laatste code..."
+echo "⬇️ Sync met GitHub..."
 git fetch origin main
 git reset --hard origin/main
 
 # -------------------------
-# 5. Node activeren
+# 5. Opschonen build artifacts
 # -------------------------
-nvm use 20 || { echo "❌ Node 20 niet beschikbaar"; exit 1; }
-echo "Node: $(node -v)"
+echo "🧨 Verwijder .next build"
+rm -rf .next
 
 # -------------------------
-# 6. Opschonen
+# 6. Install EXACT dependencies
 # -------------------------
-echo "🧨 Verwijder node_modules + .next + lockfile..."
-rm -rf node_modules .next package-lock.json
+echo "📦 Install dependencies (lockfile leidend)"
+npm ci --legacy-peer-deps
 
 # -------------------------
-# 7. Install dependencies
+# 7. Build
 # -------------------------
-echo "📦 Install dependencies..."
-npm install --legacy-peer-deps
+echo "🏗️ Build frontend..."
+npm run build
 
 # -------------------------
-# 8. EXTRA: UI dependencies
-# -------------------------
-echo "➕ Install framer-motion + lucide-react + clsx"
-npm install framer-motion lucide-react clsx --legacy-peer-deps
-
-# -------------------------
-# 9. Build
-# -------------------------
-echo "🏗️ Build..."
-npm run build || { echo "❌ Build faalde"; exit 1; }
-
-# -------------------------
-# 10. Check build
-# -------------------------
-if [ ! -f ".next/BUILD_ID" ]; then
-  echo "❌ Build ID ontbreekt"
-  exit 1
-fi
-
-# -------------------------
-# 11. Start PM2 (schoon)
+# 8. Start via PM2
 # -------------------------
 echo "🚀 Start frontend via PM2..."
 pm2 start npm --name frontend -- run start
 pm2 save
 
-echo "✅ Deployment afgerond op $(date)"
+echo "✅ Frontend deploy klaar op $(date)"

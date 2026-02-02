@@ -21,18 +21,19 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.6 (FIXED)
- * --------------------------------------------------
- * ✅ Orders ≠ decisions (juist gescheiden)
- * ✅ Manual execute werkt betrouwbaar
+ * BotAgentCard — TradeLayer 2.6 (FINAL)
+ *
  * ✅ Backend = single source of truth
+ * ✅ Decisions ≠ orders ≠ executions
+ * ✅ Trades komen EXCLUSIEF uit bot_ledger
  */
 export default function BotAgentCard({
   bot,
   decision,
-  order,                 // ✅ EXPLICIET BINNEN
+  order,
   portfolio,
   history = [],
+  trades = [],              // ✅ EXPLICIET
   loadingDecision = false,
 
   onGenerate,
@@ -63,14 +64,12 @@ export default function BotAgentCard({
     mode: bot?.mode ?? "manual",
     risk_profile: bot?.risk_profile ?? "balanced",
     symbol,
-
     budget: bot?.budget || {
       total_eur: 0,
       daily_limit_eur: 0,
       min_order_eur: 0,
       max_order_eur: 0,
     },
-
     stats: {
       net_cash_delta_eur: 0,
       net_qty: 0,
@@ -93,7 +92,7 @@ export default function BotAgentCard({
     : safePortfolioFallback;
 
   /* =====================================================
-     CLICK OUTSIDE — SETTINGS MENU
+     CLICK OUTSIDE — SETTINGS
   ===================================================== */
   useEffect(() => {
     if (!showSettings) return;
@@ -114,7 +113,7 @@ export default function BotAgentCard({
   }, [showSettings]);
 
   /* =====================================================
-     RISK CONFIG
+     RISK + STATUS
   ===================================================== */
   const riskConfig = {
     conservative: {
@@ -150,6 +149,9 @@ export default function BotAgentCard({
         className: "bg-green-100 text-green-700 border-green-200",
       };
 
+  /* =====================================================
+     RENDER
+  ===================================================== */
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
       {/* HEADER */}
@@ -161,7 +163,6 @@ export default function BotAgentCard({
 
           <div>
             <div className="font-semibold">{bot?.name ?? "Bot"}</div>
-
             <div className="text-xs text-[var(--text-muted)]">
               {symbol} · {timeframe}
             </div>
@@ -216,7 +217,11 @@ export default function BotAgentCard({
       <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
         <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
         <span className="font-semibold">
-          {decision?.action ? decision.action.toUpperCase() : "—"}
+          {loadingDecision
+            ? "ANALYSING"
+            : decision?.action
+            ? decision.action.toUpperCase()
+            : "—"}
         </span>
         {decision?.confidence && (
           <>
@@ -234,7 +239,7 @@ export default function BotAgentCard({
         <BotDecisionCard
           bot={bot}
           decision={decision ?? null}
-          order={order ?? null}          // ✅ JUISTE BRON
+          order={order ?? null}
           loading={loadingDecision}
           isAuto={isAuto}
           onGenerate={onGenerate}
@@ -244,7 +249,10 @@ export default function BotAgentCard({
 
         <div className="space-y-4">
           <BotPortfolioCard bot={effectivePortfolio} />
-          <BotTradeTable botId={bot.id} />
+          <BotTradeTable
+            botId={bot.id}
+            trades={Array.isArray(trades) ? trades : []}
+          />
         </div>
       </div>
 

@@ -13,7 +13,11 @@ import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
 
 /**
- * BotPage — TradeLayer 2.5 (STABLE JSX)
+ * BotPage — TradeLayer 2.6 (FINAL / WIRED)
+ *
+ * - Backend = single source of truth
+ * - Trades komen EXCLUSIEF uit bot_ledger
+ * - UI is puur renderlaag
  */
 export default function BotPage() {
   /* =====================================================
@@ -38,6 +42,7 @@ export default function BotPage() {
     history = [],
     portfolios = [],
     decisionsByBot = {},
+    tradesByBot = {},          // ✅ FIX: trades uit hook
     loading,
 
     createBot,
@@ -264,6 +269,7 @@ export default function BotPage() {
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
           const decision = decisionsByBot[bot.id];
+          const trades = tradesByBot[bot.id] || [];   // ✅ FIX
 
           return (
             <BotAgentCard
@@ -271,6 +277,7 @@ export default function BotPage() {
               bot={bot}
               decision={decision ?? null}
               portfolio={portfolio}
+              trades={trades}                         // ✅ FIX
               history={history}
               loadingDecision={
                 generatingBotId === bot.id ||

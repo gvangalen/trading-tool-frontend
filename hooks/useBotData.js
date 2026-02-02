@@ -7,24 +7,23 @@ import {
   fetchBotToday,
   fetchBotHistory,
   fetchBotPortfolios,
-  fetchBotTrades, // ✅
+  fetchBotTrades,
   generateBotDecision,
   markBotExecuted,
   skipBotToday,
   createBotConfig,
   updateBotConfig,
   deleteBotConfig,
-} from "@/lib/api/botApi";
+} from "@/lib/api/bot";
 
 /**
- * useBotData
+ * useBotData — FINAL
  * --------------------------------------------------
- * Centrale hook voor Trading Bots
- *
- * - Backend = single source of truth
- * - Geen business logic
- * - Volledig deterministisch
+ * ✅ Backend = single source of truth
+ * ❌ Geen business logic
+ * ❌ Geen afgeleide trades / holdings
  */
+
 export default function useBotData() {
   /* =====================================================
      📦 STATE
@@ -33,8 +32,6 @@ export default function useBotData() {
   const [today, setToday] = useState(null);
   const [history, setHistory] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
-
-  // ✅ ECHTE TRADES (per bot)
   const [tradesByBot, setTradesByBot] = useState({});
 
   const [loading, setLoading] = useState({
@@ -42,7 +39,7 @@ export default function useBotData() {
     today: false,
     history: false,
     portfolios: false,
-    trades: false, // ✅
+    trades: false,
     generate: false,
     action: false,
     create: false,
@@ -57,78 +54,69 @@ export default function useBotData() {
      🔄 LOADERS
   ===================================================== */
   const loadConfigs = useCallback(async () => {
-    setLoading((l) => ({ ...l, configs: true }));
+    setLoading(l => ({ ...l, configs: true }));
     try {
-      setError(null);
       const data = await fetchBotConfigs();
       setConfigs(Array.isArray(data) ? data : []);
     } finally {
-      setLoading((l) => ({ ...l, configs: false }));
+      setLoading(l => ({ ...l, configs: false }));
     }
   }, []);
 
   const loadToday = useCallback(async () => {
-    setLoading((l) => ({ ...l, today: true }));
+    setLoading(l => ({ ...l, today: true }));
     try {
-      setError(null);
       const data = await fetchBotToday();
       setToday(data ?? null);
     } finally {
-      setLoading((l) => ({ ...l, today: false }));
+      setLoading(l => ({ ...l, today: false }));
     }
   }, []);
 
   const loadHistory = useCallback(async (days = 30) => {
-    setLoading((l) => ({ ...l, history: true }));
+    setLoading(l => ({ ...l, history: true }));
     try {
-      setError(null);
       const data = await fetchBotHistory(days);
       setHistory(Array.isArray(data) ? data : []);
     } finally {
-      setLoading((l) => ({ ...l, history: false }));
+      setLoading(l => ({ ...l, history: false }));
     }
   }, []);
 
   const loadPortfolios = useCallback(async () => {
-    setLoading((l) => ({ ...l, portfolios: true }));
+    setLoading(l => ({ ...l, portfolios: true }));
     try {
-      setError(null);
       const data = await fetchBotPortfolios();
       setPortfolios(Array.isArray(data) ? data : []);
     } finally {
-      setLoading((l) => ({ ...l, portfolios: false }));
+      setLoading(l => ({ ...l, portfolios: false }));
     }
   }, []);
 
   /* =====================================================
      📈 TRADES (ECHTE FILLS)
-     - Ledger execute entries
-     - Lazy per bot
   ===================================================== */
   const loadTradesForBot = useCallback(async (bot_id, limit = 50) => {
     if (!bot_id) return;
 
-    setLoading((l) => ({ ...l, trades: true }));
+    setLoading(l => ({ ...l, trades: true }));
     try {
-      const data = await fetchBotTrades({ bot_id, limit });
-
-      setTradesByBot((prev) => ({
+      const data = await fetchBotTrades(bot_id, limit);
+      setTradesByBot(prev => ({
         ...prev,
         [bot_id]: Array.isArray(data) ? data : [],
       }));
-    } catch (err) {
-      console.error("❌ loadTradesForBot error:", err);
     } finally {
-      setLoading((l) => ({ ...l, trades: false }));
+      setLoading(l => ({ ...l, trades: false }));
     }
   }, []);
 
   /* =====================================================
-     🧠 DERIVED DATA
+     🧠 DERIVED (READ-ONLY)
   ===================================================== */
   const decisionsByBot = useMemo(() => {
     const map = {};
-    (today?.decisions || []).forEach((d) => {
+    (today?.decisions || []).forEach(d => {
       map[d.bot_id] = d;
     });
     return map;
@@ -136,7 +124,7 @@ export default function useBotData() {
 
   const ordersByBot = useMemo(() => {
     const map = {};
-    (today?.orders || []).forEach((o) => {
+    (today?.orders || []).forEach(o => {
       map[o.bot_id] = o;
     });
     return map;
@@ -145,153 +133,93 @@ export default function useBotData() {
   /* =====================================================
      ➕ CREATE / UPDATE / DELETE
   ===================================================== */
-  const createBot = useCallback(
-    async (payload) => {
-      setLoading((l) => ({ ...l, create: true }));
-      try {
-        const res = await createBotConfig(payload);
-        await loadConfigs();
-        await loadPortfolios();
-        await loadToday();
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, create: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios, loadToday]
-  );
+  const createBot = useCallback(async payload => {
+    setLoading(l => ({ ...l, create: true }));
+    try {
+      const res = await createBotConfig(payload);
+      await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
+      return res;
+    } finally {
+      setLoading(l => ({ ...l, create: false }));
+    }
+  }, [loadConfigs, loadPortfolios, loadToday]);
 
-  const updateBot = useCallback(
-    async (bot_id, payload) => {
-      setLoading((l) => ({ ...l, update: true }));
-      try {
-        const res = await updateBotConfig(bot_id, payload);
+  const updateBot = useCallback(async (bot_id, payload) => {
+    setLoading(l => ({ ...l, update: true }));
+    try {
+      const res = await updateBotConfig(bot_id, payload);
+      await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
+      return res;
+    } finally {
+      setLoading(l => ({ ...l, update: false }));
+    }
+  }, [loadConfigs, loadPortfolios, loadToday]);
 
-        await loadConfigs();
-        await loadPortfolios();
-        await loadToday();
-
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, update: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios, loadToday]
-  );
-
-  const deleteBot = useCallback(
-    async (bot_id) => {
-      setLoading((l) => ({ ...l, delete: true }));
-      try {
-        const res = await deleteBotConfig(bot_id);
-
-        await loadConfigs();
-        await loadPortfolios();
-        await loadToday();
-
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, delete: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios, loadToday]
-  );
-
-  /* =====================================================
-     💰 BOT BUDGET
-  ===================================================== */
-  const updateBudgetForBot = useCallback(
-    async (bot_id, budget) => {
-      if (!bot_id) return;
-
-      setLoading((l) => ({ ...l, budget: true }));
-      try {
-        const res = await updateBotConfig(bot_id, {
-          budget_total_eur: budget.total_eur,
-          budget_daily_limit_eur: budget.daily_limit_eur,
-          budget_min_order_eur: budget.min_order_eur,
-          budget_max_order_eur: budget.max_order_eur,
-        });
-
-        await loadConfigs();
-        await loadPortfolios();
-        await loadToday();
-
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, budget: false }));
-      }
-    },
-    [loadConfigs, loadPortfolios, loadToday]
-  );
+  const deleteBot = useCallback(async bot_id => {
+    setLoading(l => ({ ...l, delete: true }));
+    try {
+      const res = await deleteBotConfig(bot_id);
+      await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
+      return res;
+    } finally {
+      setLoading(l => ({ ...l, delete: false }));
+    }
+  }, [loadConfigs, loadPortfolios, loadToday]);
 
   /* =====================================================
      🔁 DAILY FLOW
   ===================================================== */
-  const generateDecisionForBot = useCallback(
-    async ({ bot_id, report_date = null }) => {
-      if (!bot_id) return;
+  const generateDecisionForBot = useCallback(async ({ bot_id }) => {
+    setLoading(l => ({ ...l, generate: true }));
+    try {
+      const res = await generateBotDecision({ bot_id });
+      await Promise.all([
+        loadToday(),
+        loadHistory(30),
+        loadPortfolios(),
+        loadTradesForBot(bot_id),
+      ]);
+      return res;
+    } finally {
+      setLoading(l => ({ ...l, generate: false }));
+    }
+  }, [loadToday, loadHistory, loadPortfolios, loadTradesForBot]);
 
-      setLoading((l) => ({ ...l, generate: true }));
-      try {
-        const res = await generateBotDecision({ bot_id, report_date });
+  /* =====================================================
+     ✅ EXECUTE (CRUCIAAL FIX)
+  ===================================================== */
+  const executeBot = useCallback(async ({ bot_id, decision_id }) => {
+    if (!bot_id || !decision_id) {
+      throw new Error("bot_id en decision_id zijn verplicht");
+    }
 
-        await loadToday();
-        await loadHistory(30);
-        await loadPortfolios();
-        await loadTradesForBot(bot_id); // ✅
+    setLoading(l => ({ ...l, action: true }));
+    try {
+      const res = await markBotExecuted({ bot_id, decision_id });
 
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, generate: false }));
-      }
-    },
-    [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
-  );
+      await Promise.all([
+        loadToday(),
+        loadHistory(30),
+        loadPortfolios(),
+        loadTradesForBot(bot_id),
+      ]);
 
-  // ✅ FIX: manual execute moet qty kunnen doorgeven (anders faalt het vaak)
-  const executeBot = useCallback(
-    async ({ bot_id, report_date, qty = null, price = null, notes = null }) => {
-      setLoading((l) => ({ ...l, action: true }));
-      try {
-        const res = await markBotExecuted({
-          bot_id,
-          report_date,
-          ...(qty != null && { qty }), // ✅ NEW
-          ...(price != null && { price }), // (optioneel)
-          ...(notes != null && { notes }), // (optioneel)
-        });
+      return res;
+    } finally {
+      setLoading(l => ({ ...l, action: false }));
+    }
+  }, [loadToday, loadHistory, loadPortfolios, loadTradesForBot]);
 
-        await loadToday();
-        await loadHistory(30);
-        await loadPortfolios();
-        await loadTradesForBot(bot_id); // ✅
-
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, action: false }));
-      }
-    },
-    [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
-  );
-
-  const skipBot = useCallback(
-    async ({ bot_id, report_date }) => {
-      setLoading((l) => ({ ...l, action: true }));
-      try {
-        const res = await skipBotToday({ bot_id, report_date });
-
-        await loadToday();
-        await loadHistory(30);
-        await loadPortfolios();
-
-        return res;
-      } finally {
-        setLoading((l) => ({ ...l, action: false }));
-      }
-    },
-    [loadToday, loadHistory, loadPortfolios]
-  );
+  const skipBot = useCallback(async ({ bot_id }) => {
+    setLoading(l => ({ ...l, action: true }));
+    try {
+      const res = await skipBotToday({ bot_id });
+      await Promise.all([loadToday(), loadHistory(30), loadPortfolios()]);
+      return res;
+    } finally {
+      setLoading(l => ({ ...l, action: false }));
+    }
+  }, [loadToday, loadHistory, loadPortfolios]);
 
   /* =====================================================
      🔁 INIT
@@ -311,8 +239,7 @@ export default function useBotData() {
     today,
     history,
     portfolios,
-
-    tradesByBot, // ✅ ECHTE TRADES
+    tradesByBot,
 
     decisionsByBot,
     ordersByBot,
@@ -324,11 +251,10 @@ export default function useBotData() {
     updateBot,
     deleteBot,
 
-    updateBudgetForBot,
     generateDecisionForBot,
     executeBot,
     skipBot,
 
-    loadTradesForBot, // ✅ lazy load in UI
+    loadTradesForBot,
   };
 }

@@ -1,41 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
 import { Clock } from "lucide-react";
-
-import useBotData from "@/hooks/useBotData";
 
 /**
  * BotTradeTable
  * --------------------------------------------------
- * - Toont ECHTE uitgevoerde trades (ledger execute)
- * - Gebruikt centrale useBotData hook
- * - Geen directe API calls
+ * - Pure presentational component
+ * - Ontvangt trades via props
+ * - GEEN hooks
+ * - GEEN API
  * - Backend = single source of truth
- * - Volgt GLOBAL THEME (globals.css)
  */
-export default function BotTradeTable({ botId }) {
-  const {
-    tradesByBot,
-    loadTradesForBot,
-    loading,
-  } = useBotData();
 
-  const trades = tradesByBot?.[botId] || [];
-  const isLoading = loading?.trades;
+/* =====================================================
+   HELPERS
+===================================================== */
+function tradeSideClass(side) {
+  if (side === "buy") return "score-buy";
+  if (side === "sell") return "score-sell";
+  return "score-neutral";
+}
 
-  /* =====================================================
-     🔁 LOAD TRADES (lazy per bot)
-  ===================================================== */
-  useEffect(() => {
-    if (!botId) return;
-    loadTradesForBot(botId, 20);
-  }, [botId, loadTradesForBot]);
-
+export default function BotTradeTable({ trades = [], loading = false }) {
   /* =====================================================
      STATES
   ===================================================== */
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="mt-4 text-sm text-[var(--text-muted)]">
         Trades laden…
@@ -77,29 +67,38 @@ export default function BotTradeTable({ botId }) {
           <tbody>
             {trades.map((t) => (
               <tr key={t.id} className="border-t">
+                {/* DATUM */}
                 <td className="px-3 py-2">
                   {t.executed_at
-                    ? new Date(t.executed_at).toLocaleString()
+                    ? new Date(t.executed_at).toLocaleString("nl-NL")
                     : "—"}
                 </td>
 
-                {/* ACTIE — via GLOBAL SCORE KLEUREN */}
-                <td className="px-3 py-2 font-medium score-buy">
-                  {(t.side || "buy").toUpperCase()}
+                {/* ACTIE (BUY / SELL) */}
+                <td
+                  className={`px-3 py-2 font-medium ${tradeSideClass(
+                    t.side
+                  )}`}
+                >
+                  {(t.side || "—").toUpperCase()}
                 </td>
 
+                {/* AANTAL */}
                 <td className="px-3 py-2">
                   {Number(t.qty || 0).toFixed(6)} {t.symbol || "BTC"}
                 </td>
 
+                {/* PRIJS */}
                 <td className="px-3 py-2">
                   {t.price != null ? `€${t.price}` : "—"}
                 </td>
 
+                {/* BEDRAG */}
                 <td className="px-3 py-2">
                   {t.amount_eur != null ? `€${t.amount_eur}` : "—"}
                 </td>
 
+                {/* MODE */}
                 <td className="px-3 py-2 capitalize text-[var(--text-muted)]">
                   {t.mode || "manual"}
                 </td>

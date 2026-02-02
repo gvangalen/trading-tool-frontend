@@ -28,9 +28,22 @@ export default function BotPortfolioSection({ bot }) {
     (budget.daily_limit_eur ?? 0) > 0 ||
     (budget.max_order_eur ?? 0) > 0;
 
+  // =====================================================
+  // ✅ BACKEND-LED STATS
+  // =====================================================
   const netQty = stats.net_qty ?? 0;
   const positionValue = stats.position_value_eur ?? 0;
-  const spentTotal = Math.abs(stats.net_cash_delta_eur ?? 0);
+
+  // ❗ Alleen ECHTE trades (execute)
+  const spentExecuted = Math.abs(
+    stats.net_executed_cash_delta_eur ?? 0
+  );
+
+  // Budget context (mag reserves bevatten)
+  const spentTotalForBudget = Math.abs(
+    stats.net_cash_delta_eur ?? 0
+  );
+
   const todaySpent = stats.today_spent_eur ?? 0;
 
   return (
@@ -57,7 +70,7 @@ export default function BotPortfolioSection({ bot }) {
             <BotBudgetBar
               label="Totaal budget"
               total={budget.total_eur ?? 0}
-              spent={spentTotal}
+              spent={spentTotalForBudget}
             />
 
             <div className="text-xs text-[var(--text-muted)] mt-2">
@@ -78,7 +91,7 @@ export default function BotPortfolioSection({ bot }) {
       </div>
 
       {/* =====================
-         PORTFOLIO
+         PORTFOLIO (ECHTE TRADES)
       ===================== */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border-subtle)]">
         <Stat label="Holdings">
@@ -89,16 +102,16 @@ export default function BotPortfolioSection({ bot }) {
           €{positionValue.toFixed(0)}
         </Stat>
 
-        <Stat label="Net cash">
-          €{spentTotal.toFixed(0)}
+        <Stat label="Geïnvesteerd">
+          €{spentExecuted.toFixed(0)}
         </Stat>
 
         <Stat label="PnL">
           <BotPnLBadge
-            pnlEur={positionValue - spentTotal}
+            pnlEur={positionValue - spentExecuted}
             pnlPct={
-              spentTotal > 0
-                ? ((positionValue - spentTotal) / spentTotal) * 100
+              spentExecuted > 0
+                ? ((positionValue - spentExecuted) / spentExecuted) * 100
                 : 0
             }
           />

@@ -14,7 +14,7 @@ import {
   createBotConfig,
   updateBotConfig,
   deleteBotConfig,
-} from "@/lib/botApi";
+} from "@/lib/api/botApi";
 
 /**
  * useBotData — FINAL

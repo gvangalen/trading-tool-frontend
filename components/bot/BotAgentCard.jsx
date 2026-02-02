@@ -250,9 +250,9 @@ export default function BotAgentCard({
         <div className="space-y-4">
           <BotPortfolioCard bot={effectivePortfolio} />
           <BotTradeTable
-            botId={bot.id}
             trades={Array.isArray(trades) ? trades : []}
-          />
+            loading={false}
+        />
         </div>
       </div>
 

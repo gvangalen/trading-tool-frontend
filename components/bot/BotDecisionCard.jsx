@@ -51,6 +51,7 @@ export default function BotTodayProposal({
      CORE STATE
   ===================================================== */
   const botId = decision.bot_id;
+  const decisionId = decision.id;
 
   const status = decision.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
@@ -86,12 +87,10 @@ export default function BotTodayProposal({
 
   /* =====================================================
      EXECUTE GUARD (OPTIE A)
-     - Alleen executen als er een echte order bestaat
-     - En alleen als nog niet final
-     - En alleen manual mode
   ===================================================== */
   const hasTrade = !!order;
-  const canExecute = !isAuto && !isFinal && hasTrade && !!onExecute;
+  const canExecute =
+    !isAuto && !isFinal && hasTrade && !!onExecute && !!decisionId;
 
   /* =====================================================
      HEADER
@@ -176,7 +175,6 @@ export default function BotTodayProposal({
 
   /* =====================================================
      GEEN TRADE VANDAAG
-     ✅ OPTIE A: geen execute knop tonen
   ===================================================== */
   if (!order) {
     return (
@@ -238,7 +236,12 @@ export default function BotTodayProposal({
         <div className="flex flex-wrap gap-3 pt-4">
           {canExecute && (
             <button
-              onClick={() => onExecute({ bot_id: botId })}
+              onClick={() =>
+                onExecute({
+                  bot_id: botId,
+                  decision_id: decisionId,
+                })
+              }
               className="btn-primary flex items-center gap-2"
             >
               <Play size={16} />

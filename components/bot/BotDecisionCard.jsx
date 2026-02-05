@@ -51,8 +51,8 @@ export default function BotTodayProposal({
      CORE STATE
   ===================================================== */
   const botId = decision.bot_id;
-  const decisionId = decision.id;
-
+  const decisionId = decision.decision_id;
+  
   const status = decision.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
   const executedByAuto = decision.executed_by === "auto";

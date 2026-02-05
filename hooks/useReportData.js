@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   fetchDailyReportLatest,
   fetchDailyReportByDate,
@@ -17,18 +17,23 @@ import {
 } from '@/lib/api/report';
 
 /**
- * ✅ Stabiele report hook (JS-versie)
- * - Geen TS syntax
- * - Geen infinite loops
- * - 404 = "nog geen rapport"
- * - 'error' = echte fout
+ * ✅ Robuuste report hook
+ * - 404 ≠ error tijdens generatie
+ * - polling tijdens Celery run
+ * - geen infinite loops
  */
 export function useReportData(reportType = 'daily') {
   const [report, setReport] = useState(null);
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('latest');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // null | 404 | 'error'
+  const [error, setError] = useState(null); // null | 404 | 'timeout'
+
+  const isGeneratingRef = useRef(false);
+  const pollAttemptsRef = useRef(0);
+
+  const POLL_INTERVAL = 5000; // 5s
+  const MAX_POLLS = 36; // 3 minuten
 
   const fetchFunctions = {
     daily: {
@@ -55,9 +60,9 @@ export function useReportData(reportType = 'daily') {
 
   const current = fetchFunctions[reportType];
 
-  // ==========================
-  // 📆 Datums ophalen (1x per reportType)
-  // ==========================
+  // =====================================================
+  // 📆 Datums laden
+  // =====================================================
   useEffect(() => {
     let cancelled = false;
 
@@ -66,11 +71,11 @@ export function useReportData(reportType = 'daily') {
         const data = await current.getDates();
         if (cancelled) return;
 
-        const sorted = Array.isArray(data)
-          ? data.sort((a, b) => (a < b ? 1 : -1))
-          : [];
-
-        setDates(sorted);
+        setDates(
+          Array.isArray(data)
+            ? data.sort((a, b) => (a < b ? 1 : -1))
+            : []
+        );
         setSelectedDate('latest');
       } catch {
         setDates([]);
@@ -83,9 +88,9 @@ export function useReportData(reportType = 'daily') {
     };
   }, [reportType]);
 
-  // ==========================
-  // 📄 Rapport ophalen
-  // ==========================
+  // =====================================================
+  // 📄 Rapport laden + polling
+  // =====================================================
   useEffect(() => {
     let cancelled = false;
 
@@ -101,24 +106,38 @@ export function useReportData(reportType = 'daily') {
 
         if (cancelled) return;
 
-        const isEmpty =
-          !data || typeof data !== 'object' || Object.keys(data).length === 0;
-
-        if (isEmpty) {
-          setReport(null);
-          setError(404); // 👈 normaal: nog geen rapport
-        } else {
+        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+          // ✅ REPORT BESTAAT
           setReport(data);
-        }
-      } catch {
-        if (!cancelled) {
-          setReport(null);
-          setError(404); // backend geeft 404 → frontend rustig
-        }
-      } finally {
-        if (!cancelled) {
+          isGeneratingRef.current = false;
+          pollAttemptsRef.current = 0;
           setLoading(false);
+          return;
         }
+
+        throw new Error('empty');
+      } catch {
+        if (cancelled) return;
+
+        // 🔁 Tijdens generatie: blijven pollen
+        if (isGeneratingRef.current) {
+          pollAttemptsRef.current += 1;
+
+          if (pollAttemptsRef.current >= MAX_POLLS) {
+            setError('timeout');
+            setLoading(false);
+            isGeneratingRef.current = false;
+            return;
+          }
+
+          setTimeout(loadReport, POLL_INTERVAL);
+          return;
+        }
+
+        // 🧘 Normale 404 → geen rapport
+        setReport(null);
+        setError(404);
+        setLoading(false);
       }
     }
 
@@ -128,13 +147,24 @@ export function useReportData(reportType = 'daily') {
     };
   }, [selectedDate, reportType]);
 
+  // =====================================================
+  // 🚀 Exposed helper voor UI
+  // =====================================================
+  const startGenerating = () => {
+    isGeneratingRef.current = true;
+    pollAttemptsRef.current = 0;
+    setLoading(true);
+    setError(null);
+  };
+
   return {
     report,
     dates,
     selectedDate,
     setSelectedDate,
     loading,
-    error, // null | 404 | 'error'
+    error, // null | 404 | 'timeout'
     hasReport: !!report && !loading,
+    startGenerating, // 👈 AANROEPEN bij "Genereer rapport"
   };
 }

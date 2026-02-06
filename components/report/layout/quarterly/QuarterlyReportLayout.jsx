@@ -8,19 +8,18 @@ import ReportSection from '@/components/report/sections/ReportSection';
  * Doel:
  * - Evaluatie van het afgelopen kwartaal
  * - Betrouwbaarheid van strategie, bots en setups
- * - Risico & drawdown context
- * - Beslisbasis voor aanpassingen in aanpak
+ * - Risico & robuustheid
+ * - Beslisbasis voor structurele aanpassingen
  *
- * Verwachte report keys (quarterly agent):
+ * Backend canonical keys (quarterly_reports):
  * - executive_summary
- * - market_regime_review
- * - macro_cycle_position
- * - technical_trend_quality
- * - setup_edge_evaluation
- * - bot_and_execution_review
- * - risk_and_drawdown
- * - strategy_adjustments
- * - outlook_next_quarter
+ * - market_overview
+ * - macro_trends
+ * - technical_structure
+ * - setup_performance
+ * - bot_performance
+ * - strategic_lessons
+ * - outlook
  */
 export default function QuarterlyReportLayout({ report }) {
   if (!report) return null;
@@ -35,59 +34,52 @@ export default function QuarterlyReportLayout({ report }) {
         </p>
       </ReportSection>
 
-      {/* MARKTREGIME REVIEW */}
+      {/* MARKTREGIME & CONTEXT */}
       <ReportSection title="Marktregime en context">
         <p className="leading-relaxed">
-          {report.market_regime_review || 'Geen analyse van het marktregime beschikbaar.'}
+          {report.market_overview || 'Geen marktregime-analyse beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* MACRO CYCLUS */}
       <ReportSection title="Macrocyclus en positionering">
         <p className="leading-relaxed">
-          {report.macro_cycle_position || 'Geen macrocyclus-analyse beschikbaar.'}
+          {report.macro_trends || 'Geen macrocyclus-analyse beschikbaar.'}
         </p>
       </ReportSection>
 
-      {/* TECHNISCHE TRENDKWALITEIT */}
-      <ReportSection title="Technische trendkwaliteit">
+      {/* TECHNISCHE STRUCTUUR */}
+      <ReportSection title="Technische structuur en trendkwaliteit">
         <p className="leading-relaxed">
-          {report.technical_trend_quality || 'Geen technische trendbeoordeling beschikbaar.'}
+          {report.technical_structure || 'Geen technische trendbeoordeling beschikbaar.'}
         </p>
       </ReportSection>
 
-      {/* SETUP EDGE */}
-      <ReportSection title="Setup-edge en signalen">
+      {/* SETUPS / EDGE */}
+      <ReportSection title="Setups en edge-evaluatie">
         <p className="leading-relaxed">
-          {report.setup_edge_evaluation || 'Geen setup-evaluatie beschikbaar.'}
+          {report.setup_performance || 'Geen setup-evaluatie beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* BOT & EXECUTION */}
       <ReportSection title="Bot- en execution review">
         <p className="leading-relaxed">
-          {report.bot_and_execution_review || 'Geen bot- of execution review beschikbaar.'}
+          {report.bot_performance || 'Geen bot- of execution review beschikbaar.'}
         </p>
       </ReportSection>
 
-      {/* RISICO & DRAWDOWN */}
-      <ReportSection title="Risico en drawdown">
+      {/* RISICO & LESSEN */}
+      <ReportSection title="Risico en strategische lessen">
         <p className="leading-relaxed">
-          {report.risk_and_drawdown || 'Geen risico- en drawdownanalyse beschikbaar.'}
-        </p>
-      </ReportSection>
-
-      {/* STRATEGIE AANPASSINGEN */}
-      <ReportSection title="Strategische aanpassingen">
-        <p className="leading-relaxed">
-          {report.strategy_adjustments || 'Geen strategische aanpassingen voorgesteld.'}
+          {report.strategic_lessons || 'Geen risico- of discipline-evaluatie beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* VOORUITBLIK */}
       <ReportSection title="Vooruitblik volgend kwartaal">
         <p className="leading-relaxed">
-          {report.outlook_next_quarter || 'Geen vooruitblik beschikbaar.'}
+          {report.outlook || 'Geen vooruitblik beschikbaar.'}
         </p>
       </ReportSection>
 

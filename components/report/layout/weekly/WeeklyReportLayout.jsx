@@ -10,14 +10,14 @@ import ReportSection from '@/components/report/sections/ReportSection';
  * - Samenvatting van dagelijkse signalen
  * - Geen actie-dagfocus, wel context & regime
  *
- * Verwacht report keys (weekly agent):
+ * Backend canonical keys (weekly_reports):
  * - executive_summary
- * - market_review
- * - macro_review
- * - technical_review
- * - setup_review
- * - bot_review
- * - risk_review
+ * - market_overview
+ * - macro_trends
+ * - technical_structure
+ * - setup_performance
+ * - bot_performance
+ * - strategic_lessons
  * - outlook
  */
 export default function WeeklyReportLayout({ report }) {
@@ -26,7 +26,7 @@ export default function WeeklyReportLayout({ report }) {
   return (
     <div className="max-w-3xl mx-auto space-y-12">
 
-      {/* WEEK SAMENVATTING */}
+      {/* WEEKOVERZICHT */}
       <ReportSection title="Weekoverzicht">
         <p className="leading-relaxed">
           {report.executive_summary || 'Geen weekoverzicht beschikbaar.'}
@@ -36,42 +36,42 @@ export default function WeeklyReportLayout({ report }) {
       {/* MARKT */}
       <ReportSection title="Marktontwikkeling">
         <p className="leading-relaxed">
-          {report.market_review || 'Geen marktanalyse beschikbaar.'}
+          {report.market_overview || 'Geen marktanalyse beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* MACRO */}
       <ReportSection title="Macro-context">
         <p className="leading-relaxed">
-          {report.macro_review || 'Geen macro-analyse beschikbaar.'}
+          {report.macro_trends || 'Geen macro-analyse beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* TECHNISCH */}
       <ReportSection title="Technische structuur">
         <p className="leading-relaxed">
-          {report.technical_review || 'Geen technische analyse beschikbaar.'}
+          {report.technical_structure || 'Geen technische analyse beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* SETUPS / STRATEGIE */}
       <ReportSection title="Setups en strategie">
         <p className="leading-relaxed">
-          {report.setup_review || 'Geen setup-evaluatie beschikbaar.'}
+          {report.setup_performance || 'Geen setup-evaluatie beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* BOT EVALUATIE */}
       <ReportSection title="Bot- en trade-evaluatie">
         <p className="leading-relaxed">
-          {report.bot_review || 'Geen bot-evaluatie beschikbaar.'}
+          {report.bot_performance || 'Geen bot-evaluatie beschikbaar.'}
         </p>
       </ReportSection>
 
-      {/* RISICO */}
-      <ReportSection title="Risico & discipline">
+      {/* RISICO / LESSEN */}
+      <ReportSection title="Risico & strategische lessen">
         <p className="leading-relaxed">
-          {report.risk_review || 'Geen risico-evaluatie beschikbaar.'}
+          {report.strategic_lessons || 'Geen risico-evaluatie beschikbaar.'}
         </p>
       </ReportSection>
 

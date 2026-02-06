@@ -11,15 +11,15 @@ import ReportSection from '@/components/report/sections/ReportSection';
  * - Betrouwbaarheid van signalen & bots
  * - Positionering richting komende maand(en)
  *
- * Verwachte report keys (monthly agent):
+ * Backend canonical keys (monthly_reports):
  * - executive_summary
- * - market_regime
- * - macro_environment
+ * - market_overview
+ * - macro_trends
  * - technical_structure
  * - setup_performance
  * - bot_performance
- * - risk_assessment
- * - forward_view
+ * - strategic_lessons
+ * - outlook
  */
 export default function MonthlyReportLayout({ report }) {
   if (!report) return null;
@@ -34,17 +34,17 @@ export default function MonthlyReportLayout({ report }) {
         </p>
       </ReportSection>
 
-      {/* MARKTREGIME */}
-      <ReportSection title="Marktregime">
+      {/* MARKTREGIME / MARKT */}
+      <ReportSection title="Marktregime en prijsstructuur">
         <p className="leading-relaxed">
-          {report.market_regime || 'Geen beschrijving van het marktregime beschikbaar.'}
+          {report.market_overview || 'Geen marktregime-analyse beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* MACRO */}
       <ReportSection title="Macro-omgeving">
         <p className="leading-relaxed">
-          {report.macro_environment || 'Geen macro-analyse beschikbaar.'}
+          {report.macro_trends || 'Geen macro-analyse beschikbaar.'}
         </p>
       </ReportSection>
 
@@ -69,17 +69,17 @@ export default function MonthlyReportLayout({ report }) {
         </p>
       </ReportSection>
 
-      {/* RISICO */}
-      <ReportSection title="Risico en robuustheid">
+      {/* RISICO / LESSEN */}
+      <ReportSection title="Risico en strategische lessen">
         <p className="leading-relaxed">
-          {report.risk_assessment || 'Geen risicoanalyse beschikbaar.'}
+          {report.strategic_lessons || 'Geen risico-analyse beschikbaar.'}
         </p>
       </ReportSection>
 
       {/* VOORUITBLIK */}
       <ReportSection title="Vooruitblik">
         <p className="leading-relaxed">
-          {report.forward_view || 'Geen vooruitblik beschikbaar.'}
+          {report.outlook || 'Geen vooruitblik beschikbaar.'}
         </p>
       </ReportSection>
 

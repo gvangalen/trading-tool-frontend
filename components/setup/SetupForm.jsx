@@ -6,12 +6,10 @@ import Slider from "rc-slider";
 import React, { useState, useEffect } from "react";
 import {
   Settings,
-  TrendingUp,
   BarChart3,
   Sliders,
   Tag,
   Sparkles,
-  Star,
   Save,
 } from "lucide-react";
 
@@ -36,12 +34,18 @@ export default function SetupForm({
     timeframe: "1D",
     trend: "",
     accountType: "",
+
     minInvestment: "",
+    baseAmount: 100,
+
+    executionMode: "fixed", // fixed | custom
+    scalingProfile: "fixed", // fixed | dca_contrarian | dca_trend_following | custom
+    decisionCurve: null,
+
     scoreLogic: "",
     explanation: "",
     action: "",
     tags: "",
-    dynamicInvestment: false,
     favorite: false,
   };
 
@@ -63,12 +67,18 @@ export default function SetupForm({
         timeframe: initialData.timeframe ?? "1D",
         trend: initialData.trend ?? "",
         accountType: initialData.account_type ?? "",
+
         minInvestment: initialData.min_investment ?? "",
+        baseAmount: initialData.base_amount ?? 100,
+
+        executionMode: initialData.execution_mode ?? "fixed",
+        scalingProfile: initialData.scaling_profile ?? "fixed",
+        decisionCurve: initialData.decision_curve ?? null,
+
         scoreLogic: initialData.score_logic ?? "",
         explanation: initialData.explanation ?? "",
         action: initialData.action ?? "",
         tags: (initialData.tags ?? []).join(", "),
-        dynamicInvestment: !!initialData.dynamic_investment,
         favorite: !!initialData.favorite,
       });
 
@@ -113,14 +123,26 @@ export default function SetupForm({
       timeframe: formData.timeframe,
       trend: formData.trend,
       account_type: formData.accountType,
+
       min_investment: formData.minInvestment || null,
+      base_amount: Number(formData.baseAmount),
+
+      execution_mode: formData.executionMode,
+      scaling_profile:
+        formData.executionMode === "custom"
+          ? formData.scalingProfile
+          : "fixed",
+      decision_curve:
+        formData.executionMode === "custom"
+          ? formData.decisionCurve
+          : null,
+
       score_logic: formData.scoreLogic,
       explanation: formData.explanation,
       action: formData.action,
       tags: formData.tags
         ? formData.tags.split(",").map((t) => t.trim())
         : [],
-      dynamic_investment: formData.dynamicInvestment,
       favorite: formData.favorite,
 
       min_macro_score: macroScore[0],
@@ -138,8 +160,6 @@ export default function SetupForm({
       } else {
         await saveNewSetup(payload);
         showSnackbar("Nieuwe setup opgeslagen!", "success");
-
-        // Reset form only for NEW setups
         setFormData(emptyForm);
         setMacroScore([30, 70]);
         setTechnicalScore([40, 80]);
@@ -177,212 +197,90 @@ export default function SetupForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8 mt-4">
 
-      {/* ------------------------------------------------ */}
-      {/* SECTIE: BASISGEGEVENS */}
-      {/* ------------------------------------------------ */}
+      {/* BASIS */}
       <div className={sectionClass}>
         {sectionTitle(<Settings size={18} />, "Basisgegevens")}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            name="name"
-            placeholder="Naam*"
-            value={formData.name}
-            onChange={handleChange}
-            className={fieldClass}
-            required
-          />
+          <input name="name" placeholder="Naam*" value={formData.name} onChange={handleChange} className={fieldClass} required />
+          <input name="symbol" placeholder="Symbool*" value={formData.symbol} onChange={handleChange} className={fieldClass} required />
 
-          <input
-            name="symbol"
-            placeholder="Symbool*"
-            value={formData.symbol}
-            onChange={handleChange}
-            className={fieldClass}
-            required
-          />
-
-          <select
-            name="strategyType"
-            value={formData.strategyType}
-            onChange={handleChange}
-            className={fieldClass}
-            required
-          >
+          <select name="strategyType" value={formData.strategyType} onChange={handleChange} className={fieldClass} required>
             <option value="">Strategie Type*</option>
             <option value="dca">DCA</option>
             <option value="manual">Manual</option>
             <option value="trading">Trading</option>
           </select>
 
-          <select
-            name="timeframe"
-            value={formData.timeframe}
-            onChange={handleChange}
-            className={fieldClass}
-          >
-            <option value="1D">1D — Daily</option>
-            <option value="4H">4H — 4 uur</option>
-            <option value="1W">1W — Weekly</option>
-          </select>
-
-          <select
-            name="trend"
-            value={formData.trend}
-            onChange={handleChange}
-            className={fieldClass}
-          >
-            <option value="">Trend</option>
-            <option value="bullish">📈 Bullish</option>
-            <option value="bearish">📉 Bearish</option>
-            <option value="range">⚖️ Range</option>
+          <select name="timeframe" value={formData.timeframe} onChange={handleChange} className={fieldClass}>
+            <option value="1D">1D</option>
+            <option value="4H">4H</option>
+            <option value="1W">1W</option>
           </select>
         </div>
       </div>
 
-      {/* ------------------------------------------------ */}
-      {/* SECTIE: SCORE RANGES */}
-      {/* ------------------------------------------------ */}
+      {/* SCORES */}
       <div className={sectionClass}>
-        {sectionTitle(<BarChart3 size={18} />, "Score Range (0–100)")}
+        {sectionTitle(<BarChart3 size={18} />, "Score ranges")}
 
         <div className="space-y-6">
-          <div>
-            <label className="block mb-1 font-medium">
-              Macro Score: {macroScore[0]}–{macroScore[1]}
-            </label>
-            <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
-          </div>
+          <label>Macro {macroScore[0]}–{macroScore[1]}</label>
+          <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
 
-          <div>
-            <label className="block mb-1 font-medium">
-              Technical Score: {technicalScore[0]}–{technicalScore[1]}
-            </label>
-            <Slider range min={0} max={100} value={technicalScore} onChange={setTechnicalScore} />
-          </div>
+          <label>Technical {technicalScore[0]}–{technicalScore[1]}</label>
+          <Slider range min={0} max={100} value={technicalScore} onChange={setTechnicalScore} />
 
-          <div>
-            <label className="block mb-1 font-medium">
-              Market Score: {marketScore[0]}–{marketScore[1]}
-            </label>
-            <Slider range min={0} max={100} value={marketScore} onChange={setMarketScore} />
-          </div>
+          <label>Market {marketScore[0]}–{marketScore[1]}</label>
+          <Slider range min={0} max={100} value={marketScore} onChange={setMarketScore} />
         </div>
       </div>
 
-      {/* ------------------------------------------------ */}
-      {/* SECTIE: OVERIG */}
-      {/* ------------------------------------------------ */}
+      {/* EXECUTION */}
       <div className={sectionClass}>
-        {sectionTitle(<Sliders size={18} />, "Overige instellingen")}
+        {sectionTitle(<Sliders size={18} />, "Investeringslogica")}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            name="accountType"
-            placeholder="Account Type"
-            value={formData.accountType}
-            onChange={handleChange}
-            className={fieldClass}
-          />
+        <input
+          name="baseAmount"
+          type="number"
+          placeholder="Basisbedrag per cyclus (€)"
+          value={formData.baseAmount}
+          onChange={handleChange}
+          className={fieldClass}
+        />
 
-          <input
-            name="minInvestment"
-            placeholder="Minimale investering (€)"
-            type="number"
-            value={formData.minInvestment}
-            onChange={handleChange}
-            className={fieldClass}
+        <select name="executionMode" value={formData.executionMode} onChange={handleChange} className={fieldClass}>
+          <option value="fixed">Vast bedrag</option>
+          <option value="custom">Slimme investering</option>
+        </select>
+
+        {formData.executionMode === "custom" && (
+          <select name="scalingProfile" value={formData.scalingProfile} onChange={handleChange} className={fieldClass}>
+            <option value="dca_contrarian">Contrarian</option>
+            <option value="dca_trend_following">Trend following</option>
+            <option value="fixed">Geen scaling</option>
+            <option value="custom">Custom curve</option>
+          </select>
+        )}
+
+        {formData.scalingProfile === "custom" && (
+          <textarea
+            className={`${fieldClass} min-h-[120px]`}
+            placeholder="Decision curve JSON"
+            value={JSON.stringify(formData.decisionCurve ?? [], null, 2)}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                decisionCurve: JSON.parse(e.target.value),
+              }))
+            }
           />
-        </div>
+        )}
       </div>
 
-      {/* ------------------------------------------------ */}
-      {/* SECTIE: UITLEG & TAGS */}
-      {/* ------------------------------------------------ */}
-      <div className={sectionClass}>
-        {sectionTitle(<Sparkles size={18} />, "Logica & Uitleg")}
-
-        <textarea
-          name="scoreLogic"
-          placeholder="Score Logica"
-          value={formData.scoreLogic}
-          onChange={handleChange}
-          className={`${fieldClass} min-h-[70px]`}
-        />
-        <textarea
-          name="explanation"
-          placeholder="Uitleg"
-          value={formData.explanation}
-          onChange={handleChange}
-          className={`${fieldClass} min-h-[70px]`}
-        />
-        <textarea
-          name="action"
-          placeholder="Actie / Tradeplan"
-          value={formData.action}
-          onChange={handleChange}
-          className={`${fieldClass} min-h-[70px]`}
-        />
-
-        <div>
-          <label className="flex items-center gap-2 text-sm mb-1">
-            <Tag size={16} className="text-[var(--primary)]" />
-            Tags (komma gescheiden)
-          </label>
-          <input
-            name="tags"
-            placeholder="bijv: swing, scalp, dca"
-            value={formData.tags}
-            onChange={handleChange}
-            className={fieldClass}
-          />
-        </div>
-
-        {/* Checkboxen */}
-        <div className="flex gap-8 pt-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              name="dynamicInvestment"
-              checked={formData.dynamicInvestment}
-              onChange={handleChange}
-            />
-            <span>Dynamische investering</span>
-          </label>
-
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              name="favorite"
-              checked={formData.favorite}
-              onChange={handleChange}
-            />
-            <span>Favoriet</span>
-          </label>
-        </div>
-      </div>
-
-      {/* ------------------------------------------------ */}
-      {/* SUBMIT BUTTON */}
-      {/* ------------------------------------------------ */}
-      <button
-        id="setup-edit-submit"
-        type="submit"
-        disabled={loading}
-        className="
-          flex items-center gap-2
-          bg-[var(--primary)] hover:bg-[var(--primary-dark)]
-          text-white px-5 py-3
-          font-semibold rounded-xl shadow-sm hover:shadow-md
-          disabled:bg-gray-400 transition
-        "
-      >
-        <Save size={18} />
-        {loading
-          ? "Opslaan…"
-          : isEdit
-          ? "Setup bijwerken"
-          : "Nieuwe setup opslaan"}
+      {/* SUBMIT */}
+      <button type="submit" disabled={loading} className="bg-[var(--primary)] text-white px-5 py-3 rounded-xl font-semibold">
+        <Save size={18} /> {loading ? "Opslaan…" : "Opslaan"}
       </button>
     </form>
   );

@@ -17,23 +17,33 @@ import {
 } from '@/lib/api/report';
 
 /**
- * ✅ Robuuste report hook
- * - 404 ≠ error tijdens generatie
- * - polling tijdens Celery run
- * - geen infinite loops
+ * ✅ Robuuste report hook — FINAL
+ *
+ * - Loader stopt ALTIJD zodra report bestaat
+ * - Eén expliciete status-machine (geen timing hacks)
+ * - Werkt identiek voor daily / weekly / monthly / quarterly
+ *
+ * status:
+ * - idle     → geen report / geen generatie
+ * - pending  → Celery bezig (loader zichtbaar)
+ * - ready    → report aanwezig (loader UIT)
+ * - failed   → timeout / fout
  */
 export function useReportData(reportType = 'daily') {
   const [report, setReport] = useState(null);
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('latest');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // null | 404 | 'timeout'
+  const [error, setError] = useState(null);
+
+  // 🔑 NIEUW — expliciete status voor loader
+  const [status, setStatus] = useState('idle'); // idle | pending | ready | failed
 
   const isGeneratingRef = useRef(false);
   const pollAttemptsRef = useRef(0);
 
-  const POLL_INTERVAL = 5000; // 5s
-  const MAX_POLLS = 36; // 3 minuten
+  const POLL_INTERVAL = 5000; // 5 sec
+  const MAX_POLLS = 36;       // 3 min
 
   const fetchFunctions = {
     daily: {
@@ -106,12 +116,13 @@ export function useReportData(reportType = 'daily') {
 
         if (cancelled) return;
 
+        // ✅ REPORT BESTAAT → STOP ALLES
         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-          // ✅ REPORT BESTAAT
           setReport(data);
           isGeneratingRef.current = false;
           pollAttemptsRef.current = 0;
           setLoading(false);
+          setStatus('ready'); // 🔑 loader stopt hier
           return;
         }
 
@@ -119,7 +130,7 @@ export function useReportData(reportType = 'daily') {
       } catch {
         if (cancelled) return;
 
-        // 🔁 Tijdens generatie: blijven pollen
+        // 🔁 Tijdens generatie blijven pollen
         if (isGeneratingRef.current) {
           pollAttemptsRef.current += 1;
 
@@ -127,6 +138,7 @@ export function useReportData(reportType = 'daily') {
             setError('timeout');
             setLoading(false);
             isGeneratingRef.current = false;
+            setStatus('failed');
             return;
           }
 
@@ -134,10 +146,11 @@ export function useReportData(reportType = 'daily') {
           return;
         }
 
-        // 🧘 Normale 404 → geen rapport
+        // 🧘 Normale situatie: geen report
         setReport(null);
         setError(404);
         setLoading(false);
+        setStatus('idle');
       }
     }
 
@@ -148,23 +161,32 @@ export function useReportData(reportType = 'daily') {
   }, [selectedDate, reportType]);
 
   // =====================================================
-  // 🚀 Exposed helper voor UI
+  // 🚀 Start generatie (UI trigger)
   // =====================================================
   const startGenerating = () => {
     isGeneratingRef.current = true;
     pollAttemptsRef.current = 0;
     setLoading(true);
     setError(null);
+    setStatus('pending'); // 🔑 loader START
   };
 
+  // =====================================================
+  // 🔄 Exposed API
+  // =====================================================
   return {
     report,
     dates,
     selectedDate,
     setSelectedDate,
+
     loading,
-    error, // null | 404 | 'timeout'
-    hasReport: !!report && !loading,
-    startGenerating, // 👈 AANROEPEN bij "Genereer rapport"
+    error,
+    status,          // 👈 HOOFD-SIGNAAL VOOR LOADER
+
+    hasReport: status === 'ready',
+    isGenerating: status === 'pending',
+
+    startGenerating,
   };
 }

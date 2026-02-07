@@ -1,108 +1,89 @@
 'use client';
 
-import SummaryBlock from '@/components/report/blocks/SummaryBlock';
-import NarrativeBlock from '@/components/report/blocks/NarrativeBlock';
-import ScoreBarBlock from '@/components/report/blocks/ScoreBarBlock';
-import SetupMatchReportCard from '@/components/report/blocks/SetupMatchReportCard';
-import BotDecisionReportCard from '@/components/report/blocks/BotDecisionReportCard';
+import WeeklyRegimeOverviewCard from '@/components/report/blocks/weekly/WeeklyRegimeOverviewCard';
+import WeeklyScoreTrendCard from '@/components/report/blocks/weekly/WeeklyScoreTrendCard';
+import WeeklyBotBehaviorCard from '@/components/report/blocks/weekly/WeeklyBotBehaviorCard';
+
+import ReportSection from '@/components/report/sections/ReportSection';
 
 /**
- * WeeklyReportLayout
+ * WeeklyReportLayout — v2.0
  * --------------------------------------------------
- * Filosofie:
- * - Rustige, reflectieve weekbeschouwing
- * - Context > actie
- * - Evaluatie van markt, setups en botgedrag
- * - Geen dagfocus, geen intraday-prikkels
+ * Structuur:
+ * 1. Visuele samenvatting (cards)
+ * 2. Score & gedrag (cards)
+ * 3. Strategische context (tekst)
  *
- * Backend canonical keys (weekly_reports):
- * - executive_summary
- * - market_overview
- * - macro_trends
- * - technical_structure
- * - setup_performance
- * - bot_performance
- * - strategic_lessons
- * - outlook
+ * Geen daily cards
+ * Geen actie-focus
+ * Wel: regime, gedrag, betrouwbaarheid
  */
 export default function WeeklyReportLayout({ report }) {
   if (!report) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 space-y-20">
+    <div className="max-w-6xl mx-auto space-y-14">
 
-      {/* ======================================================
-       * 1. WEEKOVERZICHT — ANKER
-       * ====================================================== */}
-      <SummaryBlock
-        title="Weekoverzicht"
-        content={report.executive_summary}
-        fallback="Geen weekoverzicht beschikbaar."
-      />
+      {/* =====================================================
+          1️⃣ WEEK SAMENVATTING — VISUEEL
+      ====================================================== */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <WeeklyRegimeOverviewCard report={report} />
+        <WeeklyScoreTrendCard report={report} />
+      </section>
 
-      {/* ======================================================
-       * 2. MARKT & CONTEXT
-       * ====================================================== */}
-      <div className="space-y-14">
-        <NarrativeBlock
-          title="Marktontwikkeling"
-          content={report.market_overview}
-          fallback="Geen marktanalyse beschikbaar."
-        />
+      {/* =====================================================
+          2️⃣ BOTGEDRAG & EXECUTION
+      ====================================================== */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <WeeklyBotBehaviorCard report={report} />
 
-        <NarrativeBlock
-          title="Macro-context"
-          content={report.macro_trends}
-          fallback="Geen macro-analyse beschikbaar."
-        />
+        {/* Lege slot voor toekomstige uitbreiding */}
+        <div className="hidden md:block" />
+      </section>
 
-        <NarrativeBlock
-          title="Technische structuur"
-          content={report.technical_structure}
-          fallback="Geen technische analyse beschikbaar."
-        />
-      </div>
+      {/* =====================================================
+          3️⃣ STRATEGISCHE CONTEXT — LEESBAAR
+      ====================================================== */}
+      <section className="max-w-3xl mx-auto space-y-12">
 
-      {/* ======================================================
-       * 3. SCORES — COMPACTE SAMENVATTING
-       * ====================================================== */}
-      <ScoreBarBlock
-        macroScore={report.macro_score}
-        technicalScore={report.technical_score}
-        setupScore={report.setup_score}
-      />
+        <ReportSection title="Weekoverzicht">
+          <p className="leading-relaxed">
+            {report.executive_summary || 'Geen weekoverzicht beschikbaar.'}
+          </p>
+        </ReportSection>
 
-      {/* ======================================================
-       * 4. SETUPS & BOTGEDRAG — EVALUATIE
-       * ====================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <SetupMatchReportCard
-          title="Setup-evaluatie"
-          description={report.setup_performance}
-        />
+        <ReportSection title="Marktontwikkeling">
+          <p className="leading-relaxed">
+            {report.market_overview || 'Geen marktanalyse beschikbaar.'}
+          </p>
+        </ReportSection>
 
-        <BotDecisionReportCard
-          title="Bot- en trade-evaluatie"
-          description={report.bot_performance}
-        />
-      </div>
+        <ReportSection title="Macro-context">
+          <p className="leading-relaxed">
+            {report.macro_trends || 'Geen macro-analyse beschikbaar.'}
+          </p>
+        </ReportSection>
 
-      {/* ======================================================
-       * 5. LESSEN & VOORUITBLIK
-       * ====================================================== */}
-      <div className="space-y-14">
-        <NarrativeBlock
-          title="Strategische lessen & risico"
-          content={report.strategic_lessons}
-          fallback="Geen strategische lessen beschikbaar."
-        />
+        <ReportSection title="Technische structuur">
+          <p className="leading-relaxed">
+            {report.technical_structure || 'Geen technische analyse beschikbaar.'}
+          </p>
+        </ReportSection>
 
-        <NarrativeBlock
-          title="Vooruitblik"
-          content={report.outlook}
-          fallback="Geen vooruitblik beschikbaar."
-        />
-      </div>
+        <ReportSection title="Setups & strategische lessen">
+          <p className="leading-relaxed">
+            {report.strategic_lessons || 'Geen strategische lessen beschikbaar.'}
+          </p>
+        </ReportSection>
+
+        <ReportSection title="Vooruitblik">
+          <p className="leading-relaxed">
+            {report.outlook || 'Geen vooruitblik beschikbaar.'}
+          </p>
+        </ReportSection>
+
+      </section>
 
     </div>
   );

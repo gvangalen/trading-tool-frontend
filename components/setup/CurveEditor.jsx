@@ -5,9 +5,9 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
 /**
- * CurveEditor
+ * CurveEditor — v2.0
  *
- * Headless editor voor decision / scoring curves
+ * Editor voor investerings- of score-curves
  *
  * JSON shape:
  * {
@@ -23,8 +23,8 @@ import "rc-slider/assets/index.css";
  * Props:
  * - value: curve object
  * - onChange: (curve) => void
- * - xLabel?: string
- * - yLabel?: string
+ * - xLabel?: string   (default: "Score (0–100)")
+ * - yLabel?: string   (default: "× Basisbedrag")
  * - disabled?: boolean
  */
 
@@ -38,13 +38,13 @@ const DEFAULT_POINTS = [
 export default function CurveEditor({
   value,
   onChange,
-  xLabel = "Score (0–100)",
-  yLabel = "Multiplier",
+  xLabel = "Marktscore (0–100)",
+  yLabel = "× Basisbedrag",
   disabled = false,
 }) {
-  // ---------------------------------------------
-  // Init / normalize
-  // ---------------------------------------------
+  // --------------------------------------------------
+  // Normalize curve
+  // --------------------------------------------------
   const curve = useMemo(() => {
     if (!value || !Array.isArray(value.points)) {
       return {
@@ -57,22 +57,18 @@ export default function CurveEditor({
 
   const points = curve.points;
 
-  // ---------------------------------------------
+  // --------------------------------------------------
   // Helpers
-  // ---------------------------------------------
-  const updatePoint = (index, newPoint) => {
+  // --------------------------------------------------
+  const updatePoint = (index, patch) => {
     const next = points.map((p, i) =>
-      i === index ? { ...p, ...newPoint } : p
+      i === index ? { ...p, ...patch } : p
     );
-
-    onChange({
-      ...curve,
-      points: next,
-    });
+    onChange({ ...curve, points: next });
   };
 
   const addPoint = () => {
-    const lastX = points[points.length - 1]?.x ?? 80;
+    const lastX = points[points.length - 1]?.x ?? 60;
     const nextX = Math.min(lastX + 10, 100);
 
     onChange({
@@ -82,16 +78,16 @@ export default function CurveEditor({
   };
 
   const removePoint = (index) => {
-    if (points.length <= 2) return; // minimaal 2 punten
+    if (points.length <= 2) return;
     onChange({
       ...curve,
       points: points.filter((_, i) => i !== index),
     });
   };
 
-  // ---------------------------------------------
-  // Sort on x (veiligheid)
-  // ---------------------------------------------
+  // --------------------------------------------------
+  // Auto-sort on X (score)
+  // --------------------------------------------------
   useEffect(() => {
     const sorted = [...points].sort((a, b) => a.x - b.x);
     if (JSON.stringify(sorted) !== JSON.stringify(points)) {
@@ -100,17 +96,19 @@ export default function CurveEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points]);
 
-  // ---------------------------------------------
+  // --------------------------------------------------
   // Render
-  // ---------------------------------------------
+  // --------------------------------------------------
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--bg-soft)] p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h4 className="font-semibold text-sm">Decision Curve</h4>
-          <p className="text-xs text-muted-foreground">
-            {xLabel} → {yLabel}
+          <h4 className="font-semibold text-sm">
+            Investeringsverdeling op basis van score
+          </h4>
+          <p className="text-xs opacity-70">
+            Bij deze score investeren we meer of minder dan het basisbedrag
           </p>
         </div>
 
@@ -125,14 +123,24 @@ export default function CurveEditor({
         )}
       </div>
 
-      {/* Points editor */}
+      {/* Axis labels */}
+      <div className="grid grid-cols-[80px_1fr_90px_40px] text-xs opacity-70 px-1">
+        <div>{xLabel}</div>
+        <div className="text-center">Investeringsgewicht</div>
+        <div className="text-right">{yLabel}</div>
+        <div />
+      </div>
+
+      {/* Points */}
       <div className="space-y-3">
         {points.map((p, i) => (
           <div
             key={i}
-            className="grid grid-cols-[80px_1fr_80px_40px] gap-3 items-center"
+            className={`grid grid-cols-[80px_1fr_90px_40px] gap-3 items-center ${
+              disabled ? "opacity-60" : ""
+            }`}
           >
-            {/* X value */}
+            {/* Score */}
             <input
               type="number"
               min={0}
@@ -143,10 +151,10 @@ export default function CurveEditor({
               onChange={(e) =>
                 updatePoint(i, { x: Number(e.target.value) })
               }
-              className="p-1 rounded border text-sm"
+              className="p-1 rounded border text-sm text-center"
             />
 
-            {/* Slider */}
+            {/* Multiplier slider */}
             <Slider
               min={0}
               max={3}
@@ -156,7 +164,7 @@ export default function CurveEditor({
               onChange={(v) => updatePoint(i, { y: v })}
             />
 
-            {/* Y value */}
+            {/* Multiplier input */}
             <input
               type="number"
               min={0}
@@ -166,10 +174,10 @@ export default function CurveEditor({
               onChange={(e) =>
                 updatePoint(i, { y: Number(e.target.value) })
               }
-              className="p-1 rounded border text-sm"
+              className="p-1 rounded border text-sm text-right"
             />
 
-            {/* Delete */}
+            {/* Remove */}
             {!disabled && (
               <button
                 type="button"
@@ -184,10 +192,22 @@ export default function CurveEditor({
       </div>
 
       {/* Preview */}
-      <div className="text-xs text-muted-foreground pt-2">
-        <strong>Preview:</strong>{" "}
-        {points.map((p) => `${p.x}→${p.y}`).join(" | ")}
+      <div className="text-xs pt-2 opacity-70">
+        <strong>Voorbeeld:</strong>
+        <div className="mt-1 space-y-1">
+          {points.map((p, i) => (
+            <div key={i}>
+              Score {p.x} → {p.y}× basisbedrag
+            </div>
+          ))}
+        </div>
       </div>
+
+      {disabled && (
+        <div className="text-xs italic opacity-60 pt-2">
+          Vast bedrag gebruikt deze curve niet
+        </div>
+      )}
     </div>
   );
 }

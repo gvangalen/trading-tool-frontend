@@ -10,18 +10,30 @@ import {
   Star,
   StarOff,
   Bot,
-  TrendingUp,
-  TrendingDown,
-  Scale,
   Clock,
-  User,
   Brain,
-  DollarSign,
-  Tag,
   Pencil,
   Trash,
 } from "lucide-react";
 
+/* =========================================================
+   🧠 SCORE INTERPRETATIE (zelfde semantiek als SetupForm)
+========================================================= */
+const scoreLabel = (v) => {
+  if (v <= 25) return "Sterk bearish / risk-off";
+  if (v <= 45) return "Bearish";
+  if (v <= 60) return "Neutraal";
+  if (v <= 75) return "Neutraal → bullish";
+  if (v <= 90) return "Bullish";
+  return "Euforisch / oververhit";
+};
+
+const rangeText = (min, max) =>
+  `${scoreLabel(min)} → ${scoreLabel(max)}`;
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 export default function SetupList({
   setups = [],
   loading,
@@ -33,18 +45,17 @@ export default function SetupList({
 }) {
   const { openConfirm, showSnackbar } = useModal();
 
-  // 🔥 LOKALE STATE (nodig voor directe AI-update)
+  // lokale state voor directe AI updates
   const [localSetups, setLocalSetups] = useState(setups);
   const [aiLoading, setAiLoading] = useState({});
   const [justUpdated, setJustUpdated] = useState({});
 
-  // 🔄 sync props → local
   useEffect(() => {
     setLocalSetups(setups);
   }, [setups]);
 
   /* ---------------------------------------------------------
-     🔍 FILTER
+     FILTER
   --------------------------------------------------------- */
   const filteredSetups = !searchTerm
     ? localSetups
@@ -53,7 +64,7 @@ export default function SetupList({
       );
 
   /* ---------------------------------------------------------
-     🤖 AI UITLEG
+     AI UITLEG
   --------------------------------------------------------- */
   async function handleGenerateExplanation(id) {
     try {
@@ -61,7 +72,6 @@ export default function SetupList({
 
       const res = await generateExplanation(id);
 
-      // ✅ DIRECT zichtbaar (zonder reload)
       if (res?.explanation) {
         setLocalSetups((prev) =>
           prev.map((s) =>
@@ -70,33 +80,31 @@ export default function SetupList({
         );
       }
 
-      showSnackbar("AI-uitleg succesvol gegenereerd!", "success");
+      showSnackbar("AI-uitleg succesvol gegenereerd", "success");
 
       setJustUpdated((p) => ({ ...p, [id]: true }));
-      setTimeout(
-        () => setJustUpdated((p) => ({ ...p, [id]: false })),
-        1500
-      );
+      setTimeout(() => {
+        setJustUpdated((p) => ({ ...p, [id]: false }));
+      }, 1500);
     } catch (e) {
       console.error(e);
-      showSnackbar("AI generatie mislukt.", "danger");
+      showSnackbar("AI generatie mislukt", "danger");
     } finally {
       setAiLoading((p) => ({ ...p, [id]: false }));
     }
   }
 
   /* ---------------------------------------------------------
-     🗑️ DELETE
+     DELETE
   --------------------------------------------------------- */
   function openDeleteModal(id) {
     openConfirm({
       title: "Setup verwijderen",
-      icon: <Trash />,
       tone: "danger",
       confirmText: "Verwijderen",
       cancelText: "Annuleren",
       description: (
-        <p className="leading-relaxed">
+        <p>
           Weet je zeker dat je deze setup wilt verwijderen?
           <br />
           <span className="text-red-600 font-medium">
@@ -107,18 +115,17 @@ export default function SetupList({
       onConfirm: async () => {
         await removeSetup(id);
         reload && reload();
-        showSnackbar("Setup verwijderd.", "success");
+        showSnackbar("Setup verwijderd", "success");
       },
     });
   }
 
   /* ---------------------------------------------------------
-     ✏️ EDIT
+     EDIT
   --------------------------------------------------------- */
   function openEditModal(setup) {
     openConfirm({
       title: `Setup bewerken – ${setup.name}`,
-      icon: <Pencil />,
       tone: "primary",
       confirmText: "Opslaan",
       cancelText: "Annuleren",
@@ -129,7 +136,8 @@ export default function SetupList({
   }
 
   function SetupFormWrapper({ setup }) {
-    const SetupForm = require("@/components/setup/SetupForm").default;
+    const SetupForm =
+      require("@/components/setup/SetupForm").default;
 
     return (
       <div className="space-y-6 pt-4">
@@ -138,7 +146,7 @@ export default function SetupList({
           initialData={setup}
           onSaved={() => {
             reload && reload();
-            showSnackbar("Setup bijgewerkt!", "success");
+            showSnackbar("Setup bijgewerkt", "success");
           }}
         />
       </div>
@@ -146,131 +154,131 @@ export default function SetupList({
   }
 
   /* ---------------------------------------------------------
-     UI
+     RENDER
   --------------------------------------------------------- */
   return (
     <div className="space-y-6 mt-4">
-      {loading && <p className="text-sm text-gray-500">📡 Setups laden…</p>}
+      {loading && <p className="text-sm text-gray-500">Setups laden…</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredSetups.length > 0 ? (
-          filteredSetups.map((setup) => {
-            const trend = (setup.trend || "").toLowerCase();
+          filteredSetups.map((setup) => (
+            <div
+              key={setup.id}
+              className={`
+                relative rounded-2xl p-5
+                border border-[var(--card-border)]
+                bg-[var(--card-bg)]
+                transition-all
+                hover:shadow-lg hover:-translate-y-[2px]
+                ${justUpdated[setup.id] ? "ring-2 ring-green-500" : ""}
+              `}
+            >
+              {/* AI overlay */}
+              {aiLoading[setup.id] && (
+                <div className="absolute inset-0 z-20 rounded-2xl bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                  <AILoader variant="dots" size="md" text="AI analyse…" />
+                </div>
+              )}
 
-            const trendIcon =
-              trend === "bullish" ? (
-                <TrendingUp size={16} className="text-green-600" />
-              ) : trend === "bearish" ? (
-                <TrendingDown size={16} className="text-red-600" />
-              ) : (
-                <Scale size={16} className="text-yellow-600" />
-              );
-
-            return (
-              <div
-                key={setup.id}
-                className={`
-                  relative rounded-2xl p-5
-                  border border-[var(--card-border)]
-                  bg-[var(--card-bg)] shadow-sm
-                  transition-all duration-200
-                  hover:shadow-lg hover:-translate-y-[3px]
-                  ${justUpdated[setup.id] ? "ring-2 ring-green-500" : ""}
-                `}
+              {/* Favorite */}
+              <button
+                onClick={() =>
+                  openEditModal({ ...setup, favorite: !setup.favorite })
+                }
+                className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500"
               >
-                {/* AI overlay */}
-                {aiLoading[setup.id] && (
-                  <div className="absolute inset-0 z-20 rounded-2xl bg-white/60 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                    <AILoader variant="dots" size="md" text="AI-analyse…" />
-                  </div>
+                {setup.favorite ? (
+                  <Star size={20} className="text-yellow-500" />
+                ) : (
+                  <StarOff size={20} />
                 )}
+              </button>
 
-                {/* Favoriet */}
-                <button
-                  onClick={() =>
-                    openEditModal({ ...setup, favorite: !setup.favorite })
-                  }
-                  className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500 transition"
-                >
-                  {setup.favorite ? (
-                    <Star size={20} className="text-yellow-500" />
-                  ) : (
-                    <StarOff size={20} />
-                  )}
-                </button>
+              {/* Titel */}
+              <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
 
-                {/* Titel */}
-                <h3 className="font-bold text-lg mb-2">{setup.name}</h3>
-
-                {/* Trend */}
-                <div className="flex items-center gap-2 mb-2 text-sm">
-                  {trendIcon}
-                  <span>{setup.trend || "Onbekend"}</span>
+              {/* Meta */}
+              <div className="flex items-center gap-4 text-xs text-[var(--text-light)] mb-3">
+                <div className="flex items-center gap-1">
+                  <Clock size={14} /> {setup.timeframe}
                 </div>
-
-                {/* Details (HERSTELD) */}
-                <div className="space-y-1 text-xs text-[var(--text-light)]">
-                  <div className="flex gap-2">
-                    <Clock size={14} /> {setup.timeframe}
-                  </div>
-                  <div className="flex gap-2">
-                    <User size={14} /> {setup.account_type}
-                  </div>
-                  <div className="flex gap-2">
-                    <Brain size={14} /> {setup.strategy_type}
-                  </div>
-                  <div className="flex gap-2">
-                    <DollarSign size={14} />
-                    Min: €{setup.min_investment ?? 0}
-                  </div>
-                  <div className="flex gap-2">
-                    <Tag size={14} />
-                    {(setup.tags || []).join(", ") || "Geen tags"}
-                  </div>
-                </div>
-
-                {/* Uitleg */}
-                <div className="mt-3 text-xs whitespace-pre-line bg-[var(--bg-soft)] p-3 rounded-xl border">
-                  {setup.explanation || "Geen uitleg beschikbaar."}
-                </div>
-
-                {/* AI knop */}
-                <button
-                  onClick={() => handleGenerateExplanation(setup.id)}
-                  disabled={aiLoading[setup.id]}
-                  className="
-                    mt-3 w-full flex items-center justify-center gap-2
-                    px-3 py-2 rounded-xl text-xs font-medium text-white
-                    bg-[var(--primary)]
-                    hover:bg-[var(--primary-dark)]
-                    transition
-                  "
-                >
-                  <Bot size={15} />
-                  {aiLoading[setup.id] ? "Bezig…" : "Genereer AI-uitleg"}
-                </button>
-
-                {/* Acties */}
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={() => openEditModal(setup)}
-                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm bg-blue-500 hover:bg-blue-600 text-white transition"
-                  >
-                    <Pencil size={14} /> Bewerken
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(setup.id)}
-                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white transition"
-                  >
-                    <Trash size={14} /> Verwijder
-                  </button>
+                <div className="flex items-center gap-1">
+                  <Brain size={14} /> {setup.strategy_type}
                 </div>
               </div>
-            );
-          })
+
+              {/* SCORE RANGES */}
+              <div className="space-y-2 text-xs bg-[var(--bg-soft)] p-3 rounded-xl border">
+                <div>
+                  <strong>Macro:</strong>{" "}
+                  {setup.min_macro_score}–{setup.max_macro_score}
+                  <div className="opacity-70">
+                    {rangeText(
+                      setup.min_macro_score,
+                      setup.max_macro_score
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <strong>Technical:</strong>{" "}
+                  {setup.min_technical_score}–{setup.max_technical_score}
+                  <div className="opacity-70">
+                    {rangeText(
+                      setup.min_technical_score,
+                      setup.max_technical_score
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <strong>Market:</strong>{" "}
+                  {setup.min_market_score}–{setup.max_market_score}
+                  <div className="opacity-70">
+                    {rangeText(
+                      setup.min_market_score,
+                      setup.max_market_score
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* UITLEG */}
+              <div className="mt-3 text-xs whitespace-pre-line bg-[var(--bg-soft)] p-3 rounded-xl border">
+                {setup.explanation || "Geen uitleg beschikbaar."}
+              </div>
+
+              {/* AI knop */}
+              <button
+                onClick={() => handleGenerateExplanation(setup.id)}
+                disabled={aiLoading[setup.id]}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary-dark)]"
+              >
+                <Bot size={15} />
+                {aiLoading[setup.id] ? "Bezig…" : "Genereer AI-uitleg"}
+              </button>
+
+              {/* Acties */}
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => openEditModal(setup)}
+                  className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <Pencil size={14} /> Bewerken
+                </button>
+                <button
+                  onClick={() => openDeleteModal(setup.id)}
+                  className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Trash size={14} /> Verwijder
+                </button>
+              </div>
+            </div>
+          ))
         ) : (
-          <p className="text-sm text-gray-500">📭 Geen setups gevonden.</p>
+          <p className="text-sm text-gray-500">Geen setups gevonden.</p>
         )}
       </div>
     </div>

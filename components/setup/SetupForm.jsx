@@ -8,8 +8,6 @@ import {
   Settings,
   BarChart3,
   Sliders,
-  Tag,
-  Sparkles,
   Save,
 } from "lucide-react";
 
@@ -41,11 +39,7 @@ const CURVE_PRESETS = {
   },
 };
 
-export default function SetupForm({
-  onSaved,
-  mode = "new",
-  initialData = null,
-}) {
+export default function SetupForm({ onSaved, mode = "new", initialData = null }) {
   const isEdit = mode === "edit";
   const { showSnackbar } = useModal();
 
@@ -55,10 +49,8 @@ export default function SetupForm({
   const emptyForm = {
     name: "",
     symbol: "BTC",
-    strategyType: "",
-    timeframe: "1D",
-    trend: "",
-    accountType: "",
+    strategyType: "dca",
+    timeframe: "1W",
 
     minInvestment: "",
     baseAmount: 100,
@@ -89,10 +81,8 @@ export default function SetupForm({
     setFormData({
       name: initialData.name ?? "",
       symbol: initialData.symbol ?? "BTC",
-      strategyType: initialData.strategy_type ?? "",
-      timeframe: initialData.timeframe ?? "1D",
-      trend: initialData.trend ?? "",
-      accountType: initialData.account_type ?? "",
+      strategyType: initialData.strategy_type ?? "dca",
+      timeframe: initialData.timeframe ?? "1W",
 
       minInvestment: initialData.min_investment ?? "",
       baseAmount: initialData.base_amount ?? 100,
@@ -114,20 +104,13 @@ export default function SetupForm({
   }, [isEdit, initialData]);
 
   // ----------------------------------------------------
-  // FORM CHANGE
+  // HANDLERS
   // ----------------------------------------------------
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  // ----------------------------------------------------
-  // HANDLE SCALING PRESET CHANGE
-  // ----------------------------------------------------
   const handleScalingProfileChange = (profile) => {
     if (profile === "fixed") {
       setFormData((p) => ({
@@ -149,7 +132,6 @@ export default function SetupForm({
       return;
     }
 
-    // preset
     setFormData((p) => ({
       ...p,
       scalingProfile: profile,
@@ -169,8 +151,6 @@ export default function SetupForm({
       symbol: formData.symbol,
       strategy_type: formData.strategyType,
       timeframe: formData.timeframe,
-      trend: formData.trend,
-      account_type: formData.accountType,
 
       min_investment: formData.minInvestment || null,
       base_amount: Number(formData.baseAmount),
@@ -185,7 +165,6 @@ export default function SetupForm({
       tags: formData.tags
         ? formData.tags.split(",").map((t) => t.trim())
         : [],
-      favorite: formData.favorite,
 
       min_macro_score: macroScore[0],
       max_macro_score: macroScore[1],
@@ -198,13 +177,12 @@ export default function SetupForm({
     try {
       if (isEdit) {
         await updateSetup(initialData.id, payload);
-        showSnackbar("Setup succesvol bijgewerkt!", "success");
+        showSnackbar("Setup bijgewerkt", "success");
       } else {
         await saveNewSetup(payload);
-        showSnackbar("Nieuwe setup opgeslagen!", "success");
+        showSnackbar("Setup opgeslagen", "success");
         setFormData(emptyForm);
       }
-
       onSaved?.();
     } catch (err) {
       console.error(err);
@@ -218,7 +196,7 @@ export default function SetupForm({
   // STYLES
   // ----------------------------------------------------
   const fieldClass =
-    "p-2 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] text-[var(--text-dark)] w-full";
+    "p-2 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] w-full";
 
   const sectionClass =
     "rounded-2xl p-5 bg-[var(--card-bg)] border border-[var(--card-border)] space-y-4";
@@ -239,17 +217,36 @@ export default function SetupForm({
       {/* BASIS */}
       <div className={sectionClass}>
         {sectionTitle(<Settings size={18} />, "Basisgegevens")}
+
         <input name="name" placeholder="Naam*" value={formData.name} onChange={handleChange} className={fieldClass} required />
-        <input name="symbol" placeholder="Symbool*" value={formData.symbol} onChange={handleChange} className={fieldClass} required />
+
+        <select name="symbol" value={formData.symbol} onChange={handleChange} className={fieldClass}>
+          <option value="BTC">BTC</option>
+          <option value="SOL">SOL</option>
+        </select>
+
+        <select name="strategyType" value={formData.strategyType} onChange={handleChange} className={fieldClass}>
+          <option value="dca">DCA</option>
+          <option value="trading">Trading</option>
+          <option value="manual">Manual</option>
+        </select>
+
+        <select name="timeframe" value={formData.timeframe} onChange={handleChange} className={fieldClass}>
+          <option value="1D">Dagelijks</option>
+          <option value="1W">Wekelijks</option>
+        </select>
       </div>
 
       {/* SCORES */}
       <div className={sectionClass}>
         {sectionTitle(<BarChart3 size={18} />, "Score ranges")}
+
         <label>Macro {macroScore[0]}–{macroScore[1]}</label>
         <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
+
         <label>Technical {technicalScore[0]}–{technicalScore[1]}</label>
         <Slider range min={0} max={100} value={technicalScore} onChange={setTechnicalScore} />
+
         <label>Market {marketScore[0]}–{marketScore[1]}</label>
         <Slider range min={0} max={100} value={marketScore} onChange={setMarketScore} />
       </div>
@@ -257,6 +254,13 @@ export default function SetupForm({
       {/* EXECUTION */}
       <div className={sectionClass}>
         {sectionTitle(<Sliders size={18} />, "Investeringslogica")}
+
+        <label>
+          Basisbedrag per cyclus (€)
+          <span className="block text-xs opacity-70">
+            Cyclus = gekozen timeframe
+          </span>
+        </label>
 
         <input
           name="baseAmount"
@@ -278,9 +282,9 @@ export default function SetupForm({
               onChange={(e) => handleScalingProfileChange(e.target.value)}
               className={fieldClass}
             >
-              <option value="dca_contrarian">Contrarian</option>
+              <option value="dca_contrarian">Contrarian (meer bij zwakte)</option>
               <option value="dca_trend_following">Trend following</option>
-              <option value="custom">Custom</option>
+              <option value="custom">Custom curve</option>
               <option value="fixed">Geen scaling</option>
             </select>
 

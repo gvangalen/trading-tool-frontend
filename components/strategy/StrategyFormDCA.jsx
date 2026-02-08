@@ -5,16 +5,11 @@ import { useSetupData } from "@/hooks/useSetupData";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
-  Coins,
-  Calendar,
+  Wallet,
   Info,
-  Tag,
+  Sliders,
   Star,
   StarOff,
-  ClipboardList,
-  Wallet,
-  Clock,
-  Sliders,
 } from "lucide-react";
 
 import CurveEditor from "@/components/decision/CurveEditor";
@@ -60,14 +55,16 @@ export default function StrategyFormDCA({
 
   const [form, setForm] = useState({
     setup_id: initialData?.setup_id || "",
+
+    // alleen UI convenience
     setup_name: initialData?.setup_name || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
 
-    amount: initialData?.amount || "",
+    amount: initialData?.base_amount || "",
     frequency: initialData?.frequency || "",
 
-    scaling_profile: initialData?.scaling_profile || "fixed",
+    execution_mode: initialData?.execution_mode || "fixed",
     decision_curve: initialData?.decision_curve || null,
 
     rules: initialData?.rules || "",
@@ -80,7 +77,7 @@ export default function StrategyFormDCA({
   }, []);
 
   /* ==========================================================
-     FILTER: alleen DCA setups
+     Alleen DCA setups
   ========================================================== */
   const availableSetups = setups.filter(
     (s) => s.strategy_type?.toLowerCase() === "dca"
@@ -93,7 +90,7 @@ export default function StrategyFormDCA({
     const { name, value, type, checked } = e.target;
 
     if (type === "checkbox") {
-      setForm((prev) => ({ ...prev, [name]: checked }));
+      setForm((p) => ({ ...p, [name]: checked }));
       return;
     }
 
@@ -107,8 +104,8 @@ export default function StrategyFormDCA({
         return;
       }
 
-      setForm((prev) => ({
-        ...prev,
+      setForm((p) => ({
+        ...p,
         setup_id: selected.id,
         setup_name: selected.name,
         symbol: selected.symbol,
@@ -119,26 +116,32 @@ export default function StrategyFormDCA({
       return;
     }
 
-    if (name === "scaling_profile") {
+    if (name === "execution_mode") {
       if (value === "custom") {
-        setForm((prev) => ({
-          ...prev,
-          scaling_profile: "custom",
+        setForm((p) => ({
+          ...p,
+          execution_mode: "custom",
           decision_curve:
-            prev.decision_curve ??
+            p.decision_curve ??
             JSON.parse(JSON.stringify(CURVE_PRESETS.dca_contrarian)),
         }));
+      } else if (value === "fixed") {
+        setForm((p) => ({
+          ...p,
+          execution_mode: "fixed",
+          decision_curve: null,
+        }));
       } else {
-        setForm((prev) => ({
-          ...prev,
-          scaling_profile: value,
+        setForm((p) => ({
+          ...p,
+          execution_mode: value,
           decision_curve: CURVE_PRESETS[value],
         }));
       }
       return;
     }
 
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((p) => ({ ...p, [name]: value }));
     setError("");
   };
 
@@ -149,7 +152,10 @@ export default function StrategyFormDCA({
     form.setup_id &&
     Number(form.amount) > 0 &&
     form.frequency &&
-    (form.scaling_profile === "fixed" || form.decision_curve);
+    (
+      form.execution_mode === "fixed" ||
+      (form.decision_curve && form.decision_curve.points?.length >= 2)
+    );
 
   /* ==========================================================
      SUBMIT
@@ -166,24 +172,19 @@ export default function StrategyFormDCA({
     const payload = {
       strategy_type: "dca",
       setup_id: form.setup_id,
-      setup_name: form.setup_name,
-      symbol: form.symbol,
-      timeframe: form.timeframe,
 
-      amount: Number(form.amount),
+      base_amount: Number(form.amount),
       frequency: form.frequency,
 
-      scaling_profile: form.scaling_profile,
+      execution_mode: form.execution_mode,
       decision_curve:
-        form.scaling_profile === "fixed" ? null : form.decision_curve,
+        form.execution_mode === "fixed" ? null : form.decision_curve,
 
       rules: form.rules?.trim() || "",
       favorite: !!form.favorite,
       tags: form.tags
         ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
         : [],
-
-      origin: "DCA",
     };
 
     try {
@@ -198,7 +199,7 @@ export default function StrategyFormDCA({
           timeframe: "",
           amount: "",
           frequency: "",
-          scaling_profile: "fixed",
+          execution_mode: "fixed",
           decision_curve: null,
           rules: "",
           favorite: false,
@@ -220,7 +221,7 @@ export default function StrategyFormDCA({
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-2xl mx-auto bg-white dark:bg-[#0f0f0f] p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 space-y-6"
+      className="w-full max-w-2xl mx-auto p-6 sm:p-8 rounded-2xl border space-y-6"
     >
       <h2 className="text-xl font-bold flex items-center gap-2">
         <Wallet className="w-5 h-5 text-blue-600" />
@@ -239,7 +240,7 @@ export default function StrategyFormDCA({
           value={form.setup_id}
           disabled={mode === "edit"}
           onChange={handleChange}
-          className="w-full p-3 rounded-xl border bg-gray-50 dark:bg-[#111]"
+          className="w-full p-3 rounded-xl border"
         >
           <option value="">
             {availableSetups.length === 0
@@ -255,18 +256,10 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
-      {/* SYMBOL / TIMEFRAME */}
+      {/* SYMBOL / TIMEFRAME (read-only) */}
       <div className="grid grid-cols-2 gap-4">
-        <input
-          readOnly
-          value={form.symbol}
-          className="p-3 rounded-xl border bg-gray-100"
-        />
-        <input
-          readOnly
-          value={form.timeframe}
-          className="p-3 rounded-xl border bg-gray-100"
-        />
+        <input readOnly value={form.symbol} className="p-3 rounded-xl border bg-gray-100" />
+        <input readOnly value={form.timeframe} className="p-3 rounded-xl border bg-gray-100" />
       </div>
 
       {/* AMOUNT / FREQUENCY */}
@@ -293,16 +286,16 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
-      {/* SCALING */}
+      {/* EXECUTION MODE */}
       <div>
         <label className="text-sm font-semibold flex items-center gap-2 mb-1">
           <Sliders className="w-4 h-4 text-gray-400" />
-          Investeringsverdeling
+          Executie-logica
         </label>
 
         <select
-          name="scaling_profile"
-          value={form.scaling_profile}
+          name="execution_mode"
+          value={form.execution_mode}
           onChange={handleChange}
           className="w-full p-3 rounded-xl border"
         >
@@ -313,11 +306,11 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
-      {form.scaling_profile !== "fixed" && (
+      {form.execution_mode !== "fixed" && (
         <CurveEditor
           value={form.decision_curve}
           onChange={(curve) =>
-            setForm((prev) => ({ ...prev, decision_curve: curve }))
+            setForm((p) => ({ ...p, decision_curve: curve }))
           }
         />
       )}

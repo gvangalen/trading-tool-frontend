@@ -4,12 +4,7 @@ import "rc-slider/assets/index.css";
 import Slider from "rc-slider";
 
 import React, { useState, useEffect } from "react";
-import {
-  Settings,
-  BarChart3,
-  Sliders,
-  Save,
-} from "lucide-react";
+import { Settings, BarChart3, Sliders, Save } from "lucide-react";
 
 import { saveNewSetup, updateSetup } from "@/lib/api/setups";
 import { useModal } from "@/components/modal/ModalProvider";
@@ -55,15 +50,14 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     minInvestment: "",
     baseAmount: 100,
 
-    executionMode: "fixed", // fixed | custom
-    scalingProfile: "fixed", // fixed | dca_contrarian | dca_trend_following | custom
+    executionMode: "fixed",
+    scalingProfile: "fixed",
     decisionCurve: null,
 
     scoreLogic: "",
     explanation: "",
     action: "",
     tags: "",
-    favorite: false,
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -95,7 +89,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       explanation: initialData.explanation ?? "",
       action: initialData.action ?? "",
       tags: (initialData.tags ?? []).join(", "),
-      favorite: !!initialData.favorite,
     });
 
     setMacroScore([initialData.min_macro_score, initialData.max_macro_score]);
@@ -159,9 +152,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       decision_curve:
         formData.executionMode === "custom" ? formData.decisionCurve : null,
 
-      score_logic: formData.scoreLogic,
-      explanation: formData.explanation,
-      action: formData.action,
       tags: formData.tags
         ? formData.tags.split(",").map((t) => t.trim())
         : [],
@@ -196,13 +186,13 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   // STYLES
   // ----------------------------------------------------
   const fieldClass =
-    "p-2 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] w-full";
+    "p-3 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] w-full";
 
   const sectionClass =
     "rounded-2xl p-5 bg-[var(--card-bg)] border border-[var(--card-border)] space-y-4";
 
   const sectionTitle = (icon, text) => (
-    <h3 className="flex items-center gap-2 font-semibold">
+    <h3 className="flex items-center gap-2 font-semibold text-[1.05rem]">
       {icon}
       {text}
     </h3>
@@ -218,28 +208,38 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       <div className={sectionClass}>
         {sectionTitle(<Settings size={18} />, "Basisgegevens")}
 
-        <input name="name" placeholder="Naam*" value={formData.name} onChange={handleChange} className={fieldClass} required />
+        <input
+          name="name"
+          placeholder="Naam van de setup"
+          value={formData.name}
+          onChange={handleChange}
+          className={fieldClass}
+          required
+        />
 
-        <select name="symbol" value={formData.symbol} onChange={handleChange} className={fieldClass}>
-          <option value="BTC">BTC</option>
-          <option value="SOL">SOL</option>
-        </select>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <select name="symbol" value={formData.symbol} onChange={handleChange} className={fieldClass}>
+            <option value="BTC">BTC</option>
+            <option value="SOL">SOL</option>
+          </select>
 
-        <select name="strategyType" value={formData.strategyType} onChange={handleChange} className={fieldClass}>
-          <option value="dca">DCA</option>
-          <option value="trading">Trading</option>
-          <option value="manual">Manual</option>
-        </select>
+          <select name="strategyType" value={formData.strategyType} onChange={handleChange} className={fieldClass}>
+            <option value="dca">DCA</option>
+            <option value="trading">Trading</option>
+            <option value="manual">Manual</option>
+          </select>
 
-        <select name="timeframe" value={formData.timeframe} onChange={handleChange} className={fieldClass}>
-          <option value="1D">Dagelijks</option>
-          <option value="1W">Wekelijks</option>
-        </select>
+          <select name="timeframe" value={formData.timeframe} onChange={handleChange} className={fieldClass}>
+            <option value="1D">1D</option>
+            <option value="4H">4H</option>
+            <option value="1W">1W</option>
+          </select>
+        </div>
       </div>
 
       {/* SCORES */}
       <div className={sectionClass}>
-        {sectionTitle(<BarChart3 size={18} />, "Score ranges")}
+        {sectionTitle(<BarChart3 size={18} />, "Score ranges (0–100)")}
 
         <label>Macro {macroScore[0]}–{macroScore[1]}</label>
         <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
@@ -255,11 +255,8 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       <div className={sectionClass}>
         {sectionTitle(<Sliders size={18} />, "Investeringslogica")}
 
-        <label>
-          Basisbedrag per cyclus (€)
-          <span className="block text-xs opacity-70">
-            Cyclus = gekozen timeframe
-          </span>
+        <label className="text-sm font-medium">
+          Investeringsbedrag (€ / {formData.timeframe})
         </label>
 
         <input
@@ -272,7 +269,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
 
         <select name="executionMode" value={formData.executionMode} onChange={handleChange} className={fieldClass}>
           <option value="fixed">Vast bedrag</option>
-          <option value="custom">Slim (curve)</option>
+          <option value="custom">Dynamisch (op basis van score)</option>
         </select>
 
         {formData.executionMode === "custom" && (
@@ -282,7 +279,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
               onChange={(e) => handleScalingProfileChange(e.target.value)}
               className={fieldClass}
             >
-              <option value="dca_contrarian">Contrarian (meer bij zwakte)</option>
+              <option value="dca_contrarian">Contrarian</option>
               <option value="dca_trend_following">Trend following</option>
               <option value="custom">Custom curve</option>
               <option value="fixed">Geen scaling</option>
@@ -300,12 +297,14 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
         )}
       </div>
 
+      {/* SAVE */}
       <button
         type="submit"
         disabled={loading}
-        className="bg-[var(--primary)] text-white px-5 py-3 rounded-xl font-semibold"
+        className="w-full flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-dark)] transition text-white px-6 py-4 rounded-2xl font-semibold shadow-sm"
       >
-        <Save size={16} /> {loading ? "Opslaan…" : "Opslaan"}
+        <Save size={18} />
+        {loading ? "Opslaan…" : "Setup opslaan"}
       </button>
     </form>
   );

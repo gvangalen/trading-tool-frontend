@@ -15,6 +15,31 @@ import {
 
 import { saveNewSetup, updateSetup } from "@/lib/api/setups";
 import { useModal } from "@/components/modal/ModalProvider";
+import CurveEditor from "@/components/setup/CurveEditor";
+
+// ----------------------------------------------------
+// Curve presets (frontend only)
+// ----------------------------------------------------
+const CURVE_PRESETS = {
+  dca_contrarian: {
+    input: "market_score",
+    points: [
+      { x: 20, y: 1.5 },
+      { x: 40, y: 1.2 },
+      { x: 60, y: 1.0 },
+      { x: 80, y: 0.5 },
+    ],
+  },
+  dca_trend_following: {
+    input: "market_score",
+    points: [
+      { x: 20, y: 0.5 },
+      { x: 40, y: 0.8 },
+      { x: 60, y: 1.2 },
+      { x: 80, y: 1.4 },
+    ],
+  },
+};
 
 export default function SetupForm({
   onSaved,
@@ -59,42 +84,33 @@ export default function SetupForm({
   // LOAD FOR EDIT
   // ----------------------------------------------------
   useEffect(() => {
-    if (isEdit && initialData) {
-      setFormData({
-        name: initialData.name ?? "",
-        symbol: initialData.symbol ?? "BTC",
-        strategyType: initialData.strategy_type ?? "",
-        timeframe: initialData.timeframe ?? "1D",
-        trend: initialData.trend ?? "",
-        accountType: initialData.account_type ?? "",
+    if (!isEdit || !initialData) return;
 
-        minInvestment: initialData.min_investment ?? "",
-        baseAmount: initialData.base_amount ?? 100,
+    setFormData({
+      name: initialData.name ?? "",
+      symbol: initialData.symbol ?? "BTC",
+      strategyType: initialData.strategy_type ?? "",
+      timeframe: initialData.timeframe ?? "1D",
+      trend: initialData.trend ?? "",
+      accountType: initialData.account_type ?? "",
 
-        executionMode: initialData.execution_mode ?? "fixed",
-        scalingProfile: initialData.scaling_profile ?? "fixed",
-        decisionCurve: initialData.decision_curve ?? null,
+      minInvestment: initialData.min_investment ?? "",
+      baseAmount: initialData.base_amount ?? 100,
 
-        scoreLogic: initialData.score_logic ?? "",
-        explanation: initialData.explanation ?? "",
-        action: initialData.action ?? "",
-        tags: (initialData.tags ?? []).join(", "),
-        favorite: !!initialData.favorite,
-      });
+      executionMode: initialData.execution_mode ?? "fixed",
+      scalingProfile: initialData.decision_curve ? "custom" : "fixed",
+      decisionCurve: initialData.decision_curve ?? null,
 
-      setMacroScore([
-        initialData.min_macro_score,
-        initialData.max_macro_score,
-      ]);
-      setTechnicalScore([
-        initialData.min_technical_score,
-        initialData.max_technical_score,
-      ]);
-      setMarketScore([
-        initialData.min_market_score,
-        initialData.max_market_score,
-      ]);
-    }
+      scoreLogic: initialData.score_logic ?? "",
+      explanation: initialData.explanation ?? "",
+      action: initialData.action ?? "",
+      tags: (initialData.tags ?? []).join(", "),
+      favorite: !!initialData.favorite,
+    });
+
+    setMacroScore([initialData.min_macro_score, initialData.max_macro_score]);
+    setTechnicalScore([initialData.min_technical_score, initialData.max_technical_score]);
+    setMarketScore([initialData.min_market_score, initialData.max_market_score]);
   }, [isEdit, initialData]);
 
   // ----------------------------------------------------
@@ -106,6 +122,38 @@ export default function SetupForm({
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // ----------------------------------------------------
+  // HANDLE SCALING PRESET CHANGE
+  // ----------------------------------------------------
+  const handleScalingProfileChange = (profile) => {
+    if (profile === "fixed") {
+      setFormData((p) => ({
+        ...p,
+        scalingProfile: "fixed",
+        decisionCurve: null,
+      }));
+      return;
+    }
+
+    if (profile === "custom") {
+      setFormData((p) => ({
+        ...p,
+        scalingProfile: "custom",
+        decisionCurve:
+          p.decisionCurve ??
+          JSON.parse(JSON.stringify(CURVE_PRESETS.dca_contrarian)),
+      }));
+      return;
+    }
+
+    // preset
+    setFormData((p) => ({
+      ...p,
+      scalingProfile: profile,
+      decisionCurve: JSON.parse(JSON.stringify(CURVE_PRESETS[profile])),
     }));
   };
 
@@ -128,14 +176,8 @@ export default function SetupForm({
       base_amount: Number(formData.baseAmount),
 
       execution_mode: formData.executionMode,
-      scaling_profile:
-        formData.executionMode === "custom"
-          ? formData.scalingProfile
-          : "fixed",
       decision_curve:
-        formData.executionMode === "custom"
-          ? formData.decisionCurve
-          : null,
+        formData.executionMode === "custom" ? formData.decisionCurve : null,
 
       score_logic: formData.scoreLogic,
       explanation: formData.explanation,
@@ -161,31 +203,28 @@ export default function SetupForm({
         await saveNewSetup(payload);
         showSnackbar("Nieuwe setup opgeslagen!", "success");
         setFormData(emptyForm);
-        setMacroScore([30, 70]);
-        setTechnicalScore([40, 80]);
-        setMarketScore([20, 60]);
       }
 
-      onSaved && onSaved();
+      onSaved?.();
     } catch (err) {
-      console.error("❌ Fout:", err);
-      showSnackbar("Opslaan mislukt — controleer de velden.", "danger");
+      console.error(err);
+      showSnackbar("Opslaan mislukt", "danger");
     } finally {
       setLoading(false);
     }
   };
 
   // ----------------------------------------------------
-  // STYLE HELPERS
+  // STYLES
   // ----------------------------------------------------
   const fieldClass =
-    "p-2 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] text-[var(--text-dark)] focus:ring-2 focus:ring-[var(--primary)] outline-none transition w-full";
+    "p-2 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] text-[var(--text-dark)] w-full";
 
   const sectionClass =
-    "rounded-2xl p-5 bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm space-y-4";
+    "rounded-2xl p-5 bg-[var(--card-bg)] border border-[var(--card-border)] space-y-4";
 
   const sectionTitle = (icon, text) => (
-    <h3 className="flex items-center gap-2 text-[1.1rem] font-semibold text-[var(--text-dark)] mb-2">
+    <h3 className="flex items-center gap-2 font-semibold">
       {icon}
       {text}
     </h3>
@@ -195,45 +234,24 @@ export default function SetupForm({
   // RENDER
   // ----------------------------------------------------
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 mt-4">
+    <form onSubmit={handleSubmit} className="space-y-8">
 
       {/* BASIS */}
       <div className={sectionClass}>
         {sectionTitle(<Settings size={18} />, "Basisgegevens")}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input name="name" placeholder="Naam*" value={formData.name} onChange={handleChange} className={fieldClass} required />
-          <input name="symbol" placeholder="Symbool*" value={formData.symbol} onChange={handleChange} className={fieldClass} required />
-
-          <select name="strategyType" value={formData.strategyType} onChange={handleChange} className={fieldClass} required>
-            <option value="">Strategie Type*</option>
-            <option value="dca">DCA</option>
-            <option value="manual">Manual</option>
-            <option value="trading">Trading</option>
-          </select>
-
-          <select name="timeframe" value={formData.timeframe} onChange={handleChange} className={fieldClass}>
-            <option value="1D">1D</option>
-            <option value="4H">4H</option>
-            <option value="1W">1W</option>
-          </select>
-        </div>
+        <input name="name" placeholder="Naam*" value={formData.name} onChange={handleChange} className={fieldClass} required />
+        <input name="symbol" placeholder="Symbool*" value={formData.symbol} onChange={handleChange} className={fieldClass} required />
       </div>
 
       {/* SCORES */}
       <div className={sectionClass}>
         {sectionTitle(<BarChart3 size={18} />, "Score ranges")}
-
-        <div className="space-y-6">
-          <label>Macro {macroScore[0]}–{macroScore[1]}</label>
-          <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
-
-          <label>Technical {technicalScore[0]}–{technicalScore[1]}</label>
-          <Slider range min={0} max={100} value={technicalScore} onChange={setTechnicalScore} />
-
-          <label>Market {marketScore[0]}–{marketScore[1]}</label>
-          <Slider range min={0} max={100} value={marketScore} onChange={setMarketScore} />
-        </div>
+        <label>Macro {macroScore[0]}–{macroScore[1]}</label>
+        <Slider range min={0} max={100} value={macroScore} onChange={setMacroScore} />
+        <label>Technical {technicalScore[0]}–{technicalScore[1]}</label>
+        <Slider range min={0} max={100} value={technicalScore} onChange={setTechnicalScore} />
+        <label>Market {marketScore[0]}–{marketScore[1]}</label>
+        <Slider range min={0} max={100} value={marketScore} onChange={setMarketScore} />
       </div>
 
       {/* EXECUTION */}
@@ -243,7 +261,6 @@ export default function SetupForm({
         <input
           name="baseAmount"
           type="number"
-          placeholder="Basisbedrag per cyclus (€)"
           value={formData.baseAmount}
           onChange={handleChange}
           className={fieldClass}
@@ -251,36 +268,40 @@ export default function SetupForm({
 
         <select name="executionMode" value={formData.executionMode} onChange={handleChange} className={fieldClass}>
           <option value="fixed">Vast bedrag</option>
-          <option value="custom">Slimme investering</option>
+          <option value="custom">Slim (curve)</option>
         </select>
 
         {formData.executionMode === "custom" && (
-          <select name="scalingProfile" value={formData.scalingProfile} onChange={handleChange} className={fieldClass}>
-            <option value="dca_contrarian">Contrarian</option>
-            <option value="dca_trend_following">Trend following</option>
-            <option value="fixed">Geen scaling</option>
-            <option value="custom">Custom curve</option>
-          </select>
-        )}
+          <>
+            <select
+              value={formData.scalingProfile}
+              onChange={(e) => handleScalingProfileChange(e.target.value)}
+              className={fieldClass}
+            >
+              <option value="dca_contrarian">Contrarian</option>
+              <option value="dca_trend_following">Trend following</option>
+              <option value="custom">Custom</option>
+              <option value="fixed">Geen scaling</option>
+            </select>
 
-        {formData.scalingProfile === "custom" && (
-          <textarea
-            className={`${fieldClass} min-h-[120px]`}
-            placeholder="Decision curve JSON"
-            value={JSON.stringify(formData.decisionCurve ?? [], null, 2)}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                decisionCurve: JSON.parse(e.target.value),
-              }))
-            }
-          />
+            {formData.scalingProfile !== "fixed" && (
+              <CurveEditor
+                value={formData.decisionCurve}
+                onChange={(curve) =>
+                  setFormData((p) => ({ ...p, decisionCurve: curve }))
+                }
+              />
+            )}
+          </>
         )}
       </div>
 
-      {/* SUBMIT */}
-      <button type="submit" disabled={loading} className="bg-[var(--primary)] text-white px-5 py-3 rounded-xl font-semibold">
-        <Save size={18} /> {loading ? "Opslaan…" : "Opslaan"}
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-[var(--primary)] text-white px-5 py-3 rounded-xl font-semibold"
+      >
+        <Save size={16} /> {loading ? "Opslaan…" : "Opslaan"}
       </button>
     </form>
   );

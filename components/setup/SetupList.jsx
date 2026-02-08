@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 /* =========================================================
-   🧠 SCORE INTERPRETATIE (zelfde semantiek als SetupForm)
+   🧠 SCORE INTERPRETATIE
 ========================================================= */
 const scoreLabel = (v) => {
   if (v <= 25) return "Sterk bearish / risk-off";
@@ -30,6 +30,14 @@ const scoreLabel = (v) => {
 
 const rangeText = (min, max) =>
   `${scoreLabel(min)} → ${scoreLabel(max)}`;
+
+const regimeSentence = (setup) => {
+  return `Actief bij: Macro ≥ ${scoreLabel(
+    setup.min_macro_score
+  )}, Technical ≥ ${scoreLabel(
+    setup.min_technical_score
+  )}, Market ≥ ${scoreLabel(setup.min_market_score)}`;
+};
 
 /* =========================================================
    COMPONENT
@@ -45,7 +53,6 @@ export default function SetupList({
 }) {
   const { openConfirm, showSnackbar } = useModal();
 
-  // lokale state voor directe AI updates
   const [localSetups, setLocalSetups] = useState(setups);
   const [aiLoading, setAiLoading] = useState({});
   const [justUpdated, setJustUpdated] = useState({});
@@ -200,13 +207,18 @@ export default function SetupList({
               <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
 
               {/* Meta */}
-              <div className="flex items-center gap-4 text-xs text-[var(--text-light)] mb-3">
+              <div className="flex items-center gap-4 text-xs text-[var(--text-light)] mb-2">
                 <div className="flex items-center gap-1">
                   <Clock size={14} /> {setup.timeframe}
                 </div>
                 <div className="flex items-center gap-1">
                   <Brain size={14} /> {setup.strategy_type}
                 </div>
+              </div>
+
+              {/* REGIME SAMENVATTING (STAP 1) */}
+              <div className="text-xs italic text-[var(--text-light)] mb-3">
+                {regimeSentence(setup)}
               </div>
 
               {/* SCORE RANGES */}
@@ -250,14 +262,18 @@ export default function SetupList({
                 {setup.explanation || "Geen uitleg beschikbaar."}
               </div>
 
-              {/* AI knop */}
+              {/* AI knop (STAP 3) */}
               <button
                 onClick={() => handleGenerateExplanation(setup.id)}
                 disabled={aiLoading[setup.id]}
                 className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary-dark)]"
               >
                 <Bot size={15} />
-                {aiLoading[setup.id] ? "Bezig…" : "Genereer AI-uitleg"}
+                {aiLoading[setup.id]
+                  ? "Bezig…"
+                  : setup.explanation
+                  ? "Heranalyseer met AI"
+                  : "Genereer AI-uitleg"}
               </button>
 
               {/* Acties */}

@@ -4,7 +4,7 @@ import "rc-slider/assets/index.css";
 import Slider from "rc-slider";
 
 import React, { useState, useEffect } from "react";
-import { Settings, BarChart3, Save } from "lucide-react";
+import { Settings, BarChart3, Save, Info } from "lucide-react";
 
 import { saveNewSetup, updateSetup } from "@/lib/api/setups";
 import { useModal } from "@/components/modal/ModalProvider";
@@ -14,6 +14,21 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   const { showSnackbar } = useModal();
 
   // ----------------------------------------------------
+  // SCORE MEANING (CANON)
+  // ----------------------------------------------------
+  const scoreLabel = (v) => {
+    if (v <= 25) return "Sterk bearish / risk-off";
+    if (v <= 45) return "Bearish";
+    if (v <= 60) return "Neutraal";
+    if (v <= 75) return "Neutraal → bullish";
+    if (v <= 90) return "Bullish";
+    return "Euforisch / oververhit";
+  };
+
+  const rangeText = (min, max) =>
+    `${scoreLabel(min)} → ${scoreLabel(max)}`;
+
+  // ----------------------------------------------------
   // STATE
   // ----------------------------------------------------
   const emptyForm = {
@@ -21,7 +36,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     symbol: "BTC",
     strategyType: "dca",
     timeframe: "1W",
-    tags: "",
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -41,7 +55,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       symbol: initialData.symbol ?? "BTC",
       strategyType: initialData.strategy_type ?? "dca",
       timeframe: initialData.timeframe ?? "1W",
-      tags: (initialData.tags ?? []).join(", "),
     });
 
     setMacroScore([initialData.min_macro_score, initialData.max_macro_score]);
@@ -76,10 +89,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       strategy_type: formData.strategyType,
       timeframe: formData.timeframe,
 
-      tags: formData.tags
-        ? formData.tags.split(",").map((t) => t.trim())
-        : [],
-
       min_macro_score: macroScore[0],
       max_macro_score: macroScore[1],
       min_technical_score: technicalScore[0],
@@ -113,13 +122,37 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     "p-3 rounded-xl bg-[var(--bg-soft)] border border-[var(--border)] w-full";
 
   const sectionClass =
-    "rounded-2xl p-5 bg-[var(--card-bg)] border border-[var(--card-border)] space-y-4";
+    "rounded-2xl p-5 bg-[var(--card-bg)] border border-[var(--card-border)] space-y-5";
 
   const sectionTitle = (icon, text) => (
     <h3 className="flex items-center gap-2 font-semibold text-[1.05rem]">
       {icon}
       {text}
     </h3>
+  );
+
+  const scoreBlock = (title, score, setScore, description) => (
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm font-medium">
+        <span>{title}</span>
+        <span className="text-[var(--text-soft)]">
+          {score[0]}–{score[1]}
+        </span>
+      </div>
+
+      <Slider
+        range
+        min={0}
+        max={100}
+        value={score}
+        onChange={setScore}
+      />
+
+      <div className="text-sm text-[var(--text-soft)]">
+        <strong>{rangeText(score[0], score[1])}</strong>
+        <div className="mt-1">{description}</div>
+      </div>
+    </div>
   );
 
   // ----------------------------------------------------
@@ -177,34 +210,36 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
 
       {/* SCORES */}
       <div className={sectionClass}>
-        {sectionTitle(<BarChart3 size={18} />, "Score ranges (0–100)")}
+        {sectionTitle(<BarChart3 size={18} />, "Wanneer mag deze setup actief zijn?")}
 
-        <label>Macro {macroScore[0]}–{macroScore[1]}</label>
-        <Slider
-          range
-          min={0}
-          max={100}
-          value={macroScore}
-          onChange={setMacroScore}
-        />
+        <div className="flex items-start gap-2 text-sm text-[var(--text-soft)]">
+          <Info size={16} className="mt-0.5" />
+          <p>
+            Deze score-ranges bepalen <strong>in welke marktfase</strong> deze setup
+            geldig is. Hoeveel je koopt en hoe, regel je later in de strategie.
+          </p>
+        </div>
 
-        <label>Technical {technicalScore[0]}–{technicalScore[1]}</label>
-        <Slider
-          range
-          min={0}
-          max={100}
-          value={technicalScore}
-          onChange={setTechnicalScore}
-        />
+        {scoreBlock(
+          "Macro",
+          macroScore,
+          setMacroScore,
+          "Macro-omgeving (liquiditeit, risk-on/off, regime)."
+        )}
 
-        <label>Market {marketScore[0]}–{marketScore[1]}</label>
-        <Slider
-          range
-          min={0}
-          max={100}
-          value={marketScore}
-          onChange={setMarketScore}
-        />
+        {scoreBlock(
+          "Technical",
+          technicalScore,
+          setTechnicalScore,
+          "Technische structuur en trendbevestiging."
+        )}
+
+        {scoreBlock(
+          "Market / Sentiment",
+          marketScore,
+          setMarketScore,
+          "Sentiment, positioning en oververhitting."
+        )}
       </div>
 
       {/* SAVE */}

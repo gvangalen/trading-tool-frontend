@@ -31,14 +31,6 @@ const scoreLabel = (v) => {
 const rangeText = (min, max) =>
   `${scoreLabel(min)} → ${scoreLabel(max)}`;
 
-const regimeSentence = (setup) => {
-  return `Actief bij: Macro ≥ ${scoreLabel(
-    setup.min_macro_score
-  )}, Technical ≥ ${scoreLabel(
-    setup.min_technical_score
-  )}, Market ≥ ${scoreLabel(setup.min_market_score)}`;
-};
-
 /* =========================================================
    COMPONENT
 ========================================================= */
@@ -47,7 +39,6 @@ export default function SetupList({
   loading,
   error,
   searchTerm = "",
-  saveSetup,
   removeSetup,
   reload,
 }) {
@@ -90,9 +81,10 @@ export default function SetupList({
       showSnackbar("AI-uitleg succesvol gegenereerd", "success");
 
       setJustUpdated((p) => ({ ...p, [id]: true }));
-      setTimeout(() => {
-        setJustUpdated((p) => ({ ...p, [id]: false }));
-      }, 1500);
+      setTimeout(
+        () => setJustUpdated((p) => ({ ...p, [id]: false })),
+        1500
+      );
     } catch (e) {
       console.error(e);
       showSnackbar("AI generatie mislukt", "danger");
@@ -207,18 +199,13 @@ export default function SetupList({
               <h3 className="font-bold text-lg mb-1">{setup.name}</h3>
 
               {/* Meta */}
-              <div className="flex items-center gap-4 text-xs text-[var(--text-light)] mb-2">
+              <div className="flex items-center gap-4 text-xs text-[var(--text-light)] mb-3">
                 <div className="flex items-center gap-1">
                   <Clock size={14} /> {setup.timeframe}
                 </div>
                 <div className="flex items-center gap-1">
                   <Brain size={14} /> {setup.strategy_type}
                 </div>
-              </div>
-
-              {/* REGIME SAMENVATTING (STAP 1) */}
-              <div className="text-xs italic text-[var(--text-light)] mb-3">
-                {regimeSentence(setup)}
               </div>
 
               {/* SCORE RANGES */}
@@ -262,7 +249,7 @@ export default function SetupList({
                 {setup.explanation || "Geen uitleg beschikbaar."}
               </div>
 
-              {/* AI knop (STAP 3) */}
+              {/* AI knop */}
               <button
                 onClick={() => handleGenerateExplanation(setup.id)}
                 disabled={aiLoading[setup.id]}

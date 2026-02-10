@@ -1,28 +1,60 @@
-@media print {
+/* ================================
+   PAGE SETUP
+================================ */
 
-  body {
-    background: white !important;
-  }
+@page {
+  size: A4;
+  margin: 18mm;
+}
 
-  /* sidebar / navbar kill switch */
-  nav, aside, header, footer {
-    display: none !important;
-  }
+/* reset */
+html, body {
+  background: white;
+  margin: 0;
+  padding: 0;
+}
 
-  .print-wrapper {
-    padding: 0;
-    margin: 0;
-    width: 100%;
-  }
+/* ================================
+   A4 CANVAS
+================================ */
 
-  /* voorkom dat cards halverwege breken */
-  .card {
-    page-break-inside: avoid;
-  }
+.print-wrapper {
+  width: 794px;   /* A4 width @96dpi */
+  margin: 0 auto;
+}
 
-  /* nieuwe pagina forceren */
-  .page-break {
-    page-break-before: always;
-  }
+/* ================================
+   TYPOGRAPHY
+================================ */
 
+body {
+  font-family: Inter, Arial, sans-serif;
+  color: #111;
+}
+
+/* ================================
+   BREAK CONTROL
+================================ */
+
+.card,
+.section,
+.report-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* nieuwe pagina */
+.page-break {
+  break-before: page;
+}
+
+/* ================================
+   KILL APP UI
+================================ */
+
+nav,
+aside,
+header,
+footer {
+  display: none !important;
 }

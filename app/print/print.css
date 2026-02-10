@@ -1,0 +1,28 @@
+@media print {
+
+  body {
+    background: white !important;
+  }
+
+  /* sidebar / navbar kill switch */
+  nav, aside, header, footer {
+    display: none !important;
+  }
+
+  .print-wrapper {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+
+  /* voorkom dat cards halverwege breken */
+  .card {
+    page-break-inside: avoid;
+  }
+
+  /* nieuwe pagina forceren */
+  .page-break {
+    page-break-before: always;
+  }
+
+}

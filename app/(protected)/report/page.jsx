@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 
 /* =====================================================
-   CONFIG
+CONFIG
 ===================================================== */
 
 const REPORT_TYPES = {
@@ -59,7 +59,7 @@ const POLL_MAX_ATTEMPTS = 60;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* =====================================================
-   HELPERS
+HELPERS
 ===================================================== */
 
 function sortDatesDesc(list) {
@@ -78,7 +78,7 @@ function getReportSignature(report) {
 }
 
 /* =====================================================
-   PAGE
+PAGE
 ===================================================== */
 
 export default function ReportPage() {
@@ -137,7 +137,7 @@ export default function ReportPage() {
   const current = reportFns[reportType];
 
   /* =====================================================
-     LOAD (STABIEL + LOADER CORRECT)
+LOAD
 ===================================================== */
 
   const loadData = async (date = 'latest') => {
@@ -155,7 +155,6 @@ export default function ReportPage() {
           : await current.getByDate(date);
 
       if (!data && AUTO_GENERATE_IF_EMPTY) {
-        // ❗ load-loader UIT, generate-overlay AAN
         setLoading(false);
         handleGenerate(true, date);
         return;
@@ -175,7 +174,7 @@ export default function ReportPage() {
   }, [reportType]);
 
   /* =====================================================
-     GENERATE (FULLSCREEN OVERLAY)
+GENERATE
 ===================================================== */
 
   const pollUntilNewReport = async (preferDate = 'latest') => {
@@ -229,33 +228,46 @@ export default function ReportPage() {
   };
 
   /* =====================================================
-     PDF
+🔥 PDF — FIXED & BULLETPROOF
 ===================================================== */
 
   const handleDownload = async () => {
+    if (!report?.report_date) {
+      showSnackbar('Rapport nog niet geladen', 'warning');
+      return;
+    }
+
     try {
       setPdfLoading(true);
+
+      // ⭐ SOURCE OF TRUTH = report
       const date =
         selectedDate === 'latest'
-          ? dates[0]
+          ? report.report_date
           : selectedDate;
 
-      if (date) await current.pdf(date);
+      await current.pdf(date);
+
+      showSnackbar('PDF download gestart', 'success');
+
+    } catch (err) {
+      console.error(err);
+      showSnackbar('PDF downloaden mislukt', 'error');
     } finally {
       setPdfLoading(false);
     }
   };
 
   /* =====================================================
-     RENDER
+RENDER
 ===================================================== */
 
   return (
     <>
-      {/* 🔥 FULLSCREEN GENERATE OVERLAY */}
       {generating && <ReportGenerateOverlay text={generateInfo} />}
 
       <div className="max-w-screen-xl mx-auto pt-24 pb-10 px-4 space-y-8">
+
         {/* HEADER */}
         <header className="flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -301,7 +313,7 @@ export default function ReportPage() {
 
               <button
                 onClick={handleDownload}
-                disabled={pdfLoading}
+                disabled={pdfLoading || !report}
                 className="btn-secondary h-10"
               >
                 {pdfLoading

@@ -1,51 +1,50 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+// ❌ GEEN "use client"
+// Dit is bewust een SERVER component
 
 import ReportLayout from "@/components/report/layout/ReportLayout";
 
-export default function PrintReportPage() {
-  const params = useSearchParams();
+type Props = {
+  searchParams: {
+    token?: string;
+  };
+};
 
-  const type = params.get("type") || "daily";
-  const date = params.get("date");
-  const token = params.get("token");
+export default async function PrintReportPage({ searchParams }: Props) {
+  const token = searchParams?.token;
 
-  const [report, setReport] = useState<any>(null);
-
-  useEffect(() => {
-    const load = async () => {
-      if (!date || !token) return;
-
-      try {
-        const res = await fetch(
-          `/api/public/report/${type}?date=${date}&token=${token}`
-        );
-
-        const data = await res.json();
-
-        setReport(data);
-
-        // 🔥 CRUCIAAL VOOR PLAYWRIGHT
-        setTimeout(() => {
-          document.body.setAttribute("data-print-ready", "true");
-        }, 250);
-      } catch (err) {
-        console.error("PRINT LOAD ERROR", err);
-      }
-    };
-
-    load();
-  }, [type, date, token]);
-
-  if (!report) {
-    return <div style={{ padding: 40 }}>Loading report...</div>;
+  if (!token) {
+    return <div style={{ padding: 40 }}>Missing print token</div>;
   }
 
-  return (
-    <div className="print-wrapper">
-      <ReportLayout report={report} isPrint />
-    </div>
-  );
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/public/report?token=${token}`,
+      {
+        cache: "no-store", // 🔥 altijd fresh
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch report");
+    }
+
+    const report = await res.json();
+
+    return (
+      <div className="print-wrapper">
+        <ReportLayout report={report} isPrint />
+
+        {/* 🔥 SPEELTJE DAT ALLES OPLOST */}
+        <div data-print-ready="true" />
+      </div>
+    );
+  } catch (err) {
+    console.error("PRINT FETCH ERROR:", err);
+
+    return (
+      <div style={{ padding: 40 }}>
+        Failed to load report for printing.
+      </div>
+    );
+  }
 }

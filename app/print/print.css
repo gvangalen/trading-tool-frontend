@@ -1,40 +1,50 @@
-/* ================================
-   PAGE SETUP
-================================ */
+/* =====================================
+   A4 SETUP — PLAYWRIGHT PROOF
+===================================== */
 
 @page {
   size: A4;
-  margin: 18mm;
+  margin: 16mm;
 }
 
-/* reset */
-html, body {
-  background: white;
-  margin: 0;
-  padding: 0;
+
+/* =====================================
+   ROOT — NO GLOBAL HTML RESET
+   (belangrijk voor Next hydration)
+===================================== */
+
+.print-root {
+  background: #ffffff;
 }
 
-/* ================================
-   A4 CANVAS
-================================ */
+
+/* =====================================
+   PDF CANVAS
+   Exact A4 width → voorkomt scaling
+===================================== */
 
 .print-wrapper {
-  width: 794px;   /* A4 width @96dpi */
+  width: 794px; /* A4 @96dpi */
   margin: 0 auto;
+  background: white;
 }
 
-/* ================================
-   TYPOGRAPHY
-================================ */
 
-body {
+/* =====================================
+   TYPOGRAPHY
+===================================== */
+
+.print-wrapper {
   font-family: Inter, Arial, sans-serif;
   color: #111;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* ================================
-   BREAK CONTROL
-================================ */
+
+/* =====================================
+   BREAK CONTROL (SUPER belangrijk)
+===================================== */
 
 .card,
 .section,
@@ -43,18 +53,55 @@ body {
   page-break-inside: avoid;
 }
 
-/* nieuwe pagina */
+h1, h2, h3 {
+  break-after: avoid;
+}
+
+
+/* Force new page */
 .page-break {
   break-before: page;
 }
 
-/* ================================
-   KILL APP UI
-================================ */
+
+/* =====================================
+   KILL DASHBOARD UI
+===================================== */
 
 nav,
 aside,
 header,
 footer {
   display: none !important;
+}
+
+
+/* =====================================
+   IMAGE / CHART FIXES
+   (vaak vergeten → blurry PDFs)
+===================================== */
+
+img,
+canvas,
+svg {
+  max-width: 100%;
+  break-inside: avoid;
+}
+
+
+/* =====================================
+   PRINT ONLY OVERRIDES
+===================================== */
+
+@media print {
+
+  body {
+    background: white;
+  }
+
+  .print-wrapper {
+    width: 100%;
+    margin: 0;
+  }
+
 }

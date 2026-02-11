@@ -1,24 +1,36 @@
-// SERVER component (geen "use client")
+// SERVER component (GEEN "use client")
 
 import ReportLayout from "@/components/report/layout/ReportLayout";
 
 export default async function PrintReportPage({ searchParams }) {
   const token = searchParams?.token;
 
+  // ❗️NOOIT early return zonder marker
   if (!token) {
-    return <div style={{ padding: 40 }}>Missing print token</div>;
+    return (
+      <div className="print-wrapper">
+        Missing print token
+        <div data-print-ready="true" />
+      </div>
+    );
   }
 
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/api/public/report?token=${token}`,
       {
-        cache: "no-store", // altijd fresh
+        cache: "no-store",
       }
     );
 
+    // ❗️OOK hier marker teruggeven
     if (!res.ok) {
-      throw new Error("Failed to fetch report");
+      return (
+        <div className="print-wrapper">
+          Failed to fetch report
+          <div data-print-ready="true" />
+        </div>
+      );
     }
 
     const report = await res.json();
@@ -27,16 +39,18 @@ export default async function PrintReportPage({ searchParams }) {
       <div className="print-wrapper">
         <ReportLayout report={report} isPrint />
 
-        {/* 🔥 Playwright marker */}
+        {/* 🔥 PLAYWRIGHT TRIGGER — ALTIJD RENDEREN */}
         <div data-print-ready="true" />
       </div>
     );
   } catch (err) {
     console.error("PRINT FETCH ERROR:", err);
 
+    // ❗️OOK BIJ ERROR → marker
     return (
-      <div style={{ padding: 40 }}>
+      <div className="print-wrapper">
         Failed to load report for printing.
+        <div data-print-ready="true" />
       </div>
     );
   }

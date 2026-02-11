@@ -1,15 +1,8 @@
-// ❌ GEEN "use client"
-// Dit is bewust een SERVER component
+// SERVER component (geen "use client")
 
 import ReportLayout from "@/components/report/layout/ReportLayout";
 
-type Props = {
-  searchParams: {
-    token?: string;
-  };
-};
-
-export default async function PrintReportPage({ searchParams }: Props) {
+export default async function PrintReportPage({ searchParams }) {
   const token = searchParams?.token;
 
   if (!token) {
@@ -20,7 +13,7 @@ export default async function PrintReportPage({ searchParams }: Props) {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/api/public/report?token=${token}`,
       {
-        cache: "no-store", // 🔥 altijd fresh
+        cache: "no-store", // altijd fresh
       }
     );
 
@@ -34,7 +27,7 @@ export default async function PrintReportPage({ searchParams }: Props) {
       <div className="print-wrapper">
         <ReportLayout report={report} isPrint />
 
-        {/* 🔥 SPEELTJE DAT ALLES OPLOST */}
+        {/* 🔥 Playwright marker */}
         <div data-print-ready="true" />
       </div>
     );

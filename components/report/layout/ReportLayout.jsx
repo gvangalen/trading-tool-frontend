@@ -7,36 +7,35 @@ import ReportSectionStrategy from '@/components/report/sections/ReportSectionStr
 /*
 =====================================================
  ReportLayout
- - Verantwoordelijk voor:
-   • volgorde van het verhaal
-   • structuur van het rapport
-   • leesflow (data → uitleg → actie)
- - GEEN business logic
- - MINIMALE layout (content-breedte)
 =====================================================
 */
 
-export default function ReportLayout({ report }) {
+export default function ReportLayout({ report, isPrint = false }) {
   if (!report) return null;
 
   return (
-    <div className="mx-auto max-w-7xl px-6 space-y-16">
-
+    <div
+      className={`
+        mx-auto 
+        ${isPrint ? "max-w-[1100px]" : "max-w-7xl"}
+        px-6 
+        space-y-16
+      `}
+    >
       {/* 1️⃣ MARKT OVERZICHT */}
-      <section>
-        <ReportSectionMarket report={report} />
+      <section className="card">
+        <ReportSectionMarket report={report} isPrint={isPrint} />
       </section>
 
-      {/* 2️⃣ ANALYSE & ONDERBOUWING */}
-      <section>
-        <ReportSectionAnalysis report={report} />
+      {/* 2️⃣ ANALYSE */}
+      <section className="card">
+        <ReportSectionAnalysis report={report} isPrint={isPrint} />
       </section>
 
-      {/* 3️⃣ STRATEGIE & VOORUITBLIK */}
-      <section>
-       <ReportSectionStrategy report={report} />
+      {/* 3️⃣ STRATEGIE */}
+      <section className="card">
+        <ReportSectionStrategy report={report} isPrint={isPrint} />
       </section>
-
     </div>
   );
 }

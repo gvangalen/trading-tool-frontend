@@ -5,11 +5,5 @@ export default function PrintLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="nl">
-      <body className="print-body">
-        {children}
-      </body>
-    </html>
-  );
+  return <div className="print-root">{children}</div>;
 }

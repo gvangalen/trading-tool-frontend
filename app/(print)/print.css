@@ -1,51 +1,39 @@
-/* =====================================
-   A4 SETUP — PLAYWRIGHT PROOF
-===================================== */
-
 @page {
   size: A4;
   margin: 16mm;
 }
 
+html, body {
+  padding: 0;
+  margin: 0;
+}
 
-/* =====================================
-   ROOT — NO GLOBAL HTML RESET
-   (belangrijk voor Next hydration)
-===================================== */
+* {
+  box-sizing: border-box;
+}
 
+body {
+  overflow-x: hidden;
+}
+
+/* ROOT */
 .print-root {
   background: #ffffff;
 }
 
-
-/* =====================================
-   PDF CANVAS
-   Exact A4 width → voorkomt scaling
-===================================== */
-
+/* CANVAS */
 .print-wrapper {
-  width: 794px; /* A4 @96dpi */
+  width: 794px;
+  max-width: 794px;
   margin: 0 auto;
   background: white;
-}
-
-
-/* =====================================
-   TYPOGRAPHY
-===================================== */
-
-.print-wrapper {
   font-family: Inter, Arial, sans-serif;
   color: #111;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-
-/* =====================================
-   BREAK CONTROL (SUPER belangrijk)
-===================================== */
-
+/* BREAK CONTROL */
 .card,
 .section,
 .report-block {
@@ -57,17 +45,11 @@ h1, h2, h3 {
   break-after: avoid;
 }
 
-
-/* Force new page */
 .page-break {
   break-before: page;
 }
 
-
-/* =====================================
-   KILL DASHBOARD UI
-===================================== */
-
+/* UI kill */
 nav,
 aside,
 header,
@@ -75,12 +57,7 @@ footer {
   display: none !important;
 }
 
-
-/* =====================================
-   IMAGE / CHART FIXES
-   (vaak vergeten → blurry PDFs)
-===================================== */
-
+/* MEDIA */
 img,
 canvas,
 svg {
@@ -88,20 +65,22 @@ svg {
   break-inside: avoid;
 }
 
-
-/* =====================================
-   PRINT ONLY OVERRIDES
-===================================== */
+canvas {
+  image-rendering: -webkit-optimize-contrast;
+}
 
 @media print {
-
   body {
     background: white;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .print-wrapper {
     width: 100%;
     margin: 0;
   }
-
 }

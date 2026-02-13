@@ -1,5 +1,5 @@
 import "../styles/globals.css";
-import { AuthProvider } from "@/context/AuthProvider";
+import ClientProviders from "./ClientProviders";
 
 export const metadata = {
   title: "TradeLayer",
@@ -10,9 +10,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="nl">
       <body>
-        <AuthProvider>
+        <ClientProviders>
           {children}
-        </AuthProvider>
+        </ClientProviders>
       </body>
     </html>
   );

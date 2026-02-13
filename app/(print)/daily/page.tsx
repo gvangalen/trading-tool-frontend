@@ -1,11 +1,13 @@
-// SERVER component (GEEN "use client")
+// SERVER component
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import ReportLayout from "@/components/report/layout/ReportLayout";
 
-export default async function PrintReportPage({ searchParams }) {
+export default async function DailyPrintReportPage({ searchParams }) {
   const token = searchParams?.token;
 
-  // ❗️NOOIT early return zonder marker
   if (!token) {
     return (
       <div className="print-wrapper">
@@ -23,14 +25,8 @@ export default async function PrintReportPage({ searchParams }) {
       }
     );
 
-    // ❗️OOK hier marker teruggeven
     if (!res.ok) {
-      return (
-        <div className="print-wrapper">
-          Failed to fetch report
-          <div data-print-ready="true" />
-        </div>
-      );
+      throw new Error("Failed to fetch report");
     }
 
     const report = await res.json();
@@ -38,15 +34,12 @@ export default async function PrintReportPage({ searchParams }) {
     return (
       <div className="print-wrapper">
         <ReportLayout report={report} isPrint />
-
-        {/* 🔥 PLAYWRIGHT TRIGGER — ALTIJD RENDEREN */}
         <div data-print-ready="true" />
       </div>
     );
   } catch (err) {
     console.error("PRINT FETCH ERROR:", err);
 
-    // ❗️OOK BIJ ERROR → marker
     return (
       <div className="print-wrapper">
         Failed to load report for printing.

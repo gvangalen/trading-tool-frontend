@@ -1,14 +1,16 @@
-import "../styles/globals.css";
+"use client";
 
-export const metadata = {
-  title: "TradeLayer",
-  description: "AI Trading Suite",
-};
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ModalProvider } from "@/components/modal/ModalProvider";
+import { Toaster } from "react-hot-toast";
 
-export default function RootLayout({ children }) {
+export default function AppProviders({ children }) {
   return (
-    <html lang="nl">
-      <body>{children}</body>
-    </html>
+    <AuthProvider>
+      <ModalProvider>
+        <Toaster position="top-right" />
+        {children}
+      </ModalProvider>
+    </AuthProvider>
   );
 }

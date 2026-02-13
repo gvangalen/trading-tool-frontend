@@ -1,5 +1,4 @@
 import "../styles/globals.css";
-import ClientProviders from "./ClientProviders";
 
 export const metadata = {
   title: "TradeLayer",
@@ -9,11 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

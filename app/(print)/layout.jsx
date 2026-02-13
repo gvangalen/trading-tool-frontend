@@ -1,4 +1,4 @@
-import "../print.css";
+import "./print.css";
 
 export const dynamic = "force-dynamic";
 

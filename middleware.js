@@ -6,7 +6,9 @@ export async function middleware(req) {
 
   console.log("⛔ MIDDLEWARE HIT:", path);
 
-  // System files skippen
+  // =====================================================
+  // Skip system & static files
+  // =====================================================
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
@@ -15,14 +17,31 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Public pages
+  // =====================================================
+  // ✅ PUBLIC TOKEN ROUTES (PDF / PRINT / SHARE)
+  // =====================================================
+  // Required for Playwright & public report viewing
+  if (
+    path.startsWith("/daily-report") ||
+    path.startsWith("/public/report")
+  ) {
+    console.log("🟢 Token route toegestaan:", path);
+    return NextResponse.next();
+  }
+
+  // =====================================================
+  // Public auth pages
+  // =====================================================
   const publicRoutes = ["/login", "/register"];
+
   if (publicRoutes.includes(path)) {
     console.log("➡️ Public route toegestaan:", path);
     return NextResponse.next();
   }
 
+  // =====================================================
   // Token check
+  // =====================================================
   const token = req.cookies.get("access_token")?.value;
   console.log("🍪 Token aanwezig?", token ? "JA" : "NEE");
 
@@ -32,7 +51,9 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // Onboarding check met cookie doorsturen
+  // =====================================================
+  // Onboarding status check
+  // =====================================================
   let onboarding = null;
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -80,6 +101,9 @@ export async function middleware(req) {
     "/strategy"
   ];
 
+  // =====================================================
+  // Onboarding NOT complete
+  // =====================================================
   if (!onboardingComplete) {
     if (allowedDuringOnboarding.some((route) => path.startsWith(route))) {
       console.log("🟢 Toegestane onboarding route:", path);
@@ -91,7 +115,9 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // Block onboarding routes if already completed
+  // =====================================================
+  // Block onboarding if already completed
+  // =====================================================
   if (onboardingComplete && path.startsWith("/onboarding")) {
     console.log("🚫 Onboarding al klaar → redirect /dashboard");
     url.pathname = "/dashboard";

@@ -4,7 +4,9 @@ export async function middleware(req) {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  console.log("⛔ MIDDLEWARE HIT:", path);
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (isDev) console.log("⛔ MIDDLEWARE HIT:", path);
 
   // =====================================================
   // Skip system & static files
@@ -12,7 +14,8 @@ export async function middleware(req) {
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
-    /\.(png|jpg|jpeg|svg|webp|ico)$/.test(path)
+    path.startsWith("/favicon") ||
+    /\.(png|jpg|jpeg|svg|webp|ico|css|js|map)$/.test(path)
   ) {
     return NextResponse.next();
   }
@@ -25,7 +28,7 @@ export async function middleware(req) {
     path.startsWith("/daily-report") ||
     path.startsWith("/public/report")
   ) {
-    console.log("🟢 Token route toegestaan:", path);
+    if (isDev) console.log("🟢 Token route toegestaan:", path);
     return NextResponse.next();
   }
 
@@ -35,7 +38,7 @@ export async function middleware(req) {
   const publicRoutes = ["/login", "/register"];
 
   if (publicRoutes.includes(path)) {
-    console.log("➡️ Public route toegestaan:", path);
+    if (isDev) console.log("➡️ Public route toegestaan:", path);
     return NextResponse.next();
   }
 
@@ -43,10 +46,17 @@ export async function middleware(req) {
   // Token check
   // =====================================================
   const token = req.cookies.get("access_token")?.value;
-  console.log("🍪 Token aanwezig?", token ? "JA" : "NEE");
+
+  if (isDev) console.log("🍪 Token aanwezig?", token ? "JA" : "NEE");
+
+  // 🔥 ROOT FIX → voorkomt hydration errors
+  if (path === "/") {
+    url.pathname = token ? "/dashboard" : "/login";
+    return NextResponse.redirect(url);
+  }
 
   if (!token) {
-    console.log("❌ GEEN token → redirect naar login");
+    if (isDev) console.log("❌ GEEN token → redirect naar login");
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -58,28 +68,30 @@ export async function middleware(req) {
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   try {
-    console.log("🔍 Fetch onboarding status…");
+    if (isDev) console.log("🔍 Fetch onboarding status…");
 
     const res = await fetch(`${apiUrl}/api/onboarding/status`, {
       method: "GET",
       headers: {
         cookie: req.headers.get("cookie") || "",
       },
+      cache: "no-store",
     });
 
-    console.log("📡 Backend response:", res.status);
+    if (isDev) console.log("📡 Backend response:", res.status);
 
     if (res.status === 401) {
-      console.log("❌ Backend zegt 401 → redirect login");
+      if (isDev) console.log("❌ Backend zegt 401 → redirect login");
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
 
     onboarding = await res.json();
-    console.log("📦 Onboarding JSON:", onboarding);
+
+    if (isDev) console.log("📦 Onboarding JSON:", onboarding);
 
   } catch (err) {
-    console.log("💥 FOUT tijdens onboarding fetch:", err);
+    console.log("💥 Onboarding fetch error:", err);
     return NextResponse.next();
   }
 
@@ -90,7 +102,7 @@ export async function middleware(req) {
     onboarding?.has_market &&
     onboarding?.has_strategy;
 
-  console.log("🎯 Onboarding compleet?", onboardingComplete);
+  if (isDev) console.log("🎯 Onboarding compleet?", onboardingComplete);
 
   const allowedDuringOnboarding = [
     "/onboarding",
@@ -106,11 +118,11 @@ export async function middleware(req) {
   // =====================================================
   if (!onboardingComplete) {
     if (allowedDuringOnboarding.some((route) => path.startsWith(route))) {
-      console.log("🟢 Toegestane onboarding route:", path);
+      if (isDev) console.log("🟢 Toegestane onboarding route:", path);
       return NextResponse.next();
     }
 
-    console.log("🔴 Onboarding NIET klaar → redirect naar /onboarding");
+    if (isDev) console.log("🔴 Onboarding NIET klaar → redirect");
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
@@ -119,15 +131,22 @@ export async function middleware(req) {
   // Block onboarding if already completed
   // =====================================================
   if (onboardingComplete && path.startsWith("/onboarding")) {
-    console.log("🚫 Onboarding al klaar → redirect /dashboard");
+    if (isDev) console.log("🚫 Onboarding klaar → dashboard");
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  console.log("🟢 Normaal doorgelaten:", path);
+  if (isDev) console.log("🟢 Normaal doorgelaten:", path);
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/(.*)"],
+  matcher: [
+    /*
+     * Run middleware on everything except:
+     * - Next internals
+     * - static files
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
 };

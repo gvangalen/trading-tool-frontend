@@ -32,7 +32,7 @@ export default function LoginPage() {
   /* -------------------------------------------------------
      LOGIN HANDLER
   ------------------------------------------------------- */
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     if (submitting) return;
@@ -52,13 +52,13 @@ export default function LoginPage() {
     // kleine delay → snackbar zichtbaar + auth sync
     setTimeout(() => {
       router.replace("/dashboard");
-    }, 150);
+    }, 180);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-soft)] px-4">
       <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl shadow-xl p-8 animate-fade-slide">
-        
+
         {/* Titel */}
         <h1 className="text-3xl font-bold text-center mb-2 text-[var(--text-dark)]">
           Welkom terug
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-6">
-          
+
           {/* Email */}
           <div>
             <label className="text-sm text-[var(--text-light)] mb-1 block">

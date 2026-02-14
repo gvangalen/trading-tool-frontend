@@ -1,16 +1,23 @@
-"use client";
+import "./globals.css";
+import AppProviders from "@/app/providers/AppProviders";
 
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { ModalProvider } from "@/components/modal/ModalProvider";
-import { Toaster } from "react-hot-toast";
+export const metadata = {
+  title: "Trading Tool",
+  description: "AI Trading Dashboard",
+};
 
-export default function AppProviders({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <AuthProvider>
-      <ModalProvider>
-        <Toaster position="top-right" />
-        {children}
-      </ModalProvider>
-    </AuthProvider>
+    <html lang="nl">
+      <body>
+        <AppProviders>
+          {children}
+        </AppProviders>
+      </body>
+    </html>
   );
 }

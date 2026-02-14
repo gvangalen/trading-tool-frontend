@@ -1,4 +1,4 @@
-import "./globals.css";
+import "@/styles/globals.css";
 import AppProviders from "@/app/providers/AppProviders";
 
 export const metadata = {

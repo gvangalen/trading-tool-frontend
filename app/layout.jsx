@@ -6,11 +6,7 @@ export const metadata = {
   description: "AI Trading Dashboard",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }) {
   return (
     <html lang="nl">
       <body>

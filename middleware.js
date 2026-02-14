@@ -25,6 +25,7 @@ export async function middleware(req) {
   // =====================================================
   // Required for Playwright & public report viewing
   if (
+    path.startsWith("/print") ||        // ✅ PDF render
     path.startsWith("/daily-report") ||
     path.startsWith("/public/report")
   ) {

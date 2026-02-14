@@ -9,57 +9,56 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
   const { showSnackbar } = useModal();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // voorkomt dubbele redirects
   const redirected = useRef(false);
 
-  // 🚀 Al ingelogd? → direct naar dashboard
+  /* -------------------------------------------------------
+     🚀 Als al ingelogd → dashboard
+  ------------------------------------------------------- */
   useEffect(() => {
-    if (isAuthenticated && !redirected.current) {
+    if (!loading && isAuthenticated && !redirected.current) {
       redirected.current = true;
       router.replace("/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, loading, router]);
 
-  const handleLogin = async (e) => {
+  /* -------------------------------------------------------
+     LOGIN HANDLER
+  ------------------------------------------------------- */
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (submitting) return;
+
+    setSubmitting(true);
 
     const res = await login(email, password);
 
     if (!res.success) {
       showSnackbar(res.message || "Login mislukt", "danger");
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     showSnackbar("Welkom terug! ✔", "success");
 
-    // Redirect → gebruik replace voor correcte UX
-    router.replace("/dashboard");
+    // kleine delay → snackbar zichtbaar + auth sync
+    setTimeout(() => {
+      router.replace("/dashboard");
+    }, 150);
   };
 
   return (
-    <div
-      className="
-        min-h-screen flex items-center justify-center 
-        bg-[var(--bg-soft)] px-4
-      "
-    >
-      <div
-        className="
-          w-full max-w-md 
-          bg-[var(--card-bg)] border border-[var(--card-border)]
-          rounded-2xl shadow-xl p-8
-          animate-fade-slide
-        "
-      >
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-soft)] px-4">
+      <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl shadow-xl p-8 animate-fade-slide">
+        
         {/* Titel */}
         <h1 className="text-3xl font-bold text-center mb-2 text-[var(--text-dark)]">
           Welkom terug
@@ -70,19 +69,13 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-6">
+          
           {/* Email */}
           <div>
             <label className="text-sm text-[var(--text-light)] mb-1 block">
               E-mail
             </label>
-            <div
-              className="
-                flex items-center gap-2 
-                bg-[var(--bg-soft)] border border-[var(--border)]
-                rounded-xl px-3 py-2
-                focus-within:ring-1 focus-within:ring-[var(--primary)]
-              "
-            >
+            <div className="flex items-center gap-2 bg-[var(--bg-soft)] border border-[var(--border)] rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[var(--primary)]">
               <Mail size={18} className="text-[var(--text-light)]" />
               <input
                 type="email"
@@ -100,14 +93,7 @@ export default function LoginPage() {
             <label className="text-sm text-[var(--text-light)] mb-1 block">
               Wachtwoord
             </label>
-            <div
-              className="
-                flex items-center gap-2 
-                bg-[var(--bg-soft)] border border-[var(--border)]
-                rounded-xl px-3 py-2
-                focus-within:ring-1 focus-within:ring-[var(--primary)]
-              "
-            >
+            <div className="flex items-center gap-2 bg-[var(--bg-soft)] border border-[var(--border)] rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[var(--primary)]">
               <Lock size={18} className="text-[var(--text-light)]" />
               <input
                 type="password"
@@ -123,21 +109,15 @@ export default function LoginPage() {
           {/* Login button */}
           <button
             type="submit"
-            disabled={loading}
-            className="
-              w-full flex items-center justify-center gap-2
-              bg-[var(--primary)] hover:bg-[var(--primary-dark)]
-              text-white font-semibold py-3 rounded-xl
-              shadow-sm hover:shadow-md transition
-              disabled:bg-gray-400 disabled:cursor-not-allowed
-            "
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold py-3 rounded-xl shadow-sm hover:shadow-md transition disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             <LogIn size={18} />
-            {loading ? "Inloggen…" : "Inloggen"}
+            {submitting ? "Inloggen…" : "Inloggen"}
           </button>
         </form>
 
-        {/* ➕ Registratie link */}
+        {/* Registratie link */}
         <p className="text-center text-[var(--text-light)] mt-6">
           Nog geen account?{" "}
           <Link

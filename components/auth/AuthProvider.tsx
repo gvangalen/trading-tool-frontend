@@ -46,12 +46,11 @@ async function fetchWithAuth(
   });
 }
 
-
 /* ===========================================================
    AUTH PROVIDER
 =========================================================== */
 export function AuthProvider({ children }) {
-  // 👉 localStorage is alleen een hint
+  // localStorage is alleen hint (snellere UX)
   const initialUser = loadUserLocal() ?? null;
 
   const [user, setUser] = useState(initialUser);
@@ -59,7 +58,7 @@ export function AuthProvider({ children }) {
 
   const didInit = useRef(false);
   const sessionInFlight = useRef(false);
-  const abortRef = useRef(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   /* -------------------------------------------------------
      SESSION CHECK (/me)
@@ -87,14 +86,12 @@ export function AuthProvider({ children }) {
         setUser(u);
         saveUserLocal(u);
       } else {
-        // ❌ Niet ingelogd
         setUser(null);
         clearUserLocal();
       }
-    } catch (err) {
+    } catch (err: any) {
       if (err?.name !== "AbortError") {
         console.error("❌ Auth /me error:", err);
-        // ❌ Bij fout: geen half-auth state
         setUser(null);
         clearUserLocal();
       }
@@ -130,7 +127,7 @@ export function AuthProvider({ children }) {
           method: "POST",
         });
       } catch {
-        // stil — refresh mag falen zonder redirect storm
+        // refresh mag stil falen
       }
     }, 50 * 60 * 1000);
 
@@ -138,9 +135,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* -------------------------------------------------------
-     LOGIN
+     LOGIN  ✅ FIXED
   ------------------------------------------------------- */
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
@@ -154,11 +151,9 @@ export function AuthProvider({ children }) {
         };
       }
 
-      const data = await res.json();
-      const u = data.user;
-
-      setUser(u);
-      saveUserLocal(u);
+      // 🔥 BELANGRIJK:
+      // laad server session opnieuw zodat cookies & context sync zijn
+      await loadSession();
 
       return { success: true };
     } catch (err) {
@@ -168,7 +163,7 @@ export function AuthProvider({ children }) {
         message: "Serverfout",
       };
     }
-  }, []);
+  }, [loadSession]);
 
   /* -------------------------------------------------------
      LOGOUT

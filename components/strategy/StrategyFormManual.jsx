@@ -60,10 +60,13 @@ export default function StrategyFormManual({
     execution_mode: initialData?.execution_mode || "fixed",
 
     decision_curve: initialData?.decision_curve || null,
+
+    // ⭐ juiste bron
     curve_name:
+      initialData?.decision_curve_name ||
       initialData?.decision_curve?.name ||
-      initialData?.curve_name ||
       "",
+
     selected_curve_id:
       initialData?.decision_curve_id || "new",
   });
@@ -133,13 +136,15 @@ export default function StrategyFormManual({
           curve_name: "",
         }));
       } else {
-        const selected = curves.find((c) => String(c.id) === value);
+        const selected = curves.find(
+          (c) => String(c.id) === value
+        );
 
         setForm((p) => ({
           ...p,
           selected_curve_id: value,
           decision_curve: selected.curve,
-          curve_name: selected.name,
+          curve_name: selected.name ?? "",
         }));
       }
       return;
@@ -199,7 +204,8 @@ export default function StrategyFormManual({
               name: form.curve_name.trim(),
             },
 
-      curve_name:
+      // ⭐ BELANGRIJK voor backend
+      decision_curve_name:
         form.execution_mode === "fixed"
           ? null
           : form.curve_name.trim(),

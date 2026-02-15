@@ -6,6 +6,7 @@ import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
+import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
 
@@ -46,8 +47,6 @@ export default function BotAgentCard({
   const strategyName =
     bot?.strategy?.name || bot?.strategy?.type || "—";
 
-  /* ========= EXECUTION ========= */
-
   const executionMode =
     bot?.strategy?.execution_mode ||
     bot?.execution_mode ||
@@ -68,8 +67,6 @@ export default function BotAgentCard({
       ? "Curve sizing"
       : "Fixed amount";
 
-  /* ========= CLICK OUTSIDE ========= */
-
   useEffect(() => {
     if (!showSettings) return;
 
@@ -87,8 +84,6 @@ export default function BotAgentCard({
       document.removeEventListener("touchstart", handler);
     };
   }, [showSettings]);
-
-  /* ========= RISK ========= */
 
   const riskConfig = {
     conservative: {
@@ -112,8 +107,6 @@ export default function BotAgentCard({
     riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
     riskConfig.balanced;
 
-  /* ===================================================== */
-
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-6 space-y-6">
 
@@ -121,12 +114,10 @@ export default function BotAgentCard({
 
       <div className="border-b pb-5 space-y-4">
 
-        {/* ROW 1 */}
         <div className="flex items-center justify-between">
 
           {/* LEFT */}
           <div className="flex items-center gap-3">
-
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
             </div>
@@ -134,17 +125,14 @@ export default function BotAgentCard({
             <div className="text-2xl font-bold tracking-tight">
               {bot?.name}
             </div>
-
           </div>
 
           {/* RIGHT */}
           <div className="flex items-center gap-5">
 
-            {/* ACTIVE */}
             <div
-              className={`flex items-center gap-2 font-bold uppercase tracking-wide text-sm
-                ${isPaused ? "text-gray-400" : "text-green-600"}
-              `}
+              className={`flex items-center gap-2 font-bold uppercase text-sm
+              ${isPaused ? "text-gray-400" : "text-green-600"}`}
             >
               <span
                 className={`w-2.5 h-2.5 rounded-full
@@ -153,7 +141,6 @@ export default function BotAgentCard({
               {isPaused ? "Paused" : "Active"}
             </div>
 
-            {/* SETTINGS */}
             <div className="relative" ref={settingsRef}>
               <button
                 className="text-gray-400 hover:text-gray-700"
@@ -179,20 +166,16 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* ROW 2 */}
         <div className="text-sm text-gray-500">
           {symbol} · {timeframe}
         </div>
 
-        {/* ROW 3 */}
         <div>
           <span className="text-gray-500">Strategy:</span>{" "}
           <span className="font-semibold">{strategyName}</span>
         </div>
 
-        {/* ROW 4 */}
         <div className="flex flex-wrap gap-6 text-gray-700">
-
           <div className="flex items-center gap-2">
             <TrendingUp size={16} />
             <span className="font-semibold">{executionLabel}</span>
@@ -207,12 +190,9 @@ export default function BotAgentCard({
               {exposureMultiplier.toFixed(2)}×
             </span>
           </div>
-
         </div>
 
-        {/* ROW 5 */}
         <div className="flex gap-3">
-
           <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
             {risk.label}
           </span>
@@ -220,43 +200,56 @@ export default function BotAgentCard({
           <span className="px-3 py-1.5 rounded-lg border text-sm font-semibold bg-blue-50 text-blue-700">
             {isAuto ? "Auto Mode" : "Manual"}
           </span>
-
         </div>
-
       </div>
 
-      {/* ================= MARKET STATE ================= */}
+      {/* ================= PORTFOLIO + MARKET ================= */}
 
-      <div className="flex flex-col gap-2">
-        <MarketConditionsInline
-          health={decision?.market_health}
-          transitionRisk={decision?.transition_risk}
-          pressure={decision?.market_pressure}
-          multiplier={exposureMultiplier}
-        />
-      </div>
+      <div className="grid lg:grid-cols-3 border rounded-xl overflow-hidden">
 
-      {/* ================= MAIN GRID ================= */}
-
-      <div className="grid lg:grid-cols-2 gap-6">
-
-        <BotDecisionCard
-          bot={bot}
-          decision={decision}
-          order={order}
-          loading={loadingDecision}
-          isAuto={isAuto}
-          onGenerate={onGenerate}
-          onExecute={!isAuto ? onExecute : undefined}
-          onSkip={!isAuto ? onSkip : undefined}
-        />
-
-        <div className="space-y-4">
+        <div className="lg:col-span-2 p-5">
           <BotPortfolioCard bot={portfolio} />
-          <BotTradeTable trades={trades ?? []} />
         </div>
 
+        <div className="hidden lg:block w-px bg-gray-200" />
+
+        <div className="p-5">
+          <MarketConditionsPanel
+            health={decision?.market_health}
+            transitionRisk={decision?.transition_risk}
+            pressure={decision?.market_pressure}
+            multiplier={exposureMultiplier}
+          />
+        </div>
       </div>
+
+      {/* ================= DECISION + ORDER ================= */}
+
+      <div className="grid lg:grid-cols-2 border rounded-xl overflow-hidden">
+
+        <div className="p-5">
+          <BotDecisionCard
+            bot={bot}
+            decision={decision}
+            order={order}
+            loading={loadingDecision}
+            isAuto={isAuto}
+            onGenerate={onGenerate}
+            onExecute={!isAuto ? onExecute : undefined}
+            onSkip={!isAuto ? onSkip : undefined}
+          />
+        </div>
+
+        <div className="hidden lg:block w-px bg-gray-200" />
+
+        <div className="p-5">
+          <BotOrderPreview order={order} />
+        </div>
+      </div>
+
+      {/* ================= TRADES ================= */}
+
+      <BotTradeTable trades={trades ?? []} />
 
       {/* ================= HISTORY ================= */}
 

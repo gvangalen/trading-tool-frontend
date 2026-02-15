@@ -44,28 +44,19 @@ export default function BotAgentCard({
 
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
-  const strategyName =
-    bot?.strategy?.name || bot?.strategy?.type || "—";
+  const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
 
   const executionMode =
-    bot?.strategy?.execution_mode ||
-    bot?.execution_mode ||
-    "fixed";
+    bot?.strategy?.execution_mode || bot?.execution_mode || "fixed";
 
   const curveName =
-    bot?.strategy?.decision_curve_name ||
-    bot?.strategy?.curve_name ||
-    null;
+    bot?.strategy?.decision_curve_name || bot?.strategy?.curve_name || null;
 
   const exposureMultiplier =
-    decision?.exposure_multiplier ??
-    bot?.strategy?.exposure_multiplier ??
-    1;
+    decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
 
   const executionLabel =
-    executionMode === "custom"
-      ? "Curve sizing"
-      : "Fixed amount";
+    executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
   useEffect(() => {
     if (!showSettings) return;
@@ -109,14 +100,9 @@ export default function BotAgentCard({
 
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-6 space-y-6">
-
       {/* ================= HEADER ================= */}
-
       <div className="border-b pb-5 space-y-4">
-
         <div className="flex items-center justify-between">
-
-          {/* LEFT */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
@@ -127,9 +113,7 @@ export default function BotAgentCard({
             </div>
           </div>
 
-          {/* RIGHT */}
           <div className="flex items-center gap-5">
-
             <div
               className={`flex items-center gap-2 font-bold uppercase text-sm
               ${isPaused ? "text-gray-400" : "text-green-600"}`}
@@ -193,7 +177,9 @@ export default function BotAgentCard({
         </div>
 
         <div className="flex gap-3">
-          <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
+          <span
+            className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}
+          >
             {risk.label}
           </span>
 
@@ -203,10 +189,8 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ================= PORTFOLIO + MARKET ================= */}
-
+      {/* ===== Portfolio (2/3) + Market (1/3) ===== */}
       <div className="grid lg:grid-cols-3 border rounded-xl overflow-hidden">
-
         <div className="lg:col-span-2 p-5">
           <BotPortfolioCard bot={portfolio} />
         </div>
@@ -214,7 +198,7 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="p-5">
-          <MarketConditionsPanel
+          <MarketConditionsInline
             health={decision?.market_health}
             transitionRisk={decision?.transition_risk}
             pressure={decision?.market_pressure}
@@ -223,10 +207,8 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ================= DECISION + ORDER ================= */}
-
+      {/* ===== Decision + Order ===== */}
       <div className="grid lg:grid-cols-2 border rounded-xl overflow-hidden">
-
         <div className="p-5">
           <BotDecisionCard
             bot={bot}
@@ -247,12 +229,10 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ================= TRADES ================= */}
-
+      {/* Trades */}
       <BotTradeTable trades={trades ?? []} />
 
-      {/* ================= HISTORY ================= */}
-
+      {/* History */}
       <div className="pt-2 border-t">
         <button
           onClick={() => setShowHistory((v) => !v)}
@@ -271,7 +251,6 @@ export default function BotAgentCard({
           </div>
         )}
       </div>
-
     </div>
   );
 }

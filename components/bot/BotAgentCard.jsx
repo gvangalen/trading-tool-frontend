@@ -132,28 +132,62 @@ export default function BotAgentCard({
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-5 relative">
 
-      {/* ================= HEADER ================= */}
+{/* ================= HEADER ================= */}
 <div className="w-full border-b pb-5 space-y-4">
 
-  {/* ROW 1 — NAME + LIVE STATUS */}
+  {/* ROW 1 — NAME + STATUS + SETTINGS */}
   <div className="flex items-start justify-between w-full">
 
+    {/* LEFT: BOT ICON + NAME */}
     <div className="flex items-center gap-3">
-      <Brain size={26} />
+
+      {/* BOT ICON */}
+      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <Bot size={20} />
+      </div>
 
       <div className="text-2xl font-bold tracking-tight">
         {bot?.name}
       </div>
     </div>
 
-    {/* BIG LIVE STATUS */}
-    <div className={`flex items-center gap-2 font-bold text-lg uppercase
-      ${isPaused ? "text-gray-400" : "text-green-600"}
-    `}>
-      <span className={`w-3 h-3 rounded-full
-        ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
-      `}/>
-      {isPaused ? "Paused" : "Active"}
+    {/* RIGHT SIDE */}
+    <div className="flex items-center gap-4">
+
+      {/* ACTIVE STATUS */}
+      <div className={`flex items-center gap-2 font-bold text-sm uppercase tracking-wide
+        ${isPaused ? "text-gray-400" : "text-green-600"}
+      `}>
+        <span className={`w-2.5 h-2.5 rounded-full
+          ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
+        `}/>
+        {isPaused ? "Paused" : "Active"}
+      </div>
+
+      {/* SETTINGS MENU */}
+      <div className="relative" ref={settingsRef}>
+        <button
+          className="text-gray-400 hover:text-gray-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowSettings((v) => !v);
+          }}
+        >
+          <MoreVertical size={20} />
+        </button>
+
+        {showSettings && (
+          <div className="absolute right-0 mt-2 z-50">
+            <BotSettingsMenu
+              onOpen={(type) => {
+                setShowSettings(false);
+                onOpenSettings?.(type, bot);
+              }}
+            />
+          </div>
+        )}
+      </div>
+
     </div>
   </div>
 
@@ -202,7 +236,7 @@ export default function BotAgentCard({
   </div>
 
 </div>
-
+      
       {/* =================================================
          MARKET STATE (UNDER HEADER)
       ================================================= */}

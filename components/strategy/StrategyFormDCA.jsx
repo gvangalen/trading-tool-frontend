@@ -3,37 +3,10 @@
 import { useState, useEffect } from "react";
 import { useSetupData } from "@/hooks/useSetupData";
 import { useModal } from "@/components/modal/ModalProvider";
-import { Wallet, Info, Sliders, Star, StarOff } from "lucide-react";
+import { fetchAuth } from "@/lib/api/auth";
+
+import { Wallet } from "lucide-react";
 import CurveEditor from "@/components/decision/CurveEditor";
-
-/* ==========================================================
-   Curve presets
-========================================================== */
-const CURVE_PRESETS = {
-  fixed: null,
-
-  dca_contrarian: {
-    name: "Contrarian",
-    input: "market_score",
-    points: [
-      { x: 20, y: 1.5 },
-      { x: 40, y: 1.2 },
-      { x: 60, y: 1.0 },
-      { x: 80, y: 0.5 },
-    ],
-  },
-
-  dca_trend_following: {
-    name: "Trend Following",
-    input: "market_score",
-    points: [
-      { x: 20, y: 0.6 },
-      { x: 40, y: 0.9 },
-      { x: 60, y: 1.2 },
-      { x: 80, y: 1.4 },
-    ],
-  },
-};
 
 export default function StrategyFormDCA({
   onSubmit,
@@ -44,11 +17,12 @@ export default function StrategyFormDCA({
 }) {
   const { loadSetups } = useSetupData();
   const { showSnackbar } = useModal();
+
   const [error, setError] = useState("");
+  const [curves, setCurves] = useState([]);
 
   const [form, setForm] = useState({
     setup_id: initialData?.setup_id || "",
-    setup_name: initialData?.setup_name || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
 
@@ -56,86 +30,96 @@ export default function StrategyFormDCA({
     frequency: initialData?.frequency || "",
 
     execution_mode: initialData?.execution_mode || "fixed",
-    decision_curve: initialData?.decision_curve || null,
 
-    // ⭐ curve naam automatisch laden
+    decision_curve: initialData?.decision_curve || null,
     curve_name:
       initialData?.decision_curve?.name ||
-      initialData?.curve_name ||
+      initialData?.decision_curve_name ||
       "",
 
-    rules: initialData?.rules || "",
-    favorite: initialData?.favorite || false,
-    tags: initialData?.tags?.join(", ") || "",
+    selected_curve_id:
+      initialData?.decision_curve_id || "new",
   });
 
+  /* ==========================================================
+     LOAD DATA
+  ========================================================== */
   useEffect(() => {
     loadSetups();
+    loadCurves();
   }, []);
 
+  async function loadCurves() {
+    try {
+      const res = await fetchAuth("/api/curves/execution");
+      setCurves(res || []);
+    } catch (e) {
+      console.error("Failed to load curves", e);
+    }
+  }
+
   /* ==========================================================
-     Alleen DCA setups
+     AVAILABLE SETUPS
   ========================================================== */
   const availableSetups = setups.filter(
     (s) => s.strategy_type?.toLowerCase() === "dca"
   );
 
   /* ==========================================================
-     CHANGE HANDLER
+     HANDLERS
   ========================================================== */
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    if (type === "checkbox") {
-      setForm((p) => ({ ...p, [name]: checked }));
-      return;
-    }
+    const { name, value } = e.target;
 
     if (name === "setup_id") {
       const selected = availableSetups.find(
-        (s) => String(s.id) === String(value)
+        (s) => String(s.id) === value
       );
-
-      if (!selected) {
-        setError("❌ Ongeldige setup geselecteerd.");
-        return;
-      }
 
       setForm((p) => ({
         ...p,
-        setup_id: selected.id,
-        setup_name: selected.name,
-        symbol: selected.symbol,
-        timeframe: selected.timeframe,
+        setup_id: value,
+        symbol: selected?.symbol || "",
+        timeframe: selected?.timeframe || "",
       }));
-
       return;
     }
 
     if (name === "execution_mode") {
-      if (value === "custom") {
-        setForm((p) => ({
-          ...p,
-          execution_mode: "custom",
-          decision_curve:
-            p.decision_curve ??
-            JSON.parse(JSON.stringify(CURVE_PRESETS.dca_contrarian)),
-          curve_name: "",
-        }));
-      } else if (value === "fixed") {
+      if (value === "fixed") {
         setForm((p) => ({
           ...p,
           execution_mode: "fixed",
           decision_curve: null,
           curve_name: "",
+          selected_curve_id: "",
         }));
       } else {
-        const preset = CURVE_PRESETS[value];
         setForm((p) => ({
           ...p,
-          execution_mode: value,
-          decision_curve: preset,
-          curve_name: preset?.name || "",
+          execution_mode: "custom",
+          selected_curve_id: "new",
+        }));
+      }
+      return;
+    }
+
+    if (name === "selected_curve_id") {
+      if (value === "new") {
+        setForm((p) => ({
+          ...p,
+          selected_curve_id: "new",
+          decision_curve: null,
+          curve_name: "",
+        }));
+      } else {
+        const selected = curves.find((c) => String(c.id) === value);
+
+        setForm((p) => ({
+          ...p,
+          selected_curve_id: value,
+          decision_curve: selected.curve,
+          curve_name: selected.name,
         }));
       }
       return;
@@ -145,74 +129,64 @@ export default function StrategyFormDCA({
   };
 
   /* ==========================================================
-     VALIDATIE
+     VALIDATION
   ========================================================== */
-  const isFormValid = () =>
+  const isValid =
     form.setup_id &&
     Number(form.amount) > 0 &&
     form.frequency &&
-    (
-      form.execution_mode === "fixed" ||
-      (
-        form.decision_curve &&
+    (form.execution_mode === "fixed" ||
+      (form.decision_curve &&
         form.decision_curve.points?.length >= 2 &&
-        (form.execution_mode !== "custom" ||
-          form.curve_name.trim() !== "")
-      )
-    );
+        form.curve_name.trim() !== ""));
 
   /* ==========================================================
      SUBMIT
   ========================================================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!isFormValid()) {
-      setError("❌ Vul alle verplichte velden correct in.");
+    if (!isValid) {
+      setError("❌ Vul alle velden correct in.");
       return;
     }
 
-    // ⭐ curve naam in curve object injecteren
-    const curveWithName =
-      form.execution_mode === "fixed"
-        ? null
-        : {
-            ...form.decision_curve,
-            name: form.curve_name?.trim() || null,
-          };
-
     const payload = {
       strategy_type: "dca",
-      setup_id: form.setup_id,
+      setup_id: Number(form.setup_id),
       base_amount: Number(form.amount),
       frequency: form.frequency,
       execution_mode: form.execution_mode,
-      decision_curve: curveWithName,
-      curve_name: form.curve_name?.trim() || null,
-      rules: form.rules?.trim() || "",
-      favorite: !!form.favorite,
-      tags: form.tags
-        ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
-        : [],
+
+      decision_curve:
+        form.execution_mode === "fixed"
+          ? null
+          : {
+              ...form.decision_curve,
+              name: form.curve_name.trim(),
+            },
+
+      curve_name:
+        form.execution_mode === "fixed"
+          ? null
+          : form.curve_name.trim(),
     };
 
     try {
       await onSubmit(payload);
-      showSnackbar("DCA-strategie opgeslagen", "success");
+      showSnackbar("Strategie opgeslagen", "success");
     } catch (err) {
       console.error(err);
       setError("Opslaan mislukt.");
     }
   };
 
-  const valid = isFormValid();
-
   /* ==========================================================
      UI
   ========================================================== */
   return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
-      <h2 className="text-xl font-bold flex gap-2 items-center">
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+      <h2 className="text-xl font-bold flex items-center gap-2">
         <Wallet className="w-5 h-5 text-blue-600" />
         {mode === "edit" ? "DCA bewerken" : "Nieuwe DCA"}
       </h2>
@@ -254,7 +228,7 @@ export default function StrategyFormDCA({
         <option value="monthly">Maandelijks</option>
       </select>
 
-      {/* Execution */}
+      {/* Execution mode */}
       <select
         name="execution_mode"
         value={form.execution_mode}
@@ -262,37 +236,56 @@ export default function StrategyFormDCA({
         className="input"
       >
         <option value="fixed">Vast bedrag</option>
-        <option value="dca_contrarian">Contrarian</option>
-        <option value="dca_trend_following">Trend</option>
-        <option value="custom">Custom curve</option>
+        <option value="custom">Curve-based</option>
       </select>
 
-      {/* Curve naam */}
+      {/* Curve selector */}
       {form.execution_mode === "custom" && (
-        <input
-          name="curve_name"
-          value={form.curve_name}
-          onChange={handleChange}
-          placeholder="Naam van je curve"
-          className="input"
-        />
-      )}
+        <>
+          <select
+            name="selected_curve_id"
+            value={form.selected_curve_id}
+            onChange={handleChange}
+            className="input"
+          >
+            <option value="new">➕ Create new curve</option>
+            {curves.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
 
-      {/* Curve editor */}
-      {form.execution_mode !== "fixed" && (
-        <CurveEditor
-          value={form.decision_curve}
-          onChange={(curve) =>
-            setForm((p) => ({ ...p, decision_curve: curve }))
-          }
-        />
+          {/* Curve name */}
+          {form.selected_curve_id === "new" && (
+            <input
+              name="curve_name"
+              value={form.curve_name}
+              onChange={handleChange}
+              placeholder="Naam van je curve"
+              className="input"
+            />
+          )}
+
+          {/* Curve editor */}
+          {form.selected_curve_id === "new" && (
+            <CurveEditor
+              value={form.decision_curve}
+              onChange={(curve) =>
+                setForm((p) => ({ ...p, decision_curve: curve }))
+              }
+            />
+          )}
+        </>
       )}
 
       {error && <p className="text-red-500">{error}</p>}
 
-      <button disabled={!valid} className="btn-primary w-full">
-        Opslaan
-      </button>
+      {!hideSubmit && (
+        <button disabled={!isValid} className="btn-primary w-full">
+          Opslaan
+        </button>
+      )}
     </form>
   );
 }

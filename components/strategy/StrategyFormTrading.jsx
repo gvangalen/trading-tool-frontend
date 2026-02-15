@@ -7,9 +7,36 @@ import {
   Tag,
   Target,
   TrendingUp,
+  Sliders,
+  Euro,
 } from "lucide-react";
 
 import { useModal } from "@/components/modal/ModalProvider";
+import CurveEditor from "@/components/decision/CurveEditor";
+
+/* ==========================================================
+   Curve presets
+========================================================== */
+const CURVE_PRESETS = {
+  contrarian: {
+    input: "market_score",
+    points: [
+      { x: 20, y: 1.6 },
+      { x: 40, y: 1.2 },
+      { x: 60, y: 1.0 },
+      { x: 80, y: 0.6 },
+    ],
+  },
+  trend_following: {
+    input: "market_score",
+    points: [
+      { x: 20, y: 0.6 },
+      { x: 40, y: 0.9 },
+      { x: 60, y: 1.2 },
+      { x: 80, y: 1.5 },
+    ],
+  },
+};
 
 export default function StrategyFormTrading({
   setups = [],
@@ -35,13 +62,19 @@ export default function StrategyFormTrading({
     explanation: initialData?.explanation || "",
     favorite: initialData?.favorite || false,
     tags: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
+
+    // ⭐ NIEUW
+    execution_mode: initialData?.execution_mode || "fixed",
+    decision_curve: initialData?.decision_curve || null,
+    curve_name: initialData?.curve_name || "",
+    base_amount: initialData?.base_amount || "",
   });
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   /* ===========================================================
-     SETUPS FILTEREN
+     FILTER setups
   =========================================================== */
   const availableSetups = useMemo(
     () =>
@@ -54,26 +87,18 @@ export default function StrategyFormTrading({
   );
 
   /* ===========================================================
-     INITIALDATA HANDLER
+     INITIAL DATA
   =========================================================== */
   useEffect(() => {
     if (!initialData) return;
 
-    setForm({
-      setup_id: initialData.setup_id,
-      symbol: initialData.symbol,
-      timeframe: initialData.timeframe,
-      entry: initialData.entry,
+    setForm((prev) => ({
+      ...prev,
+      ...initialData,
       targetsText: Array.isArray(initialData.targets)
         ? initialData.targets.join(", ")
         : "",
-      stop_loss: initialData.stop_loss,
-      explanation: initialData.explanation ?? "",
-      favorite: initialData.favorite ?? false,
-      tags: Array.isArray(initialData.tags)
-        ? initialData.tags.join(", ")
-        : "",
-    });
+    }));
   }, [initialData]);
 
   /* ===========================================================
@@ -96,6 +121,33 @@ export default function StrategyFormTrading({
         symbol: selected?.symbol || "",
         timeframe: selected?.timeframe || "",
       }));
+      return;
+    }
+
+    if (name === "execution_mode") {
+      if (val === "custom") {
+        setForm((p) => ({
+          ...p,
+          execution_mode: "custom",
+          decision_curve:
+            p.decision_curve ??
+            JSON.parse(JSON.stringify(CURVE_PRESETS.contrarian)),
+        }));
+      } else if (val === "fixed") {
+        setForm((p) => ({
+          ...p,
+          execution_mode: "fixed",
+          decision_curve: null,
+          curve_name: "",
+        }));
+      } else {
+        setForm((p) => ({
+          ...p,
+          execution_mode: val,
+          decision_curve: CURVE_PRESETS[val],
+          curve_name: "",
+        }));
+      }
       return;
     }
 
@@ -142,6 +194,16 @@ export default function StrategyFormTrading({
       explanation: form.explanation.trim(),
       favorite: form.favorite,
       tags,
+
+      // ⭐ execution engine velden
+      execution_mode: form.execution_mode,
+      base_amount: Number(form.base_amount),
+      decision_curve:
+        form.execution_mode === "fixed" ? null : form.decision_curve,
+      curve_name:
+        form.execution_mode === "custom"
+          ? form.curve_name.trim()
+          : null,
     };
 
     try {
@@ -161,11 +223,15 @@ export default function StrategyFormTrading({
           explanation: "",
           favorite: false,
           tags: "",
+          execution_mode: "fixed",
+          decision_curve: null,
+          curve_name: "",
+          base_amount: "",
         });
       }
     } catch (err) {
-      console.error("❌ Error saving strategy:", err);
-      showSnackbar("Opslaan van strategie mislukt", "danger");
+      console.error(err);
+      showSnackbar("Opslaan mislukt", "danger");
     } finally {
       setSaving(false);
     }
@@ -182,144 +248,82 @@ export default function StrategyFormTrading({
      UI
   =========================================================== */
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="
-        w-full max-w-2xl mx-auto
-        p-6 sm:p-8 
-        rounded-2xl shadow-xl border
-        bg-white dark:bg-[#0f0f0f]
-        border-gray-200 dark:border-gray-800
-        space-y-6
-      "
-    >
-      <h3 className="text-xl font-bold flex items-center gap-2 text-[var(--text-dark)]">
+    <form className="w-full max-w-2xl mx-auto p-6 space-y-6 rounded-2xl shadow-xl border bg-white dark:bg-[#0f0f0f]">
+
+      <h3 className="text-xl font-bold flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-blue-600" />
         {mode === "edit"
           ? "Tradingstrategie bewerken"
           : "Nieuwe Tradingstrategie"}
       </h3>
 
-      {/* Setup Select */}
+      <select
+        name="setup_id"
+        value={form.setup_id}
+        disabled={mode === "edit"}
+        onChange={handleChange}
+        className="w-full p-3 rounded-xl border"
+      >
+        <option value="">-- Kies een setup --</option>
+        {availableSetups.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name} ({s.symbol} – {s.timeframe})
+          </option>
+        ))}
+      </select>
+
+      <input name="entry" type="number" value={form.entry} onChange={handleChange} placeholder="Entry" className="p-3 border rounded-xl"/>
+      <input name="targetsText" value={form.targetsText} onChange={handleChange} placeholder="Targets" className="p-3 border rounded-xl"/>
+      <input name="stop_loss" type="number" value={form.stop_loss} onChange={handleChange} placeholder="Stop loss" className="p-3 border rounded-xl"/>
+
+      {/* Position sizing */}
       <div>
-        <label className="block text-sm font-semibold mb-1">
-          Koppel aan Setup
+        <label className="text-sm font-semibold flex items-center gap-2 mb-1">
+          <Euro size={14}/> Bedrag per trade
         </label>
-        <select
-          name="setup_id"
-          value={form.setup_id}
-          disabled={mode === "edit"}
-          onChange={handleChange}
-          className="
-            w-full p-3 rounded-xl border
-            bg-gray-50 dark:bg-[#111]
-            border-gray-300 dark:border-gray-700
-            focus:ring-2 focus:ring-blue-500
-          "
-        >
-          <option value="">-- Kies een setup --</option>
-          {availableSetups.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.symbol} – {s.timeframe})
-            </option>
-          ))}
+        <input type="number" name="base_amount" value={form.base_amount} onChange={handleChange} className="w-full p-3 border rounded-xl"/>
+      </div>
+
+      {/* Execution logic */}
+      <div>
+        <label className="text-sm font-semibold flex items-center gap-2 mb-1">
+          <Sliders size={14}/> Executie logica
+        </label>
+
+        <select name="execution_mode" value={form.execution_mode} onChange={handleChange} className="w-full p-3 border rounded-xl">
+          <option value="fixed">Vast bedrag</option>
+          <option value="contrarian">Contrarian sizing</option>
+          <option value="trend_following">Trend sizing</option>
+          <option value="custom">Custom curve</option>
         </select>
       </div>
 
-      {/* Symbol + Timeframe */}
-      <div className="grid grid-cols-2 gap-4">
-        <input
-          value={form.symbol}
-          readOnly
-          className="p-3 rounded-xl border bg-gray-100 dark:bg-[#111]"
-        />
-        <input
-          value={form.timeframe}
-          readOnly
-          className="p-3 rounded-xl border bg-gray-100 dark:bg-[#111]"
-        />
-      </div>
-
-      {/* Entry */}
-      <input
-        name="entry"
-        type="number"
-        value={form.entry}
-        onChange={handleChange}
-        className="p-3 rounded-xl border"
-        placeholder="Entry prijs"
-      />
-
-      {/* Targets */}
-      <div className="flex items-center gap-2">
-        <Target className="w-4 h-4 text-gray-400" />
-        <input
-          name="targetsText"
-          value={form.targetsText}
-          onChange={handleChange}
-          className="p-3 rounded-xl border w-full"
-          placeholder="Bijv. 32000, 34000"
-        />
-      </div>
-
-      {/* Stop-loss */}
-      <input
-        name="stop_loss"
-        type="number"
-        value={form.stop_loss}
-        onChange={handleChange}
-        className="p-3 rounded-xl border"
-        placeholder="Stop-loss"
-      />
-
-      {/* Tags */}
-      <div className="flex items-center gap-2">
-        <Tag className="w-4 h-4 text-gray-400" />
-        <input
-          name="tags"
-          value={form.tags}
-          onChange={handleChange}
-          className="p-3 rounded-xl border w-full"
-          placeholder="tags"
-        />
-      </div>
-
-      {/* Favoriet */}
-      <label className="flex items-center gap-3 text-sm">
-        <input
-          type="checkbox"
-          name="favorite"
-          checked={form.favorite}
-          onChange={handleChange}
-        />
-        {form.favorite ? (
-          <span className="flex items-center gap-1 text-yellow-600">
-            <Star className="w-4 h-4" /> Favoriet
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-gray-600">
-            <StarOff className="w-4 h-4" /> Geen favoriet
-          </span>
-        )}
-      </label>
-
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-
-      {!hideSubmit && (
-        <button
-          type="submit"
-          disabled={disabled}
-          className={`btn-primary w-full ${
-            disabled ? "opacity-60 cursor-not-allowed" : ""
-          }`}
-        >
-          {saving ? "⏳ Opslaan..." : "Strategie opslaan"}
-        </button>
+      {form.execution_mode === "custom" && (
+        <input name="curve_name" value={form.curve_name} onChange={handleChange} placeholder="Curve naam" className="p-3 border rounded-xl"/>
       )}
 
-      {hideSubmit && (
-        <button id="strategy-edit-submit" type="submit" className="hidden">
-          Submit
+      {form.execution_mode !== "fixed" && (
+        <CurveEditor
+          value={form.decision_curve}
+          onChange={(curve) =>
+            setForm((p) => ({ ...p, decision_curve: curve }))
+          }
+        />
+      )}
+
+      <input name="tags" value={form.tags} onChange={handleChange} placeholder="Tags" className="p-3 border rounded-xl"/>
+
+      <label className="flex items-center gap-2">
+        <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange}/>
+        {form.favorite ? <Star className="text-yellow-500"/> : <StarOff/>}
+        Favoriet
+      </label>
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {!hideSubmit && (
+        <button type="submit" disabled={disabled} className="btn-primary w-full">
+          {saving ? "Opslaan…" : "Strategie opslaan"}
         </button>
       )}
     </form>

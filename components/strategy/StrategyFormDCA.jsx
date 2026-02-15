@@ -41,9 +41,8 @@ export default function StrategyFormDCA({
       initialData?.decision_curve_id || "new",
   });
 
-  /* ==========================================================
-     LOAD DATA
-  ========================================================== */
+  /* ================= LOAD DATA ================= */
+
   useEffect(() => {
     loadSetups();
     loadCurves();
@@ -58,16 +57,14 @@ export default function StrategyFormDCA({
     }
   }
 
-  /* ==========================================================
-     AVAILABLE SETUPS
-  ========================================================== */
+  /* ================= AVAILABLE SETUPS ================= */
+
   const availableSetups = setups.filter(
     (s) => s.strategy_type?.toLowerCase() === "dca"
   );
 
-  /* ==========================================================
-     HANDLERS
-  ========================================================== */
+  /* ================= HANDLERS ================= */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -128,9 +125,8 @@ export default function StrategyFormDCA({
     setForm((p) => ({ ...p, [name]: value }));
   };
 
-  /* ==========================================================
-     VALIDATION
-  ========================================================== */
+  /* ================= VALIDATION ================= */
+
   const isValid =
     form.setup_id &&
     Number(form.amount) > 0 &&
@@ -140,11 +136,11 @@ export default function StrategyFormDCA({
         form.decision_curve.points?.length >= 2 &&
         form.curve_name.trim() !== ""));
 
-  /* ==========================================================
-     SUBMIT
-  ========================================================== */
+  /* ================= SUBMIT ================= */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!isValid) {
       setError("❌ Vul alle velden correct in.");
       return;
@@ -180,9 +176,8 @@ export default function StrategyFormDCA({
     }
   };
 
-  /* ==========================================================
-     UI
-  ========================================================== */
+  /* ================= UI ================= */
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -228,20 +223,55 @@ export default function StrategyFormDCA({
         <option value="monthly">Maandelijks</option>
       </select>
 
-      {/* Execution mode */}
-      <select
-        name="execution_mode"
-        value={form.execution_mode}
-        onChange={handleChange}
-        className="input"
-      >
-        <option value="fixed">Vast bedrag</option>
-        <option value="custom">Curve-based</option>
-      </select>
+      {/* ================= EXECUTION LOGIC ================= */}
 
-      {/* Curve selector */}
+      <div className="space-y-3">
+        <label className="text-sm font-semibold">
+          Execution logic
+        </label>
+
+        {/* Fixed */}
+        <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+          <input
+            type="radio"
+            name="execution_mode"
+            value="fixed"
+            checked={form.execution_mode === "fixed"}
+            onChange={handleChange}
+            className="mt-1"
+          />
+          <div>
+            <div className="font-medium">Fixed amount</div>
+            <div className="text-xs text-gray-500">
+              Invest the same amount every execution.
+            </div>
+          </div>
+        </label>
+
+        {/* Curve-based */}
+        <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+          <input
+            type="radio"
+            name="execution_mode"
+            value="custom"
+            checked={form.execution_mode === "custom"}
+            onChange={handleChange}
+            className="mt-1"
+          />
+          <div>
+            <div className="font-medium">Curve-based sizing</div>
+            <div className="text-xs text-gray-500">
+              Automatically adjust allocation based on market score.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      {/* ================= CURVE SECTION ================= */}
+
       {form.execution_mode === "custom" && (
         <>
+          {/* Curve selector */}
           <select
             name="selected_curve_id"
             value={form.selected_curve_id}

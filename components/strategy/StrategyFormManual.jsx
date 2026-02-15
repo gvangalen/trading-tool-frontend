@@ -1,42 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
+import { fetchAuth } from "@/lib/api/auth";
 import CurveEditor from "@/components/decision/CurveEditor";
 
 import {
   Pencil,
-  Tag,
   Star,
   StarOff,
   Sliders,
   Euro,
 } from "lucide-react";
-
-/* ==========================================================
-   Curve presets (zelfde logica als DCA)
-========================================================== */
-const CURVE_PRESETS = {
-  contrarian: {
-    input: "market_score",
-    points: [
-      { x: 20, y: 1.6 },
-      { x: 40, y: 1.2 },
-      { x: 60, y: 1.0 },
-      { x: 80, y: 0.6 },
-    ],
-  },
-
-  trend_following: {
-    input: "market_score",
-    points: [
-      { x: 20, y: 0.6 },
-      { x: 40, y: 0.9 },
-      { x: 60, y: 1.2 },
-      { x: 80, y: 1.5 },
-    ],
-  },
-};
 
 export default function StrategyFormManual({
   onSubmit,
@@ -48,67 +23,81 @@ export default function StrategyFormManual({
 }) {
   const { showSnackbar } = useModal();
 
-  /* ===========================================================
-     FORM STATE
-  =========================================================== */
+  const [curves, setCurves] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  /* ================= LOAD CURVES ================= */
+
+  useEffect(() => {
+    loadCurves();
+  }, []);
+
+  async function loadCurves() {
+    try {
+      const res = await fetchAuth("/api/curves/execution");
+      setCurves(res || []);
+    } catch (e) {
+      console.error("Failed to load curves", e);
+    }
+  }
+
+  /* ================= FORM STATE ================= */
+
   const [form, setForm] = useState({
     setup_id: initialData?.setup_id || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
     entry: initialData?.entry || "",
-    target:
-      Array.isArray(initialData?.targets) && initialData.targets.length > 0
-        ? initialData.targets[0]
-        : "",
+    target: initialData?.targets?.[0] || "",
     stop_loss: initialData?.stop_loss || "",
     explanation: initialData?.explanation || "",
     tags: initialData?.tags?.join(", ") || "",
     favorite: initialData?.favorite || false,
 
-    // ⭐ NIEUW — execution logic
-    execution_mode: initialData?.execution_mode || "fixed",
-    decision_curve: initialData?.decision_curve || null,
-    curve_name: initialData?.curve_name || "",
     base_amount: initialData?.base_amount || "",
+
+    execution_mode: initialData?.execution_mode || "fixed",
+
+    decision_curve: initialData?.decision_curve || null,
+    curve_name:
+      initialData?.decision_curve?.name ||
+      initialData?.curve_name ||
+      "",
+    selected_curve_id:
+      initialData?.decision_curve_id || "new",
   });
 
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  /* ================= FILTER SETUPS ================= */
 
-  /* ===========================================================
-     FILTER: alleen manual setups zonder bestaande strategie
-  =========================================================== */
   const filteredSetups = useMemo(() => {
     return setups.filter((s) => {
       if (s.strategy_type?.toLowerCase() !== "manual") return false;
 
-      const already = strategies.some(
+      const exists = strategies.some(
         (st) =>
           String(st.setup_id) === String(s.id) &&
-          String(st.strategy_type).toLowerCase() === "manual"
+          st.strategy_type === "manual"
       );
 
-      if (mode === "edit" && String(s.id) === String(initialData?.setup_id)) {
-        return true;
-      }
+      if (mode === "edit" && s.id === initialData?.setup_id) return true;
 
-      return !already;
+      return !exists;
     });
   }, [setups, strategies, mode, initialData]);
 
-  /* ===========================================================
-     CHANGE HANDLER
-  =========================================================== */
+  /* ================= CHANGE HANDLER ================= */
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
     if (name === "setup_id") {
       const selected = filteredSetups.find(
-        (s) => String(s.id) === String(value)
+        (s) => String(s.id) === value
       );
 
-      setForm((prev) => ({
-        ...prev,
+      setForm((p) => ({
+        ...p,
         setup_id: value,
         symbol: selected?.symbol || "",
         timeframe: selected?.timeframe || "",
@@ -117,43 +106,55 @@ export default function StrategyFormManual({
     }
 
     if (name === "execution_mode") {
-      if (value === "custom") {
-        setForm((p) => ({
-          ...p,
-          execution_mode: "custom",
-          decision_curve:
-            p.decision_curve ??
-            JSON.parse(JSON.stringify(CURVE_PRESETS.contrarian)),
-        }));
-      } else if (value === "fixed") {
+      if (value === "fixed") {
         setForm((p) => ({
           ...p,
           execution_mode: "fixed",
           decision_curve: null,
           curve_name: "",
+          selected_curve_id: "",
         }));
       } else {
         setForm((p) => ({
           ...p,
-          execution_mode: value,
-          decision_curve: CURVE_PRESETS[value],
-          curve_name: "",
+          execution_mode: "custom",
+          selected_curve_id: "new",
         }));
       }
       return;
     }
 
-    setForm((prev) => ({
-      ...prev,
+    if (name === "selected_curve_id") {
+      if (value === "new") {
+        setForm((p) => ({
+          ...p,
+          selected_curve_id: "new",
+          decision_curve: null,
+          curve_name: "",
+        }));
+      } else {
+        const selected = curves.find((c) => String(c.id) === value);
+
+        setForm((p) => ({
+          ...p,
+          selected_curve_id: value,
+          decision_curve: selected.curve,
+          curve_name: selected.name,
+        }));
+      }
+      return;
+    }
+
+    setForm((p) => ({
+      ...p,
       [name]: type === "checkbox" ? checked : value,
     }));
 
     setError("");
   };
 
-  /* ===========================================================
-     SUBMIT
-  =========================================================== */
+  /* ================= SUBMIT ================= */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -167,16 +168,13 @@ export default function StrategyFormManual({
     const target = parseFloat(form.target);
     const stop_loss = parseFloat(form.stop_loss);
 
-    if ([entry, target, stop_loss].some((v) => Number.isNaN(v))) {
-      setError("⚠️ Entry, target en stop-loss moeten geldige getallen zijn.");
+    if ([entry, target, stop_loss].some(isNaN)) {
+      setError("⚠️ Ongeldige prijswaarden.");
       return;
     }
 
     const tags =
-      form.tags
-        ?.split(",")
-        .map((t) => t.trim())
-        .filter(Boolean) || [];
+      form.tags?.split(",").map((t) => t.trim()).filter(Boolean) || [];
 
     const payload = {
       setup_id: Number(form.setup_id),
@@ -189,65 +187,45 @@ export default function StrategyFormManual({
       explanation: form.explanation.trim(),
       tags,
       favorite: form.favorite,
-
-      // ⭐ execution engine velden
-      execution_mode: form.execution_mode,
       base_amount: Number(form.base_amount),
+
+      execution_mode: form.execution_mode,
+
       decision_curve:
-        form.execution_mode === "fixed" ? null : form.decision_curve,
+        form.execution_mode === "fixed"
+          ? null
+          : {
+              ...form.decision_curve,
+              name: form.curve_name.trim(),
+            },
+
       curve_name:
-        form.execution_mode === "custom"
-          ? form.curve_name.trim()
+        form.execution_mode === "fixed"
+          ? null
+          : form.curve_name.trim(),
+
+      decision_curve_id:
+        form.selected_curve_id !== "new"
+          ? Number(form.selected_curve_id)
           : null,
     };
 
     try {
       setSaving(true);
       await onSubmit(payload);
-
       showSnackbar("Strategie opgeslagen", "success");
-
-      if (mode === "create") {
-        setForm({
-          setup_id: "",
-          symbol: "",
-          timeframe: "",
-          entry: "",
-          target: "",
-          stop_loss: "",
-          explanation: "",
-          tags: "",
-          favorite: false,
-          execution_mode: "fixed",
-          decision_curve: null,
-          curve_name: "",
-          base_amount: "",
-        });
-      }
     } catch (err) {
       console.error(err);
       showSnackbar("Opslaan mislukt", "danger");
-      setError("❌ Opslaan mislukt.");
     } finally {
       setSaving(false);
     }
   };
 
-  const disabled =
-    saving ||
-    !form.setup_id ||
-    !form.entry ||
-    !form.target ||
-    !form.stop_loss;
+  /* ================= UI ================= */
 
-  /* ===========================================================
-     UI
-  =========================================================== */
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-2xl mx-auto p-6 sm:p-8 space-y-6 rounded-2xl shadow-xl border bg-white dark:bg-[#0f0f0f] border-gray-200 dark:border-gray-800"
-    >
+    <form className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit}>
       <h3 className="text-xl font-bold flex items-center gap-2">
         <Pencil className="w-5 h-5 text-purple-600" />
         {mode === "edit"
@@ -255,99 +233,100 @@ export default function StrategyFormManual({
           : "Nieuwe Handmatige Strategie"}
       </h3>
 
-      {/* Setup */}
       <select
         name="setup_id"
         value={form.setup_id}
-        disabled={mode === "edit"}
         onChange={handleChange}
-        className="w-full p-3 rounded-xl border"
+        className="input"
       >
-        <option value="">-- Kies een setup --</option>
+        <option value="">-- Kies setup --</option>
         {filteredSetups.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.name} ({s.symbol} – {s.timeframe})
+            {s.name} ({s.symbol})
           </option>
         ))}
       </select>
 
-      {/* Entry / Target / SL */}
-      <input name="entry" type="number" value={form.entry} onChange={handleChange} placeholder="Entry prijs" className="p-3 border rounded-xl" />
-      <input name="target" type="number" value={form.target} onChange={handleChange} placeholder="Target prijs" className="p-3 border rounded-xl" />
-      <input name="stop_loss" type="number" value={form.stop_loss} onChange={handleChange} placeholder="Stop-loss" className="p-3 border rounded-xl" />
+      <input name="entry" type="number" value={form.entry} onChange={handleChange} placeholder="Entry" className="input"/>
+      <input name="target" type="number" value={form.target} onChange={handleChange} placeholder="Target" className="input"/>
+      <input name="stop_loss" type="number" value={form.stop_loss} onChange={handleChange} placeholder="Stop loss" className="input"/>
 
-      {/* Position size */}
       <div>
-        <label className="text-sm font-semibold flex items-center gap-2 mb-1">
-          <Euro size={14} /> Bedrag per trade (€)
+        <label className="text-sm font-semibold flex gap-2 items-center mb-1">
+          <Euro size={14}/> Bedrag per trade
         </label>
-        <input
-          type="number"
-          name="base_amount"
-          value={form.base_amount}
-          onChange={handleChange}
-          className="w-full p-3 rounded-xl border"
-        />
+        <input name="base_amount" type="number" value={form.base_amount} onChange={handleChange} className="input"/>
       </div>
 
-      {/* Execution logic */}
-      <div>
-        <label className="text-sm font-semibold flex items-center gap-2 mb-1">
-          <Sliders size={14} /> Executie-logica
+      {/* EXECUTION LOGIC */}
+
+      <div className="space-y-2">
+        <label className="text-sm font-semibold flex gap-2 items-center">
+          <Sliders size={14}/> Executie-logica
         </label>
 
-        <select
-          name="execution_mode"
-          value={form.execution_mode}
-          onChange={handleChange}
-          className="w-full p-3 rounded-xl border"
-        >
-          <option value="fixed">Vast bedrag</option>
-          <option value="contrarian">Contrarian sizing</option>
-          <option value="trend_following">Trend sizing</option>
-          <option value="custom">Custom curve</option>
-        </select>
+        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer">
+          <input type="radio" name="execution_mode" value="fixed"
+            checked={form.execution_mode==="fixed"} onChange={handleChange}/>
+          Vast bedrag
+        </label>
+
+        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer">
+          <input type="radio" name="execution_mode" value="custom"
+            checked={form.execution_mode==="custom"} onChange={handleChange}/>
+          Curve-based sizing
+        </label>
       </div>
 
-      {/* Curve naam */}
+      {/* CURVE */}
+
       {form.execution_mode === "custom" && (
-        <input
-          name="curve_name"
-          value={form.curve_name}
-          onChange={handleChange}
-          placeholder="Curve naam"
-          className="p-3 border rounded-xl"
-        />
+        <>
+          <select
+            name="selected_curve_id"
+            value={form.selected_curve_id}
+            onChange={handleChange}
+            className="input"
+          >
+            <option value="new">Nieuwe curve</option>
+            {curves.map((c)=>(
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+
+          {form.selected_curve_id === "new" && (
+            <>
+              <input
+                name="curve_name"
+                value={form.curve_name}
+                onChange={handleChange}
+                placeholder="Naam van je curve"
+                className="input"
+              />
+
+              <CurveEditor
+                value={form.decision_curve}
+                onChange={(curve)=>
+                  setForm(p=>({...p, decision_curve:curve}))
+                }
+              />
+            </>
+          )}
+        </>
       )}
 
-      {/* Curve editor */}
-      {form.execution_mode !== "fixed" && (
-        <CurveEditor
-          value={form.decision_curve}
-          onChange={(curve) =>
-            setForm((p) => ({ ...p, decision_curve: curve }))
-          }
-        />
-      )}
+      <input name="tags" value={form.tags} onChange={handleChange} placeholder="Tags" className="input"/>
 
-      {/* Tags */}
-      <input name="tags" value={form.tags} onChange={handleChange} placeholder="Tags" className="p-3 border rounded-xl" />
-
-      {/* Favorite */}
       <label className="flex items-center gap-2">
-        <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange} />
-        {form.favorite ? <Star className="text-yellow-500" /> : <StarOff />}
+        <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange}/>
+        {form.favorite ? <Star className="text-yellow-500"/> : <StarOff/>}
         Favoriet
       </label>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
       {!hideSubmit && (
-        <button
-          type="submit"
-          disabled={disabled}
-          className="btn-primary w-full"
-        >
+        <button disabled={saving} className="btn-primary w-full">
           {saving ? "Opslaan…" : "Strategie opslaan"}
         </button>
       )}

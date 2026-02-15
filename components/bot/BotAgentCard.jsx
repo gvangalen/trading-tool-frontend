@@ -7,7 +7,7 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
-import MarketConditionsInline from "@/components/bot/MarketConditionsInline";
+import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
 
 import {
   Bot,

@@ -17,14 +17,12 @@ import {
   Scale,
   Rocket,
   Bot,
-  PauseCircle,
-  PlayCircle,
   TrendingUp,
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 3.2
- * Cockpit header with execution context
+ * BotAgentCard — TradeLayer 3.3
+ * Clean cockpit header + live status
  */
 
 export default function BotAgentCard({
@@ -73,15 +71,6 @@ export default function BotAgentCard({
   const executionLabel =
     executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
-  /* ================= CONFIDENCE BADGE ================= */
-
-  const getConfidenceStyle = (confidence) => {
-    const c = String(confidence || "").toLowerCase();
-    if (c === "high") return "text-green-700 bg-green-50 border-green-200";
-    if (c === "medium") return "text-orange-700 bg-orange-50 border-orange-200";
-    return "text-yellow-700 bg-yellow-50 border-yellow-200";
-  };
-
   /* ================= CLICK OUTSIDE ================= */
 
   useEffect(() => {
@@ -102,7 +91,7 @@ export default function BotAgentCard({
     };
   }, [showSettings]);
 
-  /* ================= RISK + STATUS ================= */
+  /* ================= RISK ================= */
 
   const riskConfig = {
     conservative: {
@@ -126,18 +115,6 @@ export default function BotAgentCard({
     riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
     riskConfig.balanced;
 
-  const statusConfig = isPaused
-    ? {
-        label: "Paused",
-        icon: <PauseCircle size={12} />,
-        className: "bg-gray-100 text-gray-600 border-gray-300",
-      }
-    : {
-        label: "Active",
-        icon: <PlayCircle size={12} />,
-        className: "bg-green-100 text-green-700 border-green-200",
-      };
-
   /* ================= MARKET SCORES ================= */
 
   const marketScores = {
@@ -155,79 +132,79 @@ export default function BotAgentCard({
       {/* HEADER */}
       <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
 
-        {/* LEFT: BOT INFO */}
-<div className="flex items-start gap-3">
+        {/* LEFT SIDE */}
+        <div className="flex items-start gap-3">
 
-  <div className="icon-primary mt-1">
-    <Brain size={18} />
-  </div>
+          <div className="icon-primary mt-1">
+            <Brain size={18} />
+          </div>
 
-  <div className="space-y-2">
+          <div className="space-y-2">
 
-    {/* ROW 1 — NAME + LIVE STATUS */}
-    <div className="flex items-center gap-3">
-      <div className="font-semibold text-lg leading-none">
-        {bot?.name ?? "Bot"}
-      </div>
+            {/* NAME + LIVE STATUS */}
+            <div className="flex items-center gap-3">
+              <div className="font-semibold text-lg leading-none">
+                {bot?.name ?? "Bot"}
+              </div>
 
-      <div className={`flex items-center gap-1 text-xs font-semibold uppercase
-        ${isPaused ? "text-gray-500" : "text-green-600"}
-      `}>
-        <span className={`w-2 h-2 rounded-full
-          ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
-        `}/>
-        {isPaused ? "Paused" : "Active"}
-      </div>
-    </div>
+              <div className={`flex items-center gap-1 text-xs font-semibold uppercase
+                ${isPaused ? "text-gray-500" : "text-green-600"}
+              `}>
+                <span className={`w-2 h-2 rounded-full
+                  ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
+                `}/>
+                {isPaused ? "Paused" : "Active"}
+              </div>
+            </div>
 
-    {/* ROW 2 — SYMBOL */}
-    <div className="text-xs text-[var(--text-muted)]">
-      {symbol} · {timeframe}
-    </div>
+            {/* SYMBOL */}
+            <div className="text-xs text-[var(--text-muted)]">
+              {symbol} · {timeframe}
+            </div>
 
-    {/* ROW 3 — STRATEGY */}
-    <div className="text-xs">
-      <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
-      <span className="font-medium">{strategyName}</span>
-    </div>
+            {/* STRATEGY */}
+            <div className="text-xs">
+              <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
+              <span className="font-medium">{strategyName}</span>
+            </div>
 
-    {/* ROW 4 — EXECUTION CONTEXT */}
-    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 pt-1">
+            {/* EXECUTION CONTEXT */}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 pt-1">
 
-      <div className="flex items-center gap-1">
-        <TrendingUp size={12} />
-        <span className="font-medium">{executionLabel}</span>
-        {executionMode === "custom" && curveName && (
-          <span className="text-gray-500">· {curveName}</span>
-        )}
-      </div>
+              <div className="flex items-center gap-1">
+                <TrendingUp size={12} />
+                <span className="font-medium">{executionLabel}</span>
+                {executionMode === "custom" && curveName && (
+                  <span className="text-gray-500">· {curveName}</span>
+                )}
+              </div>
 
-      <div className="font-medium">
-        Exposure:
-        <span className="ml-1 text-[var(--accent)]">
-          {exposureMultiplier.toFixed(2)}×
-        </span>
-      </div>
+              <div className="font-medium">
+                Exposure:
+                <span className="ml-1 text-indigo-600 font-semibold">
+                  {exposureMultiplier.toFixed(2)}×
+                </span>
+              </div>
 
-    </div>
+            </div>
 
-    {/* ROW 5 — STATE BADGES */}
-    <div className="flex flex-wrap gap-2 pt-1">
+            {/* BADGES */}
+            <div className="flex flex-wrap gap-2 pt-1">
 
-      <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}>
-        {risk.icon} {risk.label}
-      </span>
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}>
+                {risk.icon} {risk.label}
+              </span>
 
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
-        <Bot size={12} /> {isAuto ? "Auto" : "Manual"}
-      </span>
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
+                <Bot size={12} /> {isAuto ? "Auto" : "Manual"}
+              </span>
 
-    </div>
+            </div>
 
-  </div>
-</div>
+          </div>
+        </div>
 
-        {/* RIGHT: MARKET PANEL + SETTINGS */}
+        {/* RIGHT SIDE */}
         <div className="flex items-start gap-3 justify-between lg:justify-end w-full lg:w-auto">
 
           <MarketConditionsPanel {...marketScores} />
@@ -255,28 +232,6 @@ export default function BotAgentCard({
             )}
           </div>
         </div>
-      </div>
-
-      {/* STATUS BAR */}
-      <div className="bg-[var(--bg-soft)] rounded-xl px-4 py-3 text-sm">
-        <span className="text-[var(--text-muted)]">Huidige status:</span>{" "}
-        <span className="font-semibold">
-          {loadingDecision
-            ? "ANALYSING"
-            : decision?.action
-            ? decision.action.toUpperCase()
-            : "—"}
-        </span>
-
-        {decision?.confidence && (
-          <span
-            className={`ml-2 px-2 py-1 text-xs font-semibold rounded-md border ${getConfidenceStyle(
-              decision.confidence
-            )}`}
-          >
-            Confidence {decision.confidence.toUpperCase()}
-          </span>
-        )}
       </div>
 
       {/* MAIN GRID */}

@@ -21,8 +21,11 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 3.3
- * Clean cockpit header + live status
+ * BotAgentCard — TradeLayer 3.4
+ * ✔ Full-width clean header
+ * ✔ Live status next to name
+ * ✔ Market state below header (NOT inside header)
+ * ✔ Clean cockpit hierarchy
  */
 
 export default function BotAgentCard({
@@ -51,7 +54,7 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
   const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
 
-  /* ================= EXECUTION INFO ================= */
+  /* ========= EXECUTION CONTEXT ========= */
 
   const executionMode =
     bot?.strategy?.execution_mode ||
@@ -71,7 +74,7 @@ export default function BotAgentCard({
   const executionLabel =
     executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
-  /* ================= CLICK OUTSIDE ================= */
+  /* ========= CLICK OUTSIDE ========= */
 
   useEffect(() => {
     if (!showSettings) return;
@@ -91,7 +94,7 @@ export default function BotAgentCard({
     };
   }, [showSettings]);
 
-  /* ================= RISK ================= */
+  /* ========= RISK ========= */
 
   const riskConfig = {
     conservative: {
@@ -115,7 +118,7 @@ export default function BotAgentCard({
     riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
     riskConfig.balanced;
 
-  /* ================= MARKET SCORES ================= */
+  /* ========= MARKET STATE ========= */
 
   const marketScores = {
     health: decision?.market_health ?? 50,
@@ -124,15 +127,17 @@ export default function BotAgentCard({
     multiplier: exposureMultiplier,
   };
 
-  /* ================= RENDER ================= */
+  /* ========= RENDER ========= */
 
   return (
-    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
+    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-5 relative">
 
-      {/* HEADER */}
-      <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
+      {/* =================================================
+         HEADER — FULL WIDTH
+      ================================================= */}
+      <div className="flex items-start justify-between gap-4">
 
-        {/* LEFT SIDE */}
+        {/* LEFT: BOT IDENTITY */}
         <div className="flex items-start gap-3">
 
           <div className="icon-primary mt-1">
@@ -143,7 +148,7 @@ export default function BotAgentCard({
 
             {/* NAME + LIVE STATUS */}
             <div className="flex items-center gap-3">
-              <div className="font-semibold text-lg leading-none">
+              <div className="text-lg font-semibold leading-none">
                 {bot?.name ?? "Bot"}
               </div>
 
@@ -169,7 +174,7 @@ export default function BotAgentCard({
             </div>
 
             {/* EXECUTION CONTEXT */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 pt-1">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
 
               <div className="flex items-center gap-1">
                 <TrendingUp size={12} />
@@ -185,12 +190,10 @@ export default function BotAgentCard({
                   {exposureMultiplier.toFixed(2)}×
                 </span>
               </div>
-
             </div>
 
             {/* BADGES */}
             <div className="flex flex-wrap gap-2 pt-1">
-
               <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}>
                 {risk.icon} {risk.label}
               </span>
@@ -198,43 +201,43 @@ export default function BotAgentCard({
               <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
                 <Bot size={12} /> {isAuto ? "Auto" : "Manual"}
               </span>
-
             </div>
-
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
-        <div className="flex items-start gap-3 justify-between lg:justify-end w-full lg:w-auto">
+        {/* SETTINGS */}
+        <div className="relative" ref={settingsRef}>
+          <button
+            className="icon-muted hover:icon-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowSettings((v) => !v);
+            }}
+          >
+            <MoreVertical size={18} />
+          </button>
 
-          <MarketConditionsPanel {...marketScores} />
-
-          <div className="relative" ref={settingsRef}>
-            <button
-              className="icon-muted hover:icon-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSettings((v) => !v);
-              }}
-            >
-              <MoreVertical size={18} />
-            </button>
-
-            {showSettings && (
-              <div className="absolute right-0 mt-2 z-50">
-                <BotSettingsMenu
-                  onOpen={(type) => {
-                    setShowSettings(false);
-                    onOpenSettings?.(type, bot);
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          {showSettings && (
+            <div className="absolute right-0 mt-2 z-50">
+              <BotSettingsMenu
+                onOpen={(type) => {
+                  setShowSettings(false);
+                  onOpenSettings?.(type, bot);
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* MAIN GRID */}
+      {/* =================================================
+         MARKET STATE (UNDER HEADER)
+      ================================================= */}
+      <MarketConditionsPanel {...marketScores} />
+
+      {/* =================================================
+         MAIN GRID
+      ================================================= */}
       <div className="grid lg:grid-cols-2 gap-6">
         <BotDecisionCard
           bot={bot}

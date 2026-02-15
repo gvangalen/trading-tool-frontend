@@ -132,103 +132,76 @@ export default function BotAgentCard({
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-5 relative">
 
-      {/* =================================================
-         HEADER — FULL WIDTH
-      ================================================= */}
-      <div className="flex items-start justify-between gap-4">
+      {/* ================= HEADER ================= */}
+<div className="w-full border-b pb-5 space-y-4">
 
-        {/* LEFT: BOT IDENTITY */}
-        <div className="flex items-start gap-3">
+  {/* ROW 1 — NAME + LIVE STATUS */}
+  <div className="flex items-start justify-between w-full">
 
-          <div className="icon-primary mt-1">
-            <Brain size={18} />
-          </div>
+    <div className="flex items-center gap-3">
+      <Brain size={26} />
 
-          <div className="space-y-2">
-
-            {/* NAME + LIVE STATUS */}
-            <div className="flex items-center gap-3">
-              <div className="text-lg font-semibold leading-none">
-                {bot?.name ?? "Bot"}
-              </div>
-
-              <div className={`flex items-center gap-1 text-xs font-semibold uppercase
-                ${isPaused ? "text-gray-500" : "text-green-600"}
-              `}>
-                <span className={`w-2 h-2 rounded-full
-                  ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
-                `}/>
-                {isPaused ? "Paused" : "Active"}
-              </div>
-            </div>
-
-            {/* SYMBOL */}
-            <div className="text-xs text-[var(--text-muted)]">
-              {symbol} · {timeframe}
-            </div>
-
-            {/* STRATEGY */}
-            <div className="text-xs">
-              <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
-              <span className="font-medium">{strategyName}</span>
-            </div>
-
-            {/* EXECUTION CONTEXT */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
-
-              <div className="flex items-center gap-1">
-                <TrendingUp size={12} />
-                <span className="font-medium">{executionLabel}</span>
-                {executionMode === "custom" && curveName && (
-                  <span className="text-gray-500">· {curveName}</span>
-                )}
-              </div>
-
-              <div className="font-medium">
-                Exposure:
-                <span className="ml-1 text-indigo-600 font-semibold">
-                  {exposureMultiplier.toFixed(2)}×
-                </span>
-              </div>
-            </div>
-
-            {/* BADGES */}
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}>
-                {risk.icon} {risk.label}
-              </span>
-
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
-                <Bot size={12} /> {isAuto ? "Auto" : "Manual"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* SETTINGS */}
-        <div className="relative" ref={settingsRef}>
-          <button
-            className="icon-muted hover:icon-primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowSettings((v) => !v);
-            }}
-          >
-            <MoreVertical size={18} />
-          </button>
-
-          {showSettings && (
-            <div className="absolute right-0 mt-2 z-50">
-              <BotSettingsMenu
-                onOpen={(type) => {
-                  setShowSettings(false);
-                  onOpenSettings?.(type, bot);
-                }}
-              />
-            </div>
-          )}
-        </div>
+      <div className="text-2xl font-bold tracking-tight">
+        {bot?.name}
       </div>
+    </div>
+
+    {/* BIG LIVE STATUS */}
+    <div className={`flex items-center gap-2 font-bold text-lg uppercase
+      ${isPaused ? "text-gray-400" : "text-green-600"}
+    `}>
+      <span className={`w-3 h-3 rounded-full
+        ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
+      `}/>
+      {isPaused ? "Paused" : "Active"}
+    </div>
+  </div>
+
+  {/* ROW 2 — SYMBOL */}
+  <div className="text-sm text-gray-500">
+    {symbol} · {timeframe}
+  </div>
+
+  {/* ROW 3 — STRATEGY */}
+  <div className="text-base">
+    <span className="text-gray-500">Strategy:</span>{" "}
+    <span className="font-semibold">{strategyName}</span>
+  </div>
+
+  {/* ROW 4 — EXECUTION */}
+  <div className="flex flex-wrap gap-6 text-base text-gray-700">
+
+    <div className="flex items-center gap-2">
+      <TrendingUp size={16} />
+      <span className="font-semibold">{executionLabel}</span>
+      {curveName && (
+        <span className="text-gray-500">· {curveName}</span>
+      )}
+    </div>
+
+    <div>
+      Exposure:
+      <span className="ml-2 font-bold text-indigo-600">
+        {exposureMultiplier.toFixed(2)}×
+      </span>
+    </div>
+
+  </div>
+
+  {/* ROW 5 — BADGES */}
+  <div className="flex gap-3 pt-1">
+
+    <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
+      {risk.label}
+    </span>
+
+    <span className="px-3 py-1.5 rounded-lg border text-sm font-semibold bg-blue-50 text-blue-700">
+      {isAuto ? "Auto Mode" : "Manual"}
+    </span>
+
+  </div>
+
+</div>
 
       {/* =================================================
          MARKET STATE (UNDER HEADER)

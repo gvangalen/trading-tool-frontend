@@ -7,26 +7,17 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
-import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
+import MarketConditionsInline from "@/components/bot/MarketConditionsInline";
 
 import {
-  Brain,
+  Bot,
   MoreVertical,
   Clock,
   Shield,
   Scale,
   Rocket,
-  Bot,
   TrendingUp,
 } from "lucide-react";
-
-/**
- * BotAgentCard — TradeLayer 3.4
- * ✔ Full-width clean header
- * ✔ Live status next to name
- * ✔ Market state below header (NOT inside header)
- * ✔ Clean cockpit hierarchy
- */
 
 export default function BotAgentCard({
   bot,
@@ -52,9 +43,10 @@ export default function BotAgentCard({
 
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
-  const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
+  const strategyName =
+    bot?.strategy?.name || bot?.strategy?.type || "—";
 
-  /* ========= EXECUTION CONTEXT ========= */
+  /* ========= EXECUTION ========= */
 
   const executionMode =
     bot?.strategy?.execution_mode ||
@@ -72,25 +64,27 @@ export default function BotAgentCard({
     1;
 
   const executionLabel =
-    executionMode === "custom" ? "Curve sizing" : "Fixed amount";
+    executionMode === "custom"
+      ? "Curve sizing"
+      : "Fixed amount";
 
   /* ========= CLICK OUTSIDE ========= */
 
   useEffect(() => {
     if (!showSettings) return;
 
-    const handleClickOutside = (e) => {
+    const handler = (e) => {
       if (!settingsRef.current) return;
       if (settingsRef.current.contains(e.target)) return;
       setShowSettings(false);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler, { passive: true });
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
     };
   }, [showSettings]);
 
@@ -99,18 +93,18 @@ export default function BotAgentCard({
   const riskConfig = {
     conservative: {
       label: "Conservative",
-      icon: <Shield size={12} />,
       className: "bg-green-100 text-green-700 border-green-200",
+      icon: <Shield size={12} />,
     },
     balanced: {
       label: "Balanced",
-      icon: <Scale size={12} />,
       className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      icon: <Scale size={12} />,
     },
     aggressive: {
       label: "Aggressive",
-      icon: <Rocket size={12} />,
       className: "bg-red-100 text-red-700 border-red-200",
+      icon: <Rocket size={12} />,
     },
   };
 
@@ -118,138 +112,138 @@ export default function BotAgentCard({
     riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
     riskConfig.balanced;
 
-  /* ========= MARKET STATE ========= */
-
-  const marketScores = {
-    health: decision?.market_health ?? 50,
-    transitionRisk: decision?.transition_risk ?? 50,
-    pressure: decision?.market_pressure ?? 50,
-    multiplier: exposureMultiplier,
-  };
-
-  /* ========= RENDER ========= */
+  /* ===================================================== */
 
   return (
-    <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-5 relative">
+    <div className="w-full rounded-2xl border bg-white px-6 py-6 space-y-6">
 
-{/* ================= HEADER ================= */}
-<div className="w-full border-b pb-5 space-y-4">
+      {/* ================= HEADER ================= */}
 
-  {/* ROW 1 — NAME + STATUS + SETTINGS */}
-  <div className="flex items-start justify-between w-full">
+      <div className="border-b pb-5 space-y-4">
 
-    {/* LEFT: BOT ICON + NAME */}
-    <div className="flex items-center gap-3">
+        {/* ROW 1 */}
+        <div className="flex items-center justify-between">
 
-      {/* BOT ICON */}
-      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-        <Bot size={20} />
-      </div>
+          {/* LEFT */}
+          <div className="flex items-center gap-3">
 
-      <div className="text-2xl font-bold tracking-tight">
-        {bot?.name}
-      </div>
-    </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Bot size={22} />
+            </div>
 
-    {/* RIGHT SIDE */}
-    <div className="flex items-center gap-4">
+            <div className="text-2xl font-bold tracking-tight">
+              {bot?.name}
+            </div>
 
-      {/* ACTIVE STATUS */}
-      <div className={`flex items-center gap-2 font-bold text-sm uppercase tracking-wide
-        ${isPaused ? "text-gray-400" : "text-green-600"}
-      `}>
-        <span className={`w-2.5 h-2.5 rounded-full
-          ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
-        `}/>
-        {isPaused ? "Paused" : "Active"}
-      </div>
-
-      {/* SETTINGS MENU */}
-      <div className="relative" ref={settingsRef}>
-        <button
-          className="text-gray-400 hover:text-gray-700"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowSettings((v) => !v);
-          }}
-        >
-          <MoreVertical size={20} />
-        </button>
-
-        {showSettings && (
-          <div className="absolute right-0 mt-2 z-50">
-            <BotSettingsMenu
-              onOpen={(type) => {
-                setShowSettings(false);
-                onOpenSettings?.(type, bot);
-              }}
-            />
           </div>
-        )}
+
+          {/* RIGHT */}
+          <div className="flex items-center gap-5">
+
+            {/* ACTIVE */}
+            <div
+              className={`flex items-center gap-2 font-bold uppercase tracking-wide text-sm
+                ${isPaused ? "text-gray-400" : "text-green-600"}
+              `}
+            >
+              <span
+                className={`w-2.5 h-2.5 rounded-full
+                ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`}
+              />
+              {isPaused ? "Paused" : "Active"}
+            </div>
+
+            {/* SETTINGS */}
+            <div className="relative" ref={settingsRef}>
+              <button
+                className="text-gray-400 hover:text-gray-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSettings((v) => !v);
+                }}
+              >
+                <MoreVertical size={20} />
+              </button>
+
+              {showSettings && (
+                <div className="absolute right-0 mt-2 z-50">
+                  <BotSettingsMenu
+                    onOpen={(type) => {
+                      setShowSettings(false);
+                      onOpenSettings?.(type, bot);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 2 */}
+        <div className="text-sm text-gray-500">
+          {symbol} · {timeframe}
+        </div>
+
+        {/* ROW 3 */}
+        <div>
+          <span className="text-gray-500">Strategy:</span>{" "}
+          <span className="font-semibold">{strategyName}</span>
+        </div>
+
+        {/* ROW 4 */}
+        <div className="flex flex-wrap gap-6 text-gray-700">
+
+          <div className="flex items-center gap-2">
+            <TrendingUp size={16} />
+            <span className="font-semibold">{executionLabel}</span>
+            {curveName && (
+              <span className="text-gray-500">· {curveName}</span>
+            )}
+          </div>
+
+          <div>
+            Exposure:
+            <span className="ml-2 font-bold text-indigo-600">
+              {exposureMultiplier.toFixed(2)}×
+            </span>
+          </div>
+
+        </div>
+
+        {/* ROW 5 */}
+        <div className="flex gap-3">
+
+          <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
+            {risk.label}
+          </span>
+
+          <span className="px-3 py-1.5 rounded-lg border text-sm font-semibold bg-blue-50 text-blue-700">
+            {isAuto ? "Auto Mode" : "Manual"}
+          </span>
+
+        </div>
+
       </div>
 
-    </div>
-  </div>
+      {/* ================= MARKET STATE ================= */}
 
-  {/* ROW 2 — SYMBOL */}
-  <div className="text-sm text-gray-500">
-    {symbol} · {timeframe}
-  </div>
+      <div className="flex flex-col gap-2">
+        <MarketConditionsInline
+          health={decision?.market_health}
+          transitionRisk={decision?.transition_risk}
+          pressure={decision?.market_pressure}
+          multiplier={exposureMultiplier}
+        />
+      </div>
 
-  {/* ROW 3 — STRATEGY */}
-  <div className="text-base">
-    <span className="text-gray-500">Strategy:</span>{" "}
-    <span className="font-semibold">{strategyName}</span>
-  </div>
+      {/* ================= MAIN GRID ================= */}
 
-  {/* ROW 4 — EXECUTION */}
-  <div className="flex flex-wrap gap-6 text-base text-gray-700">
-
-    <div className="flex items-center gap-2">
-      <TrendingUp size={16} />
-      <span className="font-semibold">{executionLabel}</span>
-      {curveName && (
-        <span className="text-gray-500">· {curveName}</span>
-      )}
-    </div>
-
-    <div>
-      Exposure:
-      <span className="ml-2 font-bold text-indigo-600">
-        {exposureMultiplier.toFixed(2)}×
-      </span>
-    </div>
-
-  </div>
-
-  {/* ROW 5 — BADGES */}
-  <div className="flex gap-3 pt-1">
-
-    <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
-      {risk.label}
-    </span>
-
-    <span className="px-3 py-1.5 rounded-lg border text-sm font-semibold bg-blue-50 text-blue-700">
-      {isAuto ? "Auto Mode" : "Manual"}
-    </span>
-
-  </div>
-
-</div>
-      
-      {/* =================================================
-         MARKET STATE (UNDER HEADER)
-      ================================================= */}
-      <MarketConditionsPanel {...marketScores} />
-
-      {/* =================================================
-         MAIN GRID
-      ================================================= */}
       <div className="grid lg:grid-cols-2 gap-6">
+
         <BotDecisionCard
           bot={bot}
-          decision={decision ?? null}
-          order={order ?? null}
+          decision={decision}
+          order={order}
           loading={loadingDecision}
           isAuto={isAuto}
           onGenerate={onGenerate}
@@ -259,15 +253,17 @@ export default function BotAgentCard({
 
         <div className="space-y-4">
           <BotPortfolioCard bot={portfolio} />
-          <BotTradeTable trades={Array.isArray(trades) ? trades : []} />
+          <BotTradeTable trades={trades ?? []} />
         </div>
+
       </div>
 
-      {/* HISTORY */}
+      {/* ================= HISTORY ================= */}
+
       <div className="pt-2 border-t">
         <button
           onClick={() => setShowHistory((v) => !v)}
-          className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-2"
+          className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-2"
         >
           <Clock size={14} />
           {showHistory ? "Verberg history" : "Toon history"}
@@ -282,6 +278,7 @@ export default function BotAgentCard({
           </div>
         )}
       </div>
+
     </div>
   );
 }

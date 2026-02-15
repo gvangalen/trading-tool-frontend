@@ -32,9 +32,11 @@ export default function StrategyFormDCA({
     execution_mode: initialData?.execution_mode || "fixed",
 
     decision_curve: initialData?.decision_curve || null,
+
+    // ⭐ juiste naambron
     curve_name:
+      initialData?.decision_curve_name ||
       initialData?.decision_curve?.name ||
-      initialData?.curve_name ||
       "",
 
     selected_curve_id:
@@ -110,13 +112,15 @@ export default function StrategyFormDCA({
           curve_name: "",
         }));
       } else {
-        const selected = curves.find((c) => String(c.id) === value);
+        const selected = curves.find(
+          (c) => String(c.id) === value
+        );
 
         setForm((p) => ({
           ...p,
           selected_curve_id: value,
           decision_curve: selected.curve,
-          curve_name: selected.name,
+          curve_name: selected.name ?? "",
         }));
       }
       return;
@@ -161,18 +165,17 @@ export default function StrategyFormDCA({
               name: form.curve_name.trim(),
             },
 
-      curve_name:
+      // ⭐ BELANGRIJK → backend verwacht dit veld
+      decision_curve_name:
         form.execution_mode === "fixed"
           ? null
           : form.curve_name.trim(),
 
-      // 🔥 belangrijk voor reuse
+      // ⭐ curve reuse
       decision_curve_id:
         form.selected_curve_id !== "new"
           ? Number(form.selected_curve_id)
           : null,
-
-      selected_curve_id: form.selected_curve_id,
     };
 
     try {
@@ -231,8 +234,7 @@ export default function StrategyFormDCA({
         <option value="monthly">Maandelijks</option>
       </select>
 
-      {/* ================= EXECUTION LOGIC ================= */}
-
+      {/* EXECUTION LOGIC */}
       <div className="space-y-3">
         <label className="text-sm font-semibold">
           Execution logic
@@ -271,8 +273,7 @@ export default function StrategyFormDCA({
         </label>
       </div>
 
-      {/* ================= CURVE SECTION ================= */}
-
+      {/* CURVE SECTION */}
       {form.execution_mode === "custom" && (
         <>
           <select

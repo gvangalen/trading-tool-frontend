@@ -61,10 +61,13 @@ export default function StrategyFormTrading({
     execution_mode: initialData?.execution_mode || "fixed",
 
     decision_curve: initialData?.decision_curve || null,
+
+    // ✅ juiste bron
     curve_name:
+      initialData?.decision_curve_name ||
       initialData?.decision_curve?.name ||
-      initialData?.curve_name ||
       "",
+
     selected_curve_id:
       initialData?.decision_curve_id || "new",
   });
@@ -137,7 +140,7 @@ export default function StrategyFormTrading({
           ...p,
           selected_curve_id: val,
           decision_curve: selected.curve,
-          curve_name: selected.name,
+          curve_name: selected.name ?? "",
         }));
       }
       return;
@@ -197,7 +200,8 @@ export default function StrategyFormTrading({
               name: form.curve_name.trim(),
             },
 
-      curve_name:
+      // ⭐ BELANGRIJK voor backend
+      decision_curve_name:
         form.execution_mode === "fixed"
           ? null
           : form.curve_name.trim(),
@@ -211,7 +215,6 @@ export default function StrategyFormTrading({
     try {
       setSaving(true);
       await onSubmit(payload);
-
       showSnackbar("Strategie succesvol opgeslagen", "success");
     } catch (err) {
       console.error(err);
@@ -259,7 +262,6 @@ export default function StrategyFormTrading({
       <input name="targetsText" value={form.targetsText} onChange={handleChange} placeholder="Targets (comma)" className="input"/>
       <input name="stop_loss" type="number" value={form.stop_loss} onChange={handleChange} placeholder="Stop loss" className="input"/>
 
-      {/* Position sizing */}
       <div>
         <label className="text-sm font-semibold flex gap-2 items-center mb-1">
           <Euro size={14}/> Bedrag per trade

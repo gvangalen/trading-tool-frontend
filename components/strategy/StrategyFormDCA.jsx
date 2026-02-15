@@ -55,8 +55,6 @@ export default function StrategyFormDCA({
 
   const [form, setForm] = useState({
     setup_id: initialData?.setup_id || "",
-
-    // alleen UI convenience
     setup_name: initialData?.setup_name || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
@@ -66,6 +64,9 @@ export default function StrategyFormDCA({
 
     execution_mode: initialData?.execution_mode || "fixed",
     decision_curve: initialData?.decision_curve || null,
+
+    // ⭐ NIEUW
+    curve_name: initialData?.curve_name || "",
 
     rules: initialData?.rules || "",
     favorite: initialData?.favorite || false,
@@ -130,12 +131,14 @@ export default function StrategyFormDCA({
           ...p,
           execution_mode: "fixed",
           decision_curve: null,
+          curve_name: "",
         }));
       } else {
         setForm((p) => ({
           ...p,
           execution_mode: value,
           decision_curve: CURVE_PRESETS[value],
+          curve_name: "",
         }));
       }
       return;
@@ -154,7 +157,12 @@ export default function StrategyFormDCA({
     form.frequency &&
     (
       form.execution_mode === "fixed" ||
-      (form.decision_curve && form.decision_curve.points?.length >= 2)
+      (
+        form.decision_curve &&
+        form.decision_curve.points?.length >= 2 &&
+        (form.execution_mode !== "custom" ||
+          form.curve_name.trim() !== "")
+      )
     );
 
   /* ==========================================================
@@ -180,6 +188,12 @@ export default function StrategyFormDCA({
       decision_curve:
         form.execution_mode === "fixed" ? null : form.decision_curve,
 
+      // ⭐ NIEUW
+      curve_name:
+        form.execution_mode === "custom"
+          ? form.curve_name.trim()
+          : null,
+
       rules: form.rules?.trim() || "",
       favorite: !!form.favorite,
       tags: form.tags
@@ -201,6 +215,7 @@ export default function StrategyFormDCA({
           frequency: "",
           execution_mode: "fixed",
           decision_curve: null,
+          curve_name: "",
           rules: "",
           favorite: false,
           tags: "",
@@ -256,7 +271,7 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
-      {/* SYMBOL / TIMEFRAME (read-only) */}
+      {/* SYMBOL / TIMEFRAME */}
       <div className="grid grid-cols-2 gap-4">
         <input readOnly value={form.symbol} className="p-3 rounded-xl border bg-gray-100" />
         <input readOnly value={form.timeframe} className="p-3 rounded-xl border bg-gray-100" />
@@ -306,13 +321,35 @@ export default function StrategyFormDCA({
         </select>
       </div>
 
+      {/* Curve naam + editor */}
       {form.execution_mode !== "fixed" && (
-        <CurveEditor
-          value={form.decision_curve}
-          onChange={(curve) =>
-            setForm((p) => ({ ...p, decision_curve: curve }))
-          }
-        />
+        <>
+          {form.execution_mode === "custom" && (
+            <div>
+              <label className="text-sm font-semibold mb-1 block">
+                Curve naam
+              </label>
+              <input
+                type="text"
+                name="curve_name"
+                value={form.curve_name}
+                onChange={handleChange}
+                placeholder="Bijv. Aggressive Accumulator"
+                className="w-full p-3 rounded-xl border"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Geef je curve een naam zodat je hem later opnieuw kunt gebruiken.
+              </p>
+            </div>
+          )}
+
+          <CurveEditor
+            value={form.decision_curve}
+            onChange={(curve) =>
+              setForm((p) => ({ ...p, decision_curve: curve }))
+            }
+          />
+        </>
       )}
 
       {/* RULES */}

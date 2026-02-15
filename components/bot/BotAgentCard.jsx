@@ -23,11 +23,6 @@ import {
 
 /**
  * BotAgentCard — TradeLayer 3.0
- *
- * ✅ Cockpit layout
- * ✅ Market conditions integrated
- * ✅ Decision context flow
- * ✅ Portfolio + execution view
  */
 
 export default function BotAgentCard({
@@ -38,7 +33,6 @@ export default function BotAgentCard({
   history = [],
   trades = [],
   loadingDecision = false,
-
   onGenerate,
   onExecute,
   onSkip,
@@ -56,6 +50,20 @@ export default function BotAgentCard({
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
   const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
+
+  /* ================= CONFIDENCE BADGE ================= */
+
+  const getConfidenceStyle = (confidence) => {
+    const c = String(confidence || "").toLowerCase();
+
+    if (c === "high")
+      return "text-green-700 bg-green-50 border-green-200";
+
+    if (c === "medium")
+      return "text-orange-700 bg-orange-50 border-orange-200";
+
+    return "text-yellow-700 bg-yellow-50 border-yellow-200";
+  };
 
   /* ================= SAFE PORTFOLIO ================= */
 
@@ -232,18 +240,19 @@ export default function BotAgentCard({
             ? decision.action.toUpperCase()
             : "—"}
         </span>
+
         {decision?.confidence && (
-          <>
-            {" "}
-            · Confidence{" "}
-            <span className="font-semibold uppercase">
-              {decision.confidence}
-            </span>
-          </>
+          <span
+            className={`ml-2 px-2 py-1 text-xs font-semibold rounded-md border ${getConfidenceStyle(
+              decision.confidence
+            )}`}
+          >
+            Confidence {decision.confidence.toUpperCase()}
+          </span>
         )}
       </div>
 
-      {/* 🟢 MARKET CONDITIONS */}
+      {/* MARKET CONDITIONS */}
       <MarketConditionsPanel scores={marketScores} />
 
       {/* MAIN GRID */}

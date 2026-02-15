@@ -19,11 +19,12 @@ import {
   Bot,
   PauseCircle,
   PlayCircle,
+  TrendingUp,
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 3.1
- * Cockpit header layout
+ * BotAgentCard — TradeLayer 3.2
+ * Cockpit header with execution context
  */
 
 export default function BotAgentCard({
@@ -52,17 +53,32 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
   const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
 
+  /* ================= EXECUTION INFO ================= */
+
+  const executionMode =
+    bot?.strategy?.execution_mode ||
+    bot?.execution_mode ||
+    "fixed";
+
+  const curveName =
+    bot?.strategy?.decision_curve_name ||
+    bot?.strategy?.curve_name ||
+    null;
+
+  const exposureMultiplier =
+    decision?.exposure_multiplier ??
+    bot?.strategy?.exposure_multiplier ??
+    1;
+
+  const executionLabel =
+    executionMode === "custom" ? "Curve sizing" : "Fixed amount";
+
   /* ================= CONFIDENCE BADGE ================= */
 
   const getConfidenceStyle = (confidence) => {
     const c = String(confidence || "").toLowerCase();
-
-    if (c === "high")
-      return "text-green-700 bg-green-50 border-green-200";
-
-    if (c === "medium")
-      return "text-orange-700 bg-orange-50 border-orange-200";
-
+    if (c === "high") return "text-green-700 bg-green-50 border-green-200";
+    if (c === "medium") return "text-orange-700 bg-orange-50 border-orange-200";
     return "text-yellow-700 bg-yellow-50 border-yellow-200";
   };
 
@@ -128,7 +144,7 @@ export default function BotAgentCard({
     health: decision?.market_health ?? 50,
     transitionRisk: decision?.transition_risk ?? 50,
     pressure: decision?.market_pressure ?? 50,
-    multiplier: decision?.exposure_multiplier ?? 1,
+    multiplier: exposureMultiplier,
   };
 
   /* ================= RENDER ================= */
@@ -136,7 +152,7 @@ export default function BotAgentCard({
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
 
-      {/* HEADER WITH MARKET PANEL */}
+      {/* HEADER */}
       <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
 
         {/* LEFT: BOT INFO */}
@@ -147,6 +163,7 @@ export default function BotAgentCard({
 
           <div>
             <div className="font-semibold">{bot?.name ?? "Bot"}</div>
+
             <div className="text-xs text-[var(--text-muted)]">
               {symbol} · {timeframe}
             </div>
@@ -154,6 +171,25 @@ export default function BotAgentCard({
             <div className="mt-2 text-xs">
               <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
               <span className="font-medium">{strategyName}</span>
+            </div>
+
+            {/* EXECUTION CONTEXT */}
+            <div className="mt-2 text-xs flex flex-col gap-1">
+
+              <div className="flex items-center gap-2">
+                <TrendingUp size={12} />
+                <span className="font-medium">{executionLabel}</span>
+                {executionMode === "custom" && curveName && (
+                  <span className="text-gray-500">
+                    · {curveName}
+                  </span>
+                )}
+              </div>
+
+              <div className="text-gray-500">
+                Exposure: {exposureMultiplier.toFixed(2)}×
+              </div>
+
             </div>
 
             <div className="mt-3 flex flex-col gap-2">
@@ -172,17 +208,11 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* RIGHT: MARKET CONDITIONS + SETTINGS */}
+        {/* RIGHT: MARKET PANEL + SETTINGS */}
         <div className="flex items-start gap-3 justify-between lg:justify-end w-full lg:w-auto">
 
-          <MarketConditionsPanel
-            health={marketScores.health}
-            transitionRisk={marketScores.transitionRisk}
-            pressure={marketScores.pressure}
-            multiplier={marketScores.multiplier}
-          />
+          <MarketConditionsPanel {...marketScores} />
 
-          {/* SETTINGS */}
           <div className="relative" ref={settingsRef}>
             <button
               className="icon-muted hover:icon-primary"
@@ -205,7 +235,6 @@ export default function BotAgentCard({
               </div>
             )}
           </div>
-
         </div>
       </div>
 

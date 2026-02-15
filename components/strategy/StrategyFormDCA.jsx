@@ -3,24 +3,17 @@
 import { useState, useEffect } from "react";
 import { useSetupData } from "@/hooks/useSetupData";
 import { useModal } from "@/components/modal/ModalProvider";
-
-import {
-  Wallet,
-  Info,
-  Sliders,
-  Star,
-  StarOff,
-} from "lucide-react";
-
+import { Wallet, Info, Sliders, Star, StarOff } from "lucide-react";
 import CurveEditor from "@/components/decision/CurveEditor";
 
 /* ==========================================================
-   Curve presets (frontend only)
+   Curve presets
 ========================================================== */
 const CURVE_PRESETS = {
   fixed: null,
 
   dca_contrarian: {
+    name: "Contrarian",
     input: "market_score",
     points: [
       { x: 20, y: 1.5 },
@@ -31,6 +24,7 @@ const CURVE_PRESETS = {
   },
 
   dca_trend_following: {
+    name: "Trend Following",
     input: "market_score",
     points: [
       { x: 20, y: 0.6 },
@@ -50,7 +44,6 @@ export default function StrategyFormDCA({
 }) {
   const { loadSetups } = useSetupData();
   const { showSnackbar } = useModal();
-
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
@@ -65,8 +58,11 @@ export default function StrategyFormDCA({
     execution_mode: initialData?.execution_mode || "fixed",
     decision_curve: initialData?.decision_curve || null,
 
-    // ⭐ NIEUW
-    curve_name: initialData?.curve_name || "",
+    // ⭐ curve naam automatisch laden
+    curve_name:
+      initialData?.decision_curve?.name ||
+      initialData?.curve_name ||
+      "",
 
     rules: initialData?.rules || "",
     favorite: initialData?.favorite || false,
@@ -113,7 +109,6 @@ export default function StrategyFormDCA({
         timeframe: selected.timeframe,
       }));
 
-      setError("");
       return;
     }
 
@@ -125,6 +120,7 @@ export default function StrategyFormDCA({
           decision_curve:
             p.decision_curve ??
             JSON.parse(JSON.stringify(CURVE_PRESETS.dca_contrarian)),
+          curve_name: "",
         }));
       } else if (value === "fixed") {
         setForm((p) => ({
@@ -134,18 +130,18 @@ export default function StrategyFormDCA({
           curve_name: "",
         }));
       } else {
+        const preset = CURVE_PRESETS[value];
         setForm((p) => ({
           ...p,
           execution_mode: value,
-          decision_curve: CURVE_PRESETS[value],
-          curve_name: "",
+          decision_curve: preset,
+          curve_name: preset?.name || "",
         }));
       }
       return;
     }
 
     setForm((p) => ({ ...p, [name]: value }));
-    setError("");
   };
 
   /* ==========================================================
@@ -170,30 +166,29 @@ export default function StrategyFormDCA({
   ========================================================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     if (!isFormValid()) {
       setError("❌ Vul alle verplichte velden correct in.");
       return;
     }
 
+    // ⭐ curve naam in curve object injecteren
+    const curveWithName =
+      form.execution_mode === "fixed"
+        ? null
+        : {
+            ...form.decision_curve,
+            name: form.curve_name?.trim() || null,
+          };
+
     const payload = {
       strategy_type: "dca",
       setup_id: form.setup_id,
-
       base_amount: Number(form.amount),
       frequency: form.frequency,
-
       execution_mode: form.execution_mode,
-      decision_curve:
-        form.execution_mode === "fixed" ? null : form.decision_curve,
-
-      // ⭐ NIEUW
-      curve_name:
-        form.execution_mode === "custom"
-          ? form.curve_name.trim()
-          : null,
-
+      decision_curve: curveWithName,
+      curve_name: form.curve_name?.trim() || null,
       rules: form.rules?.trim() || "",
       favorite: !!form.favorite,
       tags: form.tags
@@ -203,28 +198,10 @@ export default function StrategyFormDCA({
 
     try {
       await onSubmit(payload);
-      showSnackbar("DCA-strategie succesvol opgeslagen", "success");
-
-      if (mode === "create") {
-        setForm({
-          setup_id: "",
-          setup_name: "",
-          symbol: "",
-          timeframe: "",
-          amount: "",
-          frequency: "",
-          execution_mode: "fixed",
-          decision_curve: null,
-          curve_name: "",
-          rules: "",
-          favorite: false,
-          tags: "",
-        });
-      }
+      showSnackbar("DCA-strategie opgeslagen", "success");
     } catch (err) {
-      console.error("❌ Fout bij opslaan DCA strategie:", err);
-      showSnackbar("Opslaan van DCA-strategie mislukt", "danger");
-      setError("❌ Opslaan mislukt.");
+      console.error(err);
+      setError("Opslaan mislukt.");
     }
   };
 
@@ -234,175 +211,88 @@ export default function StrategyFormDCA({
      UI
   ========================================================== */
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-2xl mx-auto p-6 sm:p-8 rounded-2xl border space-y-6"
-    >
-      <h2 className="text-xl font-bold flex items-center gap-2">
+    <form className="space-y-6" onSubmit={handleSubmit}>
+      <h2 className="text-xl font-bold flex gap-2 items-center">
         <Wallet className="w-5 h-5 text-blue-600" />
-        {mode === "edit" ? "DCA-strategie bewerken" : "Nieuwe DCA-strategie"}
+        {mode === "edit" ? "DCA bewerken" : "Nieuwe DCA"}
       </h2>
 
-      {/* SETUP */}
-      <div>
-        <label className="text-sm font-semibold flex items-center gap-2 mb-1">
-          <Info className="w-4 h-4 text-gray-400" />
-          Koppel aan Setup
-        </label>
-
-        <select
-          name="setup_id"
-          value={form.setup_id}
-          disabled={mode === "edit"}
-          onChange={handleChange}
-          className="w-full p-3 rounded-xl border"
-        >
-          <option value="">
-            {availableSetups.length === 0
-              ? "Geen DCA-setups beschikbaar"
-              : "-- Kies een setup --"}
+      {/* Setup */}
+      <select
+        name="setup_id"
+        value={form.setup_id}
+        onChange={handleChange}
+        className="input"
+      >
+        <option value="">-- Kies setup --</option>
+        {availableSetups.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name} ({s.symbol})
           </option>
+        ))}
+      </select>
 
-          {availableSetups.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.symbol} – {s.timeframe})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* SYMBOL / TIMEFRAME */}
-      <div className="grid grid-cols-2 gap-4">
-        <input readOnly value={form.symbol} className="p-3 rounded-xl border bg-gray-100" />
-        <input readOnly value={form.timeframe} className="p-3 rounded-xl border bg-gray-100" />
-      </div>
-
-      {/* AMOUNT / FREQUENCY */}
-      <div className="grid grid-cols-2 gap-4">
-        <input
-          type="number"
-          name="amount"
-          min="1"
-          value={form.amount}
-          onChange={handleChange}
-          className="p-3 rounded-xl border"
-          placeholder="Bedrag per keer (€)"
-        />
-
-        <select
-          name="frequency"
-          value={form.frequency}
-          onChange={handleChange}
-          className="p-3 rounded-xl border"
-        >
-          <option value="">Frequentie</option>
-          <option value="weekly">Wekelijks</option>
-          <option value="monthly">Maandelijks</option>
-        </select>
-      </div>
-
-      {/* EXECUTION MODE */}
-      <div>
-        <label className="text-sm font-semibold flex items-center gap-2 mb-1">
-          <Sliders className="w-4 h-4 text-gray-400" />
-          Executie-logica
-        </label>
-
-        <select
-          name="execution_mode"
-          value={form.execution_mode}
-          onChange={handleChange}
-          className="w-full p-3 rounded-xl border"
-        >
-          <option value="fixed">Vast bedrag</option>
-          <option value="dca_contrarian">Contrarian</option>
-          <option value="dca_trend_following">Trend following</option>
-          <option value="custom">Custom curve</option>
-        </select>
-      </div>
-
-      {/* Curve naam + editor */}
-      {form.execution_mode !== "fixed" && (
-        <>
-          {form.execution_mode === "custom" && (
-            <div>
-              <label className="text-sm font-semibold mb-1 block">
-                Curve naam
-              </label>
-              <input
-                type="text"
-                name="curve_name"
-                value={form.curve_name}
-                onChange={handleChange}
-                placeholder="Bijv. Aggressive Accumulator"
-                className="w-full p-3 rounded-xl border"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Geef je curve een naam zodat je hem later opnieuw kunt gebruiken.
-              </p>
-            </div>
-          )}
-
-          <CurveEditor
-            value={form.decision_curve}
-            onChange={(curve) =>
-              setForm((p) => ({ ...p, decision_curve: curve }))
-            }
-          />
-        </>
-      )}
-
-      {/* RULES */}
-      <textarea
-        name="rules"
-        rows={3}
-        value={form.rules}
-        onChange={handleChange}
-        className="w-full p-3 rounded-xl border"
-        placeholder="Koopregels / notities"
-      />
-
-      {/* TAGS */}
+      {/* Amount */}
       <input
-        name="tags"
-        value={form.tags}
+        type="number"
+        name="amount"
+        value={form.amount}
         onChange={handleChange}
-        className="w-full p-3 rounded-xl border"
-        placeholder="Tags (komma)"
+        placeholder="Bedrag (€)"
+        className="input"
       />
 
-      {/* FAVORIET */}
-      <label className="flex items-center gap-3 text-sm">
+      {/* Frequency */}
+      <select
+        name="frequency"
+        value={form.frequency}
+        onChange={handleChange}
+        className="input"
+      >
+        <option value="">Frequentie</option>
+        <option value="weekly">Wekelijks</option>
+        <option value="monthly">Maandelijks</option>
+      </select>
+
+      {/* Execution */}
+      <select
+        name="execution_mode"
+        value={form.execution_mode}
+        onChange={handleChange}
+        className="input"
+      >
+        <option value="fixed">Vast bedrag</option>
+        <option value="dca_contrarian">Contrarian</option>
+        <option value="dca_trend_following">Trend</option>
+        <option value="custom">Custom curve</option>
+      </select>
+
+      {/* Curve naam */}
+      {form.execution_mode === "custom" && (
         <input
-          type="checkbox"
-          name="favorite"
-          checked={form.favorite}
+          name="curve_name"
+          value={form.curve_name}
           onChange={handleChange}
+          placeholder="Naam van je curve"
+          className="input"
         />
-        {form.favorite ? (
-          <span className="flex items-center gap-1 text-yellow-600">
-            <Star className="w-4 h-4" /> Favoriet
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-gray-500">
-            <StarOff className="w-4 h-4" /> Geen favoriet
-          </span>
-        )}
-      </label>
-
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-
-      {!hideSubmit && (
-        <button
-          type="submit"
-          disabled={!valid}
-          className={`btn-primary w-full ${
-            !valid ? "opacity-60 cursor-not-allowed" : ""
-          }`}
-        >
-          DCA-strategie opslaan
-        </button>
       )}
+
+      {/* Curve editor */}
+      {form.execution_mode !== "fixed" && (
+        <CurveEditor
+          value={form.decision_curve}
+          onChange={(curve) =>
+            setForm((p) => ({ ...p, decision_curve: curve }))
+          }
+        />
+      )}
+
+      {error && <p className="text-red-500">{error}</p>}
+
+      <button disabled={!valid} className="btn-primary w-full">
+        Opslaan
+      </button>
     </form>
   );
 }

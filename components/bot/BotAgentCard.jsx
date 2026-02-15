@@ -22,7 +22,8 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 3.0
+ * BotAgentCard — TradeLayer 3.1
+ * Cockpit header layout
  */
 
 export default function BotAgentCard({
@@ -64,42 +65,6 @@ export default function BotAgentCard({
 
     return "text-yellow-700 bg-yellow-50 border-yellow-200";
   };
-
-  /* ================= SAFE PORTFOLIO ================= */
-
-  const safePortfolioFallback = {
-    bot_id: bot.id,
-    name: bot?.name ?? "Bot",
-    is_active: bot?.is_active ?? true,
-    mode: bot?.mode ?? "manual",
-    risk_profile: bot?.risk_profile ?? "balanced",
-    symbol,
-    budget: {
-      total_eur: 0,
-      daily_limit_eur: 0,
-      min_order_eur: 0,
-      max_order_eur: 0,
-    },
-    stats: {
-      net_cash_delta_eur: 0,
-      net_qty: 0,
-      today_spent_eur: 0,
-      today_reserved_eur: 0,
-      today_executed_eur: 0,
-      last_price: null,
-      position_value_eur: null,
-    },
-  };
-
-  const effectivePortfolio = portfolio
-    ? {
-        ...safePortfolioFallback,
-        ...portfolio,
-        budget: { ...safePortfolioFallback.budget, ...(portfolio.budget || {}) },
-        stats: { ...safePortfolioFallback.stats, ...(portfolio.stats || {}) },
-        symbol: portfolio.symbol || safePortfolioFallback.symbol,
-      }
-    : safePortfolioFallback;
 
   /* ================= CLICK OUTSIDE ================= */
 
@@ -159,11 +124,11 @@ export default function BotAgentCard({
 
   /* ================= MARKET SCORES ================= */
 
-  const marketScores = bot?.market_scores || {
+  const marketScores = {
     health: decision?.market_health ?? 50,
-    transition_risk: decision?.transition_risk ?? 50,
+    transitionRisk: decision?.transition_risk ?? 50,
     pressure: decision?.market_pressure ?? 50,
-    exposure_multiplier: decision?.exposure_multiplier ?? 1,
+    multiplier: decision?.exposure_multiplier ?? 1,
   };
 
   /* ================= RENDER ================= */
@@ -171,8 +136,10 @@ export default function BotAgentCard({
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
 
-      {/* HEADER */}
-      <div className="flex items-start justify-between">
+      {/* HEADER WITH MARKET PANEL */}
+      <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
+
+        {/* LEFT: BOT INFO */}
         <div className="flex items-start gap-3">
           <div className="icon-primary">
             <Brain size={18} />
@@ -205,28 +172,40 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* SETTINGS */}
-        <div className="relative" ref={settingsRef}>
-          <button
-            className="icon-muted hover:icon-primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowSettings((v) => !v);
-            }}
-          >
-            <MoreVertical size={18} />
-          </button>
+        {/* RIGHT: MARKET CONDITIONS + SETTINGS */}
+        <div className="flex items-start gap-3 justify-between lg:justify-end w-full lg:w-auto">
 
-          {showSettings && (
-            <div className="absolute right-0 mt-2 z-50">
-              <BotSettingsMenu
-                onOpen={(type) => {
-                  setShowSettings(false);
-                  onOpenSettings?.(type, bot);
-                }}
-              />
-            </div>
-          )}
+          <MarketConditionsPanel
+            health={marketScores.health}
+            transitionRisk={marketScores.transitionRisk}
+            pressure={marketScores.pressure}
+            multiplier={marketScores.multiplier}
+          />
+
+          {/* SETTINGS */}
+          <div className="relative" ref={settingsRef}>
+            <button
+              className="icon-muted hover:icon-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings((v) => !v);
+              }}
+            >
+              <MoreVertical size={18} />
+            </button>
+
+            {showSettings && (
+              <div className="absolute right-0 mt-2 z-50">
+                <BotSettingsMenu
+                  onOpen={(type) => {
+                    setShowSettings(false);
+                    onOpenSettings?.(type, bot);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
 
@@ -252,9 +231,6 @@ export default function BotAgentCard({
         )}
       </div>
 
-      {/* MARKET CONDITIONS */}
-      <MarketConditionsPanel scores={marketScores} />
-
       {/* MAIN GRID */}
       <div className="grid lg:grid-cols-2 gap-6">
         <BotDecisionCard
@@ -269,7 +245,7 @@ export default function BotAgentCard({
         />
 
         <div className="space-y-4">
-          <BotPortfolioCard bot={effectivePortfolio} />
+          <BotPortfolioCard bot={portfolio} />
           <BotTradeTable trades={Array.isArray(trades) ? trades : []} />
         </div>
       </div>

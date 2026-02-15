@@ -34,7 +34,7 @@ export default function StrategyFormDCA({
     decision_curve: initialData?.decision_curve || null,
     curve_name:
       initialData?.decision_curve?.name ||
-      initialData?.decision_curve_name ||
+      initialData?.curve_name ||
       "",
 
     selected_curve_id:
@@ -165,6 +165,14 @@ export default function StrategyFormDCA({
         form.execution_mode === "fixed"
           ? null
           : form.curve_name.trim(),
+
+      // 🔥 belangrijk voor reuse
+      decision_curve_id:
+        form.selected_curve_id !== "new"
+          ? Number(form.selected_curve_id)
+          : null,
+
+      selected_curve_id: form.selected_curve_id,
     };
 
     try {
@@ -230,15 +238,13 @@ export default function StrategyFormDCA({
           Execution logic
         </label>
 
-        {/* Fixed */}
-        <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
           <input
             type="radio"
             name="execution_mode"
             value="fixed"
             checked={form.execution_mode === "fixed"}
             onChange={handleChange}
-            className="mt-1"
           />
           <div>
             <div className="font-medium">Fixed amount</div>
@@ -248,20 +254,18 @@ export default function StrategyFormDCA({
           </div>
         </label>
 
-        {/* Curve-based */}
-        <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
           <input
             type="radio"
             name="execution_mode"
             value="custom"
             checked={form.execution_mode === "custom"}
             onChange={handleChange}
-            className="mt-1"
           />
           <div>
             <div className="font-medium">Curve-based sizing</div>
             <div className="text-xs text-gray-500">
-              Automatically adjust allocation based on market score.
+              Adjust allocation based on market score.
             </div>
           </div>
         </label>
@@ -271,14 +275,13 @@ export default function StrategyFormDCA({
 
       {form.execution_mode === "custom" && (
         <>
-          {/* Curve selector */}
           <select
             name="selected_curve_id"
             value={form.selected_curve_id}
             onChange={handleChange}
             className="input"
           >
-            <option value="new">➕ Create new curve</option>
+            <option value="new">Nieuwe curve</option>
             {curves.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -286,25 +289,23 @@ export default function StrategyFormDCA({
             ))}
           </select>
 
-          {/* Curve name */}
           {form.selected_curve_id === "new" && (
-            <input
-              name="curve_name"
-              value={form.curve_name}
-              onChange={handleChange}
-              placeholder="Naam van je curve"
-              className="input"
-            />
-          )}
+            <>
+              <input
+                name="curve_name"
+                value={form.curve_name}
+                onChange={handleChange}
+                placeholder="Naam van je curve"
+                className="input"
+              />
 
-          {/* Curve editor */}
-          {form.selected_curve_id === "new" && (
-            <CurveEditor
-              value={form.decision_curve}
-              onChange={(curve) =>
-                setForm((p) => ({ ...p, decision_curve: curve }))
-              }
-            />
+              <CurveEditor
+                value={form.decision_curve}
+                onChange={(curve) =>
+                  setForm((p) => ({ ...p, decision_curve: curve }))
+                }
+              />
+            </>
           )}
         </>
       )}

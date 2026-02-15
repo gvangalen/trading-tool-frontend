@@ -6,7 +6,6 @@ import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
-import BotOrderPreview from "@/components/bot/BotOrderPreview";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
 
@@ -58,6 +57,7 @@ export default function BotAgentCard({
   const executionLabel =
     executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
+  /* close settings when clicking outside */
   useEffect(() => {
     if (!showSettings) return;
 
@@ -100,20 +100,26 @@ export default function BotAgentCard({
 
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-6 space-y-6">
+
       {/* ================= HEADER ================= */}
       <div className="border-b pb-5 space-y-4">
+
         <div className="flex items-center justify-between">
+
+          {/* LEFT */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
             </div>
-
             <div className="text-2xl font-bold tracking-tight">
               {bot?.name}
             </div>
           </div>
 
+          {/* RIGHT */}
           <div className="flex items-center gap-5">
+
+            {/* ACTIVE STATUS */}
             <div
               className={`flex items-center gap-2 font-bold uppercase text-sm
               ${isPaused ? "text-gray-400" : "text-green-600"}`}
@@ -125,6 +131,7 @@ export default function BotAgentCard({
               {isPaused ? "Paused" : "Active"}
             </div>
 
+            {/* SETTINGS */}
             <div className="relative" ref={settingsRef}>
               <button
                 className="text-gray-400 hover:text-gray-700"
@@ -177,9 +184,7 @@ export default function BotAgentCard({
         </div>
 
         <div className="flex gap-3">
-          <span
-            className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}
-          >
+          <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
             {risk.label}
           </span>
 
@@ -191,6 +196,7 @@ export default function BotAgentCard({
 
       {/* ===== Portfolio (2/3) + Market (1/3) ===== */}
       <div className="grid lg:grid-cols-3 border rounded-xl overflow-hidden">
+
         <div className="lg:col-span-2 p-5">
           <BotPortfolioCard bot={portfolio} />
         </div>
@@ -207,8 +213,9 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Decision + Order ===== */}
+      {/* ===== Decision (left) + Trades (right) ===== */}
       <div className="grid lg:grid-cols-2 border rounded-xl overflow-hidden">
+
         <div className="p-5">
           <BotDecisionCard
             bot={bot}
@@ -225,14 +232,11 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="p-5">
-          <BotOrderPreview order={order} />
+          <BotTradeTable trades={trades ?? []} />
         </div>
       </div>
 
-      {/* Trades */}
-      <BotTradeTable trades={trades ?? []} />
-
-      {/* History */}
+      {/* HISTORY */}
       <div className="pt-2 border-t">
         <button
           onClick={() => setShowHistory((v) => !v)}
@@ -251,6 +255,7 @@ export default function BotAgentCard({
           </div>
         )}
       </div>
+
     </div>
   );
 }

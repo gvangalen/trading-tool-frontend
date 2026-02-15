@@ -7,6 +7,7 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
+import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
 
 import {
   Brain,
@@ -21,19 +22,21 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — TradeLayer 2.6 (FINAL)
+ * BotAgentCard — TradeLayer 3.0
  *
- * ✅ Backend = single source of truth
- * ✅ Decisions ≠ orders ≠ executions
- * ✅ Trades komen EXCLUSIEF uit bot_ledger
+ * ✅ Cockpit layout
+ * ✅ Market conditions integrated
+ * ✅ Decision context flow
+ * ✅ Portfolio + execution view
  */
+
 export default function BotAgentCard({
   bot,
   decision,
   order,
   portfolio,
   history = [],
-  trades = [],              // ✅ EXPLICIET
+  trades = [],
   loadingDecision = false,
 
   onGenerate,
@@ -54,9 +57,8 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
   const strategyName = bot?.strategy?.name || bot?.strategy?.type || "—";
 
-  /* =====================================================
-     SAFE PORTFOLIO FALLBACK
-  ===================================================== */
+  /* ================= SAFE PORTFOLIO ================= */
+
   const safePortfolioFallback = {
     bot_id: bot.id,
     name: bot?.name ?? "Bot",
@@ -64,7 +66,7 @@ export default function BotAgentCard({
     mode: bot?.mode ?? "manual",
     risk_profile: bot?.risk_profile ?? "balanced",
     symbol,
-    budget: bot?.budget || {
+    budget: {
       total_eur: 0,
       daily_limit_eur: 0,
       min_order_eur: 0,
@@ -91,9 +93,8 @@ export default function BotAgentCard({
       }
     : safePortfolioFallback;
 
-  /* =====================================================
-     CLICK OUTSIDE — SETTINGS
-  ===================================================== */
+  /* ================= CLICK OUTSIDE ================= */
+
   useEffect(() => {
     if (!showSettings) return;
 
@@ -112,9 +113,8 @@ export default function BotAgentCard({
     };
   }, [showSettings]);
 
-  /* =====================================================
-     RISK + STATUS
-  ===================================================== */
+  /* ================= RISK + STATUS ================= */
+
   const riskConfig = {
     conservative: {
       label: "Conservative",
@@ -149,11 +149,20 @@ export default function BotAgentCard({
         className: "bg-green-100 text-green-700 border-green-200",
       };
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
+  /* ================= MARKET SCORES ================= */
+
+  const marketScores = bot?.market_scores || {
+    health: decision?.market_health ?? 50,
+    transition_risk: decision?.transition_risk ?? 50,
+    pressure: decision?.market_pressure ?? 50,
+    exposure_multiplier: decision?.exposure_multiplier ?? 1,
+  };
+
+  /* ================= RENDER ================= */
+
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-5 space-y-6 relative">
+
       {/* HEADER */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
@@ -234,6 +243,9 @@ export default function BotAgentCard({
         )}
       </div>
 
+      {/* 🟢 MARKET CONDITIONS */}
+      <MarketConditionsPanel scores={marketScores} />
+
       {/* MAIN GRID */}
       <div className="grid lg:grid-cols-2 gap-6">
         <BotDecisionCard
@@ -249,10 +261,7 @@ export default function BotAgentCard({
 
         <div className="space-y-4">
           <BotPortfolioCard bot={effectivePortfolio} />
-          <BotTradeTable
-            trades={Array.isArray(trades) ? trades : []}
-            loading={false}
-        />
+          <BotTradeTable trades={Array.isArray(trades) ? trades : []} />
         </div>
       </div>
 

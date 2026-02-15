@@ -21,7 +21,7 @@ const getExposureColor = (value) => {
 };
 
 /* =========================================
-   Bar Component
+   Bar Component (compact cockpit style)
 ========================================= */
 
 function Bar({ label, value, color }) {
@@ -29,8 +29,8 @@ function Bar({ label, value, color }) {
   const filled = Math.round((value / 100) * blocks);
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="text-sm font-medium w-44 flex items-center gap-2">
+    <div className="flex items-center justify-between gap-3">
+      <div className="text-xs font-medium w-40 flex items-center gap-2">
         <span>{label.icon}</span>
         {label.text}
       </div>
@@ -39,7 +39,7 @@ function Bar({ label, value, color }) {
         {[...Array(blocks)].map((_, i) => (
           <div
             key={i}
-            className={`h-2 w-4 rounded-sm transition-all duration-300 ${
+            className={`h-1.5 w-4 rounded-sm transition-all duration-300 ${
               i < filled ? color : "bg-gray-200 dark:bg-gray-700"
             }`}
           />
@@ -50,7 +50,7 @@ function Bar({ label, value, color }) {
 }
 
 /* =========================================
-   Main Panel
+   Main Panel — cockpit widget
 ========================================= */
 
 export default function MarketConditionsPanel({
@@ -63,8 +63,16 @@ export default function MarketConditionsPanel({
   const exposureColor = getExposureColor(multiplier);
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-[#0f0f0f] space-y-3">
-
+    <div
+      className="
+        rounded-xl
+        border border-gray-200 dark:border-gray-800
+        bg-gray-50 dark:bg-[#121212]
+        px-4 py-3
+        space-y-2
+        min-w-[260px]
+      "
+    >
       <Bar
         label={{ icon: "🟢", text: "Market Health" }}
         value={health}
@@ -84,8 +92,8 @@ export default function MarketConditionsPanel({
       />
 
       {/* Exposure */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-800">
-        <div className="text-sm font-medium flex items-center gap-2">
+      <div className="flex items-center justify-between pt-2 border-t border-gray-300/60 dark:border-gray-700/60">
+        <div className="text-xs font-medium flex items-center gap-2">
           <span>🟣</span>
           Exposure
         </div>
@@ -94,12 +102,11 @@ export default function MarketConditionsPanel({
           <div className={`font-semibold text-sm ${exposureColor}`}>
             {multiplier.toFixed(2)}×
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-[11px] text-gray-500 dark:text-gray-400">
             {exposureLabel}
           </div>
         </div>
       </div>
-
     </div>
   );
 }

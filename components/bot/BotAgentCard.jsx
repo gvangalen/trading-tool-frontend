@@ -156,57 +156,76 @@ export default function BotAgentCard({
       <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
 
         {/* LEFT: BOT INFO */}
-        <div className="flex items-start gap-3">
-          <div className="icon-primary">
-            <Brain size={18} />
-          </div>
+<div className="flex items-start gap-3">
 
-          <div>
-            <div className="font-semibold">{bot?.name ?? "Bot"}</div>
+  <div className="icon-primary mt-1">
+    <Brain size={18} />
+  </div>
 
-            <div className="text-xs text-[var(--text-muted)]">
-              {symbol} · {timeframe}
-            </div>
+  <div className="space-y-2">
 
-            <div className="mt-2 text-xs">
-              <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
-              <span className="font-medium">{strategyName}</span>
-            </div>
+    {/* ROW 1 — NAME + LIVE STATUS */}
+    <div className="flex items-center gap-3">
+      <div className="font-semibold text-lg leading-none">
+        {bot?.name ?? "Bot"}
+      </div>
 
-            {/* EXECUTION CONTEXT */}
-            <div className="mt-2 text-xs flex flex-col gap-1">
+      <div className={`flex items-center gap-1 text-xs font-semibold uppercase
+        ${isPaused ? "text-gray-500" : "text-green-600"}
+      `}>
+        <span className={`w-2 h-2 rounded-full
+          ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}
+        `}/>
+        {isPaused ? "Paused" : "Active"}
+      </div>
+    </div>
 
-              <div className="flex items-center gap-2">
-                <TrendingUp size={12} />
-                <span className="font-medium">{executionLabel}</span>
-                {executionMode === "custom" && curveName && (
-                  <span className="text-gray-500">
-                    · {curveName}
-                  </span>
-                )}
-              </div>
+    {/* ROW 2 — SYMBOL */}
+    <div className="text-xs text-[var(--text-muted)]">
+      {symbol} · {timeframe}
+    </div>
 
-              <div className="text-gray-500">
-                Exposure: {exposureMultiplier.toFixed(2)}×
-              </div>
+    {/* ROW 3 — STRATEGY */}
+    <div className="text-xs">
+      <span className="text-[var(--text-muted)]">Strategy:</span>{" "}
+      <span className="font-medium">{strategyName}</span>
+    </div>
 
-            </div>
+    {/* ROW 4 — EXECUTION CONTEXT */}
+    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 pt-1">
 
-            <div className="mt-3 flex flex-col gap-2">
-              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${risk.className}`}>
-                {risk.icon} Risk: {risk.label}
-              </span>
+      <div className="flex items-center gap-1">
+        <TrendingUp size={12} />
+        <span className="font-medium">{executionLabel}</span>
+        {executionMode === "custom" && curveName && (
+          <span className="text-gray-500">· {curveName}</span>
+        )}
+      </div>
 
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700 w-fit">
-                <Bot size={12} /> Mode: {isAuto ? "Auto" : "Manual"}
-              </span>
+      <div className="font-medium">
+        Exposure:
+        <span className="ml-1 text-[var(--accent)]">
+          {exposureMultiplier.toFixed(2)}×
+        </span>
+      </div>
 
-              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border w-fit ${statusConfig.className}`}>
-                {statusConfig.icon} Status: {statusConfig.label}
-              </span>
-            </div>
-          </div>
-        </div>
+    </div>
+
+    {/* ROW 5 — STATE BADGES */}
+    <div className="flex flex-wrap gap-2 pt-1">
+
+      <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${risk.className}`}>
+        {risk.icon} {risk.label}
+      </span>
+
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border bg-blue-50 text-blue-700">
+        <Bot size={12} /> {isAuto ? "Auto" : "Manual"}
+      </span>
+
+    </div>
+
+  </div>
+</div>
 
         {/* RIGHT: MARKET PANEL + SETTINGS */}
         <div className="flex items-start gap-3 justify-between lg:justify-end w-full lg:w-auto">

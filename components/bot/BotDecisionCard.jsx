@@ -11,19 +11,17 @@ import {
   CheckCircle,
   XCircle,
   Layers,
+  TrendingUp,
+  Gauge,
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 2.6 (BACKEND-LED)
+ * BotTodayProposal — TradeLayer 3.0
  *
- * - Backend is SINGLE SOURCE OF TRUTH
- * - Frontend rendert alleen backend-data
- * - GEEN frontend logica voor strategy-tekst
- *
- * OPTIE A FIX:
- * - Manual execute kan ALLEEN als er een echte trade/order is.
- * - Dus: in "geen trade gepland" state -> geen "Bevestig" knop.
+ * Backend = single source of truth
+ * Frontend toont execution context & sizing logica
  */
+
 export default function BotTodayProposal({
   decision = null,
   order = null,
@@ -34,9 +32,6 @@ export default function BotTodayProposal({
   onSkip,
   isAuto = false,
 }) {
-  /* =====================================================
-     LOADING
-  ===================================================== */
   if (loading) {
     return (
       <div className="py-6">
@@ -50,17 +45,36 @@ export default function BotTodayProposal({
   /* =====================================================
      CORE STATE
   ===================================================== */
+
   const botId = decision.bot_id;
   const decisionId = decision.decision_id;
-  
+
   const status = decision.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
   const executedByAuto = decision.executed_by === "auto";
   const confidence = decision.confidence ?? "low";
 
   /* =====================================================
-     TIMESTAMP (BACKEND LEIDEND)
+     EXECUTION CONTEXT (NEW)
   ===================================================== */
+
+  const executionMode = decision.execution_mode ?? "fixed";
+  const curveName = decision.decision_curve_name;
+  const multiplier = decision.exposure_multiplier ?? 1;
+  const baseAmount = decision.base_amount ?? null;
+
+  const executionLabel =
+    executionMode === "custom" ? "Curve sizing actief" : "Vast bedrag";
+
+  const allocationPreview =
+    baseAmount && multiplier
+      ? `€${Math.round(baseAmount * multiplier)}`
+      : null;
+
+  /* =====================================================
+     TIMESTAMP
+  ===================================================== */
+
   const decisionTime =
     decision.updated_at || decision.decision_ts || decision.created_at || null;
 
@@ -68,15 +82,15 @@ export default function BotTodayProposal({
     ? new Date(decisionTime).toLocaleString("nl-NL", {
         day: "2-digit",
         month: "short",
-        year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
       })
     : null;
 
   /* =====================================================
-     SETUP MATCH (⭐ BACKEND TRUTH)
+     SETUP MATCH
   ===================================================== */
+
   const setupMatch = decision.setup_match;
   if (!setupMatch) return null;
 
@@ -86,8 +100,9 @@ export default function BotTodayProposal({
       : 10;
 
   /* =====================================================
-     EXECUTE GUARD (OPTIE A)
+     EXECUTE GUARD
   ===================================================== */
+
   const hasTrade = !!order;
   const canExecute =
     !isAuto && !isFinal && hasTrade && !!onExecute && !!decisionId;
@@ -95,6 +110,7 @@ export default function BotTodayProposal({
   /* =====================================================
      HEADER
   ===================================================== */
+
   const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
       <ShoppingCart size={16} className="mt-0.5" />
@@ -108,29 +124,42 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     FINAL STATUS
+     EXECUTION CONTEXT CARD ⭐
   ===================================================== */
-  const finalStatus = isFinal && (
-    <div className="pt-3 text-sm font-medium">
-      {status === "executed" && (
-        <div className="flex items-center gap-2 text-green-600">
-          <CheckCircle size={16} />
-          {executedByAuto ? "Automatisch uitgevoerd" : "Handmatig uitgevoerd"}
-        </div>
-      )}
 
-      {status === "skipped" && (
-        <div className="flex items-center gap-2 text-orange-600">
-          <XCircle size={16} />
-          Vandaag bewust overgeslagen
+  const executionCard = (
+    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
+      <div className="flex items-center gap-2 font-medium">
+        <TrendingUp size={14} />
+        Position sizing
+      </div>
+
+      <div className="text-xs text-[var(--text-muted)]">
+        {executionLabel}
+        {executionMode === "custom" && curveName && (
+          <span className="ml-1">· {curveName}</span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <Gauge size={14} />
+        Exposure multiplier:{" "}
+        <span className="font-medium">{multiplier.toFixed(2)}×</span>
+      </div>
+
+      {allocationPreview && (
+        <div className="text-xs text-[var(--text-muted)]">
+          Verwachte allocatie:{" "}
+          <span className="font-medium">{allocationPreview}</span>
         </div>
       )}
     </div>
   );
 
   /* =====================================================
-     STRATEGY MATCH CARD (100% BACKEND)
+     STRATEGY MATCH CARD
   ===================================================== */
+
   const botScoreCard = (
     <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
@@ -174,8 +203,9 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     GEEN TRADE VANDAAG
+     NO TRADE
   ===================================================== */
+
   if (!order) {
     return (
       <div className="space-y-5 py-4">
@@ -189,7 +219,7 @@ export default function BotTodayProposal({
           </div>
 
           {botScoreCard}
-          {finalStatus}
+          {executionCard}
 
           <div className="flex flex-wrap gap-3 pt-4">
             {!isAuto && !isFinal && onSkip && (
@@ -219,8 +249,9 @@ export default function BotTodayProposal({
   }
 
   /* =====================================================
-     TRADE VOORSTEL
+     TRADE PROPOSAL
   ===================================================== */
+
   return (
     <div className="space-y-5 py-4">
       {header}
@@ -231,7 +262,7 @@ export default function BotTodayProposal({
         </div>
 
         {botScoreCard}
-        {finalStatus}
+        {executionCard}
 
         <div className="flex flex-wrap gap-3 pt-4">
           {canExecute && (

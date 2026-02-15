@@ -25,6 +25,7 @@ import {
   Euro,
   Tags,
   Activity,
+  Brain,
 } from "lucide-react";
 
 export default function StrategyCard({ strategy, onRefresh }) {
@@ -36,7 +37,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
   const [justUpdated, setJustUpdated] = useState(false);
 
   /* ==========================================================
-     DATA (DEFENSIEF – BACKWARD COMPATIBLE)
+     DATA (DEFENSIEF & BACKWARD SAFE)
   ========================================================== */
   const {
     id,
@@ -45,13 +46,21 @@ export default function StrategyCard({ strategy, onRefresh }) {
     strategy_type,
     entry,
     stop_loss,
-    amount,
+    base_amount,
     frequency,
     risk_profile,
     explanation,
     ai_explanation,
     favorite,
+    execution_mode,
+    decision_curve,
   } = strategy;
+
+  const curveName =
+    strategy.curve_name ||
+    decision_curve?.name ||
+    strategy.data?.curve_name ||
+    null;
 
   const setupName =
     strategy.setup_name ||
@@ -92,9 +101,6 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   }
 
-  /* ==========================================================
-     ⭐ FAVORIET TOGGLE (CORRECTE ENDPOINT)
-  ========================================================== */
   async function toggleFavorite() {
     try {
       await toggleFavoriteStrategy(id);
@@ -105,69 +111,17 @@ export default function StrategyCard({ strategy, onRefresh }) {
     }
   }
 
-  /* ==========================================================
-     ✏️ EDIT STRATEGY
-  ========================================================== */
-  function openEditModal() {
-    openConfirm({
-      title: `Strategie bewerken – ${setupName}`,
-      icon: <Pencil />,
-      tone: "primary",
-      confirmText: "Opslaan",
-      cancelText: "Annuleren",
-      description: <StrategyFormWrapper strategy={strategy} />,
-      onConfirm: () => {
-        document.querySelector("#strategy-edit-submit")?.click();
-      },
-    });
-  }
-
-  function StrategyFormWrapper({ strategy }) {
-    const StrategyForm =
-      require("@/components/strategy/StrategyForm").default;
-
-    return (
-      <div className="space-y-6 pt-4">
-        <StrategyForm
-          mode="edit"
-          initialData={strategy}
-          onSaved={() => {
-            onRefresh?.();
-            showSnackbar("Strategie bijgewerkt!", "success");
-          }}
-        />
-      </div>
-    );
-  }
-
-  /* ==========================================================
-     🗑 DELETE STRATEGY
-  ========================================================== */
   function openDeleteModal() {
     openConfirm({
       title: "Strategie verwijderen",
-      description: (
-        <p className="leading-relaxed">
-          Weet je zeker dat je deze strategie wilt verwijderen?
-          <br />
-          <span className="text-red-600 font-medium">
-            Dit kan niet ongedaan worden gemaakt.
-          </span>
-        </p>
-      ),
+      description:
+        "Weet je zeker dat je deze strategie wilt verwijderen?",
       icon: <Trash />,
       tone: "danger",
       confirmText: "Verwijderen",
-      cancelText: "Annuleren",
       onConfirm: async () => {
-        try {
-          await deleteStrategy(id);
-          showSnackbar("Strategie verwijderd", "success");
-          onRefresh?.();
-        } catch (err) {
-          console.error(err);
-          showSnackbar("Verwijderen mislukt", "danger");
-        }
+        await deleteStrategy(id);
+        onRefresh?.();
       },
     });
   }
@@ -185,17 +139,18 @@ export default function StrategyCard({ strategy, onRefresh }) {
       className={`
         relative border rounded-xl p-6
         bg-white dark:bg-gray-900 shadow-lg
+        transition
         ${justUpdated ? "ring-2 ring-purple-500 ring-offset-2" : ""}
       `}
     >
-      {/* AI overlay */}
+      {/* Loading overlay */}
       {loading && (
         <div className="absolute inset-0 z-20 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-xl">
           <AILoader text="AI analyse bezig…" />
         </div>
       )}
 
-      {/* Favoriet */}
+      {/* ⭐ Favorite */}
       <button
         onClick={toggleFavorite}
         className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500"
@@ -209,24 +164,32 @@ export default function StrategyCard({ strategy, onRefresh }) {
 
       {/* Header */}
       <h3 className="font-bold text-xl mb-1">{setupName}</h3>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-2">
         {strategy_type} | {symbol} {timeframe}
       </p>
+
+      {/* 🧠 Curve name */}
+      {curveName && execution_mode === "custom" && (
+        <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+          <Brain size={14} />
+          Curve: {curveName}
+        </div>
+      )}
 
       {/* ================= DCA INFO ================= */}
       {isDCA && (
         <div className="grid grid-cols-2 gap-3 text-sm mb-4">
           <div className="flex items-center gap-2">
-            <Euro size={14} /> Bedrag: €{display(amount)}
+            <Euro size={14} /> €{display(base_amount)}
           </div>
           <div className="flex items-center gap-2">
-            <Clock size={14} /> Frequentie: {display(frequency)}
+            <Clock size={14} /> {display(frequency)}
           </div>
           <div className="flex items-center gap-2">
-            <Activity size={14} /> Risico: {display(risk_profile)}
+            <Activity size={14} /> {display(risk_profile)}
           </div>
           <div className="flex items-center gap-2">
-            <Tags size={14} /> Tags: {tags.length ? tags.join(", ") : "-"}
+            <Tags size={14} /> {tags.length ? tags.join(", ") : "-"}
           </div>
         </div>
       )}
@@ -249,14 +212,14 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
-      {/* Handmatige uitleg */}
+      {/* Explanation */}
       {explanation && (
         <div className="text-sm text-gray-600 mb-3">
           <strong>Uitleg:</strong> {explanation}
         </div>
       )}
 
-      {/* AI uitleg */}
+      {/* AI Explanation */}
       {ai_explanation && (
         <div className="mt-4 p-4 rounded-lg bg-purple-50 text-purple-700 text-sm">
           <Bot className="inline w-4 h-4 mr-1" />
@@ -265,25 +228,15 @@ export default function StrategyCard({ strategy, onRefresh }) {
         </div>
       )}
 
-      {/* Acties */}
+      {/* Actions */}
       <div className="flex justify-between items-center mt-6">
-        <div className="flex gap-4">
-          <button
-            onClick={handleAnalyze}
-            className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
-          >
-            <Wand2 size={16} />
-            Analyseer (AI)
-          </button>
-
-          <button
-            onClick={openEditModal}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
-          >
-            <Pencil size={16} />
-            Bewerken
-          </button>
-        </div>
+        <button
+          onClick={handleAnalyze}
+          className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm"
+        >
+          <Wand2 size={16} />
+          Analyseer
+        </button>
 
         <button
           onClick={openDeleteModal}

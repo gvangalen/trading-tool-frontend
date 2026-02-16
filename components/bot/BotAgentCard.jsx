@@ -13,10 +13,11 @@ import {
   Bot,
   MoreVertical,
   Clock,
+  TrendingUp,
   Shield,
   Scale,
   Rocket,
-  TrendingUp,
+  Activity,
 } from "lucide-react";
 
 export default function BotAgentCard({
@@ -41,21 +42,19 @@ export default function BotAgentCard({
   const isAuto = bot?.mode === "auto";
   const isPaused = bot?.is_active === false;
 
-  /* =====================================================
-     DATA
-  ===================================================== */
+  /* ================= DATA ================= */
 
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
-  // ✅ SETUP NAME (wat eerst strategy leek)
+  // ✅ SETUP NAAM
   const setupName =
     bot?.setup?.name ||
-    bot?.strategy?.setup_name ||
     bot?.setup_name ||
+    bot?.strategy?.setup_name ||
     "—";
 
-  // ✅ STRATEGY NAME (nieuw)
+  // ✅ STRATEGY NAAM
   const strategyName =
     bot?.strategy?.name ||
     bot?.strategy?.data?.name ||
@@ -74,7 +73,12 @@ export default function BotAgentCard({
   const executionLabel =
     executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
-  /* close settings when clicking outside */
+  /* ================= STATUS ================= */
+
+  const statusLabel = decision?.action || "OBSERVE";
+  const confidence = decision?.confidence_label || decision?.confidence || "LOW";
+
+  /* close settings on outside click */
   useEffect(() => {
     if (!showSettings) return;
 
@@ -85,7 +89,7 @@ export default function BotAgentCard({
     };
 
     document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler, { passive: true });
+    document.addEventListener("touchstart", handler);
 
     return () => {
       document.removeEventListener("mousedown", handler);
@@ -93,19 +97,21 @@ export default function BotAgentCard({
     };
   }, [showSettings]);
 
+  /* ================= RISK BADGE ================= */
+
   const riskConfig = {
     conservative: {
-      label: "Conservative",
+      label: "Risk: Conservative",
       className: "bg-green-100 text-green-700 border-green-200",
       icon: <Shield size={12} />,
     },
     balanced: {
-      label: "Balanced",
+      label: "Risk: Balanced",
       className: "bg-yellow-100 text-yellow-700 border-yellow-200",
       icon: <Scale size={12} />,
     },
     aggressive: {
-      label: "Aggressive",
+      label: "Risk: Aggressive",
       className: "bg-red-100 text-red-700 border-red-200",
       icon: <Rocket size={12} />,
     },
@@ -116,44 +122,35 @@ export default function BotAgentCard({
     riskConfig.balanced;
 
   return (
-    <div className="w-full rounded-2xl border bg-white px-6 py-6 space-y-6">
+    <div className="w-full rounded-2xl border bg-white shadow-sm space-y-6 p-6">
 
       {/* ================= HEADER ================= */}
-      <div className="border-b pb-5 space-y-4">
+      <div className="space-y-4 border-b pb-5">
 
-        {/* TOP ROW */}
+        {/* TOP */}
         <div className="flex items-center justify-between">
-
-          {/* LEFT */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
             </div>
-
-            <div className="text-2xl font-bold tracking-tight">
-              {bot?.name}
-            </div>
+            <div className="text-2xl font-bold">{bot?.name}</div>
           </div>
 
-          {/* RIGHT */}
           <div className="flex items-center gap-5">
-            <div
-              className={`flex items-center gap-2 font-bold uppercase text-sm
-              ${isPaused ? "text-gray-400" : "text-green-600"}`}
-            >
-              <span
-                className={`w-2.5 h-2.5 rounded-full
-                ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`}
-              />
+
+            {/* ACTIVE STATUS */}
+            <div className={`flex items-center gap-2 text-sm font-semibold ${isPaused ? "text-gray-400" : "text-green-600"}`}>
+              <span className={`w-2.5 h-2.5 rounded-full ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`} />
               {isPaused ? "Paused" : "Active"}
             </div>
 
+            {/* SETTINGS */}
             <div className="relative" ref={settingsRef}>
               <button
                 className="text-gray-400 hover:text-gray-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowSettings((v) => !v);
+                  setShowSettings(v => !v);
                 }}
               >
                 <MoreVertical size={20} />
@@ -173,28 +170,26 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* SYMBOL / TF */}
+        {/* SYMBOL */}
         <div className="text-sm text-gray-500">
           {symbol} · {timeframe}
         </div>
 
-        {/* ✅ SETUP */}
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-sm">Setup</span>
-          <span className="font-semibold text-gray-800">
-            {setupName}
-          </span>
+        {/* SETUP */}
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-gray-500">Setup</span>
+          <span className="font-semibold">{setupName}</span>
         </div>
 
-        {/* ✅ STRATEGY */}
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-sm">Strategy</span>
-          <span className="px-2 py-1 text-xs rounded-md bg-indigo-50 text-indigo-700 font-semibold">
+        {/* STRATEGY */}
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-gray-500">Strategy</span>
+          <span className="px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 font-semibold text-xs">
             {strategyName}
           </span>
         </div>
 
-        {/* EXECUTION INFO */}
+        {/* EXECUTION */}
         <div className="flex flex-wrap gap-6 text-gray-700">
           <div className="flex items-center gap-2">
             <TrendingUp size={16} />
@@ -211,19 +206,29 @@ export default function BotAgentCard({
 
         {/* BADGES */}
         <div className="flex gap-3">
-          <span className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
+          <span className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
+            {risk.icon}
             {risk.label}
           </span>
 
           <span className="px-3 py-1.5 rounded-lg border text-sm font-semibold bg-blue-50 text-blue-700">
-            {isAuto ? "Auto Mode" : "Manual"}
+            Mode: {isAuto ? "Auto" : "Manual"}
           </span>
         </div>
+
+        {/* STATUS BAR (TERUG) */}
+        <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
+          <Activity size={16} className="text-gray-500" />
+          <span className="font-medium text-gray-600">Huidige status:</span>
+          <span className="font-bold">{statusLabel}</span>
+          <span className="text-gray-400">•</span>
+          <span>Confidence <strong>{confidence}</strong></span>
+        </div>
+
       </div>
 
-      {/* ===== Portfolio + Market ===== */}
+      {/* PORTFOLIO + MARKET */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
-
         <div className="flex-1 p-5">
           <BotPortfolioCard bot={portfolio} />
         </div>
@@ -240,9 +245,8 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Decision + Trades ===== */}
+      {/* DECISION + TRADES */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
-
         <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
@@ -266,7 +270,7 @@ export default function BotAgentCard({
       {/* HISTORY */}
       <div className="pt-2 border-t">
         <button
-          onClick={() => setShowHistory((v) => !v)}
+          onClick={() => setShowHistory(v => !v)}
           className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-2"
         >
           <Clock size={14} />
@@ -282,7 +286,6 @@ export default function BotAgentCard({
           </div>
         )}
       </div>
-
     </div>
   );
 }

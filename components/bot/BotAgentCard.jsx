@@ -48,16 +48,12 @@ export default function BotAgentCard({
   const executionMode =
     bot?.strategy?.execution_mode || bot?.execution_mode || "fixed";
 
-  const curveName =
-    bot?.strategy?.decision_curve_name || bot?.strategy?.curve_name || null;
-
   const exposureMultiplier =
     decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
 
   const executionLabel =
     executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
-  /* close settings when clicking outside */
   useEffect(() => {
     if (!showSettings) return;
 
@@ -101,9 +97,8 @@ export default function BotAgentCard({
   return (
     <div className="w-full rounded-2xl border bg-white px-6 py-6 space-y-6">
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <div className="border-b pb-5 space-y-4">
-
         <div className="flex items-center justify-between">
 
           {/* LEFT */}
@@ -118,8 +113,6 @@ export default function BotAgentCard({
 
           {/* RIGHT */}
           <div className="flex items-center gap-5">
-
-            {/* ACTIVE */}
             <div
               className={`flex items-center gap-2 font-bold uppercase text-sm
               ${isPaused ? "text-gray-400" : "text-green-600"}`}
@@ -131,7 +124,6 @@ export default function BotAgentCard({
               {isPaused ? "Paused" : "Active"}
             </div>
 
-            {/* SETTINGS */}
             <div className="relative" ref={settingsRef}>
               <button
                 className="text-gray-400 hover:text-gray-700"
@@ -154,7 +146,6 @@ export default function BotAgentCard({
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
@@ -171,9 +162,6 @@ export default function BotAgentCard({
           <div className="flex items-center gap-2">
             <TrendingUp size={16} />
             <span className="font-semibold">{executionLabel}</span>
-            {curveName && (
-              <span className="text-gray-500">· {curveName}</span>
-            )}
           </div>
 
           <div>
@@ -195,16 +183,19 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Portfolio + Market ===== */}
-      <div className="grid grid-cols-3 border rounded-xl overflow-hidden">
+      {/* PORTFOLIO + MARKET */}
+      <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
 
-        <div className="col-span-2 p-5">
+        {/* LEFT */}
+        <div className="flex-1 p-5">
           <BotPortfolioCard bot={portfolio} />
         </div>
 
-        <div className="w-px bg-gray-200" />
+        {/* DIVIDER */}
+        <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="p-5">
+        {/* RIGHT */}
+        <div className="lg:w-[340px] p-5 bg-gray-50">
           <MarketConditionsInline
             health={decision?.market_health}
             transitionRisk={decision?.transition_risk}
@@ -212,13 +203,12 @@ export default function BotAgentCard({
             multiplier={exposureMultiplier}
           />
         </div>
-
       </div>
 
-      {/* ===== Decision + Trades ===== */}
-      <div className="grid grid-cols-2 border rounded-xl overflow-hidden">
+      {/* DECISION + TRADES */}
+      <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
 
-        <div className="p-5">
+        <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
             decision={decision}
@@ -231,12 +221,11 @@ export default function BotAgentCard({
           />
         </div>
 
-        <div className="w-px bg-gray-200" />
+        <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="p-5">
+        <div className="flex-1 p-5">
           <BotTradeTable trades={trades ?? []} />
         </div>
-
       </div>
 
       {/* HISTORY */}

@@ -44,6 +44,9 @@ export default function StrategyFormTrading({
   /* ================= FORM STATE ================= */
 
   const [form, setForm] = useState({
+    // ⭐ REQUIRED NAME
+    name: initialData?.name || "",
+
     setup_id: initialData?.setup_id || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
@@ -59,10 +62,8 @@ export default function StrategyFormTrading({
     base_amount: initialData?.base_amount || "",
 
     execution_mode: initialData?.execution_mode || "fixed",
-
     decision_curve: initialData?.decision_curve || null,
 
-    // ✅ juiste bron
     curve_name:
       initialData?.decision_curve_name ||
       initialData?.decision_curve?.name ||
@@ -158,6 +159,9 @@ export default function StrategyFormTrading({
     e.preventDefault();
     setError("");
 
+    if (!form.name.trim())
+      return setError("❌ Strategie naam is verplicht.");
+
     if (!form.setup_id)
       return setError("❌ Kies eerst een setup.");
 
@@ -181,6 +185,8 @@ export default function StrategyFormTrading({
       .filter(Boolean);
 
     const payload = {
+      name: form.name.trim(), // ⭐ REQUIRED
+
       setup_id: Number(form.setup_id),
       entry,
       targets,
@@ -200,7 +206,6 @@ export default function StrategyFormTrading({
               name: form.curve_name.trim(),
             },
 
-      // ⭐ BELANGRIJK voor backend
       decision_curve_name:
         form.execution_mode === "fixed"
           ? null
@@ -226,6 +231,7 @@ export default function StrategyFormTrading({
 
   const disabled =
     saving ||
+    !form.name.trim() ||
     !form.setup_id ||
     !form.entry ||
     !form.targetsText ||
@@ -242,6 +248,15 @@ export default function StrategyFormTrading({
           ? "Tradingstrategie bewerken"
           : "Nieuwe Tradingstrategie"}
       </h3>
+
+      {/* ⭐ STRATEGY NAME */}
+      <input
+        name="name"
+        value={form.name}
+        onChange={handleChange}
+        placeholder="Strategie naam"
+        className="input"
+      />
 
       <select
         name="setup_id"
@@ -268,69 +283,6 @@ export default function StrategyFormTrading({
         </label>
         <input type="number" name="base_amount" value={form.base_amount} onChange={handleChange} className="input"/>
       </div>
-
-      {/* Execution logic */}
-      <div className="space-y-2">
-        <label className="text-sm font-semibold flex gap-2 items-center">
-          <Sliders size={14}/> Executie logica
-        </label>
-
-        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer">
-          <input type="radio" name="execution_mode" value="fixed"
-            checked={form.execution_mode==="fixed"} onChange={handleChange}/>
-          Vast bedrag
-        </label>
-
-        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer">
-          <input type="radio" name="execution_mode" value="custom"
-            checked={form.execution_mode==="custom"} onChange={handleChange}/>
-          Curve-based sizing
-        </label>
-      </div>
-
-      {/* CURVE */}
-      {form.execution_mode === "custom" && (
-        <>
-          <select
-            name="selected_curve_id"
-            value={form.selected_curve_id}
-            onChange={handleChange}
-            className="input"
-          >
-            <option value="new">Nieuwe curve</option>
-            {curves.map((c)=>(
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-
-          {form.selected_curve_id === "new" && (
-            <>
-              <input
-                name="curve_name"
-                value={form.curve_name}
-                onChange={handleChange}
-                placeholder="Naam van je curve"
-                className="input"
-              />
-
-              <CurveEditor
-                value={form.decision_curve}
-                onChange={(curve)=>
-                  setForm(p=>({...p, decision_curve:curve}))
-                }
-              />
-            </>
-          )}
-        </>
-      )}
-
-      <input name="tags" value={form.tags} onChange={handleChange} placeholder="Tags" className="input"/>
-
-      <label className="flex items-center gap-2">
-        <input type="checkbox" name="favorite" checked={form.favorite} onChange={handleChange}/>
-        {form.favorite ? <Star className="text-yellow-500"/> : <StarOff/>}
-        Favoriet
-      </label>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 

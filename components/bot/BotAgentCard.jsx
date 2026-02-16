@@ -119,13 +119,13 @@ export default function BotAgentCard({
           {/* RIGHT */}
           <div className="flex items-center gap-5">
 
-            {/* ACTIVE STATUS */}
+            {/* ACTIVE */}
             <div
               className={`flex items-center gap-2 font-bold uppercase text-sm
               ${isPaused ? "text-gray-400" : "text-green-600"}`}
             >
               <span
-                className={`w-2.5 h-2.5 rounded-full
+                className={`w-2.5 h-2.5 rounded rounded-full
                 ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`}
               />
               {isPaused ? "Paused" : "Active"}
@@ -154,6 +154,7 @@ export default function BotAgentCard({
                 </div>
               )}
             </div>
+
           </div>
         </div>
 
@@ -194,26 +195,33 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Portfolio (2/3) + Market (1/3) ===== */}
-      <div className="grid lg:grid-cols-3 border rounded-xl overflow-hidden">
+      {/* ===== Portfolio + Market (correct alignment) ===== */}
+      <div className="grid lg:grid-cols-3 border rounded-xl overflow-hidden items-stretch">
 
-        <div className="lg:col-span-2 p-5">
-          <BotPortfolioCard bot={portfolio} />
+        {/* LEFT 2/3 */}
+        <div className="lg:col-span-2 p-5 flex">
+          <div className="w-full">
+            <BotPortfolioCard bot={portfolio} />
+          </div>
         </div>
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="p-5">
-          <MarketConditionsInline
-            health={decision?.market_health}
-            transitionRisk={decision?.transition_risk}
-            pressure={decision?.market_pressure}
-            multiplier={exposureMultiplier}
-          />
+        {/* RIGHT 1/3 */}
+        <div className="p-5 flex">
+          <div className="w-full">
+            <MarketConditionsInline
+              health={decision?.market_health}
+              transitionRisk={decision?.transition_risk}
+              pressure={decision?.market_pressure}
+              multiplier={exposureMultiplier}
+            />
+          </div>
         </div>
+
       </div>
 
-      {/* ===== Decision (left) + Trades (right) ===== */}
+      {/* ===== Decision + Trades ===== */}
       <div className="grid lg:grid-cols-2 border rounded-xl overflow-hidden">
 
         <div className="p-5">

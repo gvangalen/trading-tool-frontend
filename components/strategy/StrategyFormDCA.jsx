@@ -22,6 +22,9 @@ export default function StrategyFormDCA({
   const [curves, setCurves] = useState([]);
 
   const [form, setForm] = useState({
+    // ⭐ STRATEGY NAME (REQUIRED)
+    name: initialData?.name || "",
+
     setup_id: initialData?.setup_id || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
@@ -33,7 +36,6 @@ export default function StrategyFormDCA({
 
     decision_curve: initialData?.decision_curve || null,
 
-    // ⭐ juiste naambron
     curve_name:
       initialData?.decision_curve_name ||
       initialData?.decision_curve?.name ||
@@ -132,6 +134,7 @@ export default function StrategyFormDCA({
   /* ================= VALIDATION ================= */
 
   const isValid =
+    form.name.trim() !== "" && // ⭐ REQUIRED
     form.setup_id &&
     Number(form.amount) > 0 &&
     form.frequency &&
@@ -145,12 +148,19 @@ export default function StrategyFormDCA({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!form.name.trim()) {
+      setError("❌ Strategie naam is verplicht.");
+      return;
+    }
+
     if (!isValid) {
       setError("❌ Vul alle velden correct in.");
       return;
     }
 
     const payload = {
+      name: form.name.trim(), // ⭐ REQUIRED
+
       strategy_type: "dca",
       setup_id: Number(form.setup_id),
       base_amount: Number(form.amount),
@@ -165,13 +175,11 @@ export default function StrategyFormDCA({
               name: form.curve_name.trim(),
             },
 
-      // ⭐ BELANGRIJK → backend verwacht dit veld
       decision_curve_name:
         form.execution_mode === "fixed"
           ? null
           : form.curve_name.trim(),
 
-      // ⭐ curve reuse
       decision_curve_id:
         form.selected_curve_id !== "new"
           ? Number(form.selected_curve_id)
@@ -196,6 +204,15 @@ export default function StrategyFormDCA({
         <Wallet className="w-5 h-5 text-blue-600" />
         {mode === "edit" ? "DCA bewerken" : "Nieuwe DCA"}
       </h2>
+
+      {/* ⭐ STRATEGY NAME */}
+      <input
+        name="name"
+        value={form.name}
+        onChange={handleChange}
+        placeholder="Strategie naam"
+        className="input"
+      />
 
       {/* Setup */}
       <select

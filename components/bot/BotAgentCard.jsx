@@ -125,7 +125,7 @@ export default function BotAgentCard({
               ${isPaused ? "text-gray-400" : "text-green-600"}`}
             >
               <span
-                className={`w-2.5 h-2.5 rounded rounded-full
+                className={`w-2.5 h-2.5 rounded-full
                 ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`}
               />
               {isPaused ? "Paused" : "Active"}
@@ -195,34 +195,28 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Portfolio + Market (correct alignment) ===== */}
-      <div className="grid lg:grid-cols-3 border rounded-xl overflow-hidden items-stretch">
+      {/* ===== Portfolio + Market ===== */}
+      <div className="grid grid-cols-3 border rounded-xl overflow-hidden">
 
-        {/* LEFT 2/3 */}
-        <div className="lg:col-span-2 p-5 flex">
-          <div className="w-full">
-            <BotPortfolioCard bot={portfolio} />
-          </div>
+        <div className="col-span-2 p-5">
+          <BotPortfolioCard bot={portfolio} />
         </div>
 
-        <div className="hidden lg:block w-px bg-gray-200" />
+        <div className="w-px bg-gray-200" />
 
-        {/* RIGHT 1/3 */}
-        <div className="p-5 flex">
-          <div className="w-full">
-            <MarketConditionsInline
-              health={decision?.market_health}
-              transitionRisk={decision?.transition_risk}
-              pressure={decision?.market_pressure}
-              multiplier={exposureMultiplier}
-            />
-          </div>
+        <div className="p-5">
+          <MarketConditionsInline
+            health={decision?.market_health}
+            transitionRisk={decision?.transition_risk}
+            pressure={decision?.market_pressure}
+            multiplier={exposureMultiplier}
+          />
         </div>
 
       </div>
 
       {/* ===== Decision + Trades ===== */}
-      <div className="grid lg:grid-cols-2 border rounded-xl overflow-hidden">
+      <div className="grid grid-cols-2 border rounded-xl overflow-hidden">
 
         <div className="p-5">
           <BotDecisionCard
@@ -237,11 +231,12 @@ export default function BotAgentCard({
           />
         </div>
 
-        <div className="hidden lg:block w-px bg-gray-200" />
+        <div className="w-px bg-gray-200" />
 
         <div className="p-5">
           <BotTradeTable trades={trades ?? []} />
         </div>
+
       </div>
 
       {/* HISTORY */}

@@ -12,19 +12,28 @@ export default function GuardrailsPanel({
   decision = {},
   bot = {},
 }) {
+  /* =====================================================
+     🔐 GUARDRAILS STATE
+  ===================================================== */
+
+  // kill switch default = ON
   const killSwitch = bot?.kill_switch !== false;
 
   const maxRisk =
-    decision?.max_risk_per_trade ?? bot?.max_risk_per_trade;
+    decision?.max_risk_per_trade ?? bot?.max_risk_per_trade ?? 0;
 
   const maxDaily =
-    decision?.max_daily_allocation ?? bot?.max_daily_allocation;
+    decision?.max_daily_allocation ?? bot?.max_daily_allocation ?? 0;
 
   const warnings = Array.isArray(decision?.warnings)
     ? decision.warnings
     : [];
 
   const transitionRisk = Number(decision?.transition_risk) || 0;
+
+  /* =====================================================
+     🎯 RISK LABEL + COLOR
+  ===================================================== */
 
   const riskLabel =
     transitionRisk > 70
@@ -33,15 +42,30 @@ export default function GuardrailsPanel({
       ? "Moderate"
       : "Low";
 
-  const formatEUR = (v) =>
-    v?.toLocaleString("nl-NL", {
+  const riskColor =
+    transitionRisk > 70
+      ? "text-red-600"
+      : transitionRisk > 40
+      ? "text-orange-500"
+      : "text-green-600";
+
+  /* =====================================================
+     💰 SAFE EUR FORMAT
+  ===================================================== */
+
+  const formatEUR = (value) => {
+    const num = Number(value);
+    if (!num) return "€0";
+
+    return num.toLocaleString("nl-NL", {
       style: "currency",
       currency: "EUR",
       maximumFractionDigits: 0,
     });
+  };
 
   return (
-    <div className="rounded-xl border bg-white p-5 space-y-4">
+    <div className="rounded-xl border bg-white dark:bg-gray-900 p-5 space-y-4">
 
       {/* Header */}
       <div className="flex items-center gap-2 font-semibold">
@@ -55,16 +79,16 @@ export default function GuardrailsPanel({
         <span className="text-green-600 font-semibold">LIVE</span>
       </div>
 
-      {/* Max risk */}
-      {maxRisk && (
+      {/* Max risk per trade */}
+      {maxRisk != null && (
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Max risk / trade</span>
           <span className="font-medium">{formatEUR(maxRisk)}</span>
         </div>
       )}
 
-      {/* Max daily */}
-      {maxDaily && (
+      {/* Max daily allocation */}
+      {maxDaily != null && (
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Max per day</span>
           <span className="font-medium">{formatEUR(maxDaily)}</span>
@@ -74,6 +98,7 @@ export default function GuardrailsPanel({
       {/* Kill switch */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500">Kill switch</span>
+
         <div className="flex items-center gap-2">
           {killSwitch ? (
             <>
@@ -95,7 +120,10 @@ export default function GuardrailsPanel({
           <Gauge size={14} />
           Transition risk
         </span>
-        <span className="font-medium">{riskLabel}</span>
+
+        <span className={`font-medium ${riskColor}`}>
+          {riskLabel}
+        </span>
       </div>
 
       {/* WARNINGS */}

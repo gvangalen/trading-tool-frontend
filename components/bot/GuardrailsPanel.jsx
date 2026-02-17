@@ -12,12 +12,19 @@ export default function GuardrailsPanel({
   decision = {},
   bot = {},
 }) {
-  const killSwitch = bot?.kill_switch ?? true;
-  const maxRisk = decision?.max_risk_per_trade ?? bot?.max_risk_per_trade;
-  const maxDaily = decision?.max_daily_allocation ?? bot?.max_daily_allocation;
-  const warnings = decision?.warnings ?? [];
+  const killSwitch = bot?.kill_switch !== false;
 
-  const transitionRisk = decision?.transition_risk ?? 0;
+  const maxRisk =
+    decision?.max_risk_per_trade ?? bot?.max_risk_per_trade;
+
+  const maxDaily =
+    decision?.max_daily_allocation ?? bot?.max_daily_allocation;
+
+  const warnings = Array.isArray(decision?.warnings)
+    ? decision.warnings
+    : [];
+
+  const transitionRisk = Number(decision?.transition_risk) || 0;
 
   const riskLabel =
     transitionRisk > 70
@@ -25,6 +32,13 @@ export default function GuardrailsPanel({
       : transitionRisk > 40
       ? "Moderate"
       : "Low";
+
+  const formatEUR = (v) =>
+    v?.toLocaleString("nl-NL", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    });
 
   return (
     <div className="rounded-xl border bg-white p-5 space-y-4">
@@ -45,7 +59,7 @@ export default function GuardrailsPanel({
       {maxRisk && (
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Max risk / trade</span>
-          <span className="font-medium">€{maxRisk}</span>
+          <span className="font-medium">{formatEUR(maxRisk)}</span>
         </div>
       )}
 
@@ -53,7 +67,7 @@ export default function GuardrailsPanel({
       {maxDaily && (
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Max per day</span>
-          <span className="font-medium">€{maxDaily}</span>
+          <span className="font-medium">{formatEUR(maxDaily)}</span>
         </div>
       )}
 

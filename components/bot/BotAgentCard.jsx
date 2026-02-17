@@ -7,6 +7,7 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
+
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
 import GuardrailsPanel from "@/components/bot/GuardrailsPanel";
 
@@ -69,12 +70,22 @@ export default function BotAgentCard({
     bot?.strategy?.exposure_multiplier ??
     1;
 
-  const executionLabel =
-    executionMode === "custom" ? "Curve sizing" : "Fixed amount";
-
   const statusLabel = decision?.action || "OBSERVE";
   const confidence =
     decision?.confidence_label || decision?.confidence || "LOW";
+
+  /* ================= UI INTELLIGENCE ================= */
+
+  const transitionRisk = decision?.transition_risk ?? 0;
+
+  const highStress = transitionRisk > 70;
+
+  const regimeBorder =
+    decision?.regime === "risk_off"
+      ? "border-red-200 dark:border-red-900/40"
+      : decision?.regime === "risk_on"
+      ? "border-emerald-200 dark:border-emerald-900/40"
+      : "border-gray-200 dark:border-white/10";
 
   /* close settings */
   useEffect(() => {
@@ -120,12 +131,11 @@ export default function BotAgentCard({
     riskConfig.balanced;
 
   return (
-    <div className="w-full rounded-2xl border bg-white shadow-sm space-y-6 p-6">
+    <div className="w-full rounded-2xl border bg-white dark:bg-white/5 shadow-sm space-y-6 p-6">
 
       {/* ================= HEADER ================= */}
       <div className="space-y-4 border-b pb-5">
 
-        {/* TOP */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -169,32 +179,6 @@ export default function BotAgentCard({
           {symbol} · {timeframe}
         </div>
 
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-500">Setup</span>
-          <span className="font-semibold">{setupName}</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-500">Strategy</span>
-          <span className="px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 font-semibold text-xs">
-            {strategyName}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-6 text-gray-700">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={16} />
-            <span className="font-semibold">{executionLabel}</span>
-          </div>
-
-          <div>
-            Exposure:
-            <span className="ml-2 font-bold text-indigo-600">
-              {exposureMultiplier.toFixed(2)}×
-            </span>
-          </div>
-        </div>
-
         <div className="flex gap-3">
           <span className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
             {risk.icon}
@@ -214,7 +198,6 @@ export default function BotAgentCard({
           <span className="text-gray-400">•</span>
           <span>Confidence <strong>{confidence}</strong></span>
         </div>
-
       </div>
 
       {/* ===== Portfolio + Guardrails ===== */}
@@ -225,13 +208,18 @@ export default function BotAgentCard({
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="lg:w-[340px] p-5 bg-gray-50">
+        <div className="lg:w-[340px] p-5 bg-gray-50 dark:bg-white/5">
           <GuardrailsPanel decision={decision} bot={bot} />
         </div>
       </div>
 
-      {/* ===== Market Conditions ===== */}
-      <div className="border rounded-xl p-5 bg-gray-50">
+      {/* ===== MARKET INTELLIGENCE ===== */}
+      <div className={`
+        rounded-xl border p-5 transition
+        ${regimeBorder}
+        ${highStress ? "ring-2 ring-orange-400/40" : ""}
+        bg-gray-50 dark:bg-white/5
+      `}>
         <MarketConditionsInline
           health={decision?.market_health}
           transitionRisk={decision?.transition_risk}

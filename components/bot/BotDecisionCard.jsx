@@ -8,8 +8,6 @@ import {
   SkipForward,
   RotateCcw,
   ShoppingCart,
-  CheckCircle,
-  XCircle,
   Layers,
   TrendingUp,
   Gauge,
@@ -51,24 +49,28 @@ export default function BotTodayProposal({
 
   const status = decision.status ?? "planned";
   const isFinal = status === "executed" || status === "skipped";
-  const executedByAuto = decision.executed_by === "auto";
+
   const confidence = decision.confidence ?? "low";
 
   /* =====================================================
-     EXECUTION CONTEXT (NEW)
+     EXECUTION CONTEXT
   ===================================================== */
 
-  const executionMode = decision.execution_mode ?? "fixed";
-  const curveName = decision.decision_curve_name;
-  const multiplier = decision.exposure_multiplier ?? 1;
-  const baseAmount = decision.base_amount ?? null;
+  const executionMode = decision.execution_mode || "fixed";
+  const curveName = decision.decision_curve_name || null;
+  const multiplier = Number(decision.exposure_multiplier ?? 1);
+  const baseAmount = Number(decision.base_amount ?? 0);
+
+  const safeMultiplier = isNaN(multiplier) ? 1 : multiplier;
 
   const executionLabel =
-    executionMode === "custom" ? "Curve sizing actief" : "Vast bedrag";
+    executionMode === "custom"
+      ? "Curve sizing actief"
+      : "Vast bedrag";
 
   const allocationPreview =
-    baseAmount && multiplier
-      ? `€${Math.round(baseAmount * multiplier)}`
+    baseAmount > 0
+      ? `€${Math.round(baseAmount * safeMultiplier)}`
       : null;
 
   /* =====================================================
@@ -76,7 +78,10 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const decisionTime =
-    decision.updated_at || decision.decision_ts || decision.created_at || null;
+    decision.updated_at ||
+    decision.decision_ts ||
+    decision.created_at ||
+    null;
 
   const formattedDecisionTime = decisionTime
     ? new Date(decisionTime).toLocaleString("nl-NL", {
@@ -95,7 +100,7 @@ export default function BotTodayProposal({
   if (!setupMatch) return null;
 
   const score =
-    typeof setupMatch.score === "number" && setupMatch.score > 0
+    typeof setupMatch.score === "number"
       ? Math.min(setupMatch.score, 100)
       : 10;
 
@@ -104,8 +109,13 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const hasTrade = !!order;
+
   const canExecute =
-    !isAuto && !isFinal && hasTrade && !!onExecute && !!decisionId;
+    !isAuto &&
+    !isFinal &&
+    hasTrade &&
+    !!onExecute &&
+    !!decisionId;
 
   /* =====================================================
      HEADER
@@ -124,7 +134,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     EXECUTION CONTEXT CARD ⭐
+     POSITION SIZING CARD
   ===================================================== */
 
   const executionCard = (
@@ -143,14 +153,18 @@ export default function BotTodayProposal({
 
       <div className="flex items-center gap-2 text-xs">
         <Gauge size={14} />
-        Exposure multiplier:{" "}
-        <span className="font-medium">{multiplier.toFixed(2)}×</span>
+        Exposure multiplier:
+        <span className="font-medium">
+          {safeMultiplier.toFixed(2)}×
+        </span>
       </div>
 
       {allocationPreview && (
         <div className="text-xs text-[var(--text-muted)]">
-          Verwachte allocatie:{" "}
-          <span className="font-medium">{allocationPreview}</span>
+          Verwachte allocatie:
+          <span className="font-medium ml-1">
+            {allocationPreview}
+          </span>
         </div>
       )}
     </div>
@@ -168,7 +182,8 @@ export default function BotTodayProposal({
       </div>
 
       <div className="font-semibold">
-        {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
+        {setupMatch.name} · {setupMatch.symbol} ·{" "}
+        {setupMatch.timeframe}
       </div>
 
       {formattedDecisionTime && (
@@ -180,12 +195,17 @@ export default function BotTodayProposal({
       <ScoreBar score={score} />
 
       <div className="text-xs text-[var(--text-muted)]">
-        Marktscore: <span className="font-medium">{score} / 100</span>
+        Marktscore:
+        <span className="font-medium ml-1">
+          {score} / 100
+        </span>
       </div>
 
       <div className="text-xs text-[var(--text-muted)]">
-        Strategy discipline:{" "}
-        <span className="font-medium uppercase">{confidence}</span>
+        Strategy discipline:
+        <span className="font-medium uppercase ml-1">
+          {confidence}
+        </span>
       </div>
 
       {setupMatch.thresholds && (
@@ -203,7 +223,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     NO TRADE
+     NO TRADE STATE
   ===================================================== */
 
   if (!order) {
@@ -212,7 +232,9 @@ export default function BotTodayProposal({
         {header}
 
         <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
-          <div className="font-medium">Geen trade gepland voor vandaag</div>
+          <div className="font-medium">
+            Geen trade gepland voor vandaag
+          </div>
 
           <div className="text-sm text-[var(--text-muted)]">
             {setupMatch.detail}
@@ -258,7 +280,8 @@ export default function BotTodayProposal({
 
       <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
         <div className="text-2xl font-semibold">
-          {(order.side ?? "buy").toUpperCase()} {order.symbol ?? "—"}
+          {(order.side ?? "buy").toUpperCase()}{" "}
+          {order.symbol ?? "—"}
         </div>
 
         {botScoreCard}

@@ -1,6 +1,21 @@
 "use client";
 
-/* Helpers */
+/* =====================================================
+   🎯 HELPERS
+===================================================== */
+
+const clamp = (v, min = 0, max = 100) => {
+  const n = Number(v);
+  if (isNaN(n)) return min;
+  return Math.min(max, Math.max(min, n));
+};
+
+const safeMultiplier = (v) => {
+  const n = Number(v);
+  if (isNaN(n) || n <= 0) return 1;
+  return n;
+};
+
 const getExposureLabel = (value) => {
   if (value < 0.7) return "DEFENSIVE";
   if (value < 0.95) return "REDUCED";
@@ -17,21 +32,28 @@ const getExposureColor = (value) => {
   return "text-purple-600";
 };
 
-/* Compact bar */
+/* =====================================================
+   📊 BAR COMPONENT
+===================================================== */
+
 function Bar({ icon, label, value, color }) {
   const blocks = 8;
-  const filled = Math.round((value / 100) * blocks);
+  const safeValue = clamp(value);
+  const filled = Math.round((safeValue / 100) * blocks);
 
   return (
     <div className="flex items-center gap-3">
+
       <span className="text-xs">{icon}</span>
 
       <div className="flex gap-[3px]">
         {[...Array(blocks)].map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 w-4 rounded-sm ${
-              i < filled ? color : "bg-gray-200 dark:bg-gray-700"
+            className={`h-1.5 w-4 rounded-sm transition-all duration-300 ${
+              i < filled
+                ? `${color} opacity-${Math.min(100, 40 + filled * 8)}`
+                : "bg-gray-200 dark:bg-gray-700"
             }`}
           />
         ))}
@@ -42,30 +64,60 @@ function Bar({ icon, label, value, color }) {
   );
 }
 
+/* =====================================================
+   📈 MAIN COMPONENT
+===================================================== */
+
 export default function MarketConditionsInline({
   health = 50,
   transitionRisk = 50,
   pressure = 50,
   multiplier = 1,
 }) {
-  const exposureLabel = getExposureLabel(multiplier);
-  const exposureColor = getExposureColor(multiplier);
+  const safeHealth = clamp(health);
+  const safeRisk = clamp(transitionRisk);
+  const safePressure = clamp(pressure);
+  const safeMulti = safeMultiplier(multiplier);
+
+  const exposureLabel = getExposureLabel(safeMulti);
+  const exposureColor = getExposureColor(safeMulti);
 
   return (
     <div className="flex flex-wrap items-center gap-6">
 
-      <Bar icon="🟢" label="Health" value={health} color="bg-emerald-500" />
-      <Bar icon="🟠" label="Risk" value={transitionRisk} color="bg-orange-500" />
-      <Bar icon="🔵" label="Pressure" value={pressure} color="bg-blue-500" />
+      <Bar
+        icon="🟢"
+        label="Health"
+        value={safeHealth}
+        color="bg-emerald-500"
+      />
 
+      <Bar
+        icon="🟠"
+        label="Risk"
+        value={safeRisk}
+        color="bg-orange-500"
+      />
+
+      <Bar
+        icon="🔵"
+        label="Pressure"
+        value={safePressure}
+        color="bg-blue-500"
+      />
+
+      {/* Exposure multiplier */}
       <div className="flex items-center gap-2 text-xs">
         <span>🟣</span>
-        <span className={`font-semibold ${exposureColor}`}>
-          {multiplier.toFixed(2)}×
-        </span>
-        <span className="text-gray-500">{exposureLabel}</span>
-      </div>
 
+        <span className={`font-semibold ${exposureColor}`}>
+          {safeMulti.toFixed(2)}×
+        </span>
+
+        <span className="text-gray-500">
+          {exposureLabel}
+        </span>
+      </div>
     </div>
   );
 }

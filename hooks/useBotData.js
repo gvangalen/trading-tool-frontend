@@ -45,7 +45,6 @@ export default function useBotData() {
     create: false,
     update: false,
     delete: false,
-    budget: false,
   });
 
   const [error, setError] = useState(null);
@@ -53,11 +52,15 @@ export default function useBotData() {
   /* =====================================================
      🔄 LOADERS
   ===================================================== */
+
   const loadConfigs = useCallback(async () => {
     setLoading(l => ({ ...l, configs: true }));
     try {
       const data = await fetchBotConfigs();
       setConfigs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Configs laden mislukt");
     } finally {
       setLoading(l => ({ ...l, configs: false }));
     }
@@ -68,6 +71,9 @@ export default function useBotData() {
     try {
       const data = await fetchBotToday();
       setToday(data ?? null);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Today data laden mislukt");
     } finally {
       setLoading(l => ({ ...l, today: false }));
     }
@@ -78,6 +84,9 @@ export default function useBotData() {
     try {
       const data = await fetchBotHistory(days);
       setHistory(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "History laden mislukt");
     } finally {
       setLoading(l => ({ ...l, history: false }));
     }
@@ -88,6 +97,9 @@ export default function useBotData() {
     try {
       const data = await fetchBotPortfolios();
       setPortfolios(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Portfolios laden mislukt");
     } finally {
       setLoading(l => ({ ...l, portfolios: false }));
     }
@@ -96,8 +108,9 @@ export default function useBotData() {
   /* =====================================================
      📈 TRADES (ECHTE FILLS)
   ===================================================== */
+
   const loadTradesForBot = useCallback(async (bot_id, limit = 50) => {
-    if (!bot_id) return;
+    if (!bot_id || loading.trades) return;
 
     setLoading(l => ({ ...l, trades: true }));
     try {
@@ -106,14 +119,18 @@ export default function useBotData() {
         ...prev,
         [bot_id]: Array.isArray(data) ? data : [],
       }));
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Trades laden mislukt");
     } finally {
       setLoading(l => ({ ...l, trades: false }));
     }
-  }, []);
+  }, [loading.trades]);
 
   /* =====================================================
      🧠 DERIVED (READ-ONLY)
   ===================================================== */
+
   const decisionsByBot = useMemo(() => {
     const map = {};
     (today?.decisions || []).forEach(d => {
@@ -133,12 +150,16 @@ export default function useBotData() {
   /* =====================================================
      ➕ CREATE / UPDATE / DELETE
   ===================================================== */
+
   const createBot = useCallback(async payload => {
     setLoading(l => ({ ...l, create: true }));
     try {
       const res = await createBotConfig(payload);
       await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
       return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(l => ({ ...l, create: false }));
     }
@@ -150,6 +171,9 @@ export default function useBotData() {
       const res = await updateBotConfig(bot_id, payload);
       await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
       return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(l => ({ ...l, update: false }));
     }
@@ -161,6 +185,9 @@ export default function useBotData() {
       const res = await deleteBotConfig(bot_id);
       await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
       return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(l => ({ ...l, delete: false }));
     }
@@ -169,25 +196,32 @@ export default function useBotData() {
   /* =====================================================
      🔁 DAILY FLOW
   ===================================================== */
+
   const generateDecisionForBot = useCallback(async ({ bot_id }) => {
     setLoading(l => ({ ...l, generate: true }));
     try {
       const res = await generateBotDecision({ bot_id });
+
       await Promise.all([
         loadToday(),
         loadHistory(30),
         loadPortfolios(),
         loadTradesForBot(bot_id),
       ]);
+
       return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(l => ({ ...l, generate: false }));
     }
   }, [loadToday, loadHistory, loadPortfolios, loadTradesForBot]);
 
   /* =====================================================
-     ✅ EXECUTE (CRUCIAAL FIX)
+     ✅ EXECUTE
   ===================================================== */
+
   const executeBot = useCallback(async ({ bot_id, decision_id }) => {
     if (!bot_id || !decision_id) {
       throw new Error("bot_id en decision_id zijn verplicht");
@@ -197,18 +231,21 @@ export default function useBotData() {
     try {
       const res = await markBotExecuted({ bot_id, decision_id });
 
+      // sneller refreshen (history niet nodig)
       await Promise.all([
         loadToday(),
-        loadHistory(30),
         loadPortfolios(),
         loadTradesForBot(bot_id),
       ]);
 
       return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(l => ({ ...l, action: false }));
     }
-  }, [loadToday, loadHistory, loadPortfolios, loadTradesForBot]);
+  }, [loadToday, loadPortfolios, loadTradesForBot]);
 
   const skipBot = useCallback(async ({ bot_id }) => {
     setLoading(l => ({ ...l, action: true }));
@@ -216,14 +253,18 @@ export default function useBotData() {
       const res = await skipBotToday({ bot_id });
       await Promise.all([loadToday(), loadHistory(30), loadPortfolios()]);
       return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(l => ({ ...l, action: false }));
     }
   }, [loadToday, loadHistory, loadPortfolios]);
 
   /* =====================================================
-     🔁 INIT
+     🔁 INIT LOAD
   ===================================================== */
+
   useEffect(() => {
     loadConfigs();
     loadToday();
@@ -232,8 +273,23 @@ export default function useBotData() {
   }, [loadConfigs, loadToday, loadHistory, loadPortfolios]);
 
   /* =====================================================
+     ⭐ OPTIONAL: preload trades voor premium UX
+  ===================================================== */
+
+  useEffect(() => {
+    if (!today?.decisions) return;
+
+    today.decisions.forEach(d => {
+      if (!tradesByBot[d.bot_id]) {
+        loadTradesForBot(d.bot_id);
+      }
+    });
+  }, [today, tradesByBot, loadTradesForBot]);
+
+  /* =====================================================
      📤 EXPORT
   ===================================================== */
+
   return {
     configs,
     today,

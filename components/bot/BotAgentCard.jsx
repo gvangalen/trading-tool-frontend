@@ -8,6 +8,7 @@ import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
+import GuardrailsPanel from "@/components/bot/GuardrailsPanel";
 
 import {
   Bot,
@@ -47,14 +48,12 @@ export default function BotAgentCard({
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
-  // ✅ SETUP NAAM
   const setupName =
     bot?.setup?.name ||
     bot?.setup_name ||
     bot?.strategy?.setup_name ||
     "—";
 
-  // ✅ STRATEGY NAAM
   const strategyName =
     bot?.strategy?.name ||
     bot?.strategy?.data?.name ||
@@ -73,12 +72,11 @@ export default function BotAgentCard({
   const executionLabel =
     executionMode === "custom" ? "Curve sizing" : "Fixed amount";
 
-  /* ================= STATUS ================= */
-
   const statusLabel = decision?.action || "OBSERVE";
-  const confidence = decision?.confidence_label || decision?.confidence || "LOW";
+  const confidence =
+    decision?.confidence_label || decision?.confidence || "LOW";
 
-  /* close settings on outside click */
+  /* close settings */
   useEffect(() => {
     if (!showSettings) return;
 
@@ -137,14 +135,11 @@ export default function BotAgentCard({
           </div>
 
           <div className="flex items-center gap-5">
-
-            {/* ACTIVE STATUS */}
             <div className={`flex items-center gap-2 text-sm font-semibold ${isPaused ? "text-gray-400" : "text-green-600"}`}>
               <span className={`w-2.5 h-2.5 rounded-full ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`} />
               {isPaused ? "Paused" : "Active"}
             </div>
 
-            {/* SETTINGS */}
             <div className="relative" ref={settingsRef}>
               <button
                 className="text-gray-400 hover:text-gray-700"
@@ -170,18 +165,15 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* SYMBOL */}
         <div className="text-sm text-gray-500">
           {symbol} · {timeframe}
         </div>
 
-        {/* SETUP */}
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-500">Setup</span>
           <span className="font-semibold">{setupName}</span>
         </div>
 
-        {/* STRATEGY */}
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-500">Strategy</span>
           <span className="px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 font-semibold text-xs">
@@ -189,7 +181,6 @@ export default function BotAgentCard({
           </span>
         </div>
 
-        {/* EXECUTION */}
         <div className="flex flex-wrap gap-6 text-gray-700">
           <div className="flex items-center gap-2">
             <TrendingUp size={16} />
@@ -204,7 +195,6 @@ export default function BotAgentCard({
           </div>
         </div>
 
-        {/* BADGES */}
         <div className="flex gap-3">
           <span className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
             {risk.icon}
@@ -216,10 +206,10 @@ export default function BotAgentCard({
           </span>
         </div>
 
-        {/* STATUS BAR (TERUG) */}
+        {/* STATUS BAR */}
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
           <Activity size={16} className="text-gray-500" />
-          <span className="font-medium text-gray-600">Huidige status:</span>
+          <span className="font-medium text-gray-600">Status:</span>
           <span className="font-bold">{statusLabel}</span>
           <span className="text-gray-400">•</span>
           <span>Confidence <strong>{confidence}</strong></span>
@@ -227,7 +217,7 @@ export default function BotAgentCard({
 
       </div>
 
-      {/* PORTFOLIO + MARKET */}
+      {/* ===== Portfolio + Guardrails ===== */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
         <div className="flex-1 p-5">
           <BotPortfolioCard bot={portfolio} />
@@ -236,16 +226,21 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="lg:w-[340px] p-5 bg-gray-50">
-          <MarketConditionsInline
-            health={decision?.market_health}
-            transitionRisk={decision?.transition_risk}
-            pressure={decision?.market_pressure}
-            multiplier={exposureMultiplier}
-          />
+          <GuardrailsPanel decision={decision} bot={bot} />
         </div>
       </div>
 
-      {/* DECISION + TRADES */}
+      {/* ===== Market Conditions ===== */}
+      <div className="border rounded-xl p-5 bg-gray-50">
+        <MarketConditionsInline
+          health={decision?.market_health}
+          transitionRisk={decision?.transition_risk}
+          pressure={decision?.market_pressure}
+          multiplier={exposureMultiplier}
+        />
+      </div>
+
+      {/* ===== Decision + Trades ===== */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
         <div className="flex-1 p-5">
           <BotDecisionCard

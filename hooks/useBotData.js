@@ -8,6 +8,7 @@ import {
   fetchBotHistory,
   fetchBotPortfolios,
   fetchBotTrades,
+  fetchTradePlan,            // ✅ NEW
   generateBotDecision,
   markBotExecuted,
   skipBotToday,
@@ -17,22 +18,28 @@ import {
 } from "@/lib/api/botApi";
 
 /**
- * useBotData — FINAL
+ * useBotData — FINAL + TRADE PLAN SUPPORT
  * --------------------------------------------------
  * ✅ Backend = single source of truth
  * ❌ Geen business logic
  * ❌ Geen afgeleide trades / holdings
+ * ✅ Trade plans lazy loaded & cached
  */
 
 export default function useBotData() {
+
   /* =====================================================
      📦 STATE
   ===================================================== */
+
   const [configs, setConfigs] = useState([]);
   const [today, setToday] = useState(null);
   const [history, setHistory] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
   const [tradesByBot, setTradesByBot] = useState({});
+
+  // ✅ NEW: trade plans cache
+  const [tradePlans, setTradePlans] = useState({});
 
   const [loading, setLoading] = useState({
     configs: false,
@@ -106,7 +113,7 @@ export default function useBotData() {
   }, []);
 
   /* =====================================================
-     📈 TRADES (ECHTE FILLS)
+     📈 TRADES
   ===================================================== */
 
   const loadTradesForBot = useCallback(async (bot_id, limit = 50) => {
@@ -128,7 +135,29 @@ export default function useBotData() {
   }, [loading.trades]);
 
   /* =====================================================
-     🧠 DERIVED (READ-ONLY)
+     📊 TRADE PLAN (NEW)
+  ===================================================== */
+
+  const loadTradePlan = useCallback(async (decision_id) => {
+    if (!decision_id) return;
+
+    // voorkom dubbele calls
+    if (tradePlans[decision_id]) return;
+
+    try {
+      const plan = await fetchTradePlan(decision_id);
+
+      setTradePlans(prev => ({
+        ...prev,
+        [decision_id]: plan,
+      }));
+    } catch (err) {
+      console.error("Trade plan load failed", err);
+    }
+  }, [tradePlans]);
+
+  /* =====================================================
+     🧠 DERIVED
   ===================================================== */
 
   const decisionsByBot = useMemo(() => {
@@ -219,19 +248,14 @@ export default function useBotData() {
   }, [loadToday, loadHistory, loadPortfolios, loadTradesForBot]);
 
   /* =====================================================
-     ✅ EXECUTE
+     ✅ EXECUTE / SKIP
   ===================================================== */
 
   const executeBot = useCallback(async ({ bot_id, decision_id }) => {
-    if (!bot_id || !decision_id) {
-      throw new Error("bot_id en decision_id zijn verplicht");
-    }
-
     setLoading(l => ({ ...l, action: true }));
     try {
       const res = await markBotExecuted({ bot_id, decision_id });
 
-      // sneller refreshen (history niet nodig)
       await Promise.all([
         loadToday(),
         loadPortfolios(),
@@ -273,20 +297,6 @@ export default function useBotData() {
   }, [loadConfigs, loadToday, loadHistory, loadPortfolios]);
 
   /* =====================================================
-     ⭐ OPTIONAL: preload trades voor premium UX
-  ===================================================== */
-
-  useEffect(() => {
-    if (!today?.decisions) return;
-
-    today.decisions.forEach(d => {
-      if (!tradesByBot[d.bot_id]) {
-        loadTradesForBot(d.bot_id);
-      }
-    });
-  }, [today, tradesByBot, loadTradesForBot]);
-
-  /* =====================================================
      📤 EXPORT
   ===================================================== */
 
@@ -296,6 +306,7 @@ export default function useBotData() {
     history,
     portfolios,
     tradesByBot,
+    tradePlans,        // ✅ NEW
 
     decisionsByBot,
     ordersByBot,
@@ -312,5 +323,6 @@ export default function useBotData() {
     skipBot,
 
     loadTradesForBot,
+    loadTradePlan,     // ✅ NEW
   };
 }

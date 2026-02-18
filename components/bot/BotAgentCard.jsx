@@ -8,6 +8,7 @@ import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
+import MarketDecisionCard from "@/components/bot/MarketDecisionCard";   // ✅ NEW
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
 import GuardrailsPanel from "@/components/bot/GuardrailsPanel";
 
@@ -15,7 +16,6 @@ import {
   Bot,
   MoreVertical,
   Clock,
-  TrendingUp,
   Shield,
   Scale,
   Rocket,
@@ -49,35 +49,18 @@ export default function BotAgentCard({
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
-  const setupName =
-    bot?.setup?.name ||
-    bot?.setup_name ||
-    bot?.strategy?.setup_name ||
-    "—";
-
-  const strategyName =
-    bot?.strategy?.name ||
-    bot?.strategy?.data?.name ||
-    bot?.strategy_name ||
-    bot?.strategy?.type ||
-    "—";
-
-  const executionMode =
-    bot?.strategy?.execution_mode || bot?.execution_mode || "fixed";
+  const statusLabel = decision?.action || "OBSERVE";
+  const confidence =
+    decision?.confidence_label || decision?.confidence || "LOW";
 
   const exposureMultiplier =
     decision?.exposure_multiplier ??
     bot?.strategy?.exposure_multiplier ??
     1;
 
-  const statusLabel = decision?.action || "OBSERVE";
-  const confidence =
-    decision?.confidence_label || decision?.confidence || "LOW";
-
   /* ================= UI INTELLIGENCE ================= */
 
   const transitionRisk = decision?.transition_risk ?? 0;
-
   const highStress = transitionRisk > 70;
 
   const regimeBorder =
@@ -190,7 +173,7 @@ export default function BotAgentCard({
           </span>
         </div>
 
-        {/* STATUS BAR */}
+        {/* STATUS */}
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
           <Activity size={16} className="text-gray-500" />
           <span className="font-medium text-gray-600">Status:</span>
@@ -214,18 +197,20 @@ export default function BotAgentCard({
       </div>
 
       {/* ===== MARKET INTELLIGENCE ===== */}
-      <div className={`
-        rounded-xl border p-5 transition
-        ${regimeBorder}
-        ${highStress ? "ring-2 ring-orange-400/40" : ""}
-        bg-gray-50 dark:bg-white/5
-      `}>
-        <MarketConditionsInline
-          health={decision?.market_health}
-          transitionRisk={decision?.transition_risk}
-          pressure={decision?.market_pressure}
-          multiplier={exposureMultiplier}
-        />
+      <div className={`rounded-xl border p-5 transition ${regimeBorder} ${highStress ? "ring-2 ring-orange-400/40" : ""}`}>
+        
+        {/* 🔥 Regime / Risk intelligence */}
+        <MarketDecisionCard decision={decision} />
+
+        {/* 📊 Conditions */}
+        <div className="mt-4 pt-4 border-t">
+          <MarketConditionsInline
+            health={decision?.market_health}
+            transitionRisk={decision?.transition_risk}
+            pressure={decision?.market_pressure}
+            multiplier={exposureMultiplier}
+          />
+        </div>
       </div>
 
       {/* ===== Decision + Trades ===== */}

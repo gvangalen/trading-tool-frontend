@@ -17,36 +17,19 @@ import {
 } from "lucide-react";
 
 /**
- * TradePlanCard — TradeLayer 3.0
+ * TradePlanCard — FINAL
  *
- * Doel:
- * - 1 plek waar een "trade klaarzetten" plan staat (paper/live later)
- * - zowel AUTO (backend) als MANUAL (user edits) ondersteund
- * - execution readiness checks: budget + risk limits + completeness
- *
- * Verwacht contract (voorbeeld):
- * tradePlan = {
- *   status: "ready" | "draft" | "blocked" | "none",
- *   symbol: "BTC",
- *   side: "buy" | "sell",
- *   entry_plan: [{ type: "buy"|"breakout"|"limit", price: 64200, note?: "" }],
- *   stop_loss: { price: 59900 } | null,
- *   targets: [{ label: "TP1", price: 71000 }, ...],
- *   risk: {
- *     risk_eur: 320,
- *     position_size_qty: 0.0047,
- *     rr: 3.6,
- *   },
- *   constraints: {
- *     max_risk_per_trade: 500,
- *     max_daily_allocation: 200,
- *     budget_remaining_today: 150,
- *     within_budget: true,
- *     within_risk: true,
- *   },
- *   notes: { summary?: "", rationale?: "" }
- * }
+ * ondersteunt:
+ * ✅ backend plan
+ * ✅ decision fallback
+ * ✅ manual overrides
+ * ✅ execution readiness
  */
+
+const num = (v, d = null) => {
+  const n = Number(v);
+  return isFinite(n) ? n : d;
+};
 
 const fmtEur = (v) => {
   const n = Number(v);
@@ -78,18 +61,6 @@ function Badge({ ok, labelOk, labelFail }) {
   );
 }
 
-function MiniRow({ icon, label, children }) {
-  return (
-    <div className="flex items-start justify-between gap-4 text-sm">
-      <div className="flex items-center gap-2 text-gray-500">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="text-right text-gray-900">{children}</div>
-    </div>
-  );
-}
-
 function SectionTitle({ icon, title, right }) {
   return (
     <div className="flex items-center justify-between">
@@ -104,93 +75,87 @@ function SectionTitle({ icon, title, right }) {
 
 export default function TradePlanCard({
   tradePlan = null,
-  decision = null, // optioneel: om constraints/warnings uit decision te halen
+  decision = null,
   loading = false,
   isGenerating = false,
-
-  /** Auto: laat backend nieuw plan genereren (later /api/trade_plan/generate) */
   onGenerate,
-
-  /** Manual: plan opslaan (later /api/trade_plan/save) */
   onSave,
-
-  /** Manual toggle */
   allowManual = true,
 }) {
   const [editing, setEditing] = useState(false);
-
-  // Local editable draft (voor manual overrides)
   const [draft, setDraft] = useState(() => tradePlan || null);
 
+  // sync backend updates
   useEffect(() => {
-    // als backend plan verandert -> sync, tenzij user in edit mode zit
     if (!editing) setDraft(tradePlan || null);
   }, [tradePlan, editing]);
 
   const plan = draft;
 
   const derived = useMemo(() => {
-    // Fallback: altijd iets tonen (jullie rule)
-    if (!plan) {
+    // ✅ FALLBACK: direct tonen als decision trade plan bevat
+    const fallbackPlan =
+      plan ||
+      decision?.trade_plan ||
+      null;
+
+    if (!fallbackPlan) {
       return {
         status: "none",
         symbol: decision?.symbol || "BTC",
-        side: decision?.action === "sell" ? "sell" : "buy",
+        side: decision?.action || "buy",
         entry_plan: [],
         stop_loss: null,
         targets: [],
         risk: null,
         constraints: {
-          max_risk_per_trade: decision?.max_risk_per_trade ?? null,
-          max_daily_allocation: decision?.max_daily_allocation ?? null,
           within_budget: false,
           within_risk: false,
-          budget_remaining_today: null,
+          warnings: [],
         },
         notes: { summary: "Nog geen trade plan beschikbaar." },
       };
     }
 
-    const entry = clampArr(plan.entry_plan);
-    const targets = clampArr(plan.targets);
+    const entry = clampArr(fallbackPlan.entry_plan);
+    const targets = clampArr(fallbackPlan.targets);
 
-    const maxRisk = plan?.constraints?.max_risk_per_trade ?? decision?.max_risk_per_trade ?? null;
-    const maxDaily = plan?.constraints?.max_daily_allocation ?? decision?.max_daily_allocation ?? null;
-
-    const withinBudget =
-      typeof plan?.constraints?.within_budget === "boolean"
-        ? plan.constraints.within_budget
-        : true;
-
-    const withinRisk =
-      typeof plan?.constraints?.within_risk === "boolean"
-        ? plan.constraints.within_risk
-        : true;
+    const constraints = {
+      within_budget:
+        fallbackPlan.constraints?.within_budget ??
+        true,
+      within_risk:
+        fallbackPlan.constraints?.within_risk ??
+        true,
+      max_risk_per_trade:
+        fallbackPlan.constraints?.max_risk_per_trade ??
+        decision?.max_risk_per_trade,
+      max_daily_allocation:
+        fallbackPlan.constraints?.max_daily_allocation ??
+        decision?.max_daily_allocation,
+      warnings:
+        fallbackPlan.constraints?.warnings ??
+        decision?.warnings ??
+        [],
+    };
 
     const ready =
       entry.length > 0 &&
-      !!plan.stop_loss?.price &&
+      !!fallbackPlan.stop_loss?.price &&
       targets.length > 0 &&
-      withinBudget &&
-      withinRisk;
+      constraints.within_budget &&
+      constraints.within_risk;
 
     return {
-      ...plan,
+      ...fallbackPlan,
       entry_plan: entry,
       targets,
-      constraints: {
-        ...plan.constraints,
-        max_risk_per_trade: maxRisk,
-        max_daily_allocation: maxDaily,
-        within_budget: withinBudget,
-        within_risk: withinRisk,
-      },
+      constraints,
       _ready: ready,
     };
   }, [plan, decision]);
 
   const canEdit = allowManual && !!onSave;
-  const canGenerate = !!onGenerate;
 
   const setEntry = (idx, patch) => {
     setDraft((p) => {
@@ -202,23 +167,18 @@ export default function TradePlanCard({
     });
   };
 
-  const addEntry = () => {
-    setDraft((p) => {
-      const next = { ...(p || {}) };
-      next.entry_plan = [...clampArr(next.entry_plan), { type: "buy", price: 0 }];
-      return next;
-    });
-  };
+  const addEntry = () =>
+    setDraft((p) => ({
+      ...(p || {}),
+      entry_plan: [...clampArr(p?.entry_plan), { type: "buy", price: 0 }],
+    }));
 
-  const removeEntry = (idx) => {
+  const removeEntry = (idx) =>
     setDraft((p) => {
-      const next = { ...(p || {}) };
-      const arr = clampArr(next.entry_plan).slice();
+      const arr = clampArr(p?.entry_plan).slice();
       arr.splice(idx, 1);
-      next.entry_plan = arr;
-      return next;
+      return { ...(p || {}), entry_plan: arr };
     });
-  };
 
   const setTarget = (idx, patch) => {
     setDraft((p) => {
@@ -230,38 +190,30 @@ export default function TradePlanCard({
     });
   };
 
-  const addTarget = () => {
-    setDraft((p) => {
-      const next = { ...(p || {}) };
-      const i = clampArr(next.targets).length + 1;
-      next.targets = [...clampArr(next.targets), { label: `TP${i}`, price: 0 }];
-      return next;
-    });
-  };
+  const addTarget = () =>
+    setDraft((p) => ({
+      ...(p || {}),
+      targets: [...clampArr(p?.targets), { label: "TP", price: 0 }],
+    }));
 
-  const removeTarget = (idx) => {
+  const removeTarget = (idx) =>
     setDraft((p) => {
-      const next = { ...(p || {}) };
-      const arr = clampArr(next.targets).slice();
+      const arr = clampArr(p?.targets).slice();
       arr.splice(idx, 1);
-      next.targets = arr;
-      return next;
+      return { ...(p || {}), targets: arr };
     });
-  };
 
-  const setStop = (price) => {
+  const setStop = (price) =>
     setDraft((p) => ({
       ...(p || {}),
-      stop_loss: { price: Number(price) || 0 },
+      stop_loss: { price: num(price, 0) },
     }));
-  };
 
-  const setRiskField = (key, value) => {
+  const setRiskField = (key, value) =>
     setDraft((p) => ({
       ...(p || {}),
-      risk: { ...(p?.risk || {}), [key]: Number(value) },
+      risk: { ...(p?.risk || {}), [key]: num(value, 0) },
     }));
-  };
 
   const handleSave = async () => {
     if (!onSave) return;
@@ -279,27 +231,22 @@ export default function TradePlanCard({
 
   return (
     <div className="rounded-2xl border bg-white shadow-sm p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-gray-900 font-bold text-lg">
+
+      {/* HEADER */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 font-bold text-lg">
             <Bot size={18} />
             Trade Plan
           </div>
           <div className="text-sm text-gray-500">
-            {derived.symbol || "BTC"} · {(derived.side || "buy").toUpperCase()}
-            {derived.status ? ` · ${derived.status}` : ""}
+            {derived.symbol} · {(derived.side || "buy").toUpperCase()}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {canGenerate && (
-            <button
-              onClick={onGenerate}
-              disabled={isGenerating}
-              className="btn-outline flex items-center gap-2"
-              title="Genereer nieuw plan (AI/backend)"
-            >
+        <div className="flex gap-2">
+          {onGenerate && (
+            <button onClick={onGenerate} className="btn-outline flex gap-2">
               <RotateCcw size={16} />
               {isGenerating ? "Genereren…" : "Genereer"}
             </button>
@@ -307,9 +254,8 @@ export default function TradePlanCard({
 
           {canEdit && (
             <button
-              onClick={() => setEditing((v) => !v)}
-              className="btn-secondary flex items-center gap-2"
-              title="Handmatig aanpassen"
+              onClick={() => setEditing(!editing)}
+              className="btn-secondary flex gap-2"
             >
               <Pencil size={16} />
               {editing ? "Stop edit" : "Edit"}
@@ -317,11 +263,7 @@ export default function TradePlanCard({
           )}
 
           {canEdit && editing && (
-            <button
-              onClick={handleSave}
-              className="btn-primary flex items-center gap-2"
-              title="Opslaan"
-            >
+            <button onClick={handleSave} className="btn-primary flex gap-2">
               <Save size={16} />
               Opslaan
             </button>
@@ -329,349 +271,88 @@ export default function TradePlanCard({
         </div>
       </div>
 
-      {/* Execution readiness badges */}
+      {/* BADGES */}
       <div className="flex flex-wrap gap-2">
-        <Badge
-          ok={derived._ready}
-          labelOk="klaar om te plaatsen"
-          labelFail="niet klaar"
-        />
-        <Badge
-          ok={!!derived.constraints?.within_budget}
-          labelOk="binnen budget"
-          labelFail="budget limiet"
-        />
-        <Badge
-          ok={!!derived.constraints?.within_risk}
-          labelOk="binnen risk limits"
-          labelFail="risk limiet"
-        />
+        <Badge ok={derived._ready} labelOk="klaar om te plaatsen" labelFail="niet klaar" />
+        <Badge ok={derived.constraints.within_budget} labelOk="binnen budget" labelFail="budget limiet" />
+        <Badge ok={derived.constraints.within_risk} labelOk="binnen risk limits" labelFail="risk limiet" />
       </div>
 
-      {/* Notes */}
-      {(derived?.notes?.summary || derived?.notes?.rationale) && (
-        <div className="rounded-xl border bg-gray-50 p-4 text-sm text-gray-700">
-          {derived?.notes?.summary && (
-            <div className="font-medium">{derived.notes.summary}</div>
-          )}
-          {derived?.notes?.rationale && (
-            <div className="mt-1 text-gray-600">{derived.notes.rationale}</div>
-          )}
-        </div>
-      )}
-
-      {/* Entry plan */}
+      {/* ENTRY */}
       <div className="rounded-xl border p-4 space-y-3">
         <SectionTitle
           icon={<TrendingUp size={16} />}
           title="Entry Plan"
           right={
-            editing ? (
-              <button
-                onClick={addEntry}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
-              >
-                <Plus size={14} />
-                entry
+            editing && (
+              <button onClick={addEntry} className="text-indigo-600 text-xs flex gap-1">
+                <Plus size={14}/> entry
               </button>
-            ) : null
+            )
           }
         />
 
-        {derived.entry_plan.length === 0 ? (
-          <div className="text-sm text-gray-500">
-            Geen entries ingesteld.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {derived.entry_plan.map((e, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 p-3"
-              >
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="rounded-md border bg-white px-2 py-0.5 text-xs font-semibold text-gray-700">
-                    {(e.type || "buy").toUpperCase()}
-                  </span>
+        {derived.entry_plan.map((e, i) => (
+          <div key={i} className="flex justify-between bg-gray-50 p-3 rounded-lg">
+            <div>{(e.type || "buy").toUpperCase()}</div>
 
-                  {editing ? (
-                    <select
-                      value={e.type || "buy"}
-                      onChange={(ev) => setEntry(idx, { type: ev.target.value })}
-                      className="rounded-md border bg-white px-2 py-1 text-sm"
-                    >
-                      <option value="buy">buy</option>
-                      <option value="limit">limit</option>
-                      <option value="breakout">breakout</option>
-                    </select>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {editing ? (
-                    <input
-                      type="number"
-                      value={Number(e.price || 0)}
-                      onChange={(ev) => setEntry(idx, { price: Number(ev.target.value) })}
-                      className="w-36 rounded-md border bg-white px-2 py-1 text-sm text-right"
-                      placeholder="prijs"
-                    />
-                  ) : (
-                    <div className="text-sm font-semibold text-gray-900">
-                      {fmtPrice(e.price)}
-                    </div>
-                  )}
-
-                  {editing && (
-                    <button
-                      onClick={() => removeEntry(idx)}
-                      className="text-gray-400 hover:text-red-600"
-                      title="Verwijder entry"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Stop loss + Targets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Stop loss */}
-        <div className="rounded-xl border p-4 space-y-3">
-          <SectionTitle icon={<Shield size={16} />} title="Stop Loss" />
-          <div className="rounded-lg bg-gray-50 p-3 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Stop</span>
             {editing ? (
               <input
                 type="number"
-                value={Number(derived.stop_loss?.price || 0)}
-                onChange={(ev) => setStop(ev.target.value)}
-                className="w-36 rounded-md border bg-white px-2 py-1 text-sm text-right"
-                placeholder="stop"
+                value={e.price}
+                onChange={(ev) => setEntry(i, { price: ev.target.value })}
+                className="border rounded px-2 py-1 w-28 text-right"
               />
             ) : (
-              <span className="text-sm font-semibold text-gray-900">
-                {fmtPrice(derived.stop_loss?.price)}
-              </span>
+              <div className="font-semibold">{fmtPrice(e.price)}</div>
             )}
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Targets */}
-        <div className="rounded-xl border p-4 space-y-3">
-          <SectionTitle
-            icon={<Target size={16} />}
-            title="Targets"
-            right={
-              editing ? (
-                <button
-                  onClick={addTarget}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
-                >
-                  <Plus size={14} />
-                  target
-                </button>
-              ) : null
-            }
-          />
-
-          {derived.targets.length === 0 ? (
-            <div className="text-sm text-gray-500">
-              Geen targets ingesteld.
-            </div>
+      {/* STOP + TARGETS */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-xl border p-4">
+          <SectionTitle icon={<Shield size={16}/>} title="Stop Loss" />
+          {editing ? (
+            <input
+              type="number"
+              value={derived.stop_loss?.price || 0}
+              onChange={(e)=>setStop(e.target.value)}
+              className="border rounded px-2 py-1 w-full text-right"
+            />
           ) : (
-            <div className="space-y-2">
-              {derived.targets.map((t, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 p-3"
-                >
-                  <div className="text-sm font-semibold text-gray-700">
-                    {t.label || `TP${idx + 1}`}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {editing ? (
-                      <>
-                        <input
-                          type="text"
-                          value={t.label || `TP${idx + 1}`}
-                          onChange={(ev) => setTarget(idx, { label: ev.target.value })}
-                          className="w-20 rounded-md border bg-white px-2 py-1 text-sm"
-                        />
-                        <input
-                          type="number"
-                          value={Number(t.price || 0)}
-                          onChange={(ev) => setTarget(idx, { price: Number(ev.target.value) })}
-                          className="w-28 rounded-md border bg-white px-2 py-1 text-sm text-right"
-                          placeholder="prijs"
-                        />
-                        <button
-                          onClick={() => removeTarget(idx)}
-                          className="text-gray-400 hover:text-red-600"
-                          title="Verwijder target"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="text-sm font-semibold text-gray-900">
-                        {fmtPrice(t.price)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="font-semibold">{fmtPrice(derived.stop_loss?.price)}</div>
           )}
         </div>
-      </div>
 
-      {/* Risk */}
-      <div className="rounded-xl border p-4 space-y-3">
-        <SectionTitle
-          icon={<AlertTriangle size={16} />}
-          title="Risk"
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="rounded-lg bg-gray-50 p-3 space-y-1">
-            <div className="text-xs text-gray-500">Risk per trade</div>
-            {editing ? (
-              <input
-                type="number"
-                value={Number(derived.risk?.risk_eur || 0)}
-                onChange={(ev) => setRiskField("risk_eur", ev.target.value)}
-                className="w-full rounded-md border bg-white px-2 py-1 text-sm text-right"
-              />
-            ) : (
-              <div className="text-sm font-bold">{fmtEur(derived.risk?.risk_eur)}</div>
-            )}
-            {derived.constraints?.max_risk_per_trade ? (
-              <div className="text-xs text-gray-500">
-                Max: {fmtEur(derived.constraints.max_risk_per_trade)}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="rounded-lg bg-gray-50 p-3 space-y-1">
-            <div className="text-xs text-gray-500">Position size</div>
-            {editing ? (
-              <input
-                type="number"
-                step="0.00000001"
-                value={Number(derived.risk?.position_size_qty || 0)}
-                onChange={(ev) => setRiskField("position_size_qty", ev.target.value)}
-                className="w-full rounded-md border bg-white px-2 py-1 text-sm text-right"
-              />
-            ) : (
-              <div className="text-sm font-bold">
-                {isFinite(Number(derived.risk?.position_size_qty))
-                  ? `${Number(derived.risk.position_size_qty).toFixed(8)} ${derived.symbol || ""}`.trim()
-                  : "—"}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-lg bg-gray-50 p-3 space-y-1">
-            <div className="text-xs text-gray-500">R:R ratio</div>
-            {editing ? (
-              <input
-                type="number"
-                step="0.1"
-                value={Number(derived.risk?.rr || 0)}
-                onChange={(ev) => setRiskField("rr", ev.target.value)}
-                className="w-full rounded-md border bg-white px-2 py-1 text-sm text-right"
-              />
-            ) : (
-              <div className="text-sm font-bold">
-                {isFinite(Number(derived.risk?.rr))
-                  ? Number(derived.risk.rr).toFixed(2)
-                  : "—"}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Extra context */}
-        <div className="pt-2">
-          <MiniRow icon={<Shield size={14} />} label="Risk limits">
-            <span className="text-gray-700">
-              {derived.constraints?.max_risk_per_trade
-                ? `max risk ${fmtEur(derived.constraints.max_risk_per_trade)}`
-                : "—"}
-              {derived.constraints?.max_daily_allocation
-                ? ` · max daily ${fmtEur(derived.constraints.max_daily_allocation)}`
-                : ""}
-            </span>
-          </MiniRow>
+        <div className="rounded-xl border p-4">
+          <SectionTitle icon={<Target size={16}/>} title="Targets" />
+          {derived.targets.map((t,i)=>(
+            <div key={i} className="flex justify-between">
+              <span>{t.label}</span>
+              <span className="font-semibold">{fmtPrice(t.price)}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Execution block */}
-      <div className="rounded-xl border p-4 space-y-3">
-        <SectionTitle
-          icon={<CheckCircle2 size={16} />}
-          title="Execution"
-        />
+      {/* RISK */}
+      <div className="rounded-xl border p-4 space-y-2">
+        <SectionTitle icon={<AlertTriangle size={16}/>} title="Risk" />
+        <div>Risk: {fmtEur(derived.risk?.risk_eur)}</div>
+        <div>R:R: {derived.risk?.rr ?? "—"}</div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <div className="rounded-lg bg-gray-50 p-3">
-            <div className="text-xs text-gray-500">Ready</div>
-            <div className="mt-1">
-              <Badge
-                ok={derived._ready}
-                labelOk="✔ klaar om te plaatsen"
-                labelFail="✖ niet klaar"
-              />
-            </div>
-          </div>
-
-          <div className="rounded-lg bg-gray-50 p-3">
-            <div className="text-xs text-gray-500">Budget</div>
-            <div className="mt-1">
-              <Badge
-                ok={!!derived.constraints?.within_budget}
-                labelOk="✔ binnen budget"
-                labelFail="✖ budget overschreden"
-              />
-            </div>
-          </div>
-
-          <div className="rounded-lg bg-gray-50 p-3">
-            <div className="text-xs text-gray-500">Risk</div>
-            <div className="mt-1">
-              <Badge
-                ok={!!derived.constraints?.within_risk}
-                labelOk="✔ binnen risk limits"
-                labelFail="✖ risk overschreden"
-              />
-            </div>
-          </div>
+      {/* WARNINGS */}
+      {derived.constraints.warnings?.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg text-sm text-orange-800">
+          {derived.constraints.warnings.map((w,i)=>(
+            <div key={i}>{w}</div>
+          ))}
         </div>
+      )}
 
-        {/* Warnings */}
-        {Array.isArray(derived?.constraints?.warnings) && derived.constraints.warnings.length > 0 && (
-          <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
-            <div className="font-semibold mb-1">Warnings</div>
-            <ul className="list-disc pl-5 space-y-1">
-              {derived.constraints.warnings.map((w, i) => (
-                <li key={i}>{String(w)}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* Footer hint */}
-      <div className="text-xs text-gray-500">
-        Tip: dit plan is de basis voor <span className="font-semibold">paper trading</span> én later
-        <span className="font-semibold"> exchange execution</span>. Backend blijft de bron; manual edits zijn overrides.
-      </div>
     </div>
   );
 }

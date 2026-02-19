@@ -13,7 +13,6 @@ import {
   Save,
   RotateCcw,
   Plus,
-  Trash2,
 } from "lucide-react";
 
 /**
@@ -24,6 +23,7 @@ import {
  * ✅ decision fallback
  * ✅ manual overrides
  * ✅ execution readiness
+ * 🆕 watch mode (bot wacht op entry)
  */
 
 const num = (v, d = null) => {
@@ -93,7 +93,6 @@ export default function TradePlanCard({
   const plan = draft;
 
   const derived = useMemo(() => {
-    // ✅ FALLBACK: direct tonen als decision trade plan bevat
     const fallbackPlan =
       plan ||
       decision?.trade_plan ||
@@ -113,7 +112,6 @@ export default function TradePlanCard({
           within_risk: false,
           warnings: [],
         },
-        notes: { summary: "Nog geen trade plan beschikbaar." },
       };
     }
 
@@ -122,11 +120,9 @@ export default function TradePlanCard({
 
     const constraints = {
       within_budget:
-        fallbackPlan.constraints?.within_budget ??
-        true,
+        fallbackPlan.constraints?.within_budget ?? true,
       within_risk:
-        fallbackPlan.constraints?.within_risk ??
-        true,
+        fallbackPlan.constraints?.within_risk ?? true,
       max_risk_per_trade:
         fallbackPlan.constraints?.max_risk_per_trade ??
         decision?.max_risk_per_trade,
@@ -157,6 +153,29 @@ export default function TradePlanCard({
 
   const canEdit = allowManual && !!onSave;
 
+  // 🆕 WATCH MODE
+  const showWatchMode =
+    (decision?.action || "").toLowerCase() === "hold" &&
+    derived.entry_plan.length === 0;
+
+  const watchLevels = decision?.watch_levels || {};
+
+  const pullback =
+    watchLevels.pullback_zone ??
+    watchLevels.pullback ??
+    null;
+
+  const breakout =
+    watchLevels.breakout_trigger ??
+    watchLevels.breakout ??
+    null;
+
+  const monitoringActive =
+    watchLevels.monitoring !== false;
+
+  const alertsActive =
+    watchLevels.alerts_active !== false;
+
   const setEntry = (idx, patch) => {
     setDraft((p) => {
       const next = { ...(p || {}) };
@@ -173,46 +192,10 @@ export default function TradePlanCard({
       entry_plan: [...clampArr(p?.entry_plan), { type: "buy", price: 0 }],
     }));
 
-  const removeEntry = (idx) =>
-    setDraft((p) => {
-      const arr = clampArr(p?.entry_plan).slice();
-      arr.splice(idx, 1);
-      return { ...(p || {}), entry_plan: arr };
-    });
-
-  const setTarget = (idx, patch) => {
-    setDraft((p) => {
-      const next = { ...(p || {}) };
-      const arr = clampArr(next.targets).slice();
-      arr[idx] = { ...(arr[idx] || {}), ...patch };
-      next.targets = arr;
-      return next;
-    });
-  };
-
-  const addTarget = () =>
-    setDraft((p) => ({
-      ...(p || {}),
-      targets: [...clampArr(p?.targets), { label: "TP", price: 0 }],
-    }));
-
-  const removeTarget = (idx) =>
-    setDraft((p) => {
-      const arr = clampArr(p?.targets).slice();
-      arr.splice(idx, 1);
-      return { ...(p || {}), targets: arr };
-    });
-
   const setStop = (price) =>
     setDraft((p) => ({
       ...(p || {}),
       stop_loss: { price: num(price, 0) },
-    }));
-
-  const setRiskField = (key, value) =>
-    setDraft((p) => ({
-      ...(p || {}),
-      risk: { ...(p?.risk || {}), [key]: num(value, 0) },
     }));
 
   const handleSave = async () => {
@@ -271,6 +254,35 @@ export default function TradePlanCard({
         </div>
       </div>
 
+      {/* 🆕 WATCH MODE */}
+      {showWatchMode && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-2">
+          <div className="font-semibold text-indigo-900">
+            Bot wacht op entry
+          </div>
+
+          <div className="text-sm text-indigo-800 space-y-1">
+            {pullback && (
+              <div>📉 Pullback zone: €{fmtPrice(pullback)}</div>
+            )}
+
+            {breakout && (
+              <div>📈 Breakout trigger: €{fmtPrice(breakout)}</div>
+            )}
+
+            {!pullback && !breakout && (
+              <div>Bot monitort de markt voor een entry trigger.</div>
+            )}
+          </div>
+
+          <div className="text-xs text-indigo-700 flex gap-2">
+            <span>⚡ Monitoring {monitoringActive ? "actief" : "uit"}</span>
+            <span>•</span>
+            <span>⚡ Alerts {alertsActive ? "actief" : "uit"}</span>
+          </div>
+        </div>
+      )}
+
       {/* BADGES */}
       <div className="flex flex-wrap gap-2">
         <Badge ok={derived._ready} labelOk="klaar om te plaatsen" labelFail="niet klaar" />
@@ -280,78 +292,38 @@ export default function TradePlanCard({
 
       {/* ENTRY */}
       <div className="rounded-xl border p-4 space-y-3">
-        <SectionTitle
-          icon={<TrendingUp size={16} />}
-          title="Entry Plan"
-          right={
-            editing && (
-              <button onClick={addEntry} className="text-indigo-600 text-xs flex gap-1">
-                <Plus size={14}/> entry
-              </button>
-            )
-          }
-        />
-
+        <SectionTitle icon={<TrendingUp size={16} />} title="Entry Plan" />
         {derived.entry_plan.map((e, i) => (
           <div key={i} className="flex justify-between bg-gray-50 p-3 rounded-lg">
             <div>{(e.type || "buy").toUpperCase()}</div>
-
-            {editing ? (
-              <input
-                type="number"
-                value={e.price}
-                onChange={(ev) => setEntry(i, { price: ev.target.value })}
-                className="border rounded px-2 py-1 w-28 text-right"
-              />
-            ) : (
-              <div className="font-semibold">{fmtPrice(e.price)}</div>
-            )}
+            <div className="font-semibold">{fmtPrice(e.price)}</div>
           </div>
         ))}
       </div>
 
-      {/* STOP + TARGETS */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-xl border p-4">
-          <SectionTitle icon={<Shield size={16}/>} title="Stop Loss" />
-          {editing ? (
-            <input
-              type="number"
-              value={derived.stop_loss?.price || 0}
-              onChange={(e)=>setStop(e.target.value)}
-              className="border rounded px-2 py-1 w-full text-right"
-            />
-          ) : (
-            <div className="font-semibold">{fmtPrice(derived.stop_loss?.price)}</div>
-          )}
-        </div>
+      {/* STOP */}
+      <div className="rounded-xl border p-4">
+        <SectionTitle icon={<Shield size={16}/>} title="Stop Loss" />
+        <div className="font-semibold">{fmtPrice(derived.stop_loss?.price)}</div>
+      </div>
 
-        <div className="rounded-xl border p-4">
-          <SectionTitle icon={<Target size={16}/>} title="Targets" />
-          {derived.targets.map((t,i)=>(
-            <div key={i} className="flex justify-between">
-              <span>{t.label}</span>
-              <span className="font-semibold">{fmtPrice(t.price)}</span>
-            </div>
-          ))}
-        </div>
+      {/* TARGETS */}
+      <div className="rounded-xl border p-4">
+        <SectionTitle icon={<Target size={16}/>} title="Targets" />
+        {derived.targets.map((t,i)=>(
+          <div key={i} className="flex justify-between">
+            <span>{t.label}</span>
+            <span className="font-semibold">{fmtPrice(t.price)}</span>
+          </div>
+        ))}
       </div>
 
       {/* RISK */}
-      <div className="rounded-xl border p-4 space-y-2">
+      <div className="rounded-xl border p-4">
         <SectionTitle icon={<AlertTriangle size={16}/>} title="Risk" />
         <div>Risk: {fmtEur(derived.risk?.risk_eur)}</div>
         <div>R:R: {derived.risk?.rr ?? "—"}</div>
       </div>
-
-      {/* WARNINGS */}
-      {derived.constraints.warnings?.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg text-sm text-orange-800">
-          {derived.constraints.warnings.map((w,i)=>(
-            <div key={i}>{w}</div>
-          ))}
-        </div>
-      )}
 
     </div>
   );

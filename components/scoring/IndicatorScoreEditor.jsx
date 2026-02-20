@@ -6,13 +6,20 @@ import { Plus, Trash2 } from "lucide-react";
 /**
  * IndicatorScoreEditor
  *
+ * ✔ Sync met backend via hook
+ * ✔ Reset bij indicator wissel
+ * ✔ Ondersteunt standard / contrarian / custom
+ * ✔ Weight support
+ *
  * Props:
  *  indicator
  *  category
- *  rules (default DB rules)
+ *  rules
  *  scoreMode
  *  weight
- *  onChange({ score_mode, rules, weight })
+ *  loading
+ *  onSave(settings)
+ *  onSaveCustom(rules)
  */
 
 export default function IndicatorScoreEditor({
@@ -21,32 +28,39 @@ export default function IndicatorScoreEditor({
   rules = [],
   scoreMode = "standard",
   weight = 1,
-  onChange,
+  loading = false,
+  onSave,
+  onSaveCustom,
 }) {
   const [mode, setMode] = useState(scoreMode);
   const [customRules, setCustomRules] = useState(rules);
   const [localWeight, setLocalWeight] = useState(weight);
 
+  /* --------------------------------------------------
+     Sync wanneer backend data verandert
+  -------------------------------------------------- */
   useEffect(() => {
-    onChange?.({
+    setMode(scoreMode);
+    setCustomRules(rules || []);
+    setLocalWeight(weight ?? 1);
+  }, [indicator, scoreMode, rules, weight]);
+
+  /* --------------------------------------------------
+     Auto save STANDARD & CONTRARIAN
+  -------------------------------------------------- */
+  useEffect(() => {
+    if (loading) return;
+    if (mode === "custom") return;
+
+    onSave?.({
       score_mode: mode,
-      rules: mode === "custom" ? customRules : null,
       weight: localWeight,
     });
-  }, [mode, customRules, localWeight]);
+  }, [mode, localWeight]);
 
-  /* ------------------------
-     Mode Toggle
-  -------------------------*/
-  const modes = [
-    { key: "standard", label: "Standard" },
-    { key: "contrarian", label: "Contrarian" },
-    { key: "custom", label: "Custom" },
-  ];
-
-  /* ------------------------
-     Custom Rules Logic
-  -------------------------*/
+  /* --------------------------------------------------
+     Custom rule helpers
+  -------------------------------------------------- */
 
   const addRule = () => {
     setCustomRules([
@@ -65,9 +79,27 @@ export default function IndicatorScoreEditor({
     setCustomRules(customRules.filter((_, i) => i !== index));
   };
 
-  /* ------------------------
-     Render
-  -------------------------*/
+  const saveCustomRules = () => {
+    onSaveCustom?.(customRules);
+  };
+
+  /* --------------------------------------------------
+     UI modes
+  -------------------------------------------------- */
+
+  const modes = [
+    { key: "standard", label: "Standard" },
+    { key: "contrarian", label: "Contrarian" },
+    { key: "custom", label: "Custom" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="p-6 text-sm text-gray-500">
+        Laden…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 space-y-6 border border-gray-200 dark:border-gray-800">
@@ -106,7 +138,7 @@ export default function IndicatorScoreEditor({
         </div>
       )}
 
-      {/* STANDARD RULES TABLE */}
+      {/* STANDARD / CONTRARIAN RULES */}
       {(mode === "standard" || mode === "contrarian") && (
         <div className="space-y-2">
           <div className="text-sm font-medium">Scoreregels</div>
@@ -145,6 +177,7 @@ export default function IndicatorScoreEditor({
       {/* CUSTOM EDITOR */}
       {mode === "custom" && (
         <div className="space-y-3">
+
           <div className="flex justify-between items-center">
             <div className="font-medium text-sm">
               Custom ranges
@@ -201,6 +234,13 @@ export default function IndicatorScoreEditor({
               </button>
             </div>
           ))}
+
+          <button
+            onClick={saveCustomRules}
+            className="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Save Custom Rules
+          </button>
         </div>
       )}
 

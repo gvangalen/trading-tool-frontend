@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
-import { Coins, Plus } from "lucide-react";
-
+import { Coins, Plus, RefreshCw } from "lucide-react";
 import { useModal } from "@/components/modal/ModalProvider";
+import { fetchAuth } from "@/lib/api/auth";
 
 export default function MarketIndicatorScoreView({
   availableIndicators = [],
@@ -12,23 +13,46 @@ export default function MarketIndicatorScoreView({
   scoreRules = [],
   selectIndicator,
   addMarketIndicator,
-  activeIndicators = [], // 👈 NIEUW
+  activeIndicators = [],
 }) {
   const { showSnackbar } = useModal();
 
+  const [scoreMode, setScoreMode] = useState("standard");
+  const [weight, setWeight] = useState(1);
+
   /* -------------------------------------------------------
-     ✅ Is indicator al toegevoegd?
+     Indicator select + config ophalen
+  ------------------------------------------------------- */
+  const handleSelect = async (indicator) => {
+    selectIndicator(indicator);
+
+    if (!indicator?.name) return;
+
+    try {
+      const config = await fetchAuth(
+        `/api/indicator-rules?category=market&indicator=${indicator.name}`
+      );
+
+      setScoreMode(config.score_mode || "standard");
+      setWeight(config.weight ?? 1);
+
+    } catch (err) {
+      console.error("❌ config ophalen", err);
+    }
+  };
+
+  /* -------------------------------------------------------
+     Already added?
   ------------------------------------------------------- */
   const isAlreadyAdded =
     selectedIndicator &&
     activeIndicators.includes(selectedIndicator.name);
 
   /* -------------------------------------------------------
-     ➕ Toevoegen (met duplicate protection)
+     Add indicator
   ------------------------------------------------------- */
   const handleAdd = async () => {
-    if (!selectedIndicator?.name) return;
-    if (isAlreadyAdded) return;
+    if (!selectedIndicator?.name || isAlreadyAdded) return;
 
     try {
       await addMarketIndicator(selectedIndicator.name);
@@ -36,18 +60,17 @@ export default function MarketIndicatorScoreView({
     } catch (err) {
       console.error("❌ Toevoegen mislukt:", err);
 
-      // Backend safety (409)
       if (err?.response?.status === 409) {
         showSnackbar("Indicator is al toegevoegd", "info");
         return;
       }
 
-      showSnackbar("Toevoegen van market-indicator mislukt", "danger");
+      showSnackbar("Toevoegen mislukt", "danger");
     }
   };
 
   /* -------------------------------------------------------
-     🎨 Scorekleur helper
+     Score helpers
   ------------------------------------------------------- */
   const scoreClass = (score) => {
     if (typeof score !== "number") return "text-[var(--text-light)]";
@@ -56,6 +79,19 @@ export default function MarketIndicatorScoreView({
     if (score >= 40) return "score-neutral";
     if (score >= 20) return "score-sell";
     return "score-strong-sell";
+  };
+
+  const displayScore = (score) => {
+    if (scoreMode === "contrarian") return 100 - score;
+    return score;
+  };
+
+  const modeBadge = () => {
+    if (scoreMode === "contrarian")
+      return "bg-yellow-100 text-yellow-700";
+    if (scoreMode === "custom")
+      return "bg-purple-100 text-purple-700";
+    return "bg-gray-100 text-gray-600";
   };
 
   return (
@@ -67,26 +103,43 @@ export default function MarketIndicatorScoreView({
         </div>
       }
     >
-      {/* -------------------------------------------------------
-         🔍 Indicator zoeken
-      ------------------------------------------------------- */}
+      {/* SEARCH */}
       <UniversalSearchDropdown
         label="Zoek een market-indicator"
         placeholder="Typ bijvoorbeeld Price, Volume, Change 24h…"
         items={availableIndicators}
         selected={selectedIndicator}
-        onSelect={selectIndicator}
+        onSelect={handleSelect}
       />
 
-      {/* -------------------------------------------------------
-         📊 Scoreregels
-      ------------------------------------------------------- */}
+      {/* MODE + WEIGHT */}
+      {selectedIndicator && (
+        <div className="mt-4 flex flex-wrap gap-3 text-xs">
+          <span className={`px-2 py-1 rounded ${modeBadge()}`}>
+            Mode: {scoreMode}
+          </span>
+
+          <span className="px-2 py-1 rounded bg-gray-100 text-gray-700">
+            Weight: {weight}
+          </span>
+
+          {scoreMode === "contrarian" && (
+            <span className="flex items-center gap-1 text-yellow-600">
+              <RefreshCw size={12} />
+              Omgekeerde interpretatie
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* RULES */}
       {selectedIndicator && scoreRules.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-[var(--text-dark)] mb-3">
+          <h3 className="text-sm font-semibold mb-3">
             Scoreregels voor:{" "}
             <span className="text-[var(--primary)]">
-              {selectedIndicator.display_name || selectedIndicator.name}
+              {selectedIndicator.display_name ||
+                selectedIndicator.name}
             </span>
           </h3>
 
@@ -108,7 +161,7 @@ export default function MarketIndicatorScoreView({
                   .map((r, idx) => (
                     <tr
                       key={idx}
-                      className="border-t border-[var(--card-border)] hover:bg-[var(--bg-soft)] transition"
+                      className="border-t hover:bg-[var(--bg-soft)] transition"
                     >
                       <td className="p-3">
                         {r.range_min} – {r.range_max}
@@ -116,17 +169,17 @@ export default function MarketIndicatorScoreView({
 
                       <td
                         className={`p-3 text-center font-semibold ${scoreClass(
-                          r.score
+                          displayScore(r.score)
                         )}`}
                       >
-                        {r.score}
+                        {displayScore(r.score)}
                       </td>
 
                       <td className="p-3 text-center italic text-[var(--text-light)]">
                         {r.trend}
                       </td>
 
-                      <td className="p-3 text-[var(--text-dark)]">
+                      <td className="p-3">
                         {r.interpretation}
                       </td>
 
@@ -142,14 +195,12 @@ export default function MarketIndicatorScoreView({
       )}
 
       {!selectedIndicator && (
-        <p className="mt-4 text-sm text-[var(--text-light)] italic">
+        <p className="mt-4 text-sm italic text-[var(--text-light)]">
           Selecteer een indicator om de scoreregels te bekijken.
         </p>
       )}
 
-      {/* -------------------------------------------------------
-         ➕ Toevoegen knop (smart disabled)
-      ------------------------------------------------------- */}
+      {/* ADD BUTTON */}
       <div className="mt-5">
         <button
           onClick={handleAdd}

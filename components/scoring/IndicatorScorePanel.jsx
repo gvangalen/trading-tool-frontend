@@ -8,25 +8,29 @@ export default function IndicatorScorePanel({
   indicator,
   category,
 }) {
-  const [rules, setRules] = useState([]);
-  const [scoreMode, setScoreMode] = useState("standard");
-  const [weight, setWeight] = useState(1);
+  const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
+  /* ---------------------------
+     Load indicator config
+  --------------------------- */
   useEffect(() => {
-    loadRules();
-  }, [indicator]);
+    loadConfig();
+  }, [indicator, category]);
 
-  async function loadRules() {
+  async function loadConfig() {
+    setLoading(true);
+
     try {
       const res = await fetchAuth(
         `/api/indicator-rules?category=${category}&indicator=${indicator}`
       );
 
-      setRules(res.rules || []);
-      setScoreMode(res.score_mode || "standard");
-      setWeight(res.weight ?? 1);
+      setConfig({
+        rules: res.rules || [],
+        score_mode: res.score_mode || "standard",
+        weight: res.weight ?? 1,
+      });
     } catch (e) {
       console.error("Failed loading rules", e);
     } finally {
@@ -34,57 +38,76 @@ export default function IndicatorScorePanel({
     }
   }
 
-  async function handleChange(payload) {
-    setScoreMode(payload.score_mode);
-    setWeight(payload.weight);
-
-    if (payload.rules) {
-      setRules(payload.rules);
-    }
-  }
-
-  async function save() {
-    setSaving(true);
-
+  /* ---------------------------
+     Save STANDARD / CONTRARIAN
+  --------------------------- */
+  async function saveSettings(settings) {
     try {
       await fetchAuth(`/api/indicator-rules`, {
         method: "POST",
         body: JSON.stringify({
           indicator,
           category,
-          score_mode: scoreMode,
-          weight,
-          rules,
+          score_mode: settings.score_mode,
+          weight: settings.weight,
         }),
       });
+
+      setConfig((prev) => ({
+        ...prev,
+        ...settings,
+      }));
+
     } catch (e) {
       console.error("Save failed", e);
-    } finally {
-      setSaving(false);
     }
   }
 
-  if (loading) return null;
+  /* ---------------------------
+     Save CUSTOM RULES
+  --------------------------- */
+  async function saveCustomRules(rules) {
+    try {
+      await fetchAuth(`/api/indicator-rules`, {
+        method: "POST",
+        body: JSON.stringify({
+          indicator,
+          category,
+          score_mode: "custom",
+          weight: config.weight,
+          rules,
+        }),
+      });
+
+      setConfig((prev) => ({
+        ...prev,
+        rules,
+        score_mode: "custom",
+      }));
+
+    } catch (e) {
+      console.error("Custom save failed", e);
+    }
+  }
+
+  if (loading || !config) {
+    return (
+      <div className="p-6 text-sm text-gray-500">
+        Laden…
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-
-      <IndicatorScoreEditor
-        indicator={indicator}
-        category={category}
-        rules={rules}
-        scoreMode={scoreMode}
-        weight={weight}
-        onChange={handleChange}
-      />
-
-      <button
-        onClick={save}
-        disabled={saving}
-        className="bg-blue-600 text-white px-4 py-2 rounded-xl"
-      >
-        {saving ? "Opslaan..." : "Opslaan"}
-      </button>
-    </div>
+    <IndicatorScoreEditor
+      indicator={indicator}
+      category={category}
+      rules={config.rules}
+      scoreMode={config.score_mode}
+      weight={config.weight}
+      loading={loading}
+      onSave={saveSettings}
+      onSaveCustom={saveCustomRules}
+    />
   );
 }

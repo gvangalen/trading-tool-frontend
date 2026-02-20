@@ -10,6 +10,8 @@ import {
   createManualOrder,
 } from "@/lib/api/bot";
 
+import { fetchLatestBTC } from "@/lib/api/market";
+
 export default function TradePanelContainer({ botId }) {
   const [price, setPrice] = useState(null);
   const [balance, setBalance] = useState(0);
@@ -17,69 +19,108 @@ export default function TradePanelContainer({ botId }) {
   const [strategy, setStrategy] = useState({});
   const [decisionId, setDecisionId] = useState(null);
 
+  // =========================================
+  // LOAD INITIAL DATA
+  // =========================================
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadPrice, 5000);
+
+    // refresh price elke minuut (ruim voldoende)
+    const interval = setInterval(loadPrice, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [botId]);
 
+  // =========================================
+  // LOAD BOT + STRATEGY DATA
+  // =========================================
   async function loadData() {
-    const today = await fetchBotToday();
-    const portfolios = await fetchBotPortfolios();
+    try {
+      const today = await fetchBotToday();
+      const portfolios = await fetchBotPortfolios();
 
-    const botDecision = today.decisions.find(
-      (d) => d.bot_id === botId
-    );
+      if (!today?.decisions?.length) return;
 
-    if (!botDecision) return;
+      const botDecision = today.decisions.find(
+        (d) => d.bot_id === botId
+      );
 
-    setDecisionId(botDecision.id);
+      if (!botDecision) return;
 
-    // watch levels uit trade plan / decision
-    setWatchLevels({
-      breakout: botDecision.trade_plan?.breakout,
-      pullback: botDecision.trade_plan?.pullback,
-      invalidate: botDecision.trade_plan?.invalidate,
-    });
+      setDecisionId(botDecision.id);
 
-    const plan = await fetchTradePlan(botDecision.id);
+      // ===============================
+      // WATCH LEVELS
+      // ===============================
+      const plan = await fetchTradePlan(botDecision.id);
 
-    setStrategy({
-      stop_loss: plan.stop_loss?.price,
-      targets: plan.targets?.map((t) => t.price),
-    });
+      setWatchLevels({
+        breakout: plan?.entry_plan?.breakout ?? null,
+        pullback: plan?.entry_plan?.pullback ?? null,
+        invalidate: plan?.stop_loss?.price ?? null,
+      });
 
-    const botPortfolio = portfolios.find(
-      (b) => b.bot_id === botId
-    );
+      // ===============================
+      // STRATEGY
+      // ===============================
+      setStrategy({
+        stop_loss: plan?.stop_loss?.price ?? null,
+        targets: plan?.targets?.map((t) => t.price) || [],
+      });
 
-    if (botPortfolio) {
-      setBalance(botPortfolio.budget.total_eur);
+      // ===============================
+      // BALANCE
+      // ===============================
+      const botPortfolio = portfolios.find(
+        (b) => b.bot_id === botId
+      );
+
+      if (botPortfolio) {
+        setBalance(botPortfolio.budget.total_eur || 0);
+      }
+
+      await loadPrice();
+    } catch (err) {
+      console.error("TradePanel loadData error:", err);
     }
-
-    await loadPrice();
   }
 
+  // =========================================
+  // LOAD LIVE PRICE (market_data)
+  // =========================================
   async function loadPrice() {
     try {
-      const res = await fetch("/api/market/price?symbol=BTC");
-      const data = await res.json();
-      setPrice(data.price);
-    } catch {}
+      const btc = await fetchLatestBTC();
+      if (btc?.price) {
+        setPrice(btc.price);
+      }
+    } catch (err) {
+      console.error("Price load error:", err);
+    }
   }
 
+  // =========================================
+  // MANUAL ORDER
+  // =========================================
   async function handleOrder(order) {
-    await createManualOrder({
-      bot_id: botId,
-      symbol: "BTC",
-      side: order.side,
-      quantity: order.quantity,
-      price: order.price,
-    });
+    try {
+      await createManualOrder({
+        bot_id: botId,
+        symbol: "BTC",
+        side: order.side,
+        order_type: order.orderType,
+        quantity: order.quantity,
+        limit_price: order.price,
+      });
 
-    loadData();
+      await loadData();
+    } catch (err) {
+      console.error("Manual order error:", err);
+    }
   }
 
+  // =========================================
+  // LOADING STATE
+  // =========================================
   if (!price) return null;
 
   return (

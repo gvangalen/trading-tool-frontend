@@ -10,11 +10,15 @@ import {
 /**
  * TradePanel
  *
+ * UI-only trading panel.
+ * Data & execution handled by container.
+ *
  * Props:
- * - price (number) -> huidige marktprijs
+ * - price (number)
  * - watchLevels { breakout, pullback, invalidate }
  * - strategy { stop_loss, targets[] }
  * - balance (number)
+ * - onSubmit(orderData)  ✅ NEW
  */
 
 export default function TradePanel({
@@ -29,6 +33,7 @@ export default function TradePanel({
     stop_loss: 59900,
     targets: [70500, 72000],
   },
+  onSubmit, // ✅ container hook
 }) {
   const [side, setSide] = useState("buy");
   const [orderType, setOrderType] = useState("limit");
@@ -72,9 +77,7 @@ export default function TradePanel({
         <button
           onClick={() => setSide("buy")}
           className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 ${
-            side === "buy"
-              ? "bg-green-600"
-              : "text-gray-400"
+            side === "buy" ? "bg-green-600" : "text-gray-400"
           }`}
         >
           <ArrowUpCircle size={18} />
@@ -84,9 +87,7 @@ export default function TradePanel({
         <button
           onClick={() => setSide("sell")}
           className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 ${
-            side === "sell"
-              ? "bg-red-600"
-              : "text-gray-400"
+            side === "sell" ? "bg-red-600" : "text-gray-400"
           }`}
         >
           <ArrowDownCircle size={18} />
@@ -226,6 +227,14 @@ export default function TradePanel({
         </button>
 
         <button
+          onClick={() =>
+            onSubmit?.({
+              side,
+              orderType,
+              quantity: amountBTC,
+              price: orderPrice,
+            })
+          }
           className={`w-full py-3 rounded-lg font-semibold ${
             side === "buy"
               ? "bg-green-600 hover:bg-green-700"

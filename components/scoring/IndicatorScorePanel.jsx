@@ -51,23 +51,22 @@ export default function IndicatorScorePanel({
         category,
         indicator,
         score_mode: settings.score_mode,
-        weight: settings.weight,
+        weight: settings.weight ?? 1,
       });
 
       setConfig((prev) => ({
         ...prev,
         ...settings,
       }));
-
     } catch (e) {
       console.error("Save failed", e);
     }
   }
 
   /* ---------------------------
-     Save CUSTOM RULES
+     Save CUSTOM RULES + WEIGHT
   --------------------------- */
-  async function saveCustom(rules) {
+  async function saveCustom(rules, weight) {
     try {
       await saveCustomRules({
         category,
@@ -75,10 +74,19 @@ export default function IndicatorScorePanel({
         rules,
       });
 
+      // save weight + mode
+      await updateIndicatorSettings({
+        category,
+        indicator,
+        score_mode: "custom",
+        weight: weight ?? 1,
+      });
+
       setConfig((prev) => ({
         ...prev,
         rules,
         score_mode: "custom",
+        weight,
       }));
 
     } catch (e) {

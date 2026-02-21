@@ -72,8 +72,7 @@ export default function IndicatorScoreEditor({
     { key: "custom", label: "Custom" },
   ];
 
-  const weightBadgeLabel =
-    mode === "custom" ? "custom" : "standaard";
+  const weightBadgeLabel = mode === "custom" ? "custom" : "standaard";
 
   const displayScore = (s) =>
     mode === "contrarian" ? 100 - Number(s || 0) : Number(s || 0);
@@ -93,7 +92,11 @@ export default function IndicatorScoreEditor({
     const max = Number(r?.range_max);
     const score = Number(r?.score);
 
-    if (!Number.isFinite(min) || !Number.isFinite(max) || !Number.isFinite(score))
+    if (
+      !Number.isFinite(min) ||
+      !Number.isFinite(max) ||
+      !Number.isFinite(score)
+    )
       return false;
     if (min >= max) return false;
     if (score < 0 || score > 100) return false;
@@ -105,17 +108,6 @@ export default function IndicatorScoreEditor({
     if (!Array.isArray(customRules) || customRules.length === 0) return true;
     return customRules.some((r) => !isValidRule(r));
   }, [customRules, mode]);
-
-  /* --------------------------------------------------
-   🧠 Trend auto generator
--------------------------------------------------- */
-const getTrend = (score) => {
-  if (score <= 25) return "Zeer laag";
-  if (score <= 45) return "Laag";
-  if (score <= 60) return "Neutraal";
-  if (score <= 80) return "Actief";
-  return "Hoog";
-};
 
   /* --------------------------------------------------
      Custom rule helpers
@@ -137,8 +129,7 @@ const getTrend = (score) => {
 
   const updateRule = (index, field, value) => {
     const updated = [...(Array.isArray(customRules) ? customRules : [])];
-    const v =
-      field === "trend" ? String(value) : Number(value);
+    const v = field === "trend" ? String(value) : Number(value);
 
     updated[index] = {
       ...updated[index],
@@ -173,7 +164,6 @@ const getTrend = (score) => {
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 space-y-6 border border-gray-200 dark:border-gray-800">
-
       {/* HEADER + WEIGHT BADGE */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -186,7 +176,9 @@ const getTrend = (score) => {
         {/* ✅ Weight altijd zichtbaar (read-only bij standard/contrarian) */}
         <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm">
           <span className="font-medium">Weight</span>
-          <span className="tabular-nums font-semibold">{Number(localWeight).toFixed(1)}</span>
+          <span className="tabular-nums font-semibold">
+            {Number(localWeight).toFixed(1)}
+          </span>
           <span className="text-[var(--text-light)]">({weightBadgeLabel})</span>
         </div>
       </div>
@@ -224,7 +216,8 @@ const getTrend = (score) => {
 
       {mode === "custom" && (
         <div className="text-sm text-purple-700 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-300 rounded-xl px-3 py-2">
-          Custom = je definieert je eigen ranges + scores. Hier kun je ook het gewicht aanpassen.
+          Custom = je definieert je eigen ranges + scores. Hier kun je ook het
+          gewicht aanpassen.
         </div>
       )}
 
@@ -308,12 +301,12 @@ const getTrend = (score) => {
 
           {/* ✅ Duidelijke tabel-header voor custom */}
           <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
+            {/* 🔥 3e blok (Trend) weggehaald -> nu alleen Range + Score */}
             <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
-              <div className="col-span-5">Range</div>
+              <div className="col-span-8">Range</div>
               <div className="col-span-3 text-center">Score</div>
-              <div className="col-span-3 text-center">Trend</div>
               <div className="col-span-1 text-right"></div>
-          </div>
+            </div>
 
             <div className="p-3 space-y-2">
               {sortedCustom.map((rule, idx) => {
@@ -323,63 +316,66 @@ const getTrend = (score) => {
                   bg-white dark:bg-gray-900
                   ${valid ? "border-gray-200 dark:border-gray-800" : "border-red-400"}
                 `;
-            
+
                 return (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                    
                     {/* RANGE */}
-                    <div className="col-span-5 flex gap-2">
+                    <div className="col-span-8 flex gap-2">
                       <input
                         type="number"
                         value={rule.range_min}
-                        onChange={(e)=>updateRule(idx,"range_min",e.target.value)}
+                        onChange={(e) => updateRule(idx, "range_min", e.target.value)}
                         className={inputCls}
                         placeholder="min"
                       />
+
                       <input
                         type="number"
                         value={rule.range_max}
-                        onChange={(e)=>updateRule(idx,"range_max",e.target.value)}
+                        onChange={(e) => updateRule(idx, "range_max", e.target.value)}
                         className={inputCls}
                         placeholder="max"
                       />
                     </div>
-            
+
                     {/* SCORE */}
                     <div className="col-span-3">
                       <input
                         type="number"
                         value={rule.score}
-                        onChange={(e)=>updateRule(idx,"score",e.target.value)}
+                        onChange={(e) => updateRule(idx, "score", e.target.value)}
                         className={inputCls}
                         placeholder="score"
                       />
                     </div>
-            
-                    {/* TREND */}
-                    <div className="col-span-3 text-center italic text-[var(--text-light)]">
-                      {getTrend(rule.score)}
-                    </div>
-            
+
                     {/* DELETE */}
-                    <div className="col-span-1 text-right">
+                    <div className="col-span-1 flex justify-end">
                       <button
-                        onClick={()=>removeRule(idx)}
+                        onClick={() => removeRule(idx)}
                         className="text-red-500 hover:text-red-600 p-2"
+                        aria-label="Verwijder range"
                       >
-                        <Trash2 size={16}/>
+                        <Trash2 size={16} />
                       </button>
                     </div>
-            
+
                     {!valid && (
-                      <div className="col-span-12 text-xs text-red-600">
+                      <div className="col-span-12 text-xs text-red-600 -mt-1">
                         Ongeldige regel: controleer min/max en score (0–100).
                       </div>
                     )}
                   </div>
                 );
               })}
-            </div>   {/* ⭐ DEZE DIV MOET ER STAAN */}
+
+              {sortedCustom.length === 0 && (
+                <div className="text-sm text-[var(--text-light)] italic">
+                  Nog geen custom rules. Klik op <span className="font-medium">Add</span>.
+                </div>
+              )}
+            </div>
+          </div>
 
           <button
             onClick={saveCustomRules}

@@ -107,6 +107,17 @@ export default function IndicatorScoreEditor({
   }, [customRules, mode]);
 
   /* --------------------------------------------------
+   🧠 Trend auto generator
+-------------------------------------------------- */
+const getTrend = (score) => {
+  if (score <= 25) return "Zeer laag";
+  if (score <= 45) return "Laag";
+  if (score <= 60) return "Neutraal";
+  if (score <= 80) return "Actief";
+  return "Hoog";
+};
+
+  /* --------------------------------------------------
      Custom rule helpers
   -------------------------------------------------- */
   const addRule = () => {
@@ -298,11 +309,11 @@ export default function IndicatorScoreEditor({
           {/* ✅ Duidelijke tabel-header voor custom */}
           <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
             <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
-              <div className="col-span-4">Min</div>
-              <div className="col-span-4">Max</div>
-              <div className="col-span-3">Score</div>
-              <div className="col-span-1 text-right"> </div>
-            </div>
+              <div className="col-span-5">Range</div>
+              <div className="col-span-3 text-center">Score</div>
+              <div className="col-span-3 text-center">Trend</div>
+              <div className="col-span-1 text-right"></div>
+          </div>
 
             <div className="p-3 space-y-2">
               {sortedCustom.map((rule, idx) => {
@@ -315,35 +326,37 @@ export default function IndicatorScoreEditor({
 
                 return (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-4">
-                      <input
-                        type="number"
-                        value={rule.range_min}
-                        onChange={(e) => updateRule(idx, "range_min", e.target.value)}
-                        className={inputCls}
-                        placeholder="min"
-                      />
-                    </div>
-
-                    <div className="col-span-4">
-                      <input
-                        type="number"
-                        value={rule.range_max}
-                        onChange={(e) => updateRule(idx, "range_max", e.target.value)}
-                        className={inputCls}
-                        placeholder="max"
-                      />
-                    </div>
-
-                    <div className="col-span-3">
-                      <input
-                        type="number"
-                        value={rule.score}
-                        onChange={(e) => updateRule(idx, "score", e.target.value)}
-                        className={inputCls}
-                        placeholder="score"
-                      />
-                    </div>
+                    <div className="col-span-5 flex gap-2">
+                  <input
+                    type="number"
+                    value={rule.range_min}
+                    onChange={(e) => updateRule(idx, "range_min", e.target.value)}
+                    className={inputCls}
+                    placeholder="min"
+                  />
+                
+                  <input
+                    type="number"
+                    value={rule.range_max}
+                    onChange={(e) => updateRule(idx, "range_max", e.target.value)}
+                    className={inputCls}
+                    placeholder="max"
+                  />
+                </div>
+                
+                <div className="col-span-3">
+                  <input
+                    type="number"
+                    value={rule.score}
+                    onChange={(e) => updateRule(idx, "score", e.target.value)}
+                    className={inputCls}
+                    placeholder="score"
+                  />
+                </div>
+                
+                <div className="col-span-3 text-center text-[var(--text-light)] italic">
+                  {getTrend(rule.score)}
+                </div>
 
                     <div className="col-span-1 flex justify-end">
                       <button

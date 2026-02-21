@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 import { Coins, Plus, RefreshCw } from "lucide-react";
@@ -17,12 +17,12 @@ export default function MarketIndicatorScoreView({
 }) {
   const { showSnackbar } = useModal();
 
-  const [scoreMode, setScoreMode] = useState("standard");
+  const [mode, setMode] = useState("standard");
   const [weight, setWeight] = useState(1);
   const [customRules, setCustomRules] = useState([]);
 
   /* -------------------------------------------------------
-     Load indicator config
+     Load indicator config (NEW API)
   ------------------------------------------------------- */
   const handleSelect = async (indicator) => {
     selectIndicator(indicator);
@@ -30,246 +30,244 @@ export default function MarketIndicatorScoreView({
 
     try {
       const config = await fetchAuth(
-        `/api/indicator-rules?category=market&indicator=${indicator.name}`
+        `/api/indicator_config/market/${indicator.name}`
       );
 
-      setScoreMode(config.score_mode || "standard");
-      setWeight(config.weight ?? 1);
-      setCustomRules(config.rules || []);
+      setMode(config?.score_mode || "standard");
+      setWeight(config?.weight ?? 1);
+      setCustomRules(config?.rules || []);
 
     } catch (err) {
-      console.error("❌ config ophalen", err);
+      console.error("config load error", err);
     }
   };
 
   /* -------------------------------------------------------
-     Save settings
+     ADD indicator
   ------------------------------------------------------- */
-  const saveSettings = async (mode = scoreMode, rules = customRules) => {
+  const handleAdd = async () => {
     if (!selectedIndicator?.name) return;
 
-    await fetchAuth(`/api/indicator-rules`, {
+    try {
+      await addMarketIndicator(selectedIndicator.name);
+      showSnackbar("Indicator toegevoegd", "success");
+    } catch {
+      showSnackbar("Toevoegen mislukt", "danger");
+    }
+  };
+
+  /* -------------------------------------------------------
+     CUSTOM RULES HELPERS
+  ------------------------------------------------------- */
+
+  const addRule = () =>
+    setCustomRules([
+      ...customRules,
+      { range_min: 0, range_max: 100, score: 50 },
+    ]);
+
+  const updateRule = (i, field, value) => {
+    const copy = [...customRules];
+    copy[i][field] = Number(value);
+    setCustomRules(copy);
+  };
+
+  const removeRule = (i) =>
+    setCustomRules(customRules.filter((_, idx) => idx !== i));
+
+  const saveCustom = async () => {
+    await fetchAuth(`/api/indicator_config/custom`, {
       method: "POST",
       body: JSON.stringify({
-        indicator: selectedIndicator.name,
         category: "market",
-        score_mode: mode,
-        weight,
-        rules: mode === "custom" ? rules : undefined,
+        indicator: selectedIndicator.name,
+        rules: customRules,
       }),
     });
 
-    showSnackbar("Score instellingen opgeslagen", "success");
+    showSnackbar("Custom regels opgeslagen", "success");
+  };
+
+  const saveMode = async (newMode) => {
+    setMode(newMode);
+
+    await fetchAuth(`/api/indicator_config/settings`, {
+      method: "PUT",
+      body: JSON.stringify({
+        category: "market",
+        indicator: selectedIndicator.name,
+        score_mode: newMode,
+        weight,
+      }),
+    });
   };
 
   /* -------------------------------------------------------
-     Add custom rule
+     UI helpers
   ------------------------------------------------------- */
-  const addRule = () => {
-    setCustomRules([
-      ...customRules,
-      { range_min: 0, range_max: 100, score: 50, trend: "" },
-    ]);
-  };
 
-  const updateRule = (i, field, value) => {
-    const updated = [...customRules];
-    updated[i][field] = value;
-    setCustomRules(updated);
-  };
-
-  const removeRule = (i) => {
-    setCustomRules(customRules.filter((_, idx) => idx !== i));
-  };
-
-  /* -------------------------------------------------------
-     Already added?
-  ------------------------------------------------------- */
-  const isAlreadyAdded =
-    selectedIndicator &&
-    activeIndicators.includes(selectedIndicator.name);
-
-  /* -------------------------------------------------------
-     Add indicator
-  ------------------------------------------------------- */
-  const handleAdd = async () => {
-    if (!selectedIndicator?.name || isAlreadyAdded) return;
-
-    await addMarketIndicator(selectedIndicator.name);
-    showSnackbar("Market-indicator toegevoegd", "success");
-  };
-
-  /* -------------------------------------------------------
-     Score display helpers
-  ------------------------------------------------------- */
   const displayScore = (score) =>
-    scoreMode === "contrarian" ? 100 - score : score;
-
-  const scoreClass = (score) => {
-    if (score >= 80) return "score-strong-buy";
-    if (score >= 60) return "score-buy";
-    if (score >= 40) return "score-neutral";
-    if (score >= 20) return "score-sell";
-    return "score-strong-sell";
-  };
-
-  /* -------------------------------------------------------
-     Mode button styling
-  ------------------------------------------------------- */
-  const modeBtn = (mode) =>
-    `px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-      scoreMode === mode
-        ? "bg-[var(--primary)] text-white"
-        : "bg-[var(--bg-soft)] text-[var(--text-light)] hover:bg-[var(--card-border)]"
-    }`;
+    mode === "contrarian" ? 100 - score : score;
 
   return (
     <CardWrapper
       title={
         <div className="flex items-center gap-2">
           <Coins className="w-5 h-5 text-[var(--primary)]" />
-          <span>Market Indicator Scorelogica</span>
+          Market Indicator Scorelogica
         </div>
       }
     >
       {/* SEARCH */}
       <UniversalSearchDropdown
-        label="Zoek een market-indicator"
-        placeholder="Typ bijvoorbeeld Price, Volume, Change 24h…"
+        label="Zoek indicator"
+        placeholder="Price, Volume, Change 24h…"
         items={availableIndicators}
         selected={selectedIndicator}
         onSelect={handleSelect}
       />
 
-      {/* MODE TOGGLE */}
       {selectedIndicator && (
-        <div className="mt-5 flex gap-2">
-          {["standard", "contrarian", "custom"].map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                setScoreMode(m);
-                saveSettings(m);
-              }}
-              className={modeBtn(m)}
-            >
-              {m.charAt(0).toUpperCase() + m.slice(1)}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* CONTRARIAN INFO */}
-      {scoreMode === "contrarian" && (
-        <div className="flex items-center gap-2 text-sm text-yellow-600 mt-2">
-          <RefreshCw size={14} />
-          Score wordt omgekeerd geïnterpreteerd
-        </div>
-      )}
-
-      {/* WEIGHT */}
-      {selectedIndicator && (
-        <div className="mt-5">
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-[var(--text-light)]">Indicator gewicht</span>
-            <span className="font-medium">{weight.toFixed(1)}</span>
+        <>
+          {/* MODE SELECTOR */}
+          <div className="flex gap-2 mt-4">
+            {["standard", "contrarian", "custom"].map((m) => (
+              <button
+                key={m}
+                onClick={() => saveMode(m)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  mode === m
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
           </div>
 
-          <input
-            type="range"
-            min="0"
-            max="3"
-            step="0.1"
-            value={weight}
-            onChange={(e) => {
-              const w = Number(e.target.value);
-              setWeight(w);
-              saveSettings(scoreMode);
-            }}
-            className="w-full"
-          />
-        </div>
-      )}
+          {mode === "contrarian" && (
+            <div className="flex items-center gap-2 text-yellow-600 text-sm mt-2">
+              <RefreshCw size={14} />
+              Score wordt omgekeerd geïnterpreteerd
+            </div>
+          )}
 
-      {/* RULE TABLE */}
-      {selectedIndicator && scoreRules.length > 0 && scoreMode !== "custom" && (
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold mb-3">
-            Scoreregels voor:{" "}
-            <span className="text-[var(--primary)]">
-              {selectedIndicator.display_name || selectedIndicator.name}
-            </span>
-          </h3>
+          {/* WEIGHT — ONLY CUSTOM */}
+          {mode === "custom" && (
+            <div className="mt-4">
+              <div className="text-sm font-medium mb-1">
+                Indicator gewicht
+              </div>
 
-          <div className="overflow-x-auto rounded-xl border border-[var(--card-border)]">
-            <table className="w-full text-sm">
-              <tbody>
-                {[...scoreRules]
-                  .sort((a, b) => a.range_min - b.range_min)
-                  .map((r, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="p-3">{r.range_min} – {r.range_max}</td>
-                      <td className={`p-3 text-center font-semibold ${scoreClass(displayScore(r.score))}`}>
+              <input
+                type="range"
+                min="0.5"
+                max="3"
+                step="0.1"
+                value={weight}
+                onChange={(e) => setWeight(Number(e.target.value))}
+                className="w-full"
+              />
+
+              <div className="text-sm text-gray-500">
+                Gewicht: {weight.toFixed(1)}
+              </div>
+            </div>
+          )}
+
+          {/* STANDARD RULE TABLE */}
+          {mode !== "custom" && scoreRules.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-semibold mb-2">
+                Scoreregels
+              </h3>
+
+              <table className="w-full text-sm border rounded-xl overflow-hidden">
+                <tbody>
+                  {scoreRules.map((r, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="p-2">
+                        {r.range_min} – {r.range_max}
+                      </td>
+                      <td className="p-2 font-semibold text-center">
                         {displayScore(r.score)}
                       </td>
-                      <td className="p-3 italic text-[var(--text-light)]">{r.trend}</td>
-                      <td className="p-3">{r.interpretation}</td>
-                      <td className="p-3 text-[var(--text-light)]">{r.action}</td>
+                      <td className="p-2 text-gray-500 italic">
+                        {r.trend}
+                      </td>
                     </tr>
                   ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* CUSTOM RULE EDITOR */}
-      {scoreMode === "custom" && (
-        <div className="mt-6 space-y-3">
-          {customRules.map((rule, i) => (
-            <div key={i} className="grid grid-cols-4 gap-2">
-              <input type="number" value={rule.range_min}
-                onChange={(e)=>updateRule(i,"range_min",Number(e.target.value))}
-                className="p-2 rounded bg-[var(--bg-soft)]" />
-              <input type="number" value={rule.range_max}
-                onChange={(e)=>updateRule(i,"range_max",Number(e.target.value))}
-                className="p-2 rounded bg-[var(--bg-soft)]" />
-              <input type="number" value={rule.score}
-                onChange={(e)=>updateRule(i,"score",Number(e.target.value))}
-                className="p-2 rounded bg-[var(--bg-soft)]" />
-              <button onClick={()=>removeRule(i)} className="text-red-500">✕</button>
+                </tbody>
+              </table>
             </div>
-          ))}
+          )}
 
-          <button
-            onClick={addRule}
-            className="text-sm text-[var(--primary)] font-medium"
-          >
-            + Range toevoegen
-          </button>
+          {/* CUSTOM EDITOR */}
+          {mode === "custom" && (
+            <div className="mt-6 space-y-3">
+              <h3 className="font-semibold">Custom ranges</h3>
 
+              {customRules.map((rule, i) => (
+                <div key={i} className="grid grid-cols-4 gap-2">
+                  <input
+                    type="number"
+                    value={rule.range_min}
+                    onChange={(e) =>
+                      updateRule(i, "range_min", e.target.value)
+                    }
+                    className="p-2 rounded bg-gray-100"
+                  />
+                  <input
+                    type="number"
+                    value={rule.range_max}
+                    onChange={(e) =>
+                      updateRule(i, "range_max", e.target.value)
+                    }
+                    className="p-2 rounded bg-gray-100"
+                  />
+                  <input
+                    type="number"
+                    value={rule.score}
+                    onChange={(e) =>
+                      updateRule(i, "score", e.target.value)
+                    }
+                    className="p-2 rounded bg-gray-100"
+                  />
+                  <button
+                    onClick={() => removeRule(i)}
+                    className="text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+              <button
+                onClick={addRule}
+                className="text-blue-600 text-sm"
+              >
+                + Range toevoegen
+              </button>
+
+              <button
+                onClick={saveCustom}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+              >
+                Custom regels opslaan
+              </button>
+            </div>
+          )}
+
+          {/* ADD BUTTON */}
           <button
-            onClick={()=>saveSettings("custom", customRules)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+            onClick={handleAdd}
+            className="mt-6 px-4 py-2 rounded-lg bg-[var(--primary)] text-white"
           >
-            Custom regels opslaan
+            <Plus size={16} /> Voeg toe
           </button>
-        </div>
+        </>
       )}
-
-      {/* ADD BUTTON */}
-      <div className="mt-6">
-        <button
-          onClick={handleAdd}
-          disabled={!selectedIndicator || isAlreadyAdded}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:brightness-90 disabled:opacity-40"
-        >
-          <Plus size={18} />
-          {isAlreadyAdded
-            ? "Indicator al toegevoegd"
-            : "Voeg toe aan market-analyse"}
-        </button>
-      </div>
     </CardWrapper>
   );
 }

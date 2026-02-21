@@ -1,4 +1,4 @@
-use client";
+"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, RefreshCw } from "lucide-react";
@@ -326,55 +326,58 @@ const getTrend = (score) => {
 
                 return (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-5 flex gap-2">
-                  <input
-                    type="number"
-                    value={rule.range_min}
-                    onChange={(e) => updateRule(idx, "range_min", e.target.value)}
-                    className={inputCls}
-                    placeholder="min"
-                  />
-                                              
-                <div className="col-span-3">
-                  <input
-                    type="number"
-                    value={rule.score}
-                    onChange={(e) => updateRule(idx, "score", e.target.value)}
-                    className={inputCls}
-                    placeholder="score"
-                  />
-                </div>
+                  {/* RANGE */}
+                  <div className="col-span-5 flex gap-2">
+                    <input
+                      type="number"
+                      value={rule.range_min}
+                      onChange={(e) => updateRule(idx, "range_min", e.target.value)}
+                      className={inputCls}
+                      placeholder="min"
+                    />
                 
-                <div className="col-span-3 text-center text-[var(--text-light)] italic">
-                  {getTrend(rule.score)}
-                </div>
-
-                    <div className="col-span-1 flex justify-end">
-                      <button
-                        onClick={() => removeRule(idx)}
-                        className="text-red-500 hover:text-red-600 p-2"
-                        aria-label="Verwijder range"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    {!valid && (
-                      <div className="col-span-12 text-xs text-red-600 -mt-1">
-                        Ongeldige regel: controleer min/max en score (0–100).
-                      </div>
-                    )}
+                    <input
+                      type="number"
+                      value={rule.range_max}
+                      onChange={(e) => updateRule(idx, "range_max", e.target.value)}
+                      className={inputCls}
+                      placeholder="max"
+                    />
                   </div>
-                );
-              })}
-
-              {sortedCustom.length === 0 && (
-                <div className="text-sm text-[var(--text-light)] italic">
-                  Nog geen custom rules. Klik op <span className="font-medium">Add</span>.
+                
+                  {/* SCORE */}
+                  <div className="col-span-3">
+                    <input
+                      type="number"
+                      value={rule.score}
+                      onChange={(e) => updateRule(idx, "score", e.target.value)}
+                      className={inputCls}
+                      placeholder="score"
+                    />
+                  </div>
+                
+                  {/* TREND AUTO */}
+                  <div className="col-span-3 text-center text-[var(--text-light)] italic">
+                    {getTrend(rule.score)}
+                  </div>
+                
+                  {/* DELETE */}
+                  <div className="col-span-1 flex justify-end">
+                    <button
+                      onClick={() => removeRule(idx)}
+                      className="text-red-500 hover:text-red-600 p-2"
+                      aria-label="Verwijder range"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                
+                  {!valid && (
+                    <div className="col-span-12 text-xs text-red-600 -mt-1">
+                      Ongeldige regel: controleer min/max en score (0–100).
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
 
           <button
             onClick={saveCustomRules}

@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import IndicatorScoreEditor from "./IndicatorScoreEditor";
-import { fetchAuth } from "@/lib/api/auth";
+
+import {
+  getIndicatorConfig,
+  updateIndicatorSettings,
+  saveCustomRules,
+} from "@/lib/api/indicatorConfig";
 
 export default function IndicatorScorePanel({
   indicator,
@@ -15,6 +20,7 @@ export default function IndicatorScorePanel({
      Load indicator config
   --------------------------- */
   useEffect(() => {
+    if (!indicator || !category) return;
     loadConfig();
   }, [indicator, category]);
 
@@ -22,17 +28,15 @@ export default function IndicatorScorePanel({
     setLoading(true);
 
     try {
-      const res = await fetchAuth(
-        `/api/indicator-rules?category=${category}&indicator=${indicator}`
-      );
+      const res = await getIndicatorConfig(category, indicator);
 
       setConfig({
-        rules: res.rules || [],
-        score_mode: res.score_mode || "standard",
-        weight: res.weight ?? 1,
+        rules: res?.rules || [],
+        score_mode: res?.score_mode || "standard",
+        weight: res?.weight ?? 1,
       });
     } catch (e) {
-      console.error("Failed loading rules", e);
+      console.error("Failed loading config", e);
     } finally {
       setLoading(false);
     }
@@ -43,14 +47,11 @@ export default function IndicatorScorePanel({
   --------------------------- */
   async function saveSettings(settings) {
     try {
-      await fetchAuth(`/api/indicator-rules`, {
-        method: "POST",
-        body: JSON.stringify({
-          indicator,
-          category,
-          score_mode: settings.score_mode,
-          weight: settings.weight,
-        }),
+      await updateIndicatorSettings({
+        category,
+        indicator,
+        score_mode: settings.score_mode,
+        weight: settings.weight,
       });
 
       setConfig((prev) => ({
@@ -66,17 +67,12 @@ export default function IndicatorScorePanel({
   /* ---------------------------
      Save CUSTOM RULES
   --------------------------- */
-  async function saveCustomRules(rules) {
+  async function saveCustom(rules) {
     try {
-      await fetchAuth(`/api/indicator-rules`, {
-        method: "POST",
-        body: JSON.stringify({
-          indicator,
-          category,
-          score_mode: "custom",
-          weight: config.weight,
-          rules,
-        }),
+      await saveCustomRules({
+        category,
+        indicator,
+        rules,
       });
 
       setConfig((prev) => ({
@@ -107,7 +103,7 @@ export default function IndicatorScorePanel({
       weight={config.weight}
       loading={loading}
       onSave={saveSettings}
-      onSaveCustom={saveCustomRules}
+      onSaveCustom={saveCustom}
     />
   );
 }

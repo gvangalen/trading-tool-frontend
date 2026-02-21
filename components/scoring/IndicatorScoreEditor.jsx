@@ -378,6 +378,7 @@ const getTrend = (score) => {
                     </div>
                   )}
                 </div>
+              ))}   {/* ← DEZE REGEL ONTBRAK */}
 
           <button
             onClick={saveCustomRules}

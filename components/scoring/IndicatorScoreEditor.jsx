@@ -110,6 +110,18 @@ export default function IndicatorScoreEditor({
   }, [customRules, mode]);
 
   /* --------------------------------------------------
+     🧠 Trend auto generator (geen extra input)
+  -------------------------------------------------- */
+  const getTrend = (score) => {
+    const s = Number(score);
+    if (s <= 25) return "Zeer laag";
+    if (s <= 45) return "Laag";
+    if (s <= 60) return "Neutraal";
+    if (s <= 80) return "Actief";
+    return "Hoog";
+  };
+
+  /* --------------------------------------------------
      Custom rule helpers
   -------------------------------------------------- */
   const addRule = () => {
@@ -140,7 +152,9 @@ export default function IndicatorScoreEditor({
 
   const removeRule = (index) => {
     setCustomRules(
-      (Array.isArray(customRules) ? customRules : []).filter((_, i) => i !== index)
+      (Array.isArray(customRules) ? customRules : []).filter(
+        (_, i) => i !== index
+      )
     );
   };
 
@@ -237,7 +251,10 @@ export default function IndicatorScoreEditor({
               </thead>
               <tbody>
                 {sortedRules.map((r, i) => (
-                  <tr key={i} className="border-t border-gray-200 dark:border-gray-800">
+                  <tr
+                    key={i}
+                    className="border-t border-gray-200 dark:border-gray-800"
+                  >
                     <td className="p-3">
                       {r.range_min} – {r.range_max}
                     </td>
@@ -255,7 +272,8 @@ export default function IndicatorScoreEditor({
 
           {/* ✅ Weight read-only zichtbaar; slider niet hier */}
           <div className="text-xs text-[var(--text-light)]">
-            Gewicht aanpassen kan alleen via <span className="font-medium">Custom</span>.
+            Gewicht aanpassen kan alleen via{" "}
+            <span className="font-medium">Custom</span>.
           </div>
         </div>
       )}
@@ -301,52 +319,66 @@ export default function IndicatorScoreEditor({
 
           {/* ✅ Duidelijke tabel-header voor custom */}
           <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
-            {/* 🔥 3e blok (Trend) weggehaald -> nu alleen Range + Score */}
             <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
-              <div className="col-span-8">Range</div>
+              <div className="col-span-5">Range</div>
               <div className="col-span-3 text-center">Score</div>
+              <div className="col-span-3 text-center">Trend</div>
               <div className="col-span-1 text-right"></div>
             </div>
 
             <div className="p-3 space-y-2">
               {sortedCustom.map((rule, idx) => {
                 const valid = isValidRule(rule);
-                const inputCls = `
-                  w-full p-2 rounded-lg border
-                  bg-white dark:bg-gray-900
-                  ${valid ? "border-gray-200 dark:border-gray-800" : "border-red-400"}
-                `;
+
+                const inputCls = `w-full p-2 rounded-lg border bg-white dark:bg-gray-900 ${
+                  valid
+                    ? "border-gray-200 dark:border-gray-800"
+                    : "border-red-400"
+                }`;
 
                 return (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                    {/* RANGE */}
-                    <div className="col-span-8 flex gap-2">
+                  <div
+                    key={idx}
+                    className="grid grid-cols-12 gap-2 items-center"
+                  >
+                    {/* ✅ RANGE = 1 BLOK (2 inputs binnen dezelfde kolom) */}
+                    <div className="col-span-5 flex gap-2">
                       <input
                         type="number"
                         value={rule.range_min}
-                        onChange={(e) => updateRule(idx, "range_min", e.target.value)}
+                        onChange={(e) =>
+                          updateRule(idx, "range_min", e.target.value)
+                        }
                         className={inputCls}
                         placeholder="min"
                       />
-
                       <input
                         type="number"
                         value={rule.range_max}
-                        onChange={(e) => updateRule(idx, "range_max", e.target.value)}
+                        onChange={(e) =>
+                          updateRule(idx, "range_max", e.target.value)
+                        }
                         className={inputCls}
                         placeholder="max"
                       />
                     </div>
 
-                    {/* SCORE */}
+                    {/* ✅ SCORE = 2e BLOK */}
                     <div className="col-span-3">
                       <input
                         type="number"
                         value={rule.score}
-                        onChange={(e) => updateRule(idx, "score", e.target.value)}
+                        onChange={(e) =>
+                          updateRule(idx, "score", e.target.value)
+                        }
                         className={inputCls}
                         placeholder="score"
                       />
+                    </div>
+
+                    {/* ✅ TREND = AUTO (geen input) */}
+                    <div className="col-span-3 text-center text-[var(--text-light)] italic">
+                      {getTrend(rule.score)}
                     </div>
 
                     {/* DELETE */}
@@ -371,7 +403,8 @@ export default function IndicatorScoreEditor({
 
               {sortedCustom.length === 0 && (
                 <div className="text-sm text-[var(--text-light)] italic">
-                  Nog geen custom rules. Klik op <span className="font-medium">Add</span>.
+                  Nog geen custom rules. Klik op{" "}
+                  <span className="font-medium">Add</span>.
                 </div>
               )}
             </div>

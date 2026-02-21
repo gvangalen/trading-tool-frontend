@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CardWrapper from "@/components/ui/CardWrapper";
 import UniversalSearchDropdown from "@/components/ui/UniversalSearchDropdown";
 import IndicatorScorePanel from "@/components/scoring/IndicatorScorePanel";
@@ -9,31 +9,41 @@ import { useModal } from "@/components/modal/ModalProvider";
 
 export default function MarketIndicatorScoreView({
   availableIndicators = [],
-  selectedIndicator, // mag je houden voor parent-state, maar we gebruiken local `indicator` voor UI
+  selectedIndicator,
   selectIndicator,
   addMarketIndicator,
   activeIndicators = [],
 }) {
   const { showSnackbar } = useModal();
-  const [indicator, setIndicator] = useState(null);
 
-  /* ---------------------------
+  const [indicator, setIndicator] = useState(selectedIndicator || null);
+
+  /* --------------------------------------------------
+     Sync met parent state
+  -------------------------------------------------- */
+  useEffect(() => {
+    if (selectedIndicator) {
+      setIndicator(selectedIndicator);
+    }
+  }, [selectedIndicator]);
+
+  /* --------------------------------------------------
      Select indicator
-  --------------------------- */
+  -------------------------------------------------- */
   const handleSelect = (item) => {
     setIndicator(item);
     selectIndicator?.(item);
   };
 
-  /* ---------------------------
+  /* --------------------------------------------------
      Already added?
-  --------------------------- */
+  -------------------------------------------------- */
   const isAdded =
     indicator && activeIndicators.includes(indicator.name);
 
-  /* ---------------------------
+  /* --------------------------------------------------
      Add indicator
-  --------------------------- */
+  -------------------------------------------------- */
   const handleAdd = async () => {
     if (!indicator || isAdded) return;
 
@@ -45,8 +55,13 @@ export default function MarketIndicatorScoreView({
     }
   };
 
+  /* --------------------------------------------------
+     Display name helper
+  -------------------------------------------------- */
   const displayName =
-    indicator?.display_name || indicator?.label || indicator?.name;
+    indicator?.display_name ||
+    indicator?.label ||
+    indicator?.name;
 
   return (
     <CardWrapper
@@ -66,44 +81,50 @@ export default function MarketIndicatorScoreView({
         onSelect={handleSelect}
       />
 
-      {/* INTRO / EMPTY STATE (terug zoals “begin scherm”) */}
+      {/* EMPTY STATE / INTRO */}
       {!indicator && (
         <div className="mt-4 text-sm text-[var(--text-light)]">
           <p className="italic">
             Selecteer een indicator om de scorelogica te bekijken en eventueel aan te passen.
           </p>
 
-          <div className="mt-3 grid gap-2">
+          <div className="mt-4 grid gap-3">
             <div className="flex items-start gap-2">
-              <span className="mt-[2px] inline-block h-2 w-2 rounded-full bg-[var(--primary)]" />
+              <span className="mt-[3px] h-2 w-2 rounded-full bg-[var(--primary)]" />
               <div>
-                <span className="font-medium text-[var(--text)]">Standard</span>{" "}
+                <span className="font-medium text-[var(--text)]">
+                  Standard
+                </span>{" "}
                 = normale interpretatie van de standaard scoreregels.
               </div>
             </div>
 
             <div className="flex items-start gap-2">
-              <span className="mt-[2px] inline-block h-2 w-2 rounded-full bg-yellow-500" />
+              <span className="mt-[3px] h-2 w-2 rounded-full bg-yellow-500" />
               <div>
-                <span className="font-medium text-[var(--text)]">Contrarian</span>{" "}
+                <span className="font-medium text-[var(--text)]">
+                  Contrarian
+                </span>{" "}
                 = score wordt omgekeerd gebruikt (mean-reversion / contrair).
               </div>
             </div>
 
             <div className="flex items-start gap-2">
-              <span className="mt-[2px] inline-block h-2 w-2 rounded-full bg-purple-500" />
+              <span className="mt-[3px] h-2 w-2 rounded-full bg-purple-500" />
               <div>
-                <span className="font-medium text-[var(--text)]">Custom</span>{" "}
-                = eigen ranges + score (en alleen daar kun je het gewicht aanpassen).
+                <span className="font-medium text-[var(--text)]">
+                  Custom
+                </span>{" "}
+                = eigen ranges + scores (hier kun je ook het gewicht aanpassen).
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* SELECTED INDICATOR HEADER (naam fix) */}
+      {/* SELECTED INDICATOR HEADER */}
       {indicator && (
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-5 flex items-center gap-3">
           <span
             className="
               inline-flex items-center
@@ -121,9 +142,9 @@ export default function MarketIndicatorScoreView({
         </div>
       )}
 
-      {/* SCORE PANEL (NEW SYSTEM) */}
+      {/* SCORE PANEL */}
       {indicator && (
-        <div className="mt-6">
+        <div className="mt-5 border-t pt-5">
           <IndicatorScorePanel
             category="market"
             indicator={indicator.name}

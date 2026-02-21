@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Info } from "lucide-react";
 
 /**
  * IndicatorScoreEditor
@@ -48,8 +48,7 @@ export default function IndicatorScoreEditor({
   }, [indicator, scoreMode, rules, weight]);
 
   /* --------------------------------------------------
-     Auto save STANDARD & CONTRARIAN (mode + weight)
-     - Custom: geen autosave, user klikt op opslaan
+     Auto save STANDARD & CONTRARIAN
   -------------------------------------------------- */
   useEffect(() => {
     if (loading) return;
@@ -109,9 +108,6 @@ export default function IndicatorScoreEditor({
     return customRules.some((r) => !isValidRule(r));
   }, [customRules, mode]);
 
-  /* --------------------------------------------------
-     🧠 Trend auto generator (geen extra input)
-  -------------------------------------------------- */
   const getTrend = (score) => {
     const s = Number(score);
     if (s <= 25) return "Zeer laag";
@@ -121,9 +117,6 @@ export default function IndicatorScoreEditor({
     return "Hoog";
   };
 
-  /* --------------------------------------------------
-     Custom rule helpers
-  -------------------------------------------------- */
   const addRule = () => {
     const base = sortedCustom[sortedCustom.length - 1];
     const lastMax = base ? Number(base.range_max) : 100;
@@ -159,19 +152,14 @@ export default function IndicatorScoreEditor({
   };
 
   const saveCustomRules = async () => {
-    // 1) sla settings op (mode + weight)
     await onSave?.({
       score_mode: "custom",
       weight: localWeight,
     });
 
-    // 2) sla rules op
     await onSaveCustom?.(sortedCustom);
   };
 
-  /* --------------------------------------------------
-     UI
-  -------------------------------------------------- */
   if (loading) {
     return <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>;
   }
@@ -187,13 +175,35 @@ export default function IndicatorScoreEditor({
           </p>
         </div>
 
-        {/* ✅ Weight altijd zichtbaar (read-only bij standard/contrarian) */}
-        <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm">
+        {/* WEIGHT BADGE + TOOLTIP */}
+        <div className="relative group inline-flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm">
           <span className="font-medium">Weight</span>
           <span className="tabular-nums font-semibold">
             {Number(localWeight).toFixed(1)}
           </span>
-          <span className="text-[var(--text-light)]">({weightBadgeLabel})</span>
+          <span className="text-[var(--text-light)]">
+            ({weightBadgeLabel})
+          </span>
+
+          <Info
+            size={14}
+            className="text-[var(--text-light)] cursor-help"
+          />
+
+          {/* Tooltip */}
+          <div
+            className="
+              absolute right-0 top-full mt-2 w-64
+              opacity-0 group-hover:opacity-100
+              pointer-events-none
+              transition
+              bg-black text-white text-xs rounded-lg p-3 shadow-xl
+              z-50
+            "
+          >
+            Weight bepaalt hoeveel invloed deze indicator heeft op de totale
+            categorie-score. Hogere weight = meer impact.
+          </div>
         </div>
       </div>
 
@@ -214,7 +224,6 @@ export default function IndicatorScoreEditor({
         ))}
       </div>
 
-      {/* MODE INFO (compact, netjes) */}
       {mode === "standard" && (
         <div className="text-sm text-[var(--text-light)]">
           Standard = normale interpretatie van de standaard scoreregels.
@@ -224,18 +233,17 @@ export default function IndicatorScoreEditor({
       {mode === "contrarian" && (
         <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-300 rounded-xl px-3 py-2">
           <RefreshCw size={14} />
-          Contrarian = score wordt omgekeerd gebruikt (mean-reversion / contrair).
+          Contrarian = score wordt omgekeerd gebruikt.
         </div>
       )}
 
       {mode === "custom" && (
         <div className="text-sm text-purple-700 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-300 rounded-xl px-3 py-2">
-          Custom = je definieert je eigen ranges + scores. Hier kun je ook het
-          gewicht aanpassen.
+          Custom = je definieert je eigen ranges + scores.
         </div>
       )}
 
-      {/* STANDARD / CONTRARIAN RULES */}
+      {/* STANDARD / CONTRARIAN TABLE */}
       {(mode === "standard" || mode === "contrarian") && (
         <div className="space-y-2">
           <div className="text-sm font-semibold">Scoreregels</div>
@@ -270,7 +278,6 @@ export default function IndicatorScoreEditor({
             </table>
           </div>
 
-          {/* ✅ Weight read-only zichtbaar; slider niet hier */}
           <div className="text-xs text-[var(--text-light)]">
             Gewicht aanpassen kan alleen via{" "}
             <span className="font-medium">Custom</span>.
@@ -278,10 +285,9 @@ export default function IndicatorScoreEditor({
         </div>
       )}
 
-      {/* CUSTOM */}
+      {/* CUSTOM SECTION */}
       {mode === "custom" && (
         <div className="space-y-4">
-          {/* WEIGHT SLIDER (alleen custom) */}
           <div className="space-y-2">
             <div className="text-sm font-semibold">Indicator weight</div>
 
@@ -300,14 +306,11 @@ export default function IndicatorScoreEditor({
             </div>
           </div>
 
-          {/* CUSTOM RANGES HEADER */}
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold">Custom ranges</div>
               <div className="text-xs text-[var(--text-light)]">
-                Min–Max (waarde) = het bereik van de{" "}
-                <span className="font-medium">indicator-waarde</span> waarop de
-                score wordt toegepast. Tip: min &lt; max en score tussen 0–100.
+                Min &lt; max en score tussen 0–100.
               </div>
             </div>
 
@@ -319,13 +322,12 @@ export default function IndicatorScoreEditor({
             </button>
           </div>
 
-          {/* ✅ Duidelijke tabel-header voor custom */}
           <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
             <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
               <div className="col-span-5">Min–Max (waarde)</div>
               <div className="col-span-3 text-center">Score</div>
               <div className="col-span-3 text-center">Trend</div>
-              <div className="col-span-1 text-right"></div>
+              <div className="col-span-1"></div>
             </div>
 
             <div className="p-3 space-y-2">
@@ -343,7 +345,6 @@ export default function IndicatorScoreEditor({
                     key={idx}
                     className="grid grid-cols-12 gap-2 items-center"
                   >
-                    {/* ✅ RANGE = 1 BLOK (2 inputs binnen dezelfde kolom) */}
                     <div className="col-span-5 flex gap-2">
                       <input
                         type="number"
@@ -352,8 +353,7 @@ export default function IndicatorScoreEditor({
                           updateRule(idx, "range_min", e.target.value)
                         }
                         className={inputCls}
-                        placeholder="min (waarde)"
-                        aria-label="Min waarde"
+                        placeholder="min"
                       />
                       <input
                         type="number"
@@ -362,12 +362,10 @@ export default function IndicatorScoreEditor({
                           updateRule(idx, "range_max", e.target.value)
                         }
                         className={inputCls}
-                        placeholder="max (waarde)"
-                        aria-label="Max waarde"
+                        placeholder="max"
                       />
                     </div>
 
-                    {/* ✅ SCORE = 2e BLOK */}
                     <div className="col-span-3">
                       <input
                         type="number"
@@ -376,29 +374,25 @@ export default function IndicatorScoreEditor({
                           updateRule(idx, "score", e.target.value)
                         }
                         className={inputCls}
-                        placeholder="score (0–100)"
-                        aria-label="Score"
+                        placeholder="score"
                       />
                     </div>
 
-                    {/* ✅ TREND = AUTO (geen input) */}
                     <div className="col-span-3 text-center text-[var(--text-light)] italic">
                       {getTrend(rule.score)}
                     </div>
 
-                    {/* DELETE */}
                     <div className="col-span-1 flex justify-end">
                       <button
                         onClick={() => removeRule(idx)}
                         className="text-red-500 hover:text-red-600 p-2"
-                        aria-label="Verwijder range"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
 
                     {!valid && (
-                      <div className="col-span-12 text-xs text-red-600 -mt-1">
+                      <div className="col-span-12 text-xs text-red-600">
                         Ongeldige regel: controleer min/max en score (0–100).
                       </div>
                     )}
@@ -408,8 +402,7 @@ export default function IndicatorScoreEditor({
 
               {sortedCustom.length === 0 && (
                 <div className="text-sm text-[var(--text-light)] italic">
-                  Nog geen custom rules. Klik op{" "}
-                  <span className="font-medium">Add</span>.
+                  Nog geen custom rules.
                 </div>
               )}
             </div>

@@ -26,6 +26,14 @@ export default function MarketIndicatorScoreView({
   };
 
   /* ---------------------------
+     Indicator display name
+  --------------------------- */
+  const indicatorName =
+    indicator?.display_name ||
+    indicator?.name ||
+    "";
+
+  /* ---------------------------
      Already added?
   --------------------------- */
   const isAdded =
@@ -63,9 +71,27 @@ export default function MarketIndicatorScoreView({
         onSelect={handleSelect}
       />
 
+      {/* ACTIVE INDICATOR HEADER */}
+      {indicator && (
+        <div className="mt-5 mb-2 flex items-center gap-3">
+          <div className="
+            px-3 py-1 rounded-full
+            bg-gradient-to-r from-blue-600 to-indigo-600
+            text-white text-sm font-semibold
+            shadow-sm
+          ">
+            {indicatorName}
+          </div>
+
+          <span className="text-xs text-gray-500">
+            momenteel bewerken
+          </span>
+        </div>
+      )}
+
       {/* SCORE PANEL (NEW SYSTEM) */}
       {indicator && (
-        <div className="mt-6">
+        <div className="mt-3">
           <IndicatorScorePanel
             category="market"
             indicator={indicator.name}

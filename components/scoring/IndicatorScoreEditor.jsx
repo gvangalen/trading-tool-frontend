@@ -323,62 +323,63 @@ const getTrend = (score) => {
                   bg-white dark:bg-gray-900
                   ${valid ? "border-gray-200 dark:border-gray-800" : "border-red-400"}
                 `;
-
+            
                 return (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                  {/* RANGE */}
-                  <div className="col-span-5 flex gap-2">
-                    <input
-                      type="number"
-                      value={rule.range_min}
-                      onChange={(e) => updateRule(idx, "range_min", e.target.value)}
-                      className={inputCls}
-                      placeholder="min"
-                    />
-                
-                    <input
-                      type="number"
-                      value={rule.range_max}
-                      onChange={(e) => updateRule(idx, "range_max", e.target.value)}
-                      className={inputCls}
-                      placeholder="max"
-                    />
-                  </div>
-                
-                  {/* SCORE */}
-                  <div className="col-span-3">
-                    <input
-                      type="number"
-                      value={rule.score}
-                      onChange={(e) => updateRule(idx, "score", e.target.value)}
-                      className={inputCls}
-                      placeholder="score"
-                    />
-                  </div>
-                
-                  {/* TREND AUTO */}
-                  <div className="col-span-3 text-center text-[var(--text-light)] italic">
-                    {getTrend(rule.score)}
-                  </div>
-                
-                  {/* DELETE */}
-                  <div className="col-span-1 flex justify-end">
-                    <button
-                      onClick={() => removeRule(idx)}
-                      className="text-red-500 hover:text-red-600 p-2"
-                      aria-label="Verwijder range"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                
-                  {!valid && (
-                    <div className="col-span-12 text-xs text-red-600 -mt-1">
-                      Ongeldige regel: controleer min/max en score (0–100).
+                    
+                    {/* RANGE */}
+                    <div className="col-span-5 flex gap-2">
+                      <input
+                        type="number"
+                        value={rule.range_min}
+                        onChange={(e)=>updateRule(idx,"range_min",e.target.value)}
+                        className={inputCls}
+                        placeholder="min"
+                      />
+                      <input
+                        type="number"
+                        value={rule.range_max}
+                        onChange={(e)=>updateRule(idx,"range_max",e.target.value)}
+                        className={inputCls}
+                        placeholder="max"
+                      />
                     </div>
-                  )}
-                </div>
-              ))}   {/* ← DEZE REGEL ONTBRAK */}
+            
+                    {/* SCORE */}
+                    <div className="col-span-3">
+                      <input
+                        type="number"
+                        value={rule.score}
+                        onChange={(e)=>updateRule(idx,"score",e.target.value)}
+                        className={inputCls}
+                        placeholder="score"
+                      />
+                    </div>
+            
+                    {/* TREND */}
+                    <div className="col-span-3 text-center italic text-[var(--text-light)]">
+                      {getTrend(rule.score)}
+                    </div>
+            
+                    {/* DELETE */}
+                    <div className="col-span-1 text-right">
+                      <button
+                        onClick={()=>removeRule(idx)}
+                        className="text-red-500 hover:text-red-600 p-2"
+                      >
+                        <Trash2 size={16}/>
+                      </button>
+                    </div>
+            
+                    {!valid && (
+                      <div className="col-span-12 text-xs text-red-600">
+                        Ongeldige regel: controleer min/max en score (0–100).
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>   {/* ⭐ DEZE DIV MOET ER STAAN */}
 
           <button
             onClick={saveCustomRules}

@@ -15,7 +15,6 @@ export default function MarketIndicatorScoreView({
   activeIndicators = [],
 }) {
   const { showSnackbar } = useModal();
-
   const [indicator, setIndicator] = useState(selectedIndicator || null);
 
   /* --------------------------------------------------
@@ -81,44 +80,10 @@ export default function MarketIndicatorScoreView({
         onSelect={handleSelect}
       />
 
-      {/* EMPTY STATE / INTRO */}
+      {/* EMPTY STATE (clean & rustig) */}
       {!indicator && (
-        <div className="mt-4 text-sm text-[var(--text-light)]">
-          <p className="italic">
-            Selecteer een indicator om de scorelogica te bekijken en eventueel aan te passen.
-          </p>
-
-          <div className="mt-4 grid gap-3">
-            <div className="flex items-start gap-2">
-              <span className="mt-[3px] h-2 w-2 rounded-full bg-[var(--primary)]" />
-              <div>
-                <span className="font-medium text-[var(--text)]">
-                  Standard
-                </span>{" "}
-                = normale interpretatie van de standaard scoreregels.
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2">
-              <span className="mt-[3px] h-2 w-2 rounded-full bg-yellow-500" />
-              <div>
-                <span className="font-medium text-[var(--text)]">
-                  Contrarian
-                </span>{" "}
-                = score wordt omgekeerd gebruikt (mean-reversion / contrair).
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2">
-              <span className="mt-[3px] h-2 w-2 rounded-full bg-purple-500" />
-              <div>
-                <span className="font-medium text-[var(--text)]">
-                  Custom
-                </span>{" "}
-                = eigen ranges + scores (hier kun je ook het gewicht aanpassen).
-              </div>
-            </div>
-          </div>
+        <div className="mt-4 text-sm text-[var(--text-light)] italic">
+          Selecteer een indicator om de scorelogica te bekijken en aan te passen.
         </div>
       )}
 

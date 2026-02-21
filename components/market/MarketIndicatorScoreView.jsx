@@ -9,7 +9,7 @@ import { useModal } from "@/components/modal/ModalProvider";
 
 export default function MarketIndicatorScoreView({
   availableIndicators = [],
-  selectedIndicator,
+  selectedIndicator, // mag je houden voor parent-state, maar we gebruiken local `indicator` voor UI
   selectIndicator,
   addMarketIndicator,
   activeIndicators = [],
@@ -22,16 +22,8 @@ export default function MarketIndicatorScoreView({
   --------------------------- */
   const handleSelect = (item) => {
     setIndicator(item);
-    selectIndicator(item);
+    selectIndicator?.(item);
   };
-
-  /* ---------------------------
-     Indicator display name
-  --------------------------- */
-  const indicatorName =
-    indicator?.display_name ||
-    indicator?.name ||
-    "";
 
   /* ---------------------------
      Already added?
@@ -53,12 +45,15 @@ export default function MarketIndicatorScoreView({
     }
   };
 
+  const displayName =
+    indicator?.display_name || indicator?.label || indicator?.name;
+
   return (
     <CardWrapper
       title={
         <div className="flex items-center gap-2">
           <Coins className="w-5 h-5 text-[var(--primary)]" />
-          Market Indicator Scorelogica
+          <span>Market Indicator Scorelogica</span>
         </div>
       }
     >
@@ -71,19 +66,56 @@ export default function MarketIndicatorScoreView({
         onSelect={handleSelect}
       />
 
-      {/* ACTIVE INDICATOR HEADER */}
-      {indicator && (
-        <div className="mt-5 mb-2 flex items-center gap-3">
-          <div className="
-            px-3 py-1 rounded-full
-            bg-gradient-to-r from-blue-600 to-indigo-600
-            text-white text-sm font-semibold
-            shadow-sm
-          ">
-            {indicatorName}
-          </div>
+      {/* INTRO / EMPTY STATE (terug zoals “begin scherm”) */}
+      {!indicator && (
+        <div className="mt-4 text-sm text-[var(--text-light)]">
+          <p className="italic">
+            Selecteer een indicator om de scorelogica te bekijken en eventueel aan te passen.
+          </p>
 
-          <span className="text-xs text-gray-500">
+          <div className="mt-3 grid gap-2">
+            <div className="flex items-start gap-2">
+              <span className="mt-[2px] inline-block h-2 w-2 rounded-full bg-[var(--primary)]" />
+              <div>
+                <span className="font-medium text-[var(--text)]">Standard</span>{" "}
+                = normale interpretatie van de standaard scoreregels.
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="mt-[2px] inline-block h-2 w-2 rounded-full bg-yellow-500" />
+              <div>
+                <span className="font-medium text-[var(--text)]">Contrarian</span>{" "}
+                = score wordt omgekeerd gebruikt (mean-reversion / contrair).
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="mt-[2px] inline-block h-2 w-2 rounded-full bg-purple-500" />
+              <div>
+                <span className="font-medium text-[var(--text)]">Custom</span>{" "}
+                = eigen ranges + score (en alleen daar kun je het gewicht aanpassen).
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SELECTED INDICATOR HEADER (naam fix) */}
+      {indicator && (
+        <div className="mt-4 flex items-center gap-3">
+          <span
+            className="
+              inline-flex items-center
+              px-3 py-1 rounded-full
+              bg-[var(--primary)]
+              text-white text-sm font-semibold
+            "
+          >
+            {displayName}
+          </span>
+
+          <span className="text-sm text-[var(--text-light)]">
             momenteel bewerken
           </span>
         </div>
@@ -91,7 +123,7 @@ export default function MarketIndicatorScoreView({
 
       {/* SCORE PANEL (NEW SYSTEM) */}
       {indicator && (
-        <div className="mt-3">
+        <div className="mt-6">
           <IndicatorScorePanel
             category="market"
             indicator={indicator.name}
@@ -112,6 +144,7 @@ export default function MarketIndicatorScoreView({
             font-medium
             hover:brightness-90
             disabled:opacity-40 disabled:cursor-not-allowed
+            transition
           "
         >
           <Plus size={16} />

@@ -244,7 +244,7 @@ export default function IndicatorScoreEditor({
             <table className="w-full text-sm">
               <thead className="bg-gray-100 dark:bg-gray-800 text-left">
                 <tr>
-                  <th className="p-3">Range</th>
+                  <th className="p-3">Min–Max (waarde)</th>
                   <th className="p-3 text-center">Score</th>
                   <th className="p-3 text-center">Trend</th>
                 </tr>
@@ -262,7 +262,7 @@ export default function IndicatorScoreEditor({
                       {displayScore(r.score)}
                     </td>
                     <td className="p-3 text-center text-[var(--text-light)] italic">
-                      {r.trend || "–"}
+                      {r.trend || getTrend(r.score)}
                     </td>
                   </tr>
                 ))}
@@ -305,7 +305,9 @@ export default function IndicatorScoreEditor({
             <div>
               <div className="text-sm font-semibold">Custom ranges</div>
               <div className="text-xs text-[var(--text-light)]">
-                Tip: min &lt; max en score tussen 0–100.
+                Min–Max (waarde) = het bereik van de{" "}
+                <span className="font-medium">indicator-waarde</span> waarop de
+                score wordt toegepast. Tip: min &lt; max en score tussen 0–100.
               </div>
             </div>
 
@@ -320,7 +322,7 @@ export default function IndicatorScoreEditor({
           {/* ✅ Duidelijke tabel-header voor custom */}
           <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
             <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
-              <div className="col-span-5">Range</div>
+              <div className="col-span-5">Min–Max (waarde)</div>
               <div className="col-span-3 text-center">Score</div>
               <div className="col-span-3 text-center">Trend</div>
               <div className="col-span-1 text-right"></div>
@@ -350,7 +352,8 @@ export default function IndicatorScoreEditor({
                           updateRule(idx, "range_min", e.target.value)
                         }
                         className={inputCls}
-                        placeholder="min"
+                        placeholder="min (waarde)"
+                        aria-label="Min waarde"
                       />
                       <input
                         type="number"
@@ -359,7 +362,8 @@ export default function IndicatorScoreEditor({
                           updateRule(idx, "range_max", e.target.value)
                         }
                         className={inputCls}
-                        placeholder="max"
+                        placeholder="max (waarde)"
+                        aria-label="Max waarde"
                       />
                     </div>
 
@@ -372,7 +376,8 @@ export default function IndicatorScoreEditor({
                           updateRule(idx, "score", e.target.value)
                         }
                         className={inputCls}
-                        placeholder="score"
+                        placeholder="score (0–100)"
+                        aria-label="Score"
                       />
                     </div>
 

@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Trash2, RefreshCw, Info } from "lucide-react";
+import { RefreshCw, Info } from "lucide-react";
 
 /**
- * IndicatorScoreEditor
+ * IndicatorScoreEditor (V2 — Fixed Buckets)
  *
- * ✔ Sync met backend via hook
- * ✔ Reset bij indicator wissel
- * ✔ Ondersteunt standard / contrarian / custom
- * ✔ Weight badge altijd zichtbaar (read-only bij standard/contrarian)
- * ✔ Weight slider alleen bij custom
- * ✔ Custom editor met duidelijke header + validatie
+ * ✅ 5 vaste buckets (0–20, 20–40, 40–60, 60–80, 80–100)
+ * ✅ Standard / Contrarian / Custom: visueel IDENTIEK (zelfde tabel)
+ * ✅ Alleen score + weight editable (en dan alleen in Custom)
+ * ✅ Weight badge altijd zichtbaar + tooltip
+ * ✅ Weight slider alleen bij Custom
+ * ✅ Trend auto (geen input)
+ * ✅ Custom: Save knop (geen autosave)
+ * ✅ Standard/Contrarian: autosave (mode + weight)
  *
  * Props:
  *  indicator
@@ -24,6 +26,61 @@ import { Plus, Trash2, RefreshCw, Info } from "lucide-react";
  *  onSaveCustom(rules)
  */
 
+const FIXED_BUCKETS = [
+  { min: 0, max: 20 },
+  { min: 20, max: 40 },
+  { min: 40, max: 60 },
+  { min: 60, max: 80 },
+  { min: 80, max: 100 },
+];
+
+const clampScore = (v) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 50;
+  if (n < 10) return 10;
+  if (n > 100) return 100;
+  return n;
+};
+
+const getTrend = (score) => {
+  const s = Number(score);
+  if (s <= 20) return "Zeer laag";
+  if (s <= 40) return "Laag";
+  if (s <= 60) return "Neutraal";
+  if (s <= 80) return "Actief";
+  return "Hoog";
+};
+
+// Map ANY incoming rules to our 5 fixed buckets (0–100 normalized).
+// After DB migration this becomes exact, but this keeps UI stable now.
+function bucketizeRules(rules = []) {
+  const arr = Array.isArray(rules) ? rules : [];
+
+  return FIXED_BUCKETS.map((b) => {
+    const mid = (b.min + b.max) / 2;
+
+    const match =
+      arr.find(
+        (r) =>
+          Number(r?.range_min) <= mid && mid <= Number(r?.range_max)
+      ) ||
+      arr.find(
+        (r) =>
+          Number(r?.range_min) === b.min &&
+          Number(r?.range_max) === b.max
+      );
+
+    const s = clampScore(match?.score ?? 50);
+
+    return {
+      range_min: b.min,
+      range_max: b.max,
+      score: s,
+      trend: getTrend(s),
+    };
+  });
+}
+
 export default function IndicatorScoreEditor({
   indicator,
   category,
@@ -35,20 +92,27 @@ export default function IndicatorScoreEditor({
   onSaveCustom,
 }) {
   const [mode, setMode] = useState(scoreMode);
-  const [customRules, setCustomRules] = useState(rules);
   const [localWeight, setLocalWeight] = useState(weight);
+
+  // Custom scores only (always 5 buckets)
+  const [customRules, setCustomRules] = useState(
+    bucketizeRules(rules)
+  );
 
   /* --------------------------------------------------
      Sync wanneer backend data verandert
   -------------------------------------------------- */
   useEffect(() => {
     setMode(scoreMode || "standard");
-    setCustomRules(Array.isArray(rules) ? rules : []);
     setLocalWeight(weight ?? 1);
+
+    // Always normalize incoming rules to 5 buckets for custom editor
+    setCustomRules(bucketizeRules(rules));
   }, [indicator, scoreMode, rules, weight]);
 
   /* --------------------------------------------------
-     Auto save STANDARD & CONTRARIAN
+     Auto save STANDARD & CONTRARIAN (mode + weight)
+     Custom: save via button
   -------------------------------------------------- */
   useEffect(() => {
     if (loading) return;
@@ -73,95 +137,72 @@ export default function IndicatorScoreEditor({
 
   const weightBadgeLabel = mode === "custom" ? "custom" : "standaard";
 
-  const displayScore = (s) =>
-    mode === "contrarian" ? 100 - Number(s || 0) : Number(s || 0);
-
-  const sortedRules = useMemo(() => {
-    const arr = Array.isArray(rules) ? [...rules] : [];
-    return arr.sort((a, b) => (a?.range_min ?? 0) - (b?.range_min ?? 0));
-  }, [rules]);
-
-  const sortedCustom = useMemo(() => {
-    const arr = Array.isArray(customRules) ? [...customRules] : [];
-    return arr.sort((a, b) => (a?.range_min ?? 0) - (b?.range_min ?? 0));
-  }, [customRules]);
-
-  const isValidRule = (r) => {
-    const min = Number(r?.range_min);
-    const max = Number(r?.range_max);
-    const score = Number(r?.score);
-
-    if (
-      !Number.isFinite(min) ||
-      !Number.isFinite(max) ||
-      !Number.isFinite(score)
-    )
-      return false;
-    if (min >= max) return false;
-    if (score < 0 || score > 100) return false;
-    return true;
+  const displayScore = (s) => {
+    const base = clampScore(s);
+    if (mode === "contrarian") return clampScore(100 - base);
+    return base;
   };
 
-  const hasInvalidCustom = useMemo(() => {
-    if (mode !== "custom") return false;
-    if (!Array.isArray(customRules) || customRules.length === 0) return true;
-    return customRules.some((r) => !isValidRule(r));
-  }, [customRules, mode]);
+  const isCustom = mode === "custom";
 
-  const getTrend = (score) => {
-    const s = Number(score);
-    if (s <= 25) return "Zeer laag";
-    if (s <= 45) return "Laag";
-    if (s <= 60) return "Neutraal";
-    if (s <= 80) return "Actief";
-    return "Hoog";
-  };
+  // Standard rules also bucketized so the table is ALWAYS identical
+  const standardRules = useMemo(
+    () => bucketizeRules(rules),
+    [rules]
+  );
 
-  const addRule = () => {
-    const base = sortedCustom[sortedCustom.length - 1];
-    const lastMax = base ? Number(base.range_max) : 100;
+  const rows = isCustom ? customRules : standardRules;
 
-    setCustomRules([
-      ...(Array.isArray(customRules) ? customRules : []),
-      {
-        range_min: Number.isFinite(lastMax) ? lastMax : 0,
-        range_max: Number.isFinite(lastMax) ? lastMax + 10 : 100,
-        score: 50,
-        trend: "",
-      },
-    ]);
-  };
+  /* --------------------------------------------------
+     Custom edit: score only (ranges locked)
+  -------------------------------------------------- */
+  const updateCustomScore = (idx, value) => {
+    setCustomRules((prev) => {
+      const next = Array.isArray(prev)
+        ? [...prev]
+        : bucketizeRules([]);
 
-  const updateRule = (index, field, value) => {
-    const updated = [...(Array.isArray(customRules) ? customRules : [])];
-    const v = field === "trend" ? String(value) : Number(value);
+      const b = FIXED_BUCKETS[idx];
+      const s = clampScore(value);
 
-    updated[index] = {
-      ...updated[index],
-      [field]: v,
-    };
-    setCustomRules(updated);
-  };
+      next[idx] = {
+        range_min: b.min,
+        range_max: b.max,
+        score: s,
+        trend: getTrend(s),
+      };
 
-  const removeRule = (index) => {
-    setCustomRules(
-      (Array.isArray(customRules) ? customRules : []).filter(
-        (_, i) => i !== index
-      )
-    );
+      return next;
+    });
   };
 
   const saveCustomRules = async () => {
+    // 1) save settings
     await onSave?.({
       score_mode: "custom",
       weight: localWeight,
     });
 
-    await onSaveCustom?.(sortedCustom);
+    // 2) save 5 fixed bucket rules
+    const payload = FIXED_BUCKETS.map((b, i) => {
+      const s = clampScore(customRules?.[i]?.score ?? 50);
+      return {
+        range_min: b.min,
+        range_max: b.max,
+        score: s,
+        trend: getTrend(s),
+      };
+    });
+
+    await onSaveCustom?.(payload);
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>;
+    return (
+      <div className="p-6 text-sm text-[var(--text-light)]">
+        Laden…
+      </div>
+    );
   }
 
   return (
@@ -224,203 +265,126 @@ export default function IndicatorScoreEditor({
         ))}
       </div>
 
-      {mode === "standard" && (
-        <div className="text-sm text-[var(--text-light)]">
-          Standard = normale interpretatie van de standaard scoreregels.
-        </div>
-      )}
+      {/* MODE INFO (zelfde plek) */}
+      <div className="min-h-[40px]">
+        {mode === "standard" && (
+          <div className="text-sm text-[var(--text-light)]">
+            Standard = normale interpretatie van de standaard scoreregels.
+          </div>
+        )}
 
-      {mode === "contrarian" && (
-        <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-300 rounded-xl px-3 py-2">
-          <RefreshCw size={14} />
-          Contrarian = score wordt omgekeerd gebruikt.
-        </div>
-      )}
+        {mode === "contrarian" && (
+          <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-300 rounded-xl px-3 py-2">
+            <RefreshCw size={14} />
+            Contrarian = score wordt omgekeerd gebruikt.
+          </div>
+        )}
 
-      {mode === "custom" && (
-        <div className="text-sm text-purple-700 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-300 rounded-xl px-3 py-2">
-          Custom = je definieert je eigen ranges + scores.
-        </div>
-      )}
+        {mode === "custom" && (
+          <div className="text-sm text-purple-700 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-300 rounded-xl px-3 py-2">
+            Custom = vaste buckets (0–100). Je past alleen score + weight aan.
+          </div>
+        )}
+      </div>
 
-      {/* STANDARD / CONTRARIAN TABLE */}
-      {(mode === "standard" || mode === "contrarian") && (
+      {/* WEIGHT SLIDER (alleen custom) */}
+      {isCustom && (
         <div className="space-y-2">
-          <div className="text-sm font-semibold">Scoreregels</div>
+          <div className="text-sm font-semibold">Indicator weight</div>
 
-          <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-                <tr>
-                  <th className="p-3">Min–Max (waarde)</th>
-                  <th className="p-3 text-center">Score</th>
-                  <th className="p-3 text-center">Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedRules.map((r, i) => (
-                  <tr
-                    key={i}
-                    className="border-t border-gray-200 dark:border-gray-800"
-                  >
-                    <td className="p-3">
-                      {r.range_min} – {r.range_max}
-                    </td>
-                    <td className="p-3 text-center font-semibold">
-                      {displayScore(r.score)}
-                    </td>
-                    <td className="p-3 text-center text-[var(--text-light)] italic">
-                      {r.trend || getTrend(r.score)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <input
+            type="range"
+            min="0"
+            max="3"
+            step="0.1"
+            value={localWeight}
+            onChange={(e) => setLocalWeight(Number(e.target.value))}
+            className="w-full"
+          />
+
+          <div className="text-sm text-[var(--text-light)]">
+            Gewicht: {Number(localWeight).toFixed(1)}
+          </div>
+        </div>
+      )}
+
+      {/* UNIFIED TABLE (ALL MODES IDENTICAL) */}
+      <div className="space-y-2">
+        <div className="text-sm font-semibold">Scoreregels</div>
+
+        <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
+          {/* Header grid (zelfde als custom editor) */}
+          <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
+            <div className="col-span-5">Genormaliseerde waarde (0–100)</div>
+            <div className="col-span-3 text-center">Score</div>
+            <div className="col-span-4 text-center">Trend</div>
           </div>
 
+          <div className="p-3 space-y-2">
+            {FIXED_BUCKETS.map((b, idx) => {
+              const rawScore = rows?.[idx]?.score ?? 50;
+              const shownScore = displayScore(rawScore);
+
+              const inputCls = `
+                w-full p-2 rounded-lg border bg-white dark:bg-gray-900
+                border-gray-200 dark:border-gray-800
+                ${!isCustom ? "opacity-70 cursor-not-allowed" : ""}
+              `;
+
+              return (
+                <div
+                  key={idx}
+                  className="grid grid-cols-12 gap-2 items-center"
+                >
+                  <div className="col-span-5 text-sm font-medium">
+                    {b.min} – {b.max}
+                  </div>
+
+                  <div className="col-span-3">
+                    <input
+                      type="number"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={isCustom ? rawScore : shownScore}
+                      disabled={!isCustom}
+                      onChange={(e) =>
+                        updateCustomScore(idx, e.target.value)
+                      }
+                      className={inputCls}
+                      aria-label={`Score bucket ${b.min}-${b.max}`}
+                    />
+                  </div>
+
+                  <div className="col-span-4 text-center text-[var(--text-light)] italic">
+                    {getTrend(isCustom ? rawScore : shownScore)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {!isCustom && (
           <div className="text-xs text-[var(--text-light)]">
             Gewicht aanpassen kan alleen via{" "}
             <span className="font-medium">Custom</span>.
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* CUSTOM SECTION */}
-      {mode === "custom" && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="text-sm font-semibold">Indicator weight</div>
-
-            <input
-              type="range"
-              min="0"
-              max="3"
-              step="0.1"
-              value={localWeight}
-              onChange={(e) => setLocalWeight(Number(e.target.value))}
-              className="w-full"
-            />
-
-            <div className="text-sm text-[var(--text-light)]">
-              Gewicht: {Number(localWeight).toFixed(1)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold">Custom ranges</div>
-              <div className="text-xs text-[var(--text-light)]">
-                Min &lt; max en score tussen 0–100.
-              </div>
-            </div>
-
-            <button
-              onClick={addRule}
-              className="flex items-center gap-2 text-sm bg-[var(--primary)] text-white px-4 py-2 rounded-lg hover:brightness-95"
-            >
-              <Plus size={16} /> Add
-            </button>
-          </div>
-
-          <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
-            <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
-              <div className="col-span-5">Min–Max (waarde)</div>
-              <div className="col-span-3 text-center">Score</div>
-              <div className="col-span-3 text-center">Trend</div>
-              <div className="col-span-1"></div>
-            </div>
-
-            <div className="p-3 space-y-2">
-              {sortedCustom.map((rule, idx) => {
-                const valid = isValidRule(rule);
-
-                const inputCls = `w-full p-2 rounded-lg border bg-white dark:bg-gray-900 ${
-                  valid
-                    ? "border-gray-200 dark:border-gray-800"
-                    : "border-red-400"
-                }`;
-
-                return (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-12 gap-2 items-center"
-                  >
-                    <div className="col-span-5 flex gap-2">
-                      <input
-                        type="number"
-                        value={rule.range_min}
-                        onChange={(e) =>
-                          updateRule(idx, "range_min", e.target.value)
-                        }
-                        className={inputCls}
-                        placeholder="min"
-                      />
-                      <input
-                        type="number"
-                        value={rule.range_max}
-                        onChange={(e) =>
-                          updateRule(idx, "range_max", e.target.value)
-                        }
-                        className={inputCls}
-                        placeholder="max"
-                      />
-                    </div>
-
-                    <div className="col-span-3">
-                      <input
-                        type="number"
-                        value={rule.score}
-                        onChange={(e) =>
-                          updateRule(idx, "score", e.target.value)
-                        }
-                        className={inputCls}
-                        placeholder="score"
-                      />
-                    </div>
-
-                    <div className="col-span-3 text-center text-[var(--text-light)] italic">
-                      {getTrend(rule.score)}
-                    </div>
-
-                    <div className="col-span-1 flex justify-end">
-                      <button
-                        onClick={() => removeRule(idx)}
-                        className="text-red-500 hover:text-red-600 p-2"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    {!valid && (
-                      <div className="col-span-12 text-xs text-red-600">
-                        Ongeldige regel: controleer min/max en score (0–100).
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {sortedCustom.length === 0 && (
-                <div className="text-sm text-[var(--text-light)] italic">
-                  Nog geen custom rules.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={saveCustomRules}
-            disabled={hasInvalidCustom}
-            className="
-              inline-flex items-center justify-center
-              bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium
-              hover:brightness-95
-              disabled:opacity-40 disabled:cursor-not-allowed
-            "
-          >
-            Save Custom Rules
-          </button>
-        </div>
+      {/* SAVE only for custom */}
+      {isCustom && (
+        <button
+          onClick={saveCustomRules}
+          className="
+            inline-flex items-center justify-center
+            bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium
+            hover:brightness-95
+          "
+        >
+          Save Custom Rules
+        </button>
       )}
     </div>
   );

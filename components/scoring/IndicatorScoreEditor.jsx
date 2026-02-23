@@ -15,20 +15,11 @@ import { RefreshCw, Info } from "lucide-react";
  * ✅ Custom: Save knop (geen autosave)
  * ✅ Standard/Contrarian: autosave (alleen mode; weight niet editable)
  *
- * ✅ Update (multi-tenant / user-aware):
- * - Frontend stuurt géén user_id mee (auth header bepaalt user).
- * - Maar we sturen wél consistent genormaliseerde indicator-name door naar onSave/onSaveCustom,
- *   zodat backend rules altijd dezelfde key gebruikt (en dus user/template rules correct matchen).
- *
- * Props:
- *  indicator: string
- *  category: "macro" | "market" | "technical"
- *  rules: array
- *  scoreMode: "standard" | "contrarian" | "custom"
- *  weight: number
- *  loading: boolean
- *  onSave(settings) -> Promise|void
- *  onSaveCustom(rules) -> Promise|void
+ * ✅ IMPORTANT FIXES:
+ * - Standard/Contrarian gebruiken altijd vaste template scores (niet DB rules)
+ * - Contrarian is exact inverse van Standard template (met clamp 10..100)
+ * - In Standard/Contrarian tonen we score als badge (geen input)
+ * - Units (%, USD, index) worden weergegeven onder "Genormaliseerde waarde"
  */
 
 const FIXED_BUCKETS = [
@@ -39,6 +30,9 @@ const FIXED_BUCKETS = [
   { min: 80, max: 100 },
 ];
 
+// ✅ Global template scores for Standard mode
+const STANDARD_TEMPLATE_SCORES = [10, 25, 50, 75, 100];
+
 // Houd dit bewust gelijk aan backend normalize_indicator_name (scoring_utils)
 const NAME_ALIASES = {
   fear_and_greed_index: "fear_greed_index",
@@ -47,6 +41,14 @@ const NAME_ALIASES = {
   "s&p500": "sp500",
   "s&p_500": "sp500",
   sp_500: "sp500",
+};
+
+// Simple meta map for unit display (extend when needed)
+const INDICATOR_META = {
+  volume: { unit: "%", label: "Volume (relatief)" },
+  change_24h: { unit: "%", label: "Change 24h" },
+  fear_greed_index: { unit: "index", label: "Fear & Greed" },
+  sp500: { unit: "index", label: "S&P 500" },
 };
 
 function normalizeIndicatorName(name) {
@@ -64,6 +66,7 @@ function normalizeIndicatorName(name) {
 const clampScore = (v) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return 50;
+  // jij wilde minimum geen 0, dus 10
   if (n < 10) return 10;
   if (n > 100) return 100;
   return n;
@@ -93,8 +96,18 @@ function getScoreStyle(score) {
   return "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300";
 }
 
-// Map ANY incoming rules to our 5 fixed buckets (0–100 normalized).
-// Keeps UI stable even if DB has partial rules.
+function safeJson(value) {
+  if (!value) return {};
+  if (typeof value === "object") return value;
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "object" && parsed ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+// Custom rules (DB) bucketize → keeps UI stable
 function bucketizeRules(rules = []) {
   const arr = Array.isArray(rules) ? rules : [];
 
@@ -136,6 +149,8 @@ export default function IndicatorScoreEditor({
     [indicator]
   );
 
+  const meta = INDICATOR_META[normalizedIndicator] || null;
+
   const [mode, setMode] = useState(scoreMode);
   const [localWeight, setLocalWeight] = useState(weight);
 
@@ -171,7 +186,7 @@ export default function IndicatorScoreEditor({
   }, [mode, loading, normalizedIndicator, category]);
 
   /* --------------------------------------------------
-     Helpers
+     Modes
   -------------------------------------------------- */
   const modes = [
     { key: "standard", label: "Standard" },
@@ -182,20 +197,34 @@ export default function IndicatorScoreEditor({
   const isCustom = mode === "custom";
   const weightBadgeLabel = isCustom ? "custom" : "standaard";
 
+  /* --------------------------------------------------
+     ✅ Rows logic:
+     - Standard: fixed template
+     - Contrarian: inverse of template (still displayed in same table)
+     - Custom: DB-driven editable
+  -------------------------------------------------- */
+  const templateRows = useMemo(() => {
+    return FIXED_BUCKETS.map((b, idx) => {
+      const s = clampScore(STANDARD_TEMPLATE_SCORES[idx]);
+      return {
+        range_min: b.min,
+        range_max: b.max,
+        score: s,
+        trend: getTrend(s),
+      };
+    });
+  }, []);
+
   const displayScore = useCallback(
     (s) => {
       const base = clampScore(s);
-      // Contrarian = score-mode transform; buckets blijven magnitude-based
       if (mode === "contrarian") return clampScore(100 - base);
       return base;
     },
     [mode]
   );
 
-  // Standard rules also bucketized so the table is ALWAYS identical
-  const standardRules = useMemo(() => bucketizeRules(rules), [rules]);
-
-  const rows = isCustom ? customRules : standardRules;
+  const rows = isCustom ? customRules : templateRows;
 
   /* --------------------------------------------------
      Custom edit: score only (ranges locked)
@@ -245,10 +274,12 @@ export default function IndicatorScoreEditor({
   };
 
   if (loading) {
-    return (
-      <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>
-    );
+    return <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>;
   }
+
+  const valueLabel = meta?.unit
+    ? `Genormaliseerde waarde (0–100, ${meta.unit})`
+    : "Genormaliseerde waarde (0–100)";
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 space-y-6 border border-gray-200 dark:border-gray-800">
@@ -262,6 +293,11 @@ export default function IndicatorScoreEditor({
           <div className="mt-1 text-xs text-[var(--text-light)]">
             Indicator key:{" "}
             <span className="font-mono">{normalizedIndicator || "—"}</span>
+            {meta?.label ? (
+              <span className="ml-2 text-[var(--text-light)]">
+                • {meta.label}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -309,18 +345,18 @@ export default function IndicatorScoreEditor({
         ))}
       </div>
 
-      {/* MODE INFO (zelfde plek) */}
+      {/* MODE INFO */}
       <div className="min-h-[40px]">
         {mode === "standard" && (
           <div className="text-sm text-[var(--text-light)]">
-            Standard = normale interpretatie van de bucket-scores (magnitude).
+            Standard = vaste template scores (zelfde overal).
           </div>
         )}
 
         {mode === "contrarian" && (
           <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-300 rounded-xl px-3 py-2">
             <RefreshCw size={14} />
-            Contrarian = bucket-score wordt omgekeerd toegepast (100 - score).
+            Contrarian = exact inverse van Standard template (100 - score).
           </div>
         )}
 
@@ -352,14 +388,14 @@ export default function IndicatorScoreEditor({
         </div>
       )}
 
-      {/* UNIFIED TABLE (ALL MODES IDENTICAL) */}
+      {/* UNIFIED TABLE */}
       <div className="space-y-2">
         <div className="text-sm font-semibold">Scoreregels</div>
 
         <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
           {/* Header grid */}
           <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
-            <div className="col-span-5">Genormaliseerde waarde (0–100)</div>
+            <div className="col-span-5">{valueLabel}</div>
             <div className="col-span-3 text-center">
               Score {mode === "contrarian" ? "(inverted)" : ""}
             </div>
@@ -370,12 +406,6 @@ export default function IndicatorScoreEditor({
             {FIXED_BUCKETS.map((b, idx) => {
               const rawScore = rows?.[idx]?.score ?? 50;
               const shownScore = displayScore(rawScore);
-
-              const inputCls = `
-                w-full p-2 rounded-lg border bg-white dark:bg-gray-900
-                border-gray-200 dark:border-gray-800
-                ${!isCustom ? "opacity-70 cursor-not-allowed" : ""}
-              `;
 
               return (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center">
@@ -412,7 +442,7 @@ export default function IndicatorScoreEditor({
                   </div>
 
                   <div className="col-span-4 text-center text-[var(--text-light)] italic">
-                    {getTrend(isCustom ? rawScore : shownScore)}
+                    {getTrend(shownScore)}
                   </div>
                 </div>
               );

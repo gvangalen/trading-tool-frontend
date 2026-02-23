@@ -2,24 +2,31 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { RefreshCw, Info } from "lucide-react";
+import ScoreModeBadge from "@/components/ScoreModeBadge";
 
 /**
- * IndicatorScoreEditor (V2 — Fixed Buckets) — TradeLayer 2.0
+ * IndicatorScoreEditor — Grip Theme PRO 3.0 (100% theme-driven)
  *
  * ✅ 5 vaste buckets (0–20, 20–40, 40–60, 60–80, 80–100)
  * ✅ Standard / Contrarian / Custom: visueel IDENTIEK (zelfde tabel)
- * ✅ Alleen score editable (en dan alleen in Custom)
- * ✅ Weight badge altijd zichtbaar + tooltip
- * ✅ Weight slider alleen bij Custom
- * ✅ Trend auto (geen input)
- * ✅ Custom: Save knop (geen autosave)
- * ✅ Standard/Contrarian: autosave (alleen mode; weight niet editable)
+ * ✅ Standard/Contrarian tonen score als badge (geen input)
+ * ✅ Contrarian is exact inverse van Standard template (100 - score)
+ * ✅ Custom = DB-rules (editable score + weight + save)
+ * ✅ Units (%, USD, index) worden zichtbaar in de UI header (0–100, unit)
  *
- * ✅ IMPORTANT FIXES:
- * - Standard/Contrarian gebruiken altijd vaste template scores (niet DB rules)
- * - Contrarian is exact inverse van Standard template (met clamp 10..100)
- * - In Standard/Contrarian tonen we score als badge (geen input)
- * - Units (%, USD, index) worden weergegeven onder "Genormaliseerde waarde"
+ * UX regels:
+ * - Tabel ranges blijven ALTIJD 0–100 (design), ook al clampen we scores naar 10–100
+ * - Contrarian moet net zo “vol” aanvoelen als Standard (geen rare 90-top)
+ *
+ * Props:
+ *  indicator: string
+ *  category: "macro" | "market" | "technical"
+ *  rules: array
+ *  scoreMode: "standard" | "contrarian" | "custom"
+ *  weight: number
+ *  loading: boolean
+ *  onSave(settings) -> Promise|void
+ *  onSaveCustom(rules) -> Promise|void
  */
 
 const FIXED_BUCKETS = [
@@ -30,7 +37,7 @@ const FIXED_BUCKETS = [
   { min: 80, max: 100 },
 ];
 
-// ✅ Global template scores for Standard mode
+// ✅ Global template scores for Standard mode (stable everywhere)
 const STANDARD_TEMPLATE_SCORES = [10, 25, 50, 75, 100];
 
 // Houd dit bewust gelijk aan backend normalize_indicator_name (scoring_utils)
@@ -46,9 +53,14 @@ const NAME_ALIASES = {
 // Simple meta map for unit display (extend when needed)
 const INDICATOR_META = {
   volume: { unit: "%", label: "Volume (relatief)" },
+  market_volume: { unit: "%", label: "Volume (relatief)" }, // safe alias
+  volume_change: { unit: "%", label: "Volume change" },
   change_24h: { unit: "%", label: "Change 24h" },
+  change_7d: { unit: "%", label: "Change 7d" },
   fear_greed_index: { unit: "index", label: "Fear & Greed" },
   sp500: { unit: "index", label: "S&P 500" },
+  dxy: { unit: "index", label: "DXY" },
+  price: { unit: "USD", label: "Price" },
 };
 
 function normalizeIndicatorName(name) {
@@ -63,10 +75,11 @@ function normalizeIndicatorName(name) {
   return NAME_ALIASES[normalized] || normalized;
 }
 
+// Score-engine clamp (business) ≠ UI-range (design)
 const clampScore = (v) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return 50;
-  // jij wilde minimum geen 0, dus 10
+  // jouw engine wil geen 0 => min 10
   if (n < 10) return 10;
   if (n > 100) return 100;
   return n;
@@ -81,33 +94,18 @@ const getTrend = (score) => {
   return "Hoog";
 };
 
-function getScoreStyle(score) {
+// Theme-driven score badge classes (no hardcoded colors)
+// Uses your global score variables where possible.
+function getScoreBadgeClass(score) {
   const s = Number(score);
-
-  if (s <= 20)
-    return "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300";
-  if (s <= 40)
-    return "bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300";
-  if (s <= 60)
-    return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
-  if (s <= 80)
-    return "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300";
-
-  return "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300";
+  if (s <= 20) return "score-badge score-badge-sell";
+  if (s <= 40) return "score-badge score-badge-neutral";
+  if (s <= 60) return "score-badge score-badge-neutral";
+  if (s <= 80) return "score-badge score-badge-buy";
+  return "score-badge score-badge-strong-buy";
 }
 
-function safeJson(value) {
-  if (!value) return {};
-  if (typeof value === "object") return value;
-  try {
-    const parsed = JSON.parse(value);
-    return typeof parsed === "object" && parsed ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-// Custom rules (DB) bucketize → keeps UI stable
+// Custom rules (DB) bucketize → keeps UI stable even if DB partial
 function bucketizeRules(rules = []) {
   const arr = Array.isArray(rules) ? rules : [];
 
@@ -115,13 +113,8 @@ function bucketizeRules(rules = []) {
     const mid = (b.min + b.max) / 2;
 
     const match =
-      arr.find(
-        (r) => Number(r?.range_min) <= mid && mid <= Number(r?.range_max)
-      ) ||
-      arr.find(
-        (r) =>
-          Number(r?.range_min) === b.min && Number(r?.range_max) === b.max
-      );
+      arr.find((r) => Number(r?.range_min) <= mid && mid <= Number(r?.range_max)) ||
+      arr.find((r) => Number(r?.range_min) === b.min && Number(r?.range_max) === b.max);
 
     const s = clampScore(match?.score ?? 50);
 
@@ -144,11 +137,7 @@ export default function IndicatorScoreEditor({
   onSave,
   onSaveCustom,
 }) {
-  const normalizedIndicator = useMemo(
-    () => normalizeIndicatorName(indicator),
-    [indicator]
-  );
-
+  const normalizedIndicator = useMemo(() => normalizeIndicatorName(indicator), [indicator]);
   const meta = INDICATOR_META[normalizedIndicator] || null;
 
   const [mode, setMode] = useState(scoreMode);
@@ -195,12 +184,11 @@ export default function IndicatorScoreEditor({
   ];
 
   const isCustom = mode === "custom";
-  const weightBadgeLabel = isCustom ? "custom" : "standaard";
 
   /* --------------------------------------------------
      ✅ Rows logic:
-     - Standard: fixed template
-     - Contrarian: inverse of template (still displayed in same table)
+     - Standard: fixed template rows
+     - Contrarian: inverse (100 - template score)
      - Custom: DB-driven editable
   -------------------------------------------------- */
   const templateRows = useMemo(() => {
@@ -216,8 +204,8 @@ export default function IndicatorScoreEditor({
   }, []);
 
   const displayScore = useCallback(
-    (s) => {
-      const base = clampScore(s);
+    (baseScore) => {
+      const base = clampScore(baseScore);
       if (mode === "contrarian") return clampScore(100 - base);
       return base;
     },
@@ -282,32 +270,32 @@ export default function IndicatorScoreEditor({
     : "Genormaliseerde waarde (0–100)";
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 space-y-6 border border-gray-200 dark:border-gray-800">
-      {/* HEADER + WEIGHT BADGE */}
+    <div className="card-surface p-6 space-y-6">
+      {/* HEADER */}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold">Score Logica</h3>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-[var(--text-dark)]">Score Logica</h3>
+            <ScoreModeBadge mode={mode} />
+          </div>
+
           <p className="text-sm text-[var(--text-light)]">
             Pas aan hoe deze indicator wordt geïnterpreteerd.
           </p>
-          <div className="mt-1 text-xs text-[var(--text-light)]">
-            Indicator key:{" "}
-            <span className="font-mono">{normalizedIndicator || "—"}</span>
-            {meta?.label ? (
-              <span className="ml-2 text-[var(--text-light)]">
-                • {meta.label}
-              </span>
-            ) : null}
+
+          <div className="text-xs text-[var(--text-light)]">
+            Indicator key: <span className="font-mono">{normalizedIndicator || "—"}</span>
+            {meta?.label ? <span className="ml-2">• {meta.label}</span> : null}
           </div>
         </div>
 
         {/* WEIGHT BADGE + TOOLTIP */}
-        <div className="relative group inline-flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm">
-          <span className="font-medium">Weight</span>
-          <span className="tabular-nums font-semibold">
+        <div className="relative group inline-flex items-center gap-2 rounded-full bg-[var(--surface-2)] px-3 py-1 text-sm border border-[var(--border)]">
+          <span className="font-medium text-[var(--text-dark)]">Weight</span>
+          <span className="tabular-nums font-semibold text-[var(--text-dark)]">
             {Number(localWeight).toFixed(1)}
           </span>
-          <span className="text-[var(--text-light)]">({weightBadgeLabel})</span>
+          <span className="text-[var(--text-light)]">({isCustom ? "custom" : "standaard"})</span>
 
           <Info size={14} className="text-[var(--text-light)] cursor-help" />
 
@@ -322,22 +310,22 @@ export default function IndicatorScoreEditor({
               z-50
             "
           >
-            Weight bepaalt hoeveel invloed deze indicator heeft op de totale
-            categorie-score. Hogere weight = meer impact.
+            Weight bepaalt hoeveel invloed deze indicator heeft op de totale categorie-score.
+            Hogere weight = meer impact.
           </div>
         </div>
       </div>
 
       {/* MODE TOGGLE */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {modes.map((m) => (
           <button
             key={m.key}
             onClick={() => setMode(m.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+            className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium transition border ${
               mode === m.key
-                ? "bg-[var(--primary)] text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                ? "bg-[var(--primary)] text-white border-transparent"
+                : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
             }`}
           >
             {m.label}
@@ -354,14 +342,14 @@ export default function IndicatorScoreEditor({
         )}
 
         {mode === "contrarian" && (
-          <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-300 rounded-xl px-3 py-2">
-            <RefreshCw size={14} />
+          <div className="flex items-center gap-2 text-sm rounded-[var(--radius-md)] px-3 py-2 border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-dark)]">
+            <RefreshCw size={14} className="icon-muted" />
             Contrarian = exact inverse van Standard template (100 - score).
           </div>
         )}
 
         {mode === "custom" && (
-          <div className="text-sm text-purple-700 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-300 rounded-xl px-3 py-2">
+          <div className="text-sm rounded-[var(--radius-md)] px-3 py-2 border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-dark)]">
             Custom = vaste buckets (0–100). Je past alleen score + weight aan.
           </div>
         )}
@@ -370,7 +358,7 @@ export default function IndicatorScoreEditor({
       {/* WEIGHT SLIDER (alleen custom) */}
       {isCustom && (
         <div className="space-y-2">
-          <div className="text-sm font-semibold">Indicator weight</div>
+          <div className="text-sm font-semibold text-[var(--text-dark)]">Indicator weight</div>
 
           <input
             type="range"
@@ -388,13 +376,13 @@ export default function IndicatorScoreEditor({
         </div>
       )}
 
-      {/* UNIFIED TABLE */}
+      {/* TABLE */}
       <div className="space-y-2">
-        <div className="text-sm font-semibold">Scoreregels</div>
+        <div className="text-sm font-semibold text-[var(--text-dark)]">Scoreregels</div>
 
-        <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-800">
-          {/* Header grid */}
-          <div className="grid grid-cols-12 gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-[var(--text-light)]">
+        <div className="border rounded-[var(--radius-lg)] overflow-hidden border-[var(--border)] bg-[var(--surface-1)]">
+          {/* Header */}
+          <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs font-semibold text-[var(--text-light)] bg-[var(--surface-2)] border-b border-[var(--border)]">
             <div className="col-span-5">{valueLabel}</div>
             <div className="col-span-3 text-center">
               Score {mode === "contrarian" ? "(inverted)" : ""}
@@ -402,6 +390,7 @@ export default function IndicatorScoreEditor({
             <div className="col-span-4 text-center">Trend</div>
           </div>
 
+          {/* Rows */}
           <div className="p-3 space-y-2">
             {FIXED_BUCKETS.map((b, idx) => {
               const rawScore = rows?.[idx]?.score ?? 50;
@@ -409,7 +398,7 @@ export default function IndicatorScoreEditor({
 
               return (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                  <div className="col-span-5 text-sm font-medium">
+                  <div className="col-span-5 text-sm font-medium text-[var(--text-dark)]">
                     {b.min} – {b.max}
                   </div>
 
@@ -422,20 +411,11 @@ export default function IndicatorScoreEditor({
                         step="5"
                         value={rawScore}
                         onChange={(e) => updateCustomScore(idx, e.target.value)}
-                        className="
-                          w-full p-2 rounded-lg border
-                          bg-white dark:bg-gray-900
-                          border-gray-200 dark:border-gray-800
-                        "
+                        className="input text-center"
                         aria-label={`Score bucket ${b.min}-${b.max}`}
                       />
                     ) : (
-                      <div
-                        className={`
-                          w-full py-2 rounded-lg text-center font-semibold
-                          ${getScoreStyle(shownScore)}
-                        `}
-                      >
+                      <div className={`w-full py-2 rounded-[var(--radius-md)] text-center font-semibold ${getScoreBadgeClass(shownScore)}`}>
                         {shownScore}
                       </div>
                     )}
@@ -452,25 +432,18 @@ export default function IndicatorScoreEditor({
 
         {!isCustom && (
           <div className="text-xs text-[var(--text-light)]">
-            Score/weight aanpassen kan alleen via{" "}
-            <span className="font-medium">Custom</span>.
+            Score/weight aanpassen kan alleen via <span className="font-medium">Custom</span>.
           </div>
         )}
       </div>
 
       {/* SAVE only for custom */}
       {isCustom && (
-        <button
-          onClick={saveCustomRules}
-          className="
-            inline-flex items-center justify-center
-            bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium
-            hover:brightness-95
-          "
-        >
+        <button onClick={saveCustomRules} className="btn-primary">
           Save Custom Rules
         </button>
       )}
-    </div>
+
+          </div>
   );
 }

@@ -78,6 +78,21 @@ const getTrend = (score) => {
   return "Hoog";
 };
 
+function getScoreStyle(score) {
+  const s = Number(score);
+
+  if (s <= 20)
+    return "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300";
+  if (s <= 40)
+    return "bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300";
+  if (s <= 60)
+    return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+  if (s <= 80)
+    return "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300";
+
+  return "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300";
+}
+
 // Map ANY incoming rules to our 5 fixed buckets (0–100 normalized).
 // Keeps UI stable even if DB has partial rules.
 function bucketizeRules(rules = []) {
@@ -369,17 +384,31 @@ export default function IndicatorScoreEditor({
                   </div>
 
                   <div className="col-span-3">
-                    <input
-                      type="number"
-                      min="10"
-                      max="100"
-                      step="5"
-                      value={isCustom ? rawScore : shownScore}
-                      disabled={!isCustom}
-                      onChange={(e) => updateCustomScore(idx, e.target.value)}
-                      className={inputCls}
-                      aria-label={`Score bucket ${b.min}-${b.max}`}
-                    />
+                    {isCustom ? (
+                      <input
+                        type="number"
+                        min="10"
+                        max="100"
+                        step="5"
+                        value={rawScore}
+                        onChange={(e) => updateCustomScore(idx, e.target.value)}
+                        className="
+                          w-full p-2 rounded-lg border
+                          bg-white dark:bg-gray-900
+                          border-gray-200 dark:border-gray-800
+                        "
+                        aria-label={`Score bucket ${b.min}-${b.max}`}
+                      />
+                    ) : (
+                      <div
+                        className={`
+                          w-full py-2 rounded-lg text-center font-semibold
+                          ${getScoreStyle(shownScore)}
+                        `}
+                      >
+                        {shownScore}
+                      </div>
+                    )}
                   </div>
 
                   <div className="col-span-4 text-center text-[var(--text-light)] italic">

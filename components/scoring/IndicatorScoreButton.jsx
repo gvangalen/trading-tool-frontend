@@ -22,7 +22,15 @@ export default function IndicatorScoreButton({ indicator, category }) {
   return (
     <button
       onClick={openEditor}
-      className="text-gray-400 hover:text-blue-500"
+      className="
+        inline-flex items-center justify-center
+        p-1.5
+        rounded-[var(--radius-sm)]
+        text-[var(--icon-muted)]
+        hover:text-[var(--icon-primary)]
+        hover:bg-[var(--surface-2)]
+        transition
+      "
       title="Score instellingen"
     >
       <Settings size={16} />

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { RefreshCw, Info } from "lucide-react";
-import ScoreModeBadge from "@/components/ScoreModeBadge";
+import ScoreModeBadge from "./ScoreModeBadge";
+
 
 /**
  * IndicatorScoreEditor — Grip Theme PRO 3.0 (100% theme-driven)

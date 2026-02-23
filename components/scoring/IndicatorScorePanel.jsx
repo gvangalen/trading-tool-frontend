@@ -1,32 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import IndicatorScoreEditor from "./IndicatorScoreEditor";
 
 import {
   getIndicatorConfig,
   updateIndicatorSettings,
-  saveCustomRules,
+  saveCustomRules as apiSaveCustomRules,
 } from "@/lib/api/indicatorConfig";
 
-export default function IndicatorScorePanel({
-  indicator,
-  category,
-}) {
+import { useModal } from "@/components/modal/ModalProvider";
+
+/**
+ * IndicatorScorePanel — gebruikt globale snackbar uit ModalProvider
+ *
+ * ✅ Load config (rules + score_mode + weight)
+ * ✅ Standard/Contrarian: updateIndicatorSettings + snackbar
+ * ✅ Custom:
+ *    1) updateIndicatorSettings (mode=custom + weight)
+ *    2) saveCustomRules (5 bucket rules)
+ *    3) reload config
+ *    + snackbar
+ */
+
+export default function IndicatorScorePanel({ indicator, category }) {
+  const { showSnackbar } = useModal();
+
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------
-     Load indicator config
-  --------------------------- */
-  useEffect(() => {
+  const loadConfig = useCallback(async () => {
     if (!indicator || !category) return;
-    loadConfig();
-  }, [indicator, category]);
 
-  async function loadConfig() {
     setLoading(true);
-
     try {
       const res = await getIndicatorConfig(category, indicator);
 
@@ -37,69 +43,75 @@ export default function IndicatorScorePanel({
       });
     } catch (e) {
       console.error("Failed loading config", e);
+      showSnackbar("Laden mislukt ❌", "danger");
     } finally {
       setLoading(false);
     }
-  }
+  }, [indicator, category, showSnackbar]);
+
+  /* ---------------------------
+     Load indicator config
+  --------------------------- */
+  useEffect(() => {
+    if (!indicator || !category) return;
+    loadConfig();
+  }, [indicator, category, loadConfig]);
 
   /* ---------------------------
      Save STANDARD / CONTRARIAN
+     (Editor autosave bij mode-switch)
   --------------------------- */
-  async function saveSettings(settings) {
-    try {
-      await updateIndicatorSettings({
-        category,
-        indicator,
-        score_mode: settings.score_mode,
-        weight: settings.weight ?? 1,
-      });
+  const saveSettings = useCallback(
+    async (settings) => {
+      try {
+        await updateIndicatorSettings({
+          category,
+          indicator,
+          score_mode: settings?.score_mode,
+          weight: settings?.weight ?? 1,
+        });
 
-      setConfig((prev) => ({
-        ...prev,
-        ...settings,
-      }));
-    } catch (e) {
-      console.error("Save failed", e);
-    }
-  }
+        // refresh from API (single source of truth)
+        await loadConfig();
+
+        showSnackbar("Instellingen opgeslagen ✅", "success");
+      } catch (e) {
+        console.error("Save failed", e);
+        showSnackbar("Opslaan mislukt ❌", "danger");
+      }
+    },
+    [category, indicator, loadConfig, showSnackbar]
+  );
 
   /* ---------------------------
-     Save CUSTOM RULES + WEIGHT
+     Save CUSTOM RULES
+     Let op: Editor doet eerst onSave(mode+weight), daarna onSaveCustom(rules)
+     Maar we supporten hier óók direct custom-save in 1 flow (veilig).
   --------------------------- */
-  async function saveCustom(rules, weight) {
-    try {
-      await saveCustomRules({
-        category,
-        indicator,
-        rules,
-      });
+  const saveCustom = useCallback(
+    async (payloadRules) => {
+      try {
+        // 1) Save rules
+        await apiSaveCustomRules({
+          category,
+          indicator,
+          rules: Array.isArray(payloadRules) ? payloadRules : [],
+        });
 
-      // save weight + mode
-      await updateIndicatorSettings({
-        category,
-        indicator,
-        score_mode: "custom",
-        weight: weight ?? 1,
-      });
+        // 2) Reload
+        await loadConfig();
 
-      setConfig((prev) => ({
-        ...prev,
-        rules,
-        score_mode: "custom",
-        weight,
-      }));
-
-    } catch (e) {
-      console.error("Custom save failed", e);
-    }
-  }
+        showSnackbar("Custom rules opgeslagen ✅", "success");
+      } catch (e) {
+        console.error("Custom save failed", e);
+        showSnackbar("Custom opslaan mislukt ❌", "danger");
+      }
+    },
+    [category, indicator, loadConfig, showSnackbar]
+  );
 
   if (loading || !config) {
-    return (
-      <div className="p-6 text-sm text-gray-500">
-        Laden…
-      </div>
-    );
+    return <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>;
   }
 
   return (

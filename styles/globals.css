@@ -435,29 +435,58 @@ textarea:focus {
 }
 
 /* ===========================================
-   SCORE MODE BADGES
+   SCORE BADGES (0–100) — used in IndicatorScoreEditor
+   Theme-driven: uses only CSS vars
 =========================================== */
 
-.badge {
+.score-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.7rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
+  justify-content: center;
+  width: 100%;
 
-.badge-standard {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-dark);
 }
 
-.badge-contrarian {
-  background: rgba(234, 179, 8, 0.15);
-  color: var(--score-buy);
+/* Strong Buy */
+.score-badge-strong-buy {
+  border-color: color-mix(in srgb, var(--score-strong-buy) 25%, transparent);
+  color: var(--score-strong-buy);
+  background: color-mix(in srgb, var(--score-strong-buy) 12%, var(--surface-2));
 }
 
-.badge-custom {
-  background: rgba(26, 71, 255, 0.12);
-  color: var(--primary);
+/* Buy */
+.score-badge-buy {
+  border-color: color-mix(in srgb, var(--score-buy) 25%, transparent);
+  color: var(--score-buy);
+  background: color-mix(in srgb, var(--score-buy) 12%, var(--surface-2));
+}
+
+/* Neutral */
+.score-badge-neutral {
+  border-color: color-mix(in srgb, var(--score-neutral) 25%, transparent);
+  color: var(--score-neutral);
+  background: color-mix(in srgb, var(--score-neutral) 12%, var(--surface-2));
+}
+
+/* Sell */
+.score-badge-sell {
+  border-color: color-mix(in srgb, var(--score-sell) 25%, transparent);
+  color: var(--score-sell);
+  background: color-mix(in srgb, var(--score-sell) 12%, var(--surface-2));
+}
+
+/* Strong Sell (optioneel) */
+.score-badge-strong-sell {
+  border-color: color-mix(in srgb, var(--score-strong-sell) 25%, transparent);
+  color: var(--score-strong-sell);
+  background: color-mix(in srgb, var(--score-strong-sell) 12%, var(--surface-2));
 }

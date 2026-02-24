@@ -11,7 +11,10 @@ import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
 import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
-import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview"; // ✅ NEW
+import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
+
+// ✅ NEW: chart component (you said it lives here)
+import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
 /**
  * BotPage — TradeLayer 2.6 (FINAL / WIRED)
@@ -76,8 +79,7 @@ export default function BotPage() {
 
   /* =====================================================
      🧩 MERGE bots + portfolio (voor overview)
-     We geven BotPortfolioOverview dezelfde shape als BotPortfolioSection verwacht:
-     { symbol, budget, stats, bot_id, ... }
+     Shape: { bot_id, symbol, budget, stats }
   ===================================================== */
   const aggregatedBotsForOverview = useMemo(() => {
     return (bots || []).map((bot) => {
@@ -90,6 +92,80 @@ export default function BotPage() {
       };
     });
   }, [bots, portfolios]);
+
+  /* =====================================================
+     📈 NEW: GENERAL PORTFOLIO BALANCE (ALL BOTS)
+     We try a few possible shapes; fallback is “single point” from portfolios.
+  ===================================================== */
+  const totalPortfolioValueEur = useMemo(() => {
+    // safest default: sum of position values (if present)
+    return (portfolios || []).reduce((acc, p) => {
+      const v = Number(p?.stats?.position_value_eur ?? 0);
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+  }, [portfolios]);
+
+  const portfolioBalanceDataByRange = useMemo(() => {
+    // 1) If backend already sends something like today.portfolio_balance_by_range
+    // Expected shape:
+    // {
+    //   "1D": [{ts, value_eur}, ...],
+    //   "1W": [{ts, value_eur}, ...],
+    //   ...
+    // }
+    const byRange =
+      today?.portfolio_balance_by_range ||
+      today?.portfolio_balance_history_by_range ||
+      null;
+
+    if (byRange && typeof byRange === "object") {
+      const normalizeSeries = (series) =>
+        (Array.isArray(series) ? series : [])
+          .map((p) => ({
+            ts: p?.ts || p?.timestamp || p?.date || null,
+            value_eur: Number(p?.value_eur ?? p?.value ?? p?.balance_eur ?? p?.portfolio_value_eur ?? 0),
+          }))
+          .filter((p) => p.ts && Number.isFinite(p.value_eur));
+
+      return {
+        "1D": normalizeSeries(byRange["1D"]),
+        "1W": normalizeSeries(byRange["1W"]),
+        "1M": normalizeSeries(byRange["1M"]),
+        "1Y": normalizeSeries(byRange["1Y"]),
+        ALL: normalizeSeries(byRange["ALL"] || byRange["all"]),
+      };
+    }
+
+    // 2) If backend sends a single timeseries somewhere (history) we can reuse it
+    // We try to detect “portfolio value” points. If it doesn't exist -> empty.
+    const detected = (Array.isArray(history) ? history : [])
+      .map((p) => {
+        const ts = p?.ts || p?.timestamp || p?.date || null;
+        const v =
+          p?.portfolio_value_eur ??
+          p?.total_value_eur ??
+          p?.value_eur ??
+          p?.balance_eur ??
+          null;
+        const value_eur = Number(v);
+        return {
+          ts,
+          value_eur: Number.isFinite(value_eur) ? value_eur : null,
+        };
+      })
+      .filter((p) => p.ts && p.value_eur !== null);
+
+    if (detected.length >= 2) {
+      // Use same for all ranges until backend adds proper ranged endpoints
+      return { "1D": detected, "1W": detected, "1M": detected, "1Y": detected, ALL: detected };
+    }
+
+    // 3) Fallback: single point so card renders; chart will show “Geen data beschikbaar”
+    const now = new Date().toISOString();
+    const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
+
+    return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
+  }, [today, history, totalPortfolioValueEur]);
 
   /* =====================================================
      🔁 GENERATE DECISION
@@ -149,10 +225,7 @@ export default function BotPage() {
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
-        <BotForm
-          strategies={strategies}
-          onChange={(v) => (formRef.current = v)}
-        />
+        <BotForm strategies={strategies} onChange={(v) => (formRef.current = v)} />
       ),
       confirmText: "Bot toevoegen",
       onConfirm: async () => {
@@ -272,15 +345,19 @@ export default function BotPage() {
 
       <BotScores scores={dailyScores} loading={loading?.today} />
 
-      {/* ✅ NEW: General portfolio (alle bots samen) */}
+      {/* ✅ NEW: Portfolio balance chart (alle bots samen) */}
+      <PortfolioBalanceCard
+        title="Portfolio balance"
+        defaultRange="1W"
+        dataByRange={portfolioBalanceDataByRange}
+      />
+
+      {/* ✅ NEW: General portfolio overview (alle bots samen) */}
       <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Bots</h2>
-        <button
-          onClick={handleAddBot}
-          className="btn-primary flex items-center gap-2"
-        >
+        <button onClick={handleAddBot} className="btn-primary flex items-center gap-2">
           <Plus size={16} />
           Nieuwe bot
         </button>
@@ -300,7 +377,9 @@ export default function BotPage() {
               portfolio={portfolio}
               trades={trades}
               history={history}
-              loadingDecision={generatingBotId === bot.id || executingBotId === bot.id}
+              loadingDecision={
+                generatingBotId === bot.id || executingBotId === bot.id
+              }
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}

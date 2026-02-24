@@ -168,7 +168,7 @@ export default function IndicatorScoreEditor({
      Auto-save for STANDARD & CONTRARIAN only
      (Mode changes are saved; custom is saved via button)
   -------------------------------------------------- */
-  useEffect(() => {
+    useEffect(() => {
     if (loading) return;
     if (!normalizedIndicator || !category) return;
     if (mode === "custom") return;
@@ -178,9 +178,10 @@ export default function IndicatorScoreEditor({
       category,
       score_mode: mode,
       weight: localWeight,
+      __silent: true, // ✅ voorkomt snackbar bij navigatie
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, loading, normalizedIndicator, category]);
+  }, [mode, loading, normalizedIndicator, category, localWeight]);
 
   /* --------------------------------------------------
      Template rows (standard baseline)

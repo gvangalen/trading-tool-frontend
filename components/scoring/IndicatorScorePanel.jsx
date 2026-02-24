@@ -59,14 +59,14 @@ export default function IndicatorScorePanel({ indicator, category }) {
       const res = await getIndicatorConfig(category, normalizedIndicator);
 
       setConfig({
-        rules: res?.rules || [],
+        rules: Array.isArray(res?.rules) ? res.rules : [],
         score_mode: res?.score_mode || "standard",
-        weight: res?.weight ?? 1,
+        weight: typeof res?.weight === "number" ? res.weight : 1,
       });
     } catch (e) {
       console.error("Failed loading config", e);
 
-      // ✅ voorkomen dat je voor altijd op "Laden…" blijft
+      // ✅ voorkom dat je voor altijd op "Laden…" blijft
       setConfig({
         rules: [],
         score_mode: "standard",
@@ -89,71 +89,83 @@ export default function IndicatorScorePanel({ indicator, category }) {
   }, [loadConfig]);
 
   /* ---------------------------
-     Save STANDARD / CONTRARIAN (mode + weight)
+     Save STANDARD / CONTRARIAN
+     (mode + weight)
   --------------------------- */
-  async function saveSettings(settings) {
-    try {
-      await updateIndicatorSettings({
-        category,
-        indicator: normalizedIndicator,
-        score_mode: settings.score_mode,
-        weight: settings.weight ?? 1,
-      });
+  const saveSettings = useCallback(
+    async (settings) => {
+      try {
+        const nextMode = settings?.score_mode ?? "standard";
+        const nextWeight =
+          typeof settings?.weight === "number" ? settings.weight : 1;
 
-      setConfig((prev) => ({
-        ...(prev || {}),
-        score_mode: settings.score_mode,
-        weight: settings.weight ?? (prev?.weight ?? 1),
-      }));
+        await updateIndicatorSettings({
+          category,
+          indicator: normalizedIndicator,
+          score_mode: nextMode,
+          weight: nextWeight,
+        });
 
-      showSnackbar("Instellingen opgeslagen", "success");
-    } catch (e) {
-      console.error("Save failed", e);
-      showSnackbar("Opslaan mislukt", "danger");
-    }
-  }
+        setConfig((prev) => ({
+          ...(prev || {}),
+          score_mode: nextMode,
+          weight: nextWeight,
+        }));
+
+        showSnackbar("Instellingen opgeslagen", "success");
+      } catch (e) {
+        console.error("Save failed", e);
+        showSnackbar("Opslaan mislukt", "danger");
+      }
+    },
+    [category, normalizedIndicator, showSnackbar]
+  );
 
   /* ---------------------------
      Save CUSTOM RULES + WEIGHT
-     Editor calls: onSaveCustom(payload)
+
+     ✅ Editor moet aanroepen:
+        onSaveCustom(payload, localWeight)
+
      payload = [{indicator, category, range_min, range_max, score, trend}, ...]
   --------------------------- */
-  async function saveCustom(payload) {
-    try {
-      const rulesOnly = Array.isArray(payload) ? payload : [];
+  const saveCustom = useCallback(
+    async (payload, weightFromEditor) => {
+      try {
+        const rulesOnly = Array.isArray(payload) ? payload : [];
+        const nextWeight =
+          typeof weightFromEditor === "number" ? weightFromEditor : 1;
 
-      // 1) save rules
-      await apiSaveCustomRules({
-        category,
-        indicator: normalizedIndicator,
-        rules: rulesOnly,
-      });
+        // 1) save rules
+        await apiSaveCustomRules({
+          category,
+          indicator: normalizedIndicator,
+          rules: rulesOnly,
+        });
 
-      // 2) save mode + weight
-      // weight zit niet in payload; editor stuurt weight via onSave(settings) al,
-      // maar voor zekerheid pakken we huidige config.weight (of 1)
-      const nextWeight = config?.weight ?? 1;
+        // 2) save mode + weight
+        await updateIndicatorSettings({
+          category,
+          indicator: normalizedIndicator,
+          score_mode: "custom",
+          weight: nextWeight,
+        });
 
-      await updateIndicatorSettings({
-        category,
-        indicator: normalizedIndicator,
-        score_mode: "custom",
-        weight: nextWeight,
-      });
+        setConfig((prev) => ({
+          ...(prev || {}),
+          rules: rulesOnly,
+          score_mode: "custom",
+          weight: nextWeight,
+        }));
 
-      setConfig((prev) => ({
-        ...(prev || {}),
-        rules: rulesOnly,
-        score_mode: "custom",
-        weight: nextWeight,
-      }));
-
-      showSnackbar("Custom rules opgeslagen", "success");
-    } catch (e) {
-      console.error("Custom save failed", e);
-      showSnackbar("Custom opslaan mislukt", "danger");
-    }
-  }
+        showSnackbar("Custom rules opgeslagen", "success");
+      } catch (e) {
+        console.error("Custom save failed", e);
+        showSnackbar("Custom opslaan mislukt", "danger");
+      }
+    },
+    [category, normalizedIndicator, showSnackbar]
+  );
 
   /* ---------------------------
      UI states
@@ -163,7 +175,6 @@ export default function IndicatorScorePanel({ indicator, category }) {
   }
 
   if (!config) {
-    // extra safety (zou praktisch niet meer gebeuren)
     return (
       <div className="p-6 text-sm text-[var(--text-light)]">
         Kon config niet initialiseren.

@@ -91,6 +91,10 @@ export default function IndicatorScorePanel({ indicator, category }) {
   /* ---------------------------
      Save STANDARD / CONTRARIAN
      (mode + weight)
+
+     ✅ Update: support silent autosave from Editor
+        Editor can call:
+        onSave({ ..., __silent: true })
   --------------------------- */
   const saveSettings = useCallback(
     async (settings) => {
@@ -112,7 +116,10 @@ export default function IndicatorScorePanel({ indicator, category }) {
           weight: nextWeight,
         }));
 
-        showSnackbar("Instellingen opgeslagen", "success");
+        // ✅ only show snackbar if not silent
+        if (!settings?.__silent) {
+          showSnackbar("Instellingen opgeslagen", "success");
+        }
       } catch (e) {
         console.error("Save failed", e);
         showSnackbar("Opslaan mislukt", "danger");

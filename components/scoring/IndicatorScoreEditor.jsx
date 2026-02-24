@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { RefreshCw, Info } from "lucide-react";
-import ScoreModeBadge from "./ScoreModeBadge";
 import { useModal } from "@/components/modal/ModalProvider";
+import ScoreModeBadge from "./ScoreModeBadge";
 
 /**
- * IndicatorScoreEditor — Grip Theme PRO 3.0 (100% theme-driven)
+ * IndicatorScoreEditor — Grip Theme PRO 3.0 (theme-driven)
  *
  * ✅ 5 vaste buckets (0–20, 20–40, 40–60, 60–80, 80–100)
  * ✅ Standard / Contrarian / Custom: visueel IDENTIEK (zelfde tabel)
@@ -17,7 +17,17 @@ import { useModal } from "@/components/modal/ModalProvider";
  *
  * UX regels:
  * - Tabel ranges blijven ALTIJD 0–100 (design), ook al clampen we scores naar 10–100
- * - Contrarian moet net zo “vol” aanvoelen als Standard
+ * - Custom save doet GEEN dubbele writes: Editor stuurt 1 payload naar Panel
+ *
+ * Props:
+ *  indicator: string
+ *  category: "macro" | "market" | "technical"
+ *  rules: array
+ *  scoreMode: "standard" | "contrarian" | "custom"
+ *  weight: number
+ *  loading: boolean
+ *  onSave(settings) -> Promise|void                // Standard/Contrarian only
+ *  onSaveCustom(payload, weight) -> Promise|void   // Custom only (Panel regelt alles)
  */
 
 const FIXED_BUCKETS = [
@@ -28,7 +38,7 @@ const FIXED_BUCKETS = [
   { min: 80, max: 100 },
 ];
 
-// Global template scores for Standard mode (stable everywhere)
+// Stable template scores for Standard mode
 const STANDARD_TEMPLATE_SCORES = [10, 25, 50, 75, 100];
 
 // Keep consistent with backend normalize_indicator_name
@@ -41,7 +51,7 @@ const NAME_ALIASES = {
   sp_500: "sp500",
 };
 
-// Meta map for unit display
+// Meta map for unit display (extend when needed)
 const INDICATOR_META = {
   volume: { unit: "%", label: "Volume (relatief)" },
   market_volume: { unit: "%", label: "Volume (relatief)" },
@@ -66,7 +76,7 @@ function normalizeIndicatorName(name) {
   return NAME_ALIASES[normalized] || normalized;
 }
 
-// Score-engine clamp (business) ≠ UI-range (design)
+// Business clamp (engine) ≠ UI range (design)
 const clampScore = (v) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return 50;
@@ -85,9 +95,9 @@ const getTrend = (score) => {
 };
 
 /**
- * BELANGRIJK:
- * Deze classes moeten in je global CSS bestaan (je wilde geen local <style> meer).
- * Als je ze nog niet globaal hebt, zet ze in je global style.css.
+ * NOTE:
+ * Deze classes moeten in global CSS staan (geen local <style>).
+ * Als je ze niet hebt: voeg .score-badge + varianten toe aan global stylesheet.
  */
 function getScoreBadgeClass(score) {
   const s = Number(score);
@@ -97,7 +107,7 @@ function getScoreBadgeClass(score) {
   return "score-badge score-badge-strong-buy";
 }
 
-// Custom rules (DB) bucketize → keeps UI stable even if DB partial
+// Bucketize DB rules to fixed 5 buckets (keeps UI stable even if DB partial)
 function bucketizeRules(rules = []) {
   const arr = Array.isArray(rules) ? rules : [];
 
@@ -105,12 +115,8 @@ function bucketizeRules(rules = []) {
     const mid = (b.min + b.max) / 2;
 
     const match =
-      arr.find(
-        (r) => Number(r?.range_min) <= mid && mid <= Number(r?.range_max)
-      ) ||
-      arr.find(
-        (r) => Number(r?.range_min) === b.min && Number(r?.range_max) === b.max
-      );
+      arr.find((r) => Number(r?.range_min) <= mid && mid <= Number(r?.range_max)) ||
+      arr.find((r) => Number(r?.range_min) === b.min && Number(r?.range_max) === b.max);
 
     const s = clampScore(match?.score ?? 50);
 
@@ -139,23 +145,29 @@ export default function IndicatorScoreEditor({
     () => normalizeIndicatorName(indicator),
     [indicator]
   );
+
   const meta = INDICATOR_META[normalizedIndicator] || null;
 
   const [mode, setMode] = useState(scoreMode);
   const [localWeight, setLocalWeight] = useState(weight);
 
-  const [customRules, setCustomRules] = useState(bucketizeRules(rules));
-
+  // Custom-only state
+  const [customRules, setCustomRules] = useState(() => bucketizeRules(rules));
   const [savingCustom, setSavingCustom] = useState(false);
 
-  /* Sync wanneer backend data verandert */
+  /* --------------------------------------------------
+     Sync: when backend props change
+  -------------------------------------------------- */
   useEffect(() => {
     setMode(scoreMode || "standard");
-    setLocalWeight(weight ?? 1);
+    setLocalWeight(typeof weight === "number" ? weight : 1);
     setCustomRules(bucketizeRules(rules));
   }, [normalizedIndicator, scoreMode, rules, weight]);
 
-  /* Auto save STANDARD & CONTRARIAN (mode only) */
+  /* --------------------------------------------------
+     Auto-save for STANDARD & CONTRARIAN only
+     (Mode changes are saved; custom is saved via button)
+  -------------------------------------------------- */
   useEffect(() => {
     if (loading) return;
     if (!normalizedIndicator || !category) return;
@@ -170,15 +182,9 @@ export default function IndicatorScoreEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, loading, normalizedIndicator, category]);
 
-  const modes = [
-    { key: "standard", label: "Standard" },
-    { key: "contrarian", label: "Contrarian" },
-    { key: "custom", label: "Custom" },
-  ];
-
-  const isCustom = mode === "custom";
-
-  /* Template rows (standard baseline) */
+  /* --------------------------------------------------
+     Template rows (standard baseline)
+  -------------------------------------------------- */
   const templateRows = useMemo(() => {
     return FIXED_BUCKETS.map((b, idx) => {
       const s = clampScore(STANDARD_TEMPLATE_SCORES[idx]);
@@ -191,7 +197,9 @@ export default function IndicatorScoreEditor({
     });
   }, []);
 
-  /* Display transform for contrarian */
+  /* --------------------------------------------------
+     Display transform for contrarian
+  -------------------------------------------------- */
   const displayScore = useCallback(
     (baseScore) => {
       const base = clampScore(baseScore);
@@ -201,10 +209,13 @@ export default function IndicatorScoreEditor({
     [mode]
   );
 
+  const isCustom = mode === "custom";
   const rows = isCustom ? customRules : templateRows;
 
-  /* Custom edit: score only */
-  const updateCustomScore = (idx, value) => {
+  /* --------------------------------------------------
+     Custom edit: score only (ranges locked)
+  -------------------------------------------------- */
+  const updateCustomScore = useCallback((idx, value) => {
     setCustomRules((prev) => {
       const next = Array.isArray(prev) ? [...prev] : bucketizeRules([]);
       const b = FIXED_BUCKETS[idx];
@@ -219,48 +230,50 @@ export default function IndicatorScoreEditor({
 
       return next;
     });
-  };
+  }, []);
 
-  const saveCustomRules = async () => {
-  if (!normalizedIndicator || !category) return;
-  if (savingCustom) return;
+  /* --------------------------------------------------
+     Save custom (ONE path)
+     ✅ Editor does NOT call onSave here to avoid double writes.
+     ✅ Panel handles mode+weight+rules saving + success snackbar.
+  -------------------------------------------------- */
+  const saveCustom = useCallback(async () => {
+    if (!normalizedIndicator || !category) return;
+    if (savingCustom) return;
 
-  setSavingCustom(true);
+    setSavingCustom(true);
 
-  try {
-    // 1) save settings (mode+weight)
-    await onSave?.({
-      indicator: normalizedIndicator,
-      category,
-      score_mode: "custom",
-      weight: localWeight,
-    });
+    try {
+      const payload = FIXED_BUCKETS.map((b, i) => {
+        const s = clampScore(customRules?.[i]?.score ?? 50);
+        return {
+          indicator: normalizedIndicator,
+          category,
+          range_min: b.min,
+          range_max: b.max,
+          score: s,
+          trend: getTrend(s),
+        };
+      });
 
-    // 2) save 5 fixed bucket rules
-    const payload = FIXED_BUCKETS.map((b, i) => {
-      const s = clampScore(customRules?.[i]?.score ?? 50);
-      return {
-        indicator: normalizedIndicator,
-        category,
-        range_min: b.min,
-        range_max: b.max,
-        score: s,
-        trend: getTrend(s),
-      };
-    });
-
-    // ✅ FIX: weight meegeven
-    await onSaveCustom?.(payload, localWeight);
-
-    // 👉 deze snackbar liever verwijderen als Panel er ook 1 toont
-    // showSnackbar("Custom rules opgeslagen", "success");
-  } catch (e) {
-    console.error("Save custom rules failed", e);
-    showSnackbar("Custom opslaan mislukt", "danger");
-  } finally {
-    setSavingCustom(false);
-  }
-};
+      await onSaveCustom?.(payload, localWeight);
+      // ✅ Success snackbar hoort in Panel (single source)
+      // Hier alleen errors tonen om dubbel snackbar te voorkomen.
+    } catch (e) {
+      console.error("Save custom rules failed", e);
+      showSnackbar("Custom opslaan mislukt", "danger");
+    } finally {
+      setSavingCustom(false);
+    }
+  }, [
+    normalizedIndicator,
+    category,
+    savingCustom,
+    customRules,
+    localWeight,
+    onSaveCustom,
+    showSnackbar,
+  ]);
 
   if (loading) {
     return <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>;
@@ -269,6 +282,12 @@ export default function IndicatorScoreEditor({
   const valueLabel = meta?.unit
     ? `Genormaliseerde waarde (0–100, ${meta.unit})`
     : "Genormaliseerde waarde (0–100)";
+
+  const modes = [
+    { key: "standard", label: "Standard" },
+    { key: "contrarian", label: "Contrarian" },
+    { key: "custom", label: "Custom" },
+  ];
 
   return (
     <div className="card-surface p-6 space-y-6">
@@ -332,6 +351,7 @@ export default function IndicatorScoreEditor({
                 ? "bg-[var(--primary)] text-white border-transparent"
                 : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
             }`}
+            type="button"
           >
             {m.label}
           </button>
@@ -360,7 +380,7 @@ export default function IndicatorScoreEditor({
         )}
       </div>
 
-      {/* WEIGHT SLIDER (alleen custom) */}
+      {/* WEIGHT SLIDER (custom only) */}
       {isCustom && (
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[var(--text-dark)]">
@@ -419,9 +439,7 @@ export default function IndicatorScoreEditor({
                         max="100"
                         step="5"
                         value={rawScore}
-                        onChange={(e) =>
-                          updateCustomScore(idx, e.target.value)
-                        }
+                        onChange={(e) => updateCustomScore(idx, e.target.value)}
                         className="input text-center"
                         aria-label={`Score bucket ${b.min}-${b.max}`}
                       />
@@ -453,13 +471,14 @@ export default function IndicatorScoreEditor({
         )}
       </div>
 
-      {/* SAVE only for custom */}
+      {/* SAVE (custom only) */}
       {isCustom && (
         <button
-          onClick={saveCustomRules}
+          onClick={saveCustom}
           className="btn-primary"
           disabled={savingCustom}
           title={savingCustom ? "Bezig met opslaan…" : "Opslaan"}
+          type="button"
         >
           {savingCustom ? "Bezig…" : "Save Custom Rules"}
         </button>

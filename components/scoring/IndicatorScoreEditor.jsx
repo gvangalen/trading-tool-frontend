@@ -222,43 +222,45 @@ export default function IndicatorScoreEditor({
   };
 
   const saveCustomRules = async () => {
-    if (!normalizedIndicator || !category) return;
-    if (savingCustom) return;
+  if (!normalizedIndicator || !category) return;
+  if (savingCustom) return;
 
-    setSavingCustom(true);
+  setSavingCustom(true);
 
-    try {
-      // 1) save settings (mode+weight)
-      await onSave?.({
+  try {
+    // 1) save settings (mode+weight)
+    await onSave?.({
+      indicator: normalizedIndicator,
+      category,
+      score_mode: "custom",
+      weight: localWeight,
+    });
+
+    // 2) save 5 fixed bucket rules
+    const payload = FIXED_BUCKETS.map((b, i) => {
+      const s = clampScore(customRules?.[i]?.score ?? 50);
+      return {
         indicator: normalizedIndicator,
         category,
-        score_mode: "custom",
-        weight: localWeight,
-      });
+        range_min: b.min,
+        range_max: b.max,
+        score: s,
+        trend: getTrend(s),
+      };
+    });
 
-      // 2) save 5 fixed bucket rules
-      const payload = FIXED_BUCKETS.map((b, i) => {
-        const s = clampScore(customRules?.[i]?.score ?? 50);
-        return {
-          indicator: normalizedIndicator,
-          category,
-          range_min: b.min,
-          range_max: b.max,
-          score: s,
-          trend: getTrend(s),
-        };
-      });
+    // ✅ FIX: weight meegeven
+    await onSaveCustom?.(payload, localWeight);
 
-      await onSaveCustom?.(payload);
-
-      showSnackbar("Custom rules opgeslagen", "success");
-    } catch (e) {
-      console.error("Save custom rules failed", e);
-      showSnackbar("Custom opslaan mislukt", "danger");
-    } finally {
-      setSavingCustom(false);
-    }
-  };
+    // 👉 deze snackbar liever verwijderen als Panel er ook 1 toont
+    // showSnackbar("Custom rules opgeslagen", "success");
+  } catch (e) {
+    console.error("Save custom rules failed", e);
+    showSnackbar("Custom opslaan mislukt", "danger");
+  } finally {
+    setSavingCustom(false);
+  }
+};
 
   if (loading) {
     return <div className="p-6 text-sm text-[var(--text-light)]">Laden…</div>;

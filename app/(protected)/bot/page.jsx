@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Wallet, Plus } from "lucide-react";
 
 import useBotData from "@/hooks/useBotData";
@@ -11,6 +11,7 @@ import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
 import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
+import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview"; // ✅ NEW
 
 /**
  * BotPage — TradeLayer 2.6 (FINAL / WIRED)
@@ -42,7 +43,7 @@ export default function BotPage() {
     history = [],
     portfolios = [],
     decisionsByBot = {},
-    tradesByBot = {},          // ✅ FIX: trades uit hook
+    tradesByBot = {}, // ✅ trades uit hook
     loading,
 
     createBot,
@@ -72,6 +73,23 @@ export default function BotPage() {
     market: 10,
     setup: 10,
   };
+
+  /* =====================================================
+     🧩 MERGE bots + portfolio (voor overview)
+     We geven BotPortfolioOverview dezelfde shape als BotPortfolioSection verwacht:
+     { symbol, budget, stats, bot_id, ... }
+  ===================================================== */
+  const aggregatedBotsForOverview = useMemo(() => {
+    return (bots || []).map((bot) => {
+      const p = portfolios.find((x) => x.bot_id === bot.id);
+      return {
+        bot_id: bot.id,
+        symbol: p?.symbol ?? bot?.symbol ?? "—",
+        budget: p?.budget ?? {},
+        stats: p?.stats ?? {},
+      };
+    });
+  }, [bots, portfolios]);
 
   /* =====================================================
      🔁 GENERATE DECISION
@@ -252,7 +270,10 @@ export default function BotPage() {
         <h1 className="text-2xl font-semibold">Portfolio Management</h1>
       </div>
 
-      <BotScores scores={dailyScores} loading={loading.today} />
+      <BotScores scores={dailyScores} loading={loading?.today} />
+
+      {/* ✅ NEW: General portfolio (alle bots samen) */}
+      <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Bots</h2>
@@ -269,7 +290,7 @@ export default function BotPage() {
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
           const decision = decisionsByBot[bot.id];
-          const trades = tradesByBot[bot.id] || [];   // ✅ FIX
+          const trades = tradesByBot[bot.id] || [];
 
           return (
             <BotAgentCard
@@ -277,12 +298,9 @@ export default function BotPage() {
               bot={bot}
               decision={decision ?? null}
               portfolio={portfolio}
-              trades={trades}                         // ✅ FIX
+              trades={trades}
               history={history}
-              loadingDecision={
-                generatingBotId === bot.id ||
-                executingBotId === bot.id
-              }
+              loadingDecision={generatingBotId === bot.id || executingBotId === bot.id}
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}

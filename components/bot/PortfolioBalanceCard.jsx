@@ -27,8 +27,7 @@ const fmtEur = (n) =>
     maximumFractionDigits: 0,
   }).format(n || 0);
 
-const fmtPct = (n) =>
-  `${(n || 0).toFixed(1)}%`;
+const fmtPct = (n) => `${(n || 0).toFixed(1)}%`;
 
 function calcDelta(series) {
   if (!Array.isArray(series) || series.length < 2) {
@@ -62,15 +61,40 @@ export default function PortfolioBalanceCard({
 }) {
   const [range, setRange] = useState(defaultRange);
 
-  const rangeConfig = RANGES.find((r) => r.key === range) || RANGES[1];
+  const rangeConfig =
+    RANGES.find((r) => r.key === range) || RANGES[1];
 
-  // 🔥 Hook gebruikt hier backend endpoint
   const { data, loading } = usePortfolioBalance({
     bucket: rangeConfig.bucket,
     limit: rangeConfig.limit,
   });
 
-  const series = data || [];
+  /* =====================================================
+     🔥 ALWAYS SHOW CHART (fallback flat zero line)
+  ===================================================== */
+  const series = useMemo(() => {
+    if (data && data.length > 0) return data;
+
+    const now = new Date();
+    const points = [];
+
+    for (let i = rangeConfig.limit - 1; i >= 0; i--) {
+      const d = new Date(now);
+
+      if (rangeConfig.bucket === "1h") {
+        d.setHours(now.getHours() - i);
+      } else {
+        d.setDate(now.getDate() - i);
+      }
+
+      points.push({
+        ts: d.toISOString(),
+        equity: 0,
+      });
+    }
+
+    return points;
+  }, [data, rangeConfig]);
 
   const { last, deltaEur, deltaPct } = useMemo(
     () => calcDelta(series),
@@ -134,7 +158,7 @@ export default function PortfolioBalanceCard({
           <div className="h-full flex items-center justify-center text-sm text-[var(--text-light)]">
             Laden...
           </div>
-        ) : chartData.length ? (
+        ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={chartData}
@@ -179,7 +203,10 @@ export default function PortfolioBalanceCard({
                   color: "var(--text-dark)",
                 }}
                 labelStyle={{ color: "var(--text-light)" }}
-                formatter={(v) => [fmtEur(Number(v)), currencyLabel]}
+                formatter={(v) => [
+                  fmtEur(Number(v)),
+                  currencyLabel,
+                ]}
                 labelFormatter={(l) => l}
               />
 
@@ -194,10 +221,6 @@ export default function PortfolioBalanceCard({
               />
             </AreaChart>
           </ResponsiveContainer>
-        ) : (
-          <div className="h-full flex items-center justify-center text-sm text-[var(--text-light)]">
-            Geen data beschikbaar
-          </div>
         )}
       </div>
     </div>

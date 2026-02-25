@@ -10,12 +10,14 @@ import {
   Tooltip,
 } from "recharts";
 
+import usePortfolioBalance from "@/hooks/usePortfolioBalance";
+
 const RANGES = [
-  { key: "1D", label: "1D" },
-  { key: "1W", label: "1W" },
-  { key: "1M", label: "1M" },
-  { key: "1Y", label: "1Y" },
-  { key: "ALL", label: "ALL" },
+  { key: "1D", label: "1D", bucket: "1h", limit: 24 },
+  { key: "1W", label: "1W", bucket: "1h", limit: 24 * 7 },
+  { key: "1M", label: "1M", bucket: "1d", limit: 30 },
+  { key: "1Y", label: "1Y", bucket: "1d", limit: 365 },
+  { key: "ALL", label: "ALL", bucket: "1d", limit: 2000 },
 ];
 
 const fmtEur = (n) =>
@@ -32,8 +34,8 @@ function calcDelta(series) {
   if (!Array.isArray(series) || series.length < 2) {
     return { last: 0, deltaEur: 0, deltaPct: 0 };
   }
-  const first = Number(series[0]?.value_eur ?? 0);
-  const last = Number(series[series.length - 1]?.value_eur ?? 0);
+  const first = Number(series[0]?.equity ?? 0);
+  const last = Number(series[series.length - 1]?.equity ?? 0);
   const deltaEur = last - first;
   const deltaPct = first > 0 ? (deltaEur / first) * 100 : 0;
   return { last, deltaEur, deltaPct };
@@ -41,30 +43,46 @@ function calcDelta(series) {
 
 function shortDate(ts, rangeKey) {
   const d = new Date(ts);
-  // 1D -> tijd, anders datum
   if (rangeKey === "1D") {
-    return d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString("nl-NL", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
-  return d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString("nl-NL", {
+    day: "2-digit",
+    month: "short",
+  });
 }
 
 export default function PortfolioBalanceCard({
-  dataByRange = {},     // { "1W": PortfolioPoint[], ... }
   defaultRange = "1W",
   title = "Portfolio balance",
   currencyLabel = "EUR",
 }) {
   const [range, setRange] = useState(defaultRange);
 
-  const series = dataByRange?.[range] || [];
-  const { last, deltaEur, deltaPct } = useMemo(() => calcDelta(series), [series]);
+  const rangeConfig = RANGES.find((r) => r.key === range) || RANGES[1];
+
+  // 🔥 Hook gebruikt hier backend endpoint
+  const { data, loading } = usePortfolioBalance({
+    bucket: rangeConfig.bucket,
+    limit: rangeConfig.limit,
+  });
+
+  const series = data || [];
+
+  const { last, deltaEur, deltaPct } = useMemo(
+    () => calcDelta(series),
+    [series]
+  );
 
   const isDown = deltaEur < 0;
 
   const chartData = useMemo(() => {
-    return (series || []).map((p) => ({
+    return series.map((p) => ({
       ts: p.ts,
-      value_eur: Number(p.value_eur ?? 0),
+      equity: Number(p.equity ?? 0),
       label: shortDate(p.ts, range),
     }));
   }, [series, range]);
@@ -83,14 +101,16 @@ export default function PortfolioBalanceCard({
 
           <div
             className={`text-sm font-semibold ${
-              isDown ? "text-[var(--score-sell)]" : "text-[var(--score-strong-buy)]"
+              isDown
+                ? "text-[var(--score-sell)]"
+                : "text-[var(--score-strong-buy)]"
             }`}
           >
             {isDown ? "↘" : "↗"} {fmtPct(deltaPct)} ({fmtEur(deltaEur)})
           </div>
         </div>
 
-        {/* Range pills */}
+        {/* Range selector */}
         <div className="flex items-center gap-2">
           {RANGES.map((r) => (
             <button
@@ -110,14 +130,28 @@ export default function PortfolioBalanceCard({
       </div>
 
       <div className="mt-6 h-[240px]">
-        {chartData.length ? (
+        {loading ? (
+          <div className="h-full flex items-center justify-center text-sm text-[var(--text-light)]">
+            Laden...
+          </div>
+        ) : chartData.length ? (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ left: 10, right: 10, top: 10, bottom: 0 }}>
+            <AreaChart
+              data={chartData}
+              margin={{ left: 10, right: 10, top: 10, bottom: 0 }}
+            >
               <defs>
-                {/* theme-driven gradient */}
                 <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.30} />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.00} />
+                  <stop
+                    offset="0%"
+                    stopColor="var(--primary)"
+                    stopOpacity={0.30}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--primary)"
+                    stopOpacity={0.00}
+                  />
                 </linearGradient>
               </defs>
 
@@ -151,7 +185,7 @@ export default function PortfolioBalanceCard({
 
               <Area
                 type="monotone"
-                dataKey="value_eur"
+                dataKey="equity"
                 stroke="var(--primary)"
                 strokeWidth={2}
                 fill="url(#balanceFill)"

@@ -7,63 +7,71 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-/**
- * TradePanel
- *
- * UI-only trading panel.
- * Data & execution handled by container.
- *
- * Props:
- * - price (number)
- * - watchLevels { breakout, pullback, invalidate }
- * - strategy { stop_loss, targets[] }
- * - balance (number)
- * - onSubmit(orderData)  ✅ NEW
- */
-
 export default function TradePanel({
   price = 66744,
   balance = 1000,
-  watchLevels = {
-    breakout: 68200,
-    pullback: 62100,
-    invalidate: 59900,
-  },
-  strategy = {
-    stop_loss: 59900,
-    targets: [70500, 72000],
-  },
-  onSubmit, // ✅ container hook
+  watchLevels = {},
+  strategy = {},
+  onSubmit,
 }) {
   const [side, setSide] = useState("buy");
   const [orderType, setOrderType] = useState("limit");
   const [orderPrice, setOrderPrice] = useState(price);
   const [amountPct, setAmountPct] = useState(25);
 
+  // =====================================================
+  // POSITION SIZE
+  // =====================================================
   const amountBTC = useMemo(() => {
+    if (!orderPrice) return 0;
     const eur = (balance * amountPct) / 100;
     return eur / orderPrice;
   }, [amountPct, orderPrice, balance]);
 
   const orderValue = amountBTC * orderPrice;
 
-  const stopLoss = strategy?.stop_loss;
-  const targets = strategy?.targets || [];
+  const stopLoss = strategy?.stop_loss ?? null;
+  const targets = Array.isArray(strategy?.targets)
+    ? strategy.targets
+    : [];
 
+  // =====================================================
+  // RISK %
+  // =====================================================
   const riskPct = useMemo(() => {
-    if (!stopLoss) return null;
-    const risk = ((orderPrice - stopLoss) / orderPrice) * 100;
-    return Math.abs(risk).toFixed(2);
-  }, [orderPrice, stopLoss]);
+    if (!stopLoss || !orderPrice) return null;
 
+    if (side === "buy") {
+      const risk = ((orderPrice - stopLoss) / orderPrice) * 100;
+      return Math.abs(risk).toFixed(2);
+    } else {
+      const risk = ((stopLoss - orderPrice) / orderPrice) * 100;
+      return Math.abs(risk).toFixed(2);
+    }
+  }, [orderPrice, stopLoss, side]);
+
+  // =====================================================
+  // R/R RATIO
+  // =====================================================
   const rrRatio = useMemo(() => {
-    if (!targets.length || !stopLoss) return null;
-    const reward = targets[0] - orderPrice;
-    const risk = orderPrice - stopLoss;
-    if (risk <= 0) return null;
-    return (reward / risk).toFixed(2);
-  }, [targets, orderPrice, stopLoss]);
+    if (!targets.length || !stopLoss || !orderPrice) return null;
 
+    if (side === "buy") {
+      const reward = targets[0] - orderPrice;
+      const risk = orderPrice - stopLoss;
+      if (risk <= 0) return null;
+      return (reward / risk).toFixed(2);
+    } else {
+      const reward = orderPrice - targets[0];
+      const risk = stopLoss - orderPrice;
+      if (risk <= 0) return null;
+      return (reward / risk).toFixed(2);
+    }
+  }, [targets, orderPrice, stopLoss, side]);
+
+  // =====================================================
+  // RENDER
+  // =====================================================
   return (
     <div className="bg-[#0b0f1a] text-white rounded-2xl p-5 w-full max-w-md space-y-5 shadow-xl">
 
@@ -124,17 +132,25 @@ export default function TradePanel({
 
         <div className="flex gap-2 mt-2 text-xs">
           <button
-            onClick={() => setOrderPrice(watchLevels.pullback)}
+            onClick={() =>
+              watchLevels?.pullback &&
+              setOrderPrice(watchLevels.pullback)
+            }
             className="bg-[#111827] px-3 py-1 rounded"
           >
             Pullback
           </button>
+
           <button
-            onClick={() => setOrderPrice(watchLevels.breakout)}
+            onClick={() =>
+              watchLevels?.breakout &&
+              setOrderPrice(watchLevels.breakout)
+            }
             className="bg-[#111827] px-3 py-1 rounded"
           >
             Breakout
           </button>
+
           <button
             onClick={() => setOrderPrice(price)}
             className="bg-[#111827] px-3 py-1 rounded"
@@ -155,14 +171,9 @@ export default function TradePanel({
           min="1"
           max="100"
           value={amountPct}
-          onChange={(e) => setAmountPct(e.target.value)}
+          onChange={(e) => setAmountPct(Number(e.target.value))}
           className="w-full mt-2"
         />
-
-        <div className="flex justify-between text-xs text-gray-400">
-          <span>0%</span>
-          <span>100%</span>
-        </div>
 
         <div className="mt-2 text-sm">
           {amountBTC.toFixed(5)} BTC
@@ -220,30 +231,24 @@ export default function TradePanel({
         </div>
       )}
 
-      {/* ACTIONS */}
-      <div className="space-y-2">
-        <button className="w-full bg-[#111827] py-3 rounded-lg hover:bg-[#1f2937]">
-          Simuleer trade
-        </button>
-
-        <button
-          onClick={() =>
-            onSubmit?.({
-              side,
-              orderType,
-              quantity: amountBTC,
-              price: orderPrice,
-            })
-          }
-          className={`w-full py-3 rounded-lg font-semibold ${
-            side === "buy"
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-red-600 hover:bg-red-700"
-          }`}
-        >
-          Plaats order
-        </button>
-      </div>
+      {/* ACTION */}
+      <button
+        onClick={() =>
+          onSubmit?.({
+            side,
+            orderType,
+            quantity: amountBTC,
+            price: orderPrice,
+          })
+        }
+        className={`w-full py-3 rounded-lg font-semibold ${
+          side === "buy"
+            ? "bg-green-600 hover:bg-green-700"
+            : "bg-red-600 hover:bg-red-700"
+        }`}
+      >
+        Plaats order
+      </button>
     </div>
   );
 }

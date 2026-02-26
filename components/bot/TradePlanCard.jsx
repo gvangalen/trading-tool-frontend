@@ -12,19 +12,7 @@ import {
   Pencil,
   Save,
   RotateCcw,
-  Plus,
 } from "lucide-react";
-
-/**
- * TradePlanCard — FINAL
- *
- * ondersteunt:
- * ✅ backend plan
- * ✅ decision fallback
- * ✅ manual overrides
- * ✅ execution readiness
- * 🆕 watch mode (bot wacht op entry)
- */
 
 const num = (v, d = null) => {
   const n = Number(v);
@@ -85,7 +73,6 @@ export default function TradePlanCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => tradePlan || null);
 
-  // sync backend updates
   useEffect(() => {
     if (!editing) setDraft(tradePlan || null);
   }, [tradePlan, editing]);
@@ -94,13 +81,10 @@ export default function TradePlanCard({
 
   const derived = useMemo(() => {
     const fallbackPlan =
-      plan ||
-      decision?.trade_plan ||
-      null;
+      plan || decision?.trade_plan || null;
 
     if (!fallbackPlan) {
       return {
-        status: "none",
         symbol: decision?.symbol || "BTC",
         side: decision?.action || "buy",
         entry_plan: [],
@@ -112,6 +96,7 @@ export default function TradePlanCard({
           within_risk: false,
           warnings: [],
         },
+        _ready: false,
       };
     }
 
@@ -120,9 +105,9 @@ export default function TradePlanCard({
 
     const constraints = {
       within_budget:
-        fallbackPlan.constraints?.within_budget ?? true,
+        fallbackPlan.constraints?.within_budget ?? false,
       within_risk:
-        fallbackPlan.constraints?.within_risk ?? true,
+        fallbackPlan.constraints?.within_risk ?? false,
       max_risk_per_trade:
         fallbackPlan.constraints?.max_risk_per_trade ??
         decision?.max_risk_per_trade,
@@ -153,10 +138,8 @@ export default function TradePlanCard({
 
   const canEdit = allowManual && !!onSave;
 
-  // 🆕 WATCH MODE
-  const showWatchMode =
-    (decision?.action || "").toLowerCase() === "hold" &&
-    derived.entry_plan.length === 0;
+  // ✅ WATCH MODE — CORRECT
+  const showWatchMode = decision?.monitoring === true;
 
   const watchLevels = decision?.watch_levels || {};
 
@@ -170,33 +153,8 @@ export default function TradePlanCard({
     watchLevels.breakout ??
     null;
 
-  const monitoringActive =
-    watchLevels.monitoring !== false;
-
-  const alertsActive =
-    watchLevels.alerts_active !== false;
-
-  const setEntry = (idx, patch) => {
-    setDraft((p) => {
-      const next = { ...(p || {}) };
-      const arr = clampArr(next.entry_plan).slice();
-      arr[idx] = { ...(arr[idx] || {}), ...patch };
-      next.entry_plan = arr;
-      return next;
-    });
-  };
-
-  const addEntry = () =>
-    setDraft((p) => ({
-      ...(p || {}),
-      entry_plan: [...clampArr(p?.entry_plan), { type: "buy", price: 0 }],
-    }));
-
-  const setStop = (price) =>
-    setDraft((p) => ({
-      ...(p || {}),
-      stop_loss: { price: num(price, 0) },
-    }));
+  const monitoringActive = decision?.monitoring === true;
+  const alertsActive = decision?.alerts_active === true;
 
   const handleSave = async () => {
     if (!onSave) return;
@@ -234,27 +192,10 @@ export default function TradePlanCard({
               {isGenerating ? "Genereren…" : "Genereer"}
             </button>
           )}
-
-          {canEdit && (
-            <button
-              onClick={() => setEditing(!editing)}
-              className="btn-secondary flex gap-2"
-            >
-              <Pencil size={16} />
-              {editing ? "Stop edit" : "Edit"}
-            </button>
-          )}
-
-          {canEdit && editing && (
-            <button onClick={handleSave} className="btn-primary flex gap-2">
-              <Save size={16} />
-              Opslaan
-            </button>
-          )}
         </div>
       </div>
 
-      {/* 🆕 WATCH MODE */}
+      {/* WATCH MODE */}
       {showWatchMode && (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-2">
           <div className="font-semibold text-indigo-900">
@@ -321,7 +262,6 @@ export default function TradePlanCard({
       {/* RISK */}
       <div className="rounded-xl border p-4">
         <SectionTitle icon={<AlertTriangle size={16}/>} title="Risk" />
-        <div>Risk: {fmtEur(derived.risk?.risk_eur)}</div>
         <div>R:R: {derived.risk?.rr ?? "—"}</div>
       </div>
 

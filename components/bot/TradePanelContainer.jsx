@@ -15,6 +15,7 @@ import { fetchLatestBTC } from "@/lib/api/market";
 export default function TradePanelContainer({ botId }) {
   const [price, setPrice] = useState(null);
   const [balance, setBalance] = useState(0);
+
   const [watchLevels, setWatchLevels] = useState({});
   const [strategy, setStrategy] = useState({});
   const [decisionId, setDecisionId] = useState(null);
@@ -23,9 +24,10 @@ export default function TradePanelContainer({ botId }) {
   // LOAD INITIAL DATA
   // =========================================
   useEffect(() => {
+    if (!botId) return;
+
     loadData();
 
-    // refresh price elke minuut (ruim voldoende)
     const interval = setInterval(loadPrice, 60000);
     return () => clearInterval(interval);
   }, [botId]);
@@ -48,34 +50,43 @@ export default function TradePanelContainer({ botId }) {
 
       setDecisionId(botDecision.id);
 
-      // ===============================
-      // WATCH LEVELS
-      // ===============================
+      // =====================================================
+      // 🧠 WATCH LEVELS (COMING FROM DECISION — NOT TRADE PLAN)
+      // =====================================================
+      setWatchLevels({
+        breakout:
+          botDecision?.watch_levels?.breakout_trigger ?? null,
+        pullback:
+          botDecision?.watch_levels?.pullback_zone ?? null,
+        invalidate: null, // optional future use
+      });
+
+      // =====================================================
+      // 📊 TRADE PLAN (EXECUTION STRUCTURE)
+      // =====================================================
       const plan = await fetchTradePlan(botDecision.id);
 
-      setWatchLevels({
-        breakout: plan?.entry_plan?.breakout ?? null,
-        pullback: plan?.entry_plan?.pullback ?? null,
-        invalidate: plan?.stop_loss?.price ?? null,
-      });
-
-      // ===============================
-      // STRATEGY
-      // ===============================
       setStrategy({
         stop_loss: plan?.stop_loss?.price ?? null,
-        targets: plan?.targets?.map((t) => t.price) || [],
+        targets: Array.isArray(plan?.targets)
+          ? plan.targets.map((t) => t.price)
+          : [],
       });
 
-      // ===============================
-      // BALANCE
-      // ===============================
+      // =====================================================
+      // 💰 BALANCE (NEW PORTFOLIO STRUCTURE SAFE)
+      // =====================================================
       const botPortfolio = portfolios.find(
         (b) => b.bot_id === botId
       );
 
       if (botPortfolio) {
-        setBalance(botPortfolio.budget.total_eur || 0);
+        // prefer cash balance if exists
+        setBalance(
+          botPortfolio.cash_balance_eur ??
+            botPortfolio?.budget?.total_eur ??
+            0
+        );
       }
 
       await loadPrice();
@@ -85,7 +96,7 @@ export default function TradePanelContainer({ botId }) {
   }
 
   // =========================================
-  // LOAD LIVE PRICE (market_data)
+  // LOAD LIVE PRICE
   // =========================================
   async function loadPrice() {
     try {
@@ -99,7 +110,7 @@ export default function TradePanelContainer({ botId }) {
   }
 
   // =========================================
-  // MANUAL ORDER
+  // MANUAL ORDER (FIXED PAYLOAD)
   // =========================================
   async function handleOrder(order) {
     try {
@@ -107,9 +118,8 @@ export default function TradePanelContainer({ botId }) {
         bot_id: botId,
         symbol: "BTC",
         side: order.side,
-        order_type: order.orderType,
         quantity: order.quantity,
-        limit_price: order.price,
+        price: order.price,
       });
 
       await loadData();
@@ -119,7 +129,7 @@ export default function TradePanelContainer({ botId }) {
   }
 
   // =========================================
-  // LOADING STATE
+  // LOADING GUARD
   // =========================================
   if (!price) return null;
 
@@ -129,6 +139,7 @@ export default function TradePanelContainer({ botId }) {
       balance={balance}
       watchLevels={watchLevels}
       strategy={strategy}
+      decisionId={decisionId}
       onSubmit={handleOrder}
     />
   );

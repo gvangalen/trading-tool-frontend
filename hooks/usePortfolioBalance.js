@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { fetchPortfolioBalanceHistory } from "@/lib/api/botApi";
+import {
+  fetchPortfolioBalanceHistory,
+  fetchBotBalanceHistory,
+} from "@/lib/api/botApi";
 
 export default function usePortfolioBalance({
+  bot_id = null,        // 🔥 NIEUW
   bucket = "1h",
   limit = 300,
   autoLoad = true,
@@ -15,19 +19,35 @@ export default function usePortfolioBalance({
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
+
     try {
-      const res = await fetchPortfolioBalanceHistory({
-        bucket,
-        limit,
-      });
+      let res;
+
+      if (bot_id) {
+        // 🔥 Per bot equity
+        res = await fetchBotBalanceHistory({
+          bot_id,
+          bucket,
+          limit,
+        });
+      } else {
+        // 🌍 Global portfolio equity
+        res = await fetchPortfolioBalanceHistory({
+          bucket,
+          limit,
+        });
+      }
+
       setData(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Portfolio history laden mislukt");
+      setError(err.message || "Balance history laden mislukt");
+      setData([]);
     } finally {
       setLoading(false);
     }
-  }, [bucket, limit]);
+  }, [bot_id, bucket, limit]);
 
   useEffect(() => {
     if (autoLoad) load();

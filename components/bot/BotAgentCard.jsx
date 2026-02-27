@@ -7,8 +7,9 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
+import TradePlanCard from "@/components/bot/TradePlanCard"; // ✅ NEW
 
-import MarketDecisionCard from "@/components/bot/MarketDecisionCard";   // ✅ NEW
+import MarketDecisionCard from "@/components/bot/MarketDecisionCard";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
 import GuardrailsPanel from "@/components/bot/GuardrailsPanel";
 
@@ -198,11 +199,8 @@ export default function BotAgentCard({
 
       {/* ===== MARKET INTELLIGENCE ===== */}
       <div className={`rounded-xl border p-5 transition ${regimeBorder} ${highStress ? "ring-2 ring-orange-400/40" : ""}`}>
-        
-        {/* 🔥 Regime / Risk intelligence */}
         <MarketDecisionCard decision={decision} />
 
-        {/* 📊 Conditions */}
         <div className="mt-4 pt-4 border-t">
           <MarketConditionsInline
             health={decision?.market_health}
@@ -213,8 +211,9 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Decision + Trades ===== */}
+      {/* ===== Decision + Trade Plan + Trades ===== */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
+
         <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
@@ -230,8 +229,19 @@ export default function BotAgentCard({
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="flex-1 p-5">
+        <div className="flex-1 p-5 space-y-6">
+
+          {/* ✅ Always visible trade plan */}
+          <TradePlanCard
+            decision={decision}
+            tradePlan={decision?.trade_plan}
+            loading={loadingDecision}
+            allowManual={!isAuto}
+          />
+
+          {/* Executed trades */}
           <BotTradeTable trades={trades ?? []} />
+
         </div>
       </div>
 

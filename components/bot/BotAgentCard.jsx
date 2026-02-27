@@ -7,7 +7,13 @@ import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
+
+// ✅ READ-ONLY AI plan card (still useful to show the bot proposal)
 import TradePlanCard from "@/components/bot/TradePlanCard";
+
+// ✅ THIS is the “Bybit-like” manual trade UI you already built
+// (you have TradePanel.jsx + TradePanelContainer.jsx in the repo screenshot)
+import TradePanelContainer from "@/components/bot/TradePanelContainer";
 
 import MarketDecisionCard from "@/components/bot/MarketDecisionCard";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
@@ -24,12 +30,18 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — UPDATED (edit/save trade plan wired)
+ * BotAgentCard — FINAL (WIRED CORRECTLY)
+ * ------------------------------------------------------------
+ * ✅ Always shows a bot proposal (DecisionCard)
+ * ✅ Always shows a Trade Plan (AI plan) (TradePlanCard)
+ * ✅ Always shows the Manual Trade UI (TradePanelContainer) when manual mode
+ * ✅ Save TradePlan (edit/save) wired to parent handler:
+ *      onSaveTradePlan({ bot_id, decision_id, draft })
  *
- * Expects parent to pass:
- *   onSaveTradePlan({ bot_id, decision_id, draft })
- *
- * This matches useBotData.saveTradePlanForDecision()
+ * IMPORTANT:
+ * - The “Genereer” button belongs to BotDecisionCard (new analysis).
+ * - TradePlanCard should NOT add a second “Genereer” button unless you explicitly want it.
+ *   -> We do NOT pass onGenerate into TradePlanCard to avoid duplicate buttons.
  */
 
 export default function BotAgentCard({
@@ -40,6 +52,7 @@ export default function BotAgentCard({
   history = [],
   trades = [],
   loadingDecision = false,
+
   onGenerate,
   onExecute,
   onSkip,
@@ -65,7 +78,7 @@ export default function BotAgentCard({
   const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
-  const statusLabel = decision?.action || "OBSERVE";
+  const statusLabel = (decision?.action || "OBSERVE").toUpperCase();
   const confidence = decision?.confidence_label || decision?.confidence || "LOW";
 
   const exposureMultiplier =
@@ -73,7 +86,7 @@ export default function BotAgentCard({
 
   /* ================= UI INTELLIGENCE ================= */
 
-  const transitionRisk = decision?.transition_risk ?? 0;
+  const transitionRisk = Number(decision?.transition_risk ?? 0);
   const highStress = transitionRisk > 70;
 
   const regimeBorder =
@@ -128,12 +141,11 @@ export default function BotAgentCard({
 
   /* ================= SAVE TRADE PLAN ================= */
 
-  // ✅ bot/today gebruikt "id" voor decision id → daarom deze fallback
+  // bot/today returns decision.id (not decision_id) → keep both
   const decisionId = decision?.id ?? decision?.decision_id ?? null;
   const botId = decision?.bot_id ?? bot?.id ?? null;
 
-  const canSavePlan =
-    !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
+  const canSavePlan = !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
 
   const handleSaveTradePlan = async (planDraft) => {
     if (!canSavePlan) return;
@@ -142,7 +154,6 @@ export default function BotAgentCard({
     setSavingPlan(true);
 
     try {
-      // ✅ signature matches useBotData.saveTradePlanForDecision
       await onSaveTradePlan({
         bot_id: botId,
         decision_id: decisionId,
@@ -160,10 +171,11 @@ export default function BotAgentCard({
   /* ================= PLAN SOURCE ================= */
 
   const planSource = useMemo(() => {
-    // gebruik wat je al in decision hebt (altijd zichtbaar),
-    // en TradePlanCard gebruikt zelf decision fallback ook.
+    // Prefer decision.trade_plan (already in /bot/today payload)
     return decision?.trade_plan || null;
   }, [decision]);
+
+  /* ================= RENDER ================= */
 
   return (
     <div className="w-full rounded-2xl border bg-white dark:bg-white/5 shadow-sm space-y-6 p-6">
@@ -276,8 +288,9 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Decision + Trade Plan + Trades ===== */}
+      {/* ===== Decision + Trade Plan + Manual Trade ===== */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
+        {/* LEFT: Bot decision / proposal */}
         <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
@@ -293,15 +306,16 @@ export default function BotAgentCard({
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
+        {/* RIGHT: AI TradePlan + Manual Trade UI + Trades table */}
         <div className="flex-1 p-5 space-y-6">
-          {/* ✅ Always visible trade plan + editable + save */}
+          {/* 1) AI Trade plan (proposal details) */}
           <TradePlanCard
             decision={decision}
             tradePlan={planSource}
             loading={loadingDecision}
             allowManual={!isAuto}
             onSave={canSavePlan ? handleSaveTradePlan : undefined}
-            onGenerate={onGenerate}
+            // 🚫 do NOT pass onGenerate here → prevents duplicate "Genereer" button
             isGenerating={false}
           />
 
@@ -315,6 +329,17 @@ export default function BotAgentCard({
             </div>
           )}
 
+          {/* 2) MANUAL TRADE PANEL (Bybit-like inputs) */}
+          {!isAuto && (
+            <TradePanelContainer
+              bot={bot}
+              decision={decision}
+              portfolio={portfolio}
+              // If your container expects a different prop name, rename it here only.
+            />
+          )}
+
+          {/* 3) Executed trades table */}
           <BotTradeTable trades={trades ?? []} />
         </div>
       </div>

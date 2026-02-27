@@ -12,8 +12,6 @@ import BotScores from "@/components/bot/BotScores";
 import BotForm from "@/components/bot/AddBotForm";
 import BotBudgetForm from "@/components/bot/BotBudgetForm";
 import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
-
-// ✅ NEW: chart component (you said it lives here)
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
 /**
@@ -46,16 +44,20 @@ export default function BotPage() {
     history = [],
     portfolios = [],
     decisionsByBot = {},
-    tradesByBot = {}, // ✅ trades uit hook
+    tradesByBot = {},
     loading,
 
     createBot,
     updateBot,
     deleteBot,
     updateBudgetForBot,
+
     generateDecisionForBot,
     executeBot,
     skipBot,
+
+    // ✅ NEW: save handler uit hook (moet je hook exporten!)
+    saveTradePlanForDecision,
   } = useBotData();
 
   /* =====================================================
@@ -79,7 +81,6 @@ export default function BotPage() {
 
   /* =====================================================
      🧩 MERGE bots + portfolio (voor overview)
-     Shape: { bot_id, symbol, budget, stats }
   ===================================================== */
   const aggregatedBotsForOverview = useMemo(() => {
     return (bots || []).map((bot) => {
@@ -94,11 +95,9 @@ export default function BotPage() {
   }, [bots, portfolios]);
 
   /* =====================================================
-     📈 NEW: GENERAL PORTFOLIO BALANCE (ALL BOTS)
-     We try a few possible shapes; fallback is “single point” from portfolios.
+     📈 PORTFOLIO BALANCE (ALL BOTS)
   ===================================================== */
   const totalPortfolioValueEur = useMemo(() => {
-    // safest default: sum of position values (if present)
     return (portfolios || []).reduce((acc, p) => {
       const v = Number(p?.stats?.position_value_eur ?? 0);
       return acc + (Number.isFinite(v) ? v : 0);
@@ -106,13 +105,6 @@ export default function BotPage() {
   }, [portfolios]);
 
   const portfolioBalanceDataByRange = useMemo(() => {
-    // 1) If backend already sends something like today.portfolio_balance_by_range
-    // Expected shape:
-    // {
-    //   "1D": [{ts, value_eur}, ...],
-    //   "1W": [{ts, value_eur}, ...],
-    //   ...
-    // }
     const byRange =
       today?.portfolio_balance_by_range ||
       today?.portfolio_balance_history_by_range ||
@@ -123,7 +115,13 @@ export default function BotPage() {
         (Array.isArray(series) ? series : [])
           .map((p) => ({
             ts: p?.ts || p?.timestamp || p?.date || null,
-            value_eur: Number(p?.value_eur ?? p?.value ?? p?.balance_eur ?? p?.portfolio_value_eur ?? 0),
+            value_eur: Number(
+              p?.value_eur ??
+                p?.value ??
+                p?.balance_eur ??
+                p?.portfolio_value_eur ??
+                0
+            ),
           }))
           .filter((p) => p.ts && Number.isFinite(p.value_eur));
 
@@ -136,8 +134,6 @@ export default function BotPage() {
       };
     }
 
-    // 2) If backend sends a single timeseries somewhere (history) we can reuse it
-    // We try to detect “portfolio value” points. If it doesn't exist -> empty.
     const detected = (Array.isArray(history) ? history : [])
       .map((p) => {
         const ts = p?.ts || p?.timestamp || p?.date || null;
@@ -156,11 +152,15 @@ export default function BotPage() {
       .filter((p) => p.ts && p.value_eur !== null);
 
     if (detected.length >= 2) {
-      // Use same for all ranges until backend adds proper ranged endpoints
-      return { "1D": detected, "1W": detected, "1M": detected, "1Y": detected, ALL: detected };
+      return {
+        "1D": detected,
+        "1W": detected,
+        "1M": detected,
+        "1Y": detected,
+        ALL: detected,
+      };
     }
 
-    // 3) Fallback: single point so card renders; chart will show “Geen data beschikbaar”
     const now = new Date().toISOString();
     const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
 
@@ -183,12 +183,40 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ EXECUTE BOT
+     💾 SAVE TRADE PLAN (NEW)
+  ===================================================== */
+  const handleSaveTradePlan = async ({ bot_id, decision_id, draft }) => {
+    if (!saveTradePlanForDecision) {
+      showSnackbar("Save handler ontbreekt (hook)", "danger");
+      return;
+    }
+
+    try {
+      await saveTradePlanForDecision({ bot_id, decision_id, draft });
+      showSnackbar("Trade plan opgeslagen", "success");
+    } catch (e) {
+      console.error(e);
+      showSnackbar("Opslaan trade plan mislukt", "danger");
+      throw e; // belangrijk: BotAgentCard mag error tonen
+    }
+  };
+
+  /* =====================================================
+     ▶️ EXECUTE BOT (fix: decision_id meegeven)
   ===================================================== */
   const handleExecuteBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
-      await executeBot({ bot_id });
+
+      const decision = decisionsByBot?.[bot_id] ?? null;
+      const decision_id = decision?.id ?? decision?.decision_id ?? null;
+
+      if (!decision_id) {
+        showSnackbar("Geen decision_id gevonden om uit te voeren", "danger");
+        return;
+      }
+
+      await executeBot({ bot_id, decision_id });
 
       const bot = bots.find((b) => b.id === bot_id);
       showSnackbar(`${bot?.name ?? "Bot"} uitgevoerd`, "success");
@@ -225,7 +253,10 @@ export default function BotPage() {
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
-        <BotForm strategies={strategies} onChange={(v) => (formRef.current = v)} />
+        <BotForm
+          strategies={strategies}
+          onChange={(v) => (formRef.current = v)}
+        />
       ),
       confirmText: "Bot toevoegen",
       onConfirm: async () => {
@@ -345,19 +376,20 @@ export default function BotPage() {
 
       <BotScores scores={dailyScores} loading={loading?.today} />
 
-      {/* ✅ NEW: Portfolio balance chart (alle bots samen) */}
       <PortfolioBalanceCard
         title="Portfolio balance"
         defaultRange="1W"
         dataByRange={portfolioBalanceDataByRange}
       />
 
-      {/* ✅ NEW: General portfolio overview (alle bots samen) */}
       <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Bots</h2>
-        <button onClick={handleAddBot} className="btn-primary flex items-center gap-2">
+        <button
+          onClick={handleAddBot}
+          className="btn-primary flex items-center gap-2"
+        >
           <Plus size={16} />
           Nieuwe bot
         </button>
@@ -384,6 +416,8 @@ export default function BotPage() {
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}
               onOpenSettings={handleOpenBotSettings}
+              // ✅ NEW: save wiring
+              onSaveTradePlan={handleSaveTradePlan}
             />
           );
         })}

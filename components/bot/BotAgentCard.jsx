@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
 import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
-import TradePlanCard from "@/components/bot/TradePlanCard"; // ✅ NEW
+import TradePlanCard from "@/components/bot/TradePlanCard";
 
 import MarketDecisionCard from "@/components/bot/MarketDecisionCard";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
@@ -23,6 +23,20 @@ import {
   Activity,
 } from "lucide-react";
 
+/**
+ * BotAgentCard — UPDATED
+ * -----------------------------------------
+ * ✅ TradePlanCard always visible
+ * ✅ Adds edit/save flow for TradePlanCard
+ *
+ * Assumption (matches your current backend concept):
+ * - saving a plan is done via a callback passed from parent:
+ *   onSaveTradePlan({ bot_id, decision_id, trade_plan })
+ *
+ * If you already have a different name/signature in parent,
+ * just map it in this file.
+ */
+
 export default function BotAgentCard({
   bot,
   decision,
@@ -35,12 +49,19 @@ export default function BotAgentCard({
   onExecute,
   onSkip,
   onOpenSettings,
+
+  // 🆕 NEW: save handler from parent (page/container)
+  onSaveTradePlan,
 }) {
   if (!bot) return null;
 
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef(null);
+
+  // 🆕 save UI state
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   const isAuto = bot?.mode === "auto";
   const isPaused = bot?.is_active === false;
@@ -51,13 +72,10 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
   const statusLabel = decision?.action || "OBSERVE";
-  const confidence =
-    decision?.confidence_label || decision?.confidence || "LOW";
+  const confidence = decision?.confidence_label || decision?.confidence || "LOW";
 
   const exposureMultiplier =
-    decision?.exposure_multiplier ??
-    bot?.strategy?.exposure_multiplier ??
-    1;
+    decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
 
   /* ================= UI INTELLIGENCE ================= */
 
@@ -114,12 +132,53 @@ export default function BotAgentCard({
     riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
     riskConfig.balanced;
 
+  /* ================= SAVE TRADE PLAN ================= */
+
+  const canSavePlan = !isAuto && !!onSaveTradePlan && !!decision;
+
+  const decisionId =
+    decision?.decision_id ??
+    decision?.id ??
+    null;
+
+  const botId =
+    decision?.bot_id ??
+    bot?.id ??
+    null;
+
+  const handleSaveTradePlan = async (planDraft) => {
+    if (!canSavePlan) return;
+
+    setSaveError(null);
+    setSavingPlan(true);
+
+    try {
+      await onSaveTradePlan({
+        bot_id: botId,
+        decision_id: decisionId,
+        trade_plan: planDraft,
+      });
+    } catch (e) {
+      console.error("Save trade plan failed:", e);
+      setSaveError(e?.message || "Opslaan mislukt");
+      throw e;
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
+  /* ================= DERIVED PLAN SOURCE ================= */
+
+  // Prefer backend trade_plan from decision; if you later pass a loaded plan from API,
+  // you can feed it into TradePlanCard via prop tradePlan=...
+  const planSource = useMemo(() => {
+    return decision?.trade_plan || null;
+  }, [decision]);
+
   return (
     <div className="w-full rounded-2xl border bg-white dark:bg-white/5 shadow-sm space-y-6 p-6">
-
       {/* ================= HEADER ================= */}
       <div className="space-y-4 border-b pb-5">
-
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -129,8 +188,16 @@ export default function BotAgentCard({
           </div>
 
           <div className="flex items-center gap-5">
-            <div className={`flex items-center gap-2 text-sm font-semibold ${isPaused ? "text-gray-400" : "text-green-600"}`}>
-              <span className={`w-2.5 h-2.5 rounded-full ${isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"}`} />
+            <div
+              className={`flex items-center gap-2 text-sm font-semibold ${
+                isPaused ? "text-gray-400" : "text-green-600"
+              }`}
+            >
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"
+                }`}
+              />
               {isPaused ? "Paused" : "Active"}
             </div>
 
@@ -139,7 +206,7 @@ export default function BotAgentCard({
                 className="text-gray-400 hover:text-gray-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowSettings(v => !v);
+                  setShowSettings((v) => !v);
                 }}
               >
                 <MoreVertical size={20} />
@@ -164,7 +231,9 @@ export default function BotAgentCard({
         </div>
 
         <div className="flex gap-3">
-          <span className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}>
+          <span
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}
+          >
             {risk.icon}
             {risk.label}
           </span>
@@ -180,7 +249,9 @@ export default function BotAgentCard({
           <span className="font-medium text-gray-600">Status:</span>
           <span className="font-bold">{statusLabel}</span>
           <span className="text-gray-400">•</span>
-          <span>Confidence <strong>{confidence}</strong></span>
+          <span>
+            Confidence <strong>{confidence}</strong>
+          </span>
         </div>
       </div>
 
@@ -198,7 +269,11 @@ export default function BotAgentCard({
       </div>
 
       {/* ===== MARKET INTELLIGENCE ===== */}
-      <div className={`rounded-xl border p-5 transition ${regimeBorder} ${highStress ? "ring-2 ring-orange-400/40" : ""}`}>
+      <div
+        className={`rounded-xl border p-5 transition ${regimeBorder} ${
+          highStress ? "ring-2 ring-orange-400/40" : ""
+        }`}
+      >
         <MarketDecisionCard decision={decision} />
 
         <div className="mt-4 pt-4 border-t">
@@ -213,7 +288,6 @@ export default function BotAgentCard({
 
       {/* ===== Decision + Trade Plan + Trades ===== */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
-
         <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
@@ -230,25 +304,39 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="flex-1 p-5 space-y-6">
-
-          {/* ✅ Always visible trade plan */}
+          {/* ✅ Always visible trade plan + editable + save */}
           <TradePlanCard
             decision={decision}
-            tradePlan={decision?.trade_plan}
+            tradePlan={planSource}
             loading={loadingDecision}
             allowManual={!isAuto}
+            // enable edit/save in TradePlanCard
+            onSave={canSavePlan ? handleSaveTradePlan : undefined}
+            // optional: reuse same generate button (if you want it here too)
+            onGenerate={onGenerate}
+            isGenerating={false}
           />
+
+          {/* save feedback */}
+          {(savingPlan || saveError) && (
+            <div className="rounded-xl border bg-gray-50 p-3 text-sm">
+              {savingPlan ? (
+                <div className="text-gray-700">Opslaan…</div>
+              ) : (
+                <div className="text-red-600">Save failed: {saveError}</div>
+              )}
+            </div>
+          )}
 
           {/* Executed trades */}
           <BotTradeTable trades={trades ?? []} />
-
         </div>
       </div>
 
       {/* HISTORY */}
       <div className="pt-2 border-t">
         <button
-          onClick={() => setShowHistory(v => !v)}
+          onClick={() => setShowHistory((v) => !v)}
           className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-2"
         >
           <Clock size={14} />

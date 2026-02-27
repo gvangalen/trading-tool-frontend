@@ -70,7 +70,7 @@ export default function PortfolioBalanceCard({
   });
 
   /* =====================================================
-     🔥 ALWAYS SHOW CHART (fallback flat zero line)
+     SERIES (fallback flat line)
   ===================================================== */
   const series = useMemo(() => {
     if (data && data.length > 0) return data;
@@ -111,6 +111,30 @@ export default function PortfolioBalanceCard({
     }));
   }, [series, range]);
 
+  /* =====================================================
+     🔥 FLATLINE PROTECTION
+  ===================================================== */
+  const yDomain = useMemo(() => {
+    if (!chartData.length) return ["auto", "auto"];
+
+    const values = chartData.map((d) => d.equity);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    // If flat line (min === max)
+    if (min === max) {
+      const padding =
+        min === 0 ? 100 : Math.max(Math.abs(min) * 0.05, 1);
+
+      return [min - padding, max + padding];
+    }
+
+    const range = max - min;
+    const padding = range * 0.1;
+
+    return [min - padding, max + padding];
+  }, [chartData]);
+
   return (
     <div className="card-surface p-6">
       <div className="flex items-start justify-between gap-4">
@@ -134,7 +158,6 @@ export default function PortfolioBalanceCard({
           </div>
         </div>
 
-        {/* Range selector */}
         <div className="flex items-center gap-2">
           {RANGES.map((r) => (
             <button
@@ -166,16 +189,8 @@ export default function PortfolioBalanceCard({
             >
               <defs>
                 <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.30}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.00}
-                  />
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.30}/>
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
 
@@ -187,11 +202,16 @@ export default function PortfolioBalanceCard({
               />
 
               <YAxis
+                domain={yDomain}
                 tick={{ fontSize: 12, fill: "var(--text-muted)" }}
                 axisLine={false}
                 tickLine={false}
-                width={45}
-                tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+                width={55}
+                tickFormatter={(v) =>
+                  v >= 1000
+                    ? `${Math.round(v / 1000)}k`
+                    : Math.round(v)
+                }
               />
 
               <Tooltip

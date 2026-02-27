@@ -15,7 +15,7 @@ import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
 /**
- * BotPage — TradeLayer 2.6 (FINAL / WIRED)
+ * BotPage — TradeLayer 2.6 (FINAL / WIRED + SAVE TRADE PLAN)
  *
  * - Backend = single source of truth
  * - Trades komen EXCLUSIEF uit bot_ledger
@@ -50,13 +50,13 @@ export default function BotPage() {
     createBot,
     updateBot,
     deleteBot,
-    updateBudgetForBot,
+    updateBudgetForBot, // (moet bestaan in hook, anders kun je dit mappen naar updateBot)
 
     generateDecisionForBot,
     executeBot,
     skipBot,
 
-    // ✅ NEW: save handler uit hook (moet je hook exporten!)
+    // ✅ NEW: save handler uit hook
     saveTradePlanForDecision,
   } = useBotData();
 
@@ -84,7 +84,7 @@ export default function BotPage() {
   ===================================================== */
   const aggregatedBotsForOverview = useMemo(() => {
     return (bots || []).map((bot) => {
-      const p = portfolios.find((x) => x.bot_id === bot.id);
+      const p = (portfolios || []).find((x) => x.bot_id === bot.id);
       return {
         bot_id: bot.id,
         symbol: p?.symbol ?? bot?.symbol ?? "—",
@@ -134,38 +134,11 @@ export default function BotPage() {
       };
     }
 
-    const detected = (Array.isArray(history) ? history : [])
-      .map((p) => {
-        const ts = p?.ts || p?.timestamp || p?.date || null;
-        const v =
-          p?.portfolio_value_eur ??
-          p?.total_value_eur ??
-          p?.value_eur ??
-          p?.balance_eur ??
-          null;
-        const value_eur = Number(v);
-        return {
-          ts,
-          value_eur: Number.isFinite(value_eur) ? value_eur : null,
-        };
-      })
-      .filter((p) => p.ts && p.value_eur !== null);
-
-    if (detected.length >= 2) {
-      return {
-        "1D": detected,
-        "1W": detected,
-        "1M": detected,
-        "1Y": detected,
-        ALL: detected,
-      };
-    }
-
     const now = new Date().toISOString();
     const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
 
     return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
-  }, [today, history, totalPortfolioValueEur]);
+  }, [today, totalPortfolioValueEur]);
 
   /* =====================================================
      🔁 GENERATE DECISION
@@ -202,7 +175,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ EXECUTE BOT (fix: decision_id meegeven)
+     ▶️ EXECUTE BOT (FIX: decision_id meegeven)
   ===================================================== */
   const handleExecuteBot = async ({ bot_id }) => {
     try {
@@ -318,6 +291,7 @@ export default function BotPage() {
           ),
           confirmText: "Opslaan",
           onConfirm: async () => {
+            // ✅ Als je hook dit niet heeft: vervang dit door updateBot(bot.id, budgetRef.current)
             await updateBudgetForBot(bot.id, budgetRef.current);
             showSnackbar("Bot budget bijgewerkt", "success");
           },
@@ -398,14 +372,14 @@ export default function BotPage() {
       <div className="space-y-6">
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
-          const decision = decisionsByBot[bot.id];
+          const decision = decisionsByBot[bot.id] ?? null;
           const trades = tradesByBot[bot.id] || [];
 
           return (
             <BotAgentCard
               key={bot.id}
               bot={bot}
-              decision={decision ?? null}
+              decision={decision}
               portfolio={portfolio}
               trades={trades}
               history={history}
@@ -416,7 +390,7 @@ export default function BotPage() {
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}
               onOpenSettings={handleOpenBotSettings}
-              // ✅ NEW: save wiring
+              // ✅ NEW: trade plan save wiring
               onSaveTradePlan={handleSaveTradePlan}
             />
           );

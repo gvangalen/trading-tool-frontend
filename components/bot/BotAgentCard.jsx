@@ -24,17 +24,12 @@ import {
 } from "lucide-react";
 
 /**
- * BotAgentCard — UPDATED
- * -----------------------------------------
- * ✅ TradePlanCard always visible
- * ✅ Adds edit/save flow for TradePlanCard
+ * BotAgentCard — UPDATED (edit/save trade plan wired)
  *
- * Assumption (matches your current backend concept):
- * - saving a plan is done via a callback passed from parent:
- *   onSaveTradePlan({ bot_id, decision_id, trade_plan })
+ * Expects parent to pass:
+ *   onSaveTradePlan({ bot_id, decision_id, draft })
  *
- * If you already have a different name/signature in parent,
- * just map it in this file.
+ * This matches useBotData.saveTradePlanForDecision()
  */
 
 export default function BotAgentCard({
@@ -50,7 +45,7 @@ export default function BotAgentCard({
   onSkip,
   onOpenSettings,
 
-  // 🆕 NEW: save handler from parent (page/container)
+  // ✅ from parent (container/page)
   onSaveTradePlan,
 }) {
   if (!bot) return null;
@@ -59,7 +54,6 @@ export default function BotAgentCard({
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef(null);
 
-  // 🆕 save UI state
   const [savingPlan, setSavingPlan] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
@@ -134,17 +128,12 @@ export default function BotAgentCard({
 
   /* ================= SAVE TRADE PLAN ================= */
 
-  const canSavePlan = !isAuto && !!onSaveTradePlan && !!decision;
+  // ✅ bot/today gebruikt "id" voor decision id → daarom deze fallback
+  const decisionId = decision?.id ?? decision?.decision_id ?? null;
+  const botId = decision?.bot_id ?? bot?.id ?? null;
 
-  const decisionId =
-    decision?.decision_id ??
-    decision?.id ??
-    null;
-
-  const botId =
-    decision?.bot_id ??
-    bot?.id ??
-    null;
+  const canSavePlan =
+    !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
 
   const handleSaveTradePlan = async (planDraft) => {
     if (!canSavePlan) return;
@@ -153,10 +142,11 @@ export default function BotAgentCard({
     setSavingPlan(true);
 
     try {
+      // ✅ signature matches useBotData.saveTradePlanForDecision
       await onSaveTradePlan({
         bot_id: botId,
         decision_id: decisionId,
-        trade_plan: planDraft,
+        draft: planDraft,
       });
     } catch (e) {
       console.error("Save trade plan failed:", e);
@@ -167,11 +157,11 @@ export default function BotAgentCard({
     }
   };
 
-  /* ================= DERIVED PLAN SOURCE ================= */
+  /* ================= PLAN SOURCE ================= */
 
-  // Prefer backend trade_plan from decision; if you later pass a loaded plan from API,
-  // you can feed it into TradePlanCard via prop tradePlan=...
   const planSource = useMemo(() => {
+    // gebruik wat je al in decision hebt (altijd zichtbaar),
+    // en TradePlanCard gebruikt zelf decision fallback ook.
     return decision?.trade_plan || null;
   }, [decision]);
 
@@ -310,14 +300,11 @@ export default function BotAgentCard({
             tradePlan={planSource}
             loading={loadingDecision}
             allowManual={!isAuto}
-            // enable edit/save in TradePlanCard
             onSave={canSavePlan ? handleSaveTradePlan : undefined}
-            // optional: reuse same generate button (if you want it here too)
             onGenerate={onGenerate}
             isGenerating={false}
           />
 
-          {/* save feedback */}
           {(savingPlan || saveError) && (
             <div className="rounded-xl border bg-gray-50 p-3 text-sm">
               {savingPlan ? (
@@ -328,7 +315,6 @@ export default function BotAgentCard({
             </div>
           )}
 
-          {/* Executed trades */}
           <BotTradeTable trades={trades ?? []} />
         </div>
       </div>

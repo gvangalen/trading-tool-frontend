@@ -8,11 +8,7 @@ import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
-// ✅ READ-ONLY AI plan card (still useful to show the bot proposal)
 import TradePlanCard from "@/components/bot/TradePlanCard";
-
-// ✅ THIS is the “Bybit-like” manual trade UI you already built
-// (you have TradePanel.jsx + TradePanelContainer.jsx in the repo screenshot)
 import TradePanelContainer from "@/components/bot/TradePanelContainer";
 
 import MarketDecisionCard from "@/components/bot/MarketDecisionCard";
@@ -29,21 +25,6 @@ import {
   Activity,
 } from "lucide-react";
 
-/**
- * BotAgentCard — FINAL (WIRED CORRECTLY)
- * ------------------------------------------------------------
- * ✅ Always shows a bot proposal (DecisionCard)
- * ✅ Always shows a Trade Plan (AI plan) (TradePlanCard)
- * ✅ Always shows the Manual Trade UI (TradePanelContainer) when manual mode
- * ✅ Save TradePlan (edit/save) wired to parent handler:
- *      onSaveTradePlan({ bot_id, decision_id, draft })
- *
- * IMPORTANT:
- * - The “Genereer” button belongs to BotDecisionCard (new analysis).
- * - TradePlanCard should NOT add a second “Genereer” button unless you explicitly want it.
- *   -> We do NOT pass onGenerate into TradePlanCard to avoid duplicate buttons.
- */
-
 export default function BotAgentCard({
   bot,
   decision,
@@ -58,8 +39,8 @@ export default function BotAgentCard({
   onSkip,
   onOpenSettings,
 
-  // ✅ from parent (container/page)
   onSaveTradePlan,
+  onPlaceManualOrder, // 🔥 BELANGRIJK: van BotPage
 }) {
   if (!bot) return null;
 
@@ -84,19 +65,8 @@ export default function BotAgentCard({
   const exposureMultiplier =
     decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
 
-  /* ================= UI INTELLIGENCE ================= */
+  /* ================= CLOSE SETTINGS ================= */
 
-  const transitionRisk = Number(decision?.transition_risk ?? 0);
-  const highStress = transitionRisk > 70;
-
-  const regimeBorder =
-    decision?.regime === "risk_off"
-      ? "border-red-200 dark:border-red-900/40"
-      : decision?.regime === "risk_on"
-      ? "border-emerald-200 dark:border-emerald-900/40"
-      : "border-gray-200 dark:border-white/10";
-
-  /* close settings */
   useEffect(() => {
     if (!showSettings) return;
 
@@ -141,7 +111,6 @@ export default function BotAgentCard({
 
   /* ================= SAVE TRADE PLAN ================= */
 
-  // bot/today returns decision.id (not decision_id) → keep both
   const decisionId = decision?.id ?? decision?.decision_id ?? null;
   const botId = decision?.bot_id ?? bot?.id ?? null;
 
@@ -160,7 +129,6 @@ export default function BotAgentCard({
         draft: planDraft,
       });
     } catch (e) {
-      console.error("Save trade plan failed:", e);
       setSaveError(e?.message || "Opslaan mislukt");
       throw e;
     } finally {
@@ -168,18 +136,28 @@ export default function BotAgentCard({
     }
   };
 
+  /* ================= MANUAL TRADE ================= */
+
+  const handleManualTrade = async (payload) => {
+    if (!onPlaceManualOrder) return;
+
+    await onPlaceManualOrder({
+      bot_id: bot.id,
+      ...payload,
+    });
+  };
+
   /* ================= PLAN SOURCE ================= */
 
   const planSource = useMemo(() => {
-    // Prefer decision.trade_plan (already in /bot/today payload)
     return decision?.trade_plan || null;
   }, [decision]);
 
   /* ================= RENDER ================= */
 
   return (
-    <div className="w-full rounded-2xl border bg-white dark:bg-white/5 shadow-sm space-y-6 p-6">
-      {/* ================= HEADER ================= */}
+    <div className="w-full rounded-2xl border bg-white shadow-sm space-y-6 p-6">
+      {/* HEADER */}
       <div className="space-y-4 border-b pb-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -189,42 +167,27 @@ export default function BotAgentCard({
             <div className="text-2xl font-bold">{bot?.name}</div>
           </div>
 
-          <div className="flex items-center gap-5">
-            <div
-              className={`flex items-center gap-2 text-sm font-semibold ${
-                isPaused ? "text-gray-400" : "text-green-600"
-              }`}
+          <div className="relative" ref={settingsRef}>
+            <button
+              className="text-gray-400 hover:text-gray-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings((v) => !v);
+              }}
             >
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  isPaused ? "bg-gray-400" : "bg-green-500 animate-pulse"
-                }`}
-              />
-              {isPaused ? "Paused" : "Active"}
-            </div>
+              <MoreVertical size={20} />
+            </button>
 
-            <div className="relative" ref={settingsRef}>
-              <button
-                className="text-gray-400 hover:text-gray-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSettings((v) => !v);
-                }}
-              >
-                <MoreVertical size={20} />
-              </button>
-
-              {showSettings && (
-                <div className="absolute right-0 mt-2 z-50">
-                  <BotSettingsMenu
-                    onOpen={(type) => {
-                      setShowSettings(false);
-                      onOpenSettings?.(type, bot);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+            {showSettings && (
+              <div className="absolute right-0 mt-2 z-50">
+                <BotSettingsMenu
+                  onOpen={(type) => {
+                    setShowSettings(false);
+                    onOpenSettings?.(type, bot);
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -245,7 +208,6 @@ export default function BotAgentCard({
           </span>
         </div>
 
-        {/* STATUS */}
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
           <Activity size={16} className="text-gray-500" />
           <span className="font-medium text-gray-600">Status:</span>
@@ -257,7 +219,7 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Portfolio + Guardrails ===== */}
+      {/* Portfolio + Guardrails */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
         <div className="flex-1 p-5">
           <BotPortfolioCard bot={portfolio} />
@@ -265,17 +227,13 @@ export default function BotAgentCard({
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="lg:w-[340px] p-5 bg-gray-50 dark:bg-white/5">
+        <div className="lg:w-[340px] p-5 bg-gray-50">
           <GuardrailsPanel decision={decision} bot={bot} />
         </div>
       </div>
 
-      {/* ===== MARKET INTELLIGENCE ===== */}
-      <div
-        className={`rounded-xl border p-5 transition ${regimeBorder} ${
-          highStress ? "ring-2 ring-orange-400/40" : ""
-        }`}
-      >
+      {/* Market Intelligence */}
+      <div className="rounded-xl border p-5">
         <MarketDecisionCard decision={decision} />
 
         <div className="mt-4 pt-4 border-t">
@@ -288,9 +246,8 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* ===== Decision + Trade Plan + Manual Trade ===== */}
+      {/* Decision + Plan + Manual Trade */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
-        {/* LEFT: Bot decision / proposal */}
         <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
@@ -306,45 +263,42 @@ export default function BotAgentCard({
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
-        {/* RIGHT: AI TradePlan + Manual Trade UI + Trades table */}
         <div className="flex-1 p-5 space-y-6">
-          {/* 1) AI Trade plan (proposal details) */}
+          {/* AI voorstel */}
           <TradePlanCard
             decision={decision}
             tradePlan={planSource}
             loading={loadingDecision}
             allowManual={!isAuto}
             onSave={canSavePlan ? handleSaveTradePlan : undefined}
-            // 🚫 do NOT pass onGenerate here → prevents duplicate "Genereer" button
-            isGenerating={false}
           />
 
           {(savingPlan || saveError) && (
             <div className="rounded-xl border bg-gray-50 p-3 text-sm">
               {savingPlan ? (
-                <div className="text-gray-700">Opslaan…</div>
+                <div>Opslaan…</div>
               ) : (
                 <div className="text-red-600">Save failed: {saveError}</div>
               )}
             </div>
           )}
 
-          {/* 2) MANUAL TRADE PANEL (Bybit-like inputs) */}
+          {/* Manual Trade UI */}
           {!isAuto && (
             <TradePanelContainer
               bot={bot}
               decision={decision}
               portfolio={portfolio}
-              // If your container expects a different prop name, rename it here only.
+              onManualTrade={handleManualTrade} // 🔥 HIER zit de wiring
             />
           )}
 
-          {/* 3) Executed trades table */}
+          {/* Executed trades */}
           <BotTradeTable trades={trades ?? []} />
         </div>
       </div>
 
-      {/* HISTORY */}
+      {/* History */}
       <div className="pt-2 border-t">
         <button
           onClick={() => setShowHistory((v) => !v)}

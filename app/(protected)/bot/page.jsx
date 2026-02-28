@@ -14,13 +14,6 @@ import BotBudgetForm from "@/components/bot/BotBudgetForm";
 import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
-/**
- * BotPage — TradeLayer 2.6 (FINAL / WIRED + SAVE TRADE PLAN)
- *
- * - Backend = single source of truth
- * - Trades komen EXCLUSIEF uit bot_ledger
- * - UI is puur renderlaag
- */
 export default function BotPage() {
   /* =====================================================
      🧠 MODAL / FEEDBACK
@@ -34,6 +27,9 @@ export default function BotPage() {
   ===================================================== */
   const [generatingBotId, setGeneratingBotId] = useState(null);
   const [executingBotId, setExecutingBotId] = useState(null);
+
+  // 🔥 NIEUW
+  const [placingOrderBotId, setPlacingOrderBotId] = useState(null);
 
   /* =====================================================
      🤖 BOT DATA (BACKEND LEIDEND)
@@ -50,14 +46,16 @@ export default function BotPage() {
     createBot,
     updateBot,
     deleteBot,
-    updateBudgetForBot, // (moet bestaan in hook, anders kun je dit mappen naar updateBot)
+    updateBudgetForBot,
 
     generateDecisionForBot,
     executeBot,
     skipBot,
 
-    // ✅ NEW: save handler uit hook
     saveTradePlanForDecision,
+
+    // 🔥 NIEUW (moet bestaan in hook)
+    createManualOrder,
   } = useBotData();
 
   /* =====================================================
@@ -156,7 +154,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     💾 SAVE TRADE PLAN (NEW)
+     💾 SAVE TRADE PLAN
   ===================================================== */
   const handleSaveTradePlan = async ({ bot_id, decision_id, draft }) => {
     if (!saveTradePlanForDecision) {
@@ -170,12 +168,31 @@ export default function BotPage() {
     } catch (e) {
       console.error(e);
       showSnackbar("Opslaan trade plan mislukt", "danger");
-      throw e; // belangrijk: BotAgentCard mag error tonen
+      throw e;
     }
   };
 
   /* =====================================================
-     ▶️ EXECUTE BOT (FIX: decision_id meegeven)
+     🔥 MANUAL PAPER TRADE (NIEUW)
+  ===================================================== */
+  const handleManualTrade = async (payload) => {
+    try {
+      setPlacingOrderBotId(payload.bot_id);
+
+      await createManualOrder(payload);
+
+      showSnackbar("Paper trade geplaatst", "success");
+    } catch (e) {
+      console.error(e);
+      showSnackbar("Paper trade mislukt", "danger");
+      throw e;
+    } finally {
+      setPlacingOrderBotId(null);
+    }
+  };
+
+  /* =====================================================
+     ▶️ EXECUTE BOT
   ===================================================== */
   const handleExecuteBot = async ({ bot_id }) => {
     try {
@@ -245,100 +262,6 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ⚙️ BOT SETTINGS ROUTER
-  ===================================================== */
-  const handleOpenBotSettings = (type, bot) => {
-    if (!bot) return;
-
-    switch (type) {
-      case "general":
-        formRef.current = {};
-        openConfirm({
-          title: `⚙️ Bot instellingen – ${bot.name}`,
-          description: (
-            <BotForm
-              initialData={bot}
-              strategies={strategies}
-              onChange={(v) => (formRef.current = v)}
-            />
-          ),
-          confirmText: "Opslaan",
-          onConfirm: async () => {
-            await updateBot(bot.id, formRef.current);
-            showSnackbar("Bot bijgewerkt", "success");
-          },
-        });
-        break;
-
-      case "portfolio": {
-        const portfolio = portfolios.find((p) => p.bot_id === bot.id);
-        if (!portfolio) return;
-
-        budgetRef.current = {
-          total_eur: portfolio.budget?.total_eur ?? 0,
-          daily_limit_eur: portfolio.budget?.daily_limit_eur ?? 0,
-          min_order_eur: portfolio.budget?.min_order_eur ?? 0,
-          max_order_eur: portfolio.budget?.max_order_eur ?? 0,
-        };
-
-        openConfirm({
-          title: `💰 Bot budget – ${bot.name}`,
-          description: (
-            <BotBudgetForm
-              initialBudget={budgetRef.current}
-              onChange={(v) => (budgetRef.current = v)}
-            />
-          ),
-          confirmText: "Opslaan",
-          onConfirm: async () => {
-            // ✅ Als je hook dit niet heeft: vervang dit door updateBot(bot.id, budgetRef.current)
-            await updateBudgetForBot(bot.id, budgetRef.current);
-            showSnackbar("Bot budget bijgewerkt", "success");
-          },
-        });
-        break;
-      }
-
-      case "pause":
-        openConfirm({
-          title: "⏸️ Bot pauzeren",
-          confirmText: "Pauzeren",
-          onConfirm: async () => {
-            await updateBot(bot.id, { is_active: false });
-            showSnackbar("Bot gepauzeerd", "info");
-          },
-        });
-        break;
-
-      case "resume":
-        openConfirm({
-          title: "▶️ Bot hervatten",
-          confirmText: "Hervatten",
-          onConfirm: async () => {
-            await updateBot(bot.id, { is_active: true });
-            showSnackbar("Bot hervat", "success");
-          },
-        });
-        break;
-
-      case "delete":
-        openConfirm({
-          title: "🗑️ Bot verwijderen",
-          confirmText: "Verwijderen",
-          confirmVariant: "danger",
-          onConfirm: async () => {
-            await deleteBot(bot.id);
-            showSnackbar("Bot verwijderd", "danger");
-          },
-        });
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  /* =====================================================
      🧠 PAGE
   ===================================================== */
   return (
@@ -384,14 +307,16 @@ export default function BotPage() {
               trades={trades}
               history={history}
               loadingDecision={
-                generatingBotId === bot.id || executingBotId === bot.id
+                generatingBotId === bot.id ||
+                executingBotId === bot.id ||
+                placingOrderBotId === bot.id
               }
               onGenerate={() => handleGenerateDecision(bot)}
               onExecute={handleExecuteBot}
               onSkip={handleSkipBot}
               onOpenSettings={handleOpenBotSettings}
-              // ✅ NEW: trade plan save wiring
               onSaveTradePlan={handleSaveTradePlan}
+              onPlaceManualOrder={handleManualTrade}  {/* 🔥 NIEUW */}
             />
           );
         })}

@@ -27,9 +27,7 @@ export default function BotPage() {
   ===================================================== */
   const [generatingBotId, setGeneratingBotId] = useState(null);
   const [executingBotId, setExecutingBotId] = useState(null);
-
-  // 🔥 NIEUW
-  const [placingOrderBotId, setPlacingOrderBotId] = useState(null);
+  const [placingOrderBotId, setPlacingOrderBotId] = useState(null); // 🔥 NEW
 
   /* =====================================================
      🤖 BOT DATA (BACKEND LEIDEND)
@@ -53,9 +51,7 @@ export default function BotPage() {
     skipBot,
 
     saveTradePlanForDecision,
-
-    // 🔥 NIEUW (moet bestaan in hook)
-    createManualOrder,
+    createManualOrder, // 🔥 NEW
   } = useBotData();
 
   /* =====================================================
@@ -78,11 +74,11 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧩 MERGE bots + portfolio (voor overview)
+     🧩 MERGE bots + portfolio
   ===================================================== */
   const aggregatedBotsForOverview = useMemo(() => {
     return (bots || []).map((bot) => {
-      const p = (portfolios || []).find((x) => x.bot_id === bot.id);
+      const p = portfolios.find((x) => x.bot_id === bot.id);
       return {
         bot_id: bot.id,
         symbol: p?.symbol ?? bot?.symbol ?? "—",
@@ -93,7 +89,7 @@ export default function BotPage() {
   }, [bots, portfolios]);
 
   /* =====================================================
-     📈 PORTFOLIO BALANCE (ALL BOTS)
+     📈 PORTFOLIO BALANCE
   ===================================================== */
   const totalPortfolioValueEur = useMemo(() => {
     return (portfolios || []).reduce((acc, p) => {
@@ -132,11 +128,38 @@ export default function BotPage() {
       };
     }
 
+    const detected = (Array.isArray(history) ? history : [])
+      .map((p) => {
+        const ts = p?.ts || p?.timestamp || p?.date || null;
+        const v =
+          p?.portfolio_value_eur ??
+          p?.total_value_eur ??
+          p?.value_eur ??
+          p?.balance_eur ??
+          null;
+        const value_eur = Number(v);
+        return {
+          ts,
+          value_eur: Number.isFinite(value_eur) ? value_eur : null,
+        };
+      })
+      .filter((p) => p.ts && p.value_eur !== null);
+
+    if (detected.length >= 2) {
+      return {
+        "1D": detected,
+        "1W": detected,
+        "1M": detected,
+        "1Y": detected,
+        ALL: detected,
+      };
+    }
+
     const now = new Date().toISOString();
     const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
 
     return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
-  }, [today, totalPortfolioValueEur]);
+  }, [today, history, totalPortfolioValueEur]);
 
   /* =====================================================
      🔁 GENERATE DECISION
@@ -173,14 +196,12 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🔥 MANUAL PAPER TRADE (NIEUW)
+     🔥 MANUAL PAPER TRADE
   ===================================================== */
   const handleManualTrade = async (payload) => {
     try {
       setPlacingOrderBotId(payload.bot_id);
-
       await createManualOrder(payload);
-
       showSnackbar("Paper trade geplaatst", "success");
     } catch (e) {
       console.error(e);
@@ -235,34 +256,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ➕ ADD BOT
-  ===================================================== */
-  const handleAddBot = () => {
-    formRef.current = {};
-
-    openConfirm({
-      title: "➕ Nieuwe bot",
-      description: (
-        <BotForm
-          strategies={strategies}
-          onChange={(v) => (formRef.current = v)}
-        />
-      ),
-      confirmText: "Bot toevoegen",
-      onConfirm: async () => {
-        if (!formRef.current?.name || !formRef.current?.strategy_id) {
-          showSnackbar("Vul alle velden in", "danger");
-          return;
-        }
-
-        await createBot(formRef.current);
-        showSnackbar("Bot toegevoegd", "success");
-      },
-    });
-  };
-
-  /* =====================================================
-     🧠 PAGE
+     PAGE
   ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
@@ -281,28 +275,17 @@ export default function BotPage() {
 
       <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Bots</h2>
-        <button
-          onClick={handleAddBot}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Nieuwe bot
-        </button>
-      </div>
-
       <div className="space-y-6">
         {bots.map((bot) => {
           const portfolio = portfolios.find((p) => p.bot_id === bot.id);
-          const decision = decisionsByBot[bot.id] ?? null;
+          const decision = decisionsByBot[bot.id];
           const trades = tradesByBot[bot.id] || [];
 
           return (
             <BotAgentCard
               key={bot.id}
               bot={bot}
-              decision={decision}
+              decision={decision ?? null}
               portfolio={portfolio}
               trades={trades}
               history={history}
@@ -316,7 +299,7 @@ export default function BotPage() {
               onSkip={handleSkipBot}
               onOpenSettings={handleOpenBotSettings}
               onSaveTradePlan={handleSaveTradePlan}
-              onPlaceManualOrder={handleManualTrade}  {/* 🔥 NIEUW */}
+              onPlaceManualOrder={handleManualTrade}
             />
           );
         })}

@@ -15,23 +15,17 @@ import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
 export default function BotPage() {
-  /* =====================================================
-     🧠 MODAL / FEEDBACK
-  ===================================================== */
+  /* ================= MODAL ================= */
   const { openConfirm, showSnackbar } = useModal();
   const formRef = useRef({});
   const budgetRef = useRef({});
 
-  /* =====================================================
-     🧠 UI STATE
-  ===================================================== */
+  /* ================= STATE ================= */
   const [generatingBotId, setGeneratingBotId] = useState(null);
   const [executingBotId, setExecutingBotId] = useState(null);
-  const [placingOrderBotId, setPlacingOrderBotId] = useState(null); // 🔥 NEW
+  const [placingOrderBotId, setPlacingOrderBotId] = useState(null);
 
-  /* =====================================================
-     🤖 BOT DATA (BACKEND LEIDEND)
-  ===================================================== */
+  /* ================= DATA ================= */
   const {
     configs: bots = [],
     today,
@@ -51,21 +45,17 @@ export default function BotPage() {
     skipBot,
 
     saveTradePlanForDecision,
-    createManualOrder, // 🔥 NEW
+    createManualOrder,
   } = useBotData();
 
-  /* =====================================================
-     🧠 STRATEGIES
-  ===================================================== */
+  /* ================= STRATEGIES ================= */
   const { strategies = [], loadStrategies } = useStrategyData();
 
   useEffect(() => {
     loadStrategies();
   }, [loadStrategies]);
 
-  /* =====================================================
-     🌍 GLOBAL SCORES
-  ===================================================== */
+  /* ================= SCORES ================= */
   const dailyScores = today?.scores ?? {
     macro: 10,
     technical: 10,
@@ -73,12 +63,10 @@ export default function BotPage() {
     setup: 10,
   };
 
-  /* =====================================================
-     🧩 MERGE bots + portfolio
-  ===================================================== */
+  /* ================= OVERVIEW ================= */
   const aggregatedBotsForOverview = useMemo(() => {
     return (bots || []).map((bot) => {
-      const p = portfolios.find((x) => x.bot_id === bot.id);
+      const p = portfolios?.find((x) => x.bot_id === bot.id) ?? null;
       return {
         bot_id: bot.id,
         symbol: p?.symbol ?? bot?.symbol ?? "—",
@@ -88,9 +76,7 @@ export default function BotPage() {
     });
   }, [bots, portfolios]);
 
-  /* =====================================================
-     📈 PORTFOLIO BALANCE
-  ===================================================== */
+  /* ================= BALANCE ================= */
   const totalPortfolioValueEur = useMemo(() => {
     return (portfolios || []).reduce((acc, p) => {
       const v = Number(p?.stats?.position_value_eur ?? 0);
@@ -109,13 +95,7 @@ export default function BotPage() {
         (Array.isArray(series) ? series : [])
           .map((p) => ({
             ts: p?.ts || p?.timestamp || p?.date || null,
-            value_eur: Number(
-              p?.value_eur ??
-                p?.value ??
-                p?.balance_eur ??
-                p?.portfolio_value_eur ??
-                0
-            ),
+            value_eur: Number(p?.value_eur ?? p?.value ?? 0),
           }))
           .filter((p) => p.ts && Number.isFinite(p.value_eur));
 
@@ -128,42 +108,13 @@ export default function BotPage() {
       };
     }
 
-    const detected = (Array.isArray(history) ? history : [])
-      .map((p) => {
-        const ts = p?.ts || p?.timestamp || p?.date || null;
-        const v =
-          p?.portfolio_value_eur ??
-          p?.total_value_eur ??
-          p?.value_eur ??
-          p?.balance_eur ??
-          null;
-        const value_eur = Number(v);
-        return {
-          ts,
-          value_eur: Number.isFinite(value_eur) ? value_eur : null,
-        };
-      })
-      .filter((p) => p.ts && p.value_eur !== null);
-
-    if (detected.length >= 2) {
-      return {
-        "1D": detected,
-        "1W": detected,
-        "1M": detected,
-        "1Y": detected,
-        ALL: detected,
-      };
-    }
-
     const now = new Date().toISOString();
     const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
 
     return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
-  }, [today, history, totalPortfolioValueEur]);
+  }, [today, totalPortfolioValueEur]);
 
-  /* =====================================================
-     🔁 GENERATE DECISION
-  ===================================================== */
+  /* ================= GENERATE ================= */
   const handleGenerateDecision = async (bot) => {
     try {
       setGeneratingBotId(bot.id);
@@ -176,45 +127,34 @@ export default function BotPage() {
     }
   };
 
-  /* =====================================================
-     💾 SAVE TRADE PLAN
-  ===================================================== */
+  /* ================= SAVE PLAN ================= */
   const handleSaveTradePlan = async ({ bot_id, decision_id, draft }) => {
-    if (!saveTradePlanForDecision) {
-      showSnackbar("Save handler ontbreekt (hook)", "danger");
-      return;
-    }
+    if (!saveTradePlanForDecision) return;
 
     try {
       await saveTradePlanForDecision({ bot_id, decision_id, draft });
       showSnackbar("Trade plan opgeslagen", "success");
-    } catch (e) {
-      console.error(e);
+    } catch {
       showSnackbar("Opslaan trade plan mislukt", "danger");
-      throw e;
     }
   };
 
-  /* =====================================================
-     🔥 MANUAL PAPER TRADE
-  ===================================================== */
+  /* ================= MANUAL TRADE ================= */
   const handleManualTrade = async (payload) => {
+    if (!createManualOrder) return;
+
     try {
       setPlacingOrderBotId(payload.bot_id);
       await createManualOrder(payload);
       showSnackbar("Paper trade geplaatst", "success");
-    } catch (e) {
-      console.error(e);
+    } catch {
       showSnackbar("Paper trade mislukt", "danger");
-      throw e;
     } finally {
       setPlacingOrderBotId(null);
     }
   };
 
-  /* =====================================================
-     ▶️ EXECUTE BOT
-  ===================================================== */
+  /* ================= EXECUTE ================= */
   const handleExecuteBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
@@ -222,15 +162,10 @@ export default function BotPage() {
       const decision = decisionsByBot?.[bot_id] ?? null;
       const decision_id = decision?.id ?? decision?.decision_id ?? null;
 
-      if (!decision_id) {
-        showSnackbar("Geen decision_id gevonden om uit te voeren", "danger");
-        return;
-      }
+      if (!decision_id) return;
 
       await executeBot({ bot_id, decision_id });
-
-      const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(`${bot?.name ?? "Bot"} uitgevoerd`, "success");
+      showSnackbar("Bot uitgevoerd", "success");
     } catch {
       showSnackbar("Uitvoeren mislukt", "danger");
     } finally {
@@ -238,16 +173,12 @@ export default function BotPage() {
     }
   };
 
-  /* =====================================================
-     ⏭️ SKIP BOT
-  ===================================================== */
+  /* ================= SKIP ================= */
   const handleSkipBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
       await skipBot({ bot_id });
-
-      const bot = bots.find((b) => b.id === bot_id);
-      showSnackbar(`${bot?.name ?? "Bot"} overgeslagen`, "info");
+      showSnackbar("Bot overgeslagen", "info");
     } catch {
       showSnackbar("Overslaan mislukt", "danger");
     } finally {
@@ -255,13 +186,28 @@ export default function BotPage() {
     }
   };
 
-  /* =====================================================
-     PAGE
-  ===================================================== */
+  /* ================= SETTINGS ROUTER ================= */
+  const handleOpenBotSettings = (type, bot) => {
+    if (!bot) return;
+
+    if (type === "delete") {
+      openConfirm({
+        title: "Bot verwijderen",
+        confirmVariant: "danger",
+        confirmText: "Verwijderen",
+        onConfirm: async () => {
+          await deleteBot(bot.id);
+          showSnackbar("Bot verwijderd", "danger");
+        },
+      });
+    }
+  };
+
+  /* ================= RENDER ================= */
   return (
-    <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
+    <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10">
       <div className="flex items-center gap-3">
-        <Wallet className="icon icon-primary" />
+        <Wallet />
         <h1 className="text-2xl font-semibold">Portfolio Management</h1>
       </div>
 
@@ -276,19 +222,24 @@ export default function BotPage() {
       <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
       <div className="space-y-6">
-        {bots.map((bot) => {
-          const portfolio = portfolios.find((p) => p.bot_id === bot.id);
-          const decision = decisionsByBot[bot.id];
-          const trades = tradesByBot[bot.id] || [];
+        {(bots || []).map((bot) => {
+          const portfolio =
+            portfolios?.find((p) => p.bot_id === bot.id) ?? null;
+
+          const decision =
+            decisionsByBot?.[bot.id] ?? null;
+
+          const trades =
+            tradesByBot?.[bot.id] ?? [];
 
           return (
             <BotAgentCard
               key={bot.id}
               bot={bot}
-              decision={decision ?? null}
+              decision={decision}
               portfolio={portfolio}
               trades={trades}
-              history={history}
+              history={history ?? []}
               loadingDecision={
                 generatingBotId === bot.id ||
                 executingBotId === bot.id ||

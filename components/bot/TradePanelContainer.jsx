@@ -8,7 +8,7 @@ import {
   fetchBotPortfolios,
   fetchTradePlan,
   createManualOrder,
-} from "@/lib/api/bot";
+} from "@/lib/api/botApi";
 
 import { fetchLatestBTC } from "@/lib/api/market";
 

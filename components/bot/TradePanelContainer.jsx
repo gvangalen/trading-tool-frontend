@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import TradePanel from "./TradePanel";
 
 import {
@@ -20,9 +20,12 @@ export default function TradePanelContainer({ botId }) {
   const [strategy, setStrategy] = useState({});
   const [decisionId, setDecisionId] = useState(null);
 
-  // =========================================
-  // LOAD INITIAL DATA
-  // =========================================
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  /* =====================================================
+     LOAD INITIAL DATA
+  ===================================================== */
   useEffect(() => {
     if (!botId) return;
 
@@ -32,10 +35,10 @@ export default function TradePanelContainer({ botId }) {
     return () => clearInterval(interval);
   }, [botId]);
 
-  // =========================================
-  // LOAD BOT + STRATEGY DATA
-  // =========================================
-  async function loadData() {
+  /* =====================================================
+     LOAD BOT DATA
+  ===================================================== */
+  const loadData = useCallback(async () => {
     try {
       const today = await fetchBotToday();
       const portfolios = await fetchBotPortfolios();
@@ -50,20 +53,14 @@ export default function TradePanelContainer({ botId }) {
 
       setDecisionId(botDecision.id);
 
-      // =====================================================
-      // 🧠 WATCH LEVELS (COMING FROM DECISION — NOT TRADE PLAN)
-      // =====================================================
       setWatchLevels({
         breakout:
           botDecision?.watch_levels?.breakout_trigger ?? null,
         pullback:
           botDecision?.watch_levels?.pullback_zone ?? null,
-        invalidate: null, // optional future use
+        invalidate: null,
       });
 
-      // =====================================================
-      // 📊 TRADE PLAN (EXECUTION STRUCTURE)
-      // =====================================================
       const plan = await fetchTradePlan(botDecision.id);
 
       setStrategy({
@@ -73,17 +70,14 @@ export default function TradePanelContainer({ botId }) {
           : [],
       });
 
-      // =====================================================
-      // 💰 BALANCE (NEW PORTFOLIO STRUCTURE SAFE)
-      // =====================================================
       const botPortfolio = portfolios.find(
         (b) => b.bot_id === botId
       );
 
       if (botPortfolio) {
-        // prefer cash balance if exists
         setBalance(
           botPortfolio.cash_balance_eur ??
+            botPortfolio?.budget?.available_eur ??
             botPortfolio?.budget?.total_eur ??
             0
         );
@@ -93,44 +87,92 @@ export default function TradePanelContainer({ botId }) {
     } catch (err) {
       console.error("TradePanel loadData error:", err);
     }
-  }
+  }, [botId]);
 
-  // =========================================
-  // LOAD LIVE PRICE
-  // =========================================
-  async function loadPrice() {
+  /* =====================================================
+     LOAD LIVE PRICE
+  ===================================================== */
+  const loadPrice = useCallback(async () => {
     try {
       const btc = await fetchLatestBTC();
       if (btc?.price) {
-        setPrice(btc.price);
+        setPrice(Number(btc.price));
       }
     } catch (err) {
       console.error("Price load error:", err);
     }
-  }
+  }, []);
 
-  // =========================================
-  // MANUAL ORDER (FIXED PAYLOAD)
-  // =========================================
+  /* =====================================================
+     ORDER HANDLER (FULL UPGRADE)
+  ===================================================== */
   async function handleOrder(order) {
+    setError(null);
+
     try {
+      setLoading(true);
+
+      const isMarket = order.order_type === "market";
+
+      const effectivePrice = isMarket
+        ? price
+        : Number(order.price);
+
+      if (!effectivePrice || effectivePrice <= 0) {
+        throw new Error("Ongeldige prijs");
+      }
+
+      let quantity = Number(order.quantity ?? 0);
+      let valueEur = Number(order.value_eur ?? 0);
+
+      // =====================================
+      // EUR ↔ BTC AUTO CONVERSION
+      // =====================================
+      if (order.size_mode === "eur") {
+        if (!valueEur || valueEur <= 0) {
+          throw new Error("Ongeldige orderwaarde");
+        }
+        quantity = valueEur / effectivePrice;
+      } else {
+        if (!quantity || quantity <= 0) {
+          throw new Error("Ongeldige hoeveelheid");
+        }
+        valueEur = quantity * effectivePrice;
+      }
+
+      // =====================================
+      // FRONTEND BUDGET CHECK
+      // =====================================
+      if (valueEur > balance) {
+        throw new Error("Onvoldoende budget");
+      }
+
+      // =====================================
+      // BACKEND CALL
+      // =====================================
       await createManualOrder({
         bot_id: botId,
+        decision_id: decisionId,
         symbol: "BTC",
-        side: order.side,
-        quantity: order.quantity,
-        price: order.price,
+        side: order.side, // buy / sell
+        order_type: order.order_type, // market / limit
+        price: effectivePrice,
+        quantity_btc: quantity,
+        value_eur: valueEur,
       });
 
       await loadData();
     } catch (err) {
       console.error("Manual order error:", err);
+      setError(err.message || "Order mislukt");
+    } finally {
+      setLoading(false);
     }
   }
 
-  // =========================================
-  // LOADING GUARD
-  // =========================================
+  /* =====================================================
+     LOADING GUARD
+  ===================================================== */
   if (!price) return null;
 
   return (
@@ -140,6 +182,8 @@ export default function TradePanelContainer({ botId }) {
       watchLevels={watchLevels}
       strategy={strategy}
       decisionId={decisionId}
+      loading={loading}
+      error={error}
       onSubmit={handleOrder}
     />
   );

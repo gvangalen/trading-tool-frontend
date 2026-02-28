@@ -14,7 +14,9 @@ import { fetchLatestBTC } from "@/lib/api/market";
 
 export default function TradePanelContainer({ botId }) {
   const [price, setPrice] = useState(null);
-  const [balance, setBalance] = useState(0);
+
+  const [balanceQuote, setBalanceQuote] = useState(0); // EUR
+  const [balanceBase, setBalanceBase] = useState(0);   // BTC
 
   const [watchLevels, setWatchLevels] = useState({});
   const [strategy, setStrategy] = useState({});
@@ -58,7 +60,6 @@ export default function TradePanelContainer({ botId }) {
           botDecision?.watch_levels?.breakout_trigger ?? null,
         pullback:
           botDecision?.watch_levels?.pullback_zone ?? null,
-        invalidate: null,
       });
 
       const plan = await fetchTradePlan(botDecision.id);
@@ -75,11 +76,15 @@ export default function TradePanelContainer({ botId }) {
       );
 
       if (botPortfolio) {
-        setBalance(
+        setBalanceQuote(
           botPortfolio.cash_balance_eur ??
-            botPortfolio?.budget?.available_eur ??
-            botPortfolio?.budget?.total_eur ??
-            0
+          botPortfolio?.budget?.available_eur ??
+          0
+        );
+
+        setBalanceBase(
+          botPortfolio.btc_balance ??
+          0
         );
       }
 
@@ -104,7 +109,7 @@ export default function TradePanelContainer({ botId }) {
   }, []);
 
   /* =====================================================
-     ORDER HANDLER (FULL UPGRADE)
+     ORDER HANDLER (MATCHES NEW PANEL)
   ===================================================== */
   async function handleOrder(order) {
     setError(null);
@@ -112,7 +117,7 @@ export default function TradePanelContainer({ botId }) {
     try {
       setLoading(true);
 
-      const isMarket = order.order_type === "market";
+      const isMarket = order.orderType === "market";
 
       const effectivePrice = isMarket
         ? price
@@ -126,9 +131,9 @@ export default function TradePanelContainer({ botId }) {
       let valueEur = Number(order.value_eur ?? 0);
 
       // =====================================
-      // EUR ↔ BTC AUTO CONVERSION
+      // SIZE MODE CONVERSION
       // =====================================
-      if (order.size_mode === "eur") {
+      if (order.size_mode === "quote") {
         if (!valueEur || valueEur <= 0) {
           throw new Error("Ongeldige orderwaarde");
         }
@@ -141,10 +146,14 @@ export default function TradePanelContainer({ botId }) {
       }
 
       // =====================================
-      // FRONTEND BUDGET CHECK
+      // BUDGET CHECK
       // =====================================
-      if (valueEur > balance) {
+      if (order.side === "buy" && valueEur > balanceQuote) {
         throw new Error("Onvoldoende budget");
+      }
+
+      if (order.side === "sell" && quantity > balanceBase) {
+        throw new Error("Onvoldoende BTC");
       }
 
       // =====================================
@@ -154,8 +163,8 @@ export default function TradePanelContainer({ botId }) {
         bot_id: botId,
         decision_id: decisionId,
         symbol: "BTC",
-        side: order.side, // buy / sell
-        order_type: order.order_type, // market / limit
+        side: order.side,
+        order_type: order.orderType,
         price: effectivePrice,
         quantity_btc: quantity,
         value_eur: valueEur,
@@ -170,18 +179,17 @@ export default function TradePanelContainer({ botId }) {
     }
   }
 
-  /* =====================================================
-     LOADING GUARD
-  ===================================================== */
   if (!price) return null;
 
   return (
     <TradePanel
       price={price}
-      balance={balance}
+      balanceQuote={balanceQuote}
+      balanceBase={balanceBase}
+      quoteSymbol="EUR"
+      baseSymbol="BTC"
       watchLevels={watchLevels}
       strategy={strategy}
-      decisionId={decisionId}
       loading={loading}
       error={error}
       onSubmit={handleOrder}

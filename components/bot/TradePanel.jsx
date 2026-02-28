@@ -32,45 +32,58 @@ const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
  * TradePanel — Binance-style (paper/manual)
  *
  * Props:
- * - price: live prijs (EUR/USDC) voor quick "Markt"
- * - balanceQuote: beschikbaar saldo in quote (bijv USDC/EUR)
- * - balanceBase: beschikbaar saldo in base (bijv BTC)
+ * - price: live prijs
+ * - balanceQuote: beschikbaar saldo quote (EUR/USDC)
+ * - balanceBase: beschikbaar saldo base (BTC)
  * - quoteSymbol: "USDC" of "EUR"
  * - baseSymbol: "BTC"
- * - watchLevels: { pullback_zone / pullback, breakout_trigger / breakout }
- * - strategy: { stop_loss, targets } (kan numbers of objects zijn)
+ * - watchLevels: { pullback_zone/pullback, breakout_trigger/breakout }
+ * - strategy: { stop_loss, targets }
+ * - symbol: default "BTC"
+ * - loading: boolean (optional)
+ * - error: string (optional)
  * - onSubmit(payload)
  *   payload = {
+ *     symbol,
  *     side: "buy"|"sell",
  *     orderType: "limit"|"market"|"stop",
- *     symbol,
- *     quantity,      // in BASE (BTC)
- *     price,         // price used (EUR/USDC per BTC)
- *     tp,            // optional take profit price
- *     sl,            // optional stop loss price
+ *     quantity: number,        // in BASE (BTC)
+ *     value_eur: number,       // in QUOTE (EUR/USDC)
+ *     size_mode: "base"|"quote",
+ *     price: number,           // used price
+ *     tp, sl, stop_trigger
  *   }
  */
 export default function TradePanel({
   price = 66744,
-  balanceQuote = 0, // bijv USDC/EUR saldo
-  balanceBase = 0,  // bijv BTC saldo
+  balanceQuote = 0,
+  balanceBase = 0,
   quoteSymbol = "USDC",
   baseSymbol = "BTC",
   watchLevels = {},
   strategy = {},
   symbol = "BTC",
+  loading = false,
+  error = null,
   onSubmit,
 }) {
   const [side, setSide] = useState("buy");
   const [orderType, setOrderType] = useState("limit"); // limit | market | stop
 
   const [orderPrice, setOrderPrice] = useState(num(price, 0));
-  const [stopTrigger, setStopTrigger] = useState(""); // alleen voor stop orders
+  const [stopTrigger, setStopTrigger] = useState("");
 
-  // slider = percentage van max allocatie (quote bij buy, base bij sell)
+  // slider percentage van max allocatie (quote bij buy, base bij sell)
   const [amountPct, setAmountPct] = useState(25);
 
-  // TP/SL toggle
+  // ✅ NEW: input mode (quote/base)
+  const [sizeMode, setSizeMode] = useState("quote"); // "quote" | "base"
+
+  // ✅ NEW: typed input
+  const [amountQuoteInput, setAmountQuoteInput] = useState("");
+  const [amountBaseInput, setAmountBaseInput] = useState("");
+
+  // TP/SL
   const [useTpSl, setUseTpSl] = useState(false);
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
@@ -91,10 +104,9 @@ export default function TradePanel({
     null;
 
   /* =========================
-     Strategy-derived TP/SL defaults (optioneel)
+     Strategy derived TP/SL defaults
   ========================= */
   const strategyStop = useMemo(() => {
-    // accepteer number of {price}
     const s = strategy?.stop_loss;
     if (s == null) return null;
     if (typeof s === "object") return num(s.price, null);
@@ -104,17 +116,24 @@ export default function TradePanel({
   const strategyTargets = useMemo(() => {
     const t = strategy?.targets;
     if (!Array.isArray(t)) return [];
-    // accepteer numbers of {price}
     return t
       .map((x) => (typeof x === "object" ? num(x.price, null) : num(x, null)))
       .filter((x) => Number.isFinite(x));
   }, [strategy]);
 
-  // init price bij price update (alleen als user niet al bezig is)
+  /* =========================
+     Effective price
+  ========================= */
+  const effectivePrice = useMemo(() => {
+    if (orderType === "market") return num(price, null);
+    return num(orderPrice, null);
+  }, [orderType, price, orderPrice]);
+
+  // init orderPrice bij price update
   useEffect(() => {
     const p = num(price, null);
     if (!Number.isFinite(p)) return;
-    // update orderPrice alleen als market of als huidige orderPrice leeg/0
+
     setOrderPrice((prev) => {
       if (orderType === "market") return p;
       if (!prev || prev <= 0) return p;
@@ -124,17 +143,9 @@ export default function TradePanel({
   }, [price]);
 
   /* =========================
-     Max allocatie / sizing
+     Max qty base
   ========================= */
-  const effectivePrice = useMemo(() => {
-    // market gebruikt live price
-    if (orderType === "market") return num(price, null);
-    return num(orderPrice, null);
-  }, [orderType, price, orderPrice]);
-
   const maxQtyBase = useMemo(() => {
-    // buy: max qty = balanceQuote / price
-    // sell: max qty = balanceBase
     const p = num(effectivePrice, null);
     if (side === "buy") {
       if (!p || p <= 0) return 0;
@@ -143,10 +154,45 @@ export default function TradePanel({
     return Math.max(0, num(balanceBase, 0));
   }, [side, balanceQuote, balanceBase, effectivePrice]);
 
-  const qtyBase = useMemo(() => {
+  /* =========================
+     Qty from slider
+  ========================= */
+  const qtyFromPct = useMemo(() => {
     const pct = clamp(num(amountPct, 0), 0, 100);
     return (maxQtyBase * pct) / 100;
   }, [maxQtyBase, amountPct]);
+
+  /* =========================
+     Quantity base (final) + value quote (final)
+     - if user typed input: prefer typed input
+     - else use slider
+  ========================= */
+  const typedBase = num(amountBaseInput, null);
+  const typedQuote = num(amountQuoteInput, null);
+
+  const qtyBase = useMemo(() => {
+    const p = num(effectivePrice, null);
+    if (!p || p <= 0) return 0;
+
+    // Typed input has priority (only if it has content)
+    if (sizeMode === "base" && amountBaseInput !== "") {
+      return Math.max(0, num(typedBase, 0));
+    }
+    if (sizeMode === "quote" && amountQuoteInput !== "") {
+      return Math.max(0, num(typedQuote, 0) / p);
+    }
+
+    // fallback: slider
+    return Math.max(0, qtyFromPct);
+  }, [
+    effectivePrice,
+    sizeMode,
+    amountBaseInput,
+    amountQuoteInput,
+    typedBase,
+    typedQuote,
+    qtyFromPct,
+  ]);
 
   const orderValueQuote = useMemo(() => {
     const p = num(effectivePrice, null);
@@ -155,16 +201,86 @@ export default function TradePanel({
   }, [qtyBase, effectivePrice]);
 
   /* =========================
-     Risk preview (optioneel)
+     Keep typed inputs in sync when slider moves
+     (only if user did not type a value in that mode)
+  ========================= */
+  useEffect(() => {
+    const p = num(effectivePrice, null);
+    if (!p || p <= 0) return;
+
+    // if user isn't typing in current mode, reflect slider
+    if (sizeMode === "base") {
+      if (amountBaseInput === "") {
+        const q = qtyFromPct;
+        setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
+      }
+    } else {
+      if (amountQuoteInput === "") {
+        const v = qtyFromPct * p;
+        setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qtyFromPct, effectivePrice, sizeMode]);
+
+  /* =========================
+     When toggling sizeMode:
+     - convert the "current order" into the other input field
+     - clear the previous typed field so you don't get double sources
+  ========================= */
+  const toggleSizeMode = (nextMode) => {
+    const p = num(effectivePrice, null);
+    if (!p || p <= 0) {
+      setSizeMode(nextMode);
+      return;
+    }
+
+    if (nextMode === "base") {
+      // set base from current computed qty
+      setAmountBaseInput(qtyBase > 0 ? String(Number(qtyBase.toFixed(6))) : "");
+      setAmountQuoteInput("");
+    } else {
+      const v = qtyBase * p;
+      setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
+      setAmountBaseInput("");
+    }
+
+    setSizeMode(nextMode);
+  };
+
+  /* =========================
+     Update slider when user types
+  ========================= */
+  useEffect(() => {
+    if (maxQtyBase <= 0) return;
+
+    // only when user is actively typing (field not empty)
+    if (sizeMode === "base" && amountBaseInput !== "") {
+      const q = Math.max(0, num(amountBaseInput, 0));
+      const pct = (q / maxQtyBase) * 100;
+      setAmountPct(clamp(pct, 0, 100));
+    }
+
+    if (sizeMode === "quote" && amountQuoteInput !== "") {
+      const p = num(effectivePrice, null);
+      if (!p || p <= 0) return;
+
+      const v = Math.max(0, num(amountQuoteInput, 0));
+      const q = v / p;
+      const pct = (q / maxQtyBase) * 100;
+      setAmountPct(clamp(pct, 0, 100));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amountBaseInput, amountQuoteInput, sizeMode, maxQtyBase, effectivePrice]);
+
+  /* =========================
+     Risk preview
   ========================= */
   const riskPct = useMemo(() => {
     const p = num(effectivePrice, null);
     const sl = useTpSl ? num(slPrice, null) : strategyStop;
-
     if (!p || !sl) return null;
 
-    // buy: SL onder entry
-    // sell: SL boven entry
     const risk =
       side === "buy" ? ((p - sl) / p) * 100 : ((sl - p) / p) * 100;
 
@@ -175,10 +291,7 @@ export default function TradePanel({
   const rrRatio = useMemo(() => {
     const p = num(effectivePrice, null);
     const sl = useTpSl ? num(slPrice, null) : strategyStop;
-    const tp =
-      useTpSl
-        ? num(tpPrice, null)
-        : (strategyTargets?.[0] ?? null);
+    const tp = useTpSl ? num(tpPrice, null) : strategyTargets?.[0] ?? null;
 
     if (!p || !sl || !tp) return null;
 
@@ -192,7 +305,7 @@ export default function TradePanel({
   }, [effectivePrice, slPrice, tpPrice, useTpSl, strategyStop, strategyTargets, side]);
 
   /* =========================
-     Validatie / disabled
+     Validation
   ========================= */
   const validation = useMemo(() => {
     const p = num(effectivePrice, null);
@@ -208,29 +321,30 @@ export default function TradePanel({
         return { ok: false, reason: "Onvoldoende saldo" };
     } else {
       if (q > num(balanceBase, 0) + 1e-12)
-        return { ok: false, reason: "Onvoldoende BTC" };
+        return { ok: false, reason: `Onvoldoende ${baseSymbol}` };
     }
 
-    // stop order: trigger verplicht
     if (orderType === "stop") {
       const trig = num(stopTrigger, null);
       if (!trig || trig <= 0) return { ok: false, reason: "Stop trigger ontbreekt" };
     }
 
-    // TP/SL validatie als toggle aan
     if (useTpSl) {
       const tp = num(tpPrice, null);
       const sl = num(slPrice, null);
       if (tpPrice && (!tp || tp <= 0)) return { ok: false, reason: "TP ongeldig" };
       if (slPrice && (!sl || sl <= 0)) return { ok: false, reason: "SL ongeldig" };
 
-      // logische checks (optioneel)
       if (tp && sl) {
         if (side === "buy" && !(tp > p && sl < p))
           return { ok: false, reason: "TP/SL niet logisch t.o.v. entry" };
         if (side === "sell" && !(tp < p && sl > p))
           return { ok: false, reason: "TP/SL niet logisch t.o.v. entry" };
       }
+    }
+
+    if (typeof onSubmit !== "function") {
+      return { ok: false, reason: "Paper trade handler ontbreekt" };
     }
 
     return { ok: true, reason: null };
@@ -246,9 +360,11 @@ export default function TradePanel({
     orderValueQuote,
     balanceQuote,
     balanceBase,
+    baseSymbol,
+    onSubmit,
   ]);
 
-  const canSubmit = validation.ok && typeof onSubmit === "function";
+  const canSubmit = validation.ok && !loading;
 
   /* =========================
      Actions
@@ -264,12 +380,15 @@ export default function TradePanel({
 
     const p = num(effectivePrice, null);
     const q = num(qtyBase, null);
+    const v = num(orderValueQuote, null);
 
     onSubmit?.({
       symbol,
       side,
       orderType,
       quantity: q,
+      value_eur: v,
+      size_mode: sizeMode, // 🔥 NEW
       price: p,
       tp: useTpSl ? num(tpPrice, null) : null,
       sl: useTpSl ? num(slPrice, null) : null,
@@ -286,7 +405,6 @@ export default function TradePanel({
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Trade</h2>
 
-        {/* saldo rechts */}
         <div className="text-xs text-gray-300 text-right">
           <div className="opacity-80">Beschikbaar saldo</div>
           {side === "buy" ? (
@@ -380,7 +498,6 @@ export default function TradePanel({
           </button>
         </div>
 
-        {/* STOP trigger */}
         {orderType === "stop" && (
           <div className="mt-3">
             <label className="text-gray-400 text-sm">Stop trigger</label>
@@ -395,27 +512,89 @@ export default function TradePanel({
         )}
       </div>
 
-      {/* AMOUNT */}
-      <div>
-        <label className="text-gray-400 text-sm">
-          Amount ({amountPct}%)
-        </label>
+      {/* ✅ NEW: Amount mode toggle + typed input */}
+      <div className="bg-[#111827] p-3 rounded-lg space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold">Aantal</div>
 
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={amountPct}
-          onChange={(e) => setAmountPct(Number(e.target.value))}
-          className="w-full mt-2"
-        />
-
-        <div className="mt-2 text-sm flex items-center justify-between">
-          <div>
-            {fmt(qtyBase, 6)} {baseSymbol}
+          <div className="flex gap-2 text-xs">
+            <button
+              onClick={() => toggleSizeMode("quote")}
+              className={`px-3 py-1 rounded-lg font-semibold ${
+                sizeMode === "quote"
+                  ? "bg-orange-500 text-black"
+                  : "bg-[#0b0f1a] text-gray-300"
+              }`}
+            >
+              In {quoteSymbol}
+            </button>
+            <button
+              onClick={() => toggleSizeMode("base")}
+              className={`px-3 py-1 rounded-lg font-semibold ${
+                sizeMode === "base"
+                  ? "bg-orange-500 text-black"
+                  : "bg-[#0b0f1a] text-gray-300"
+              }`}
+            >
+              In {baseSymbol}
+            </button>
           </div>
-          <div className="text-xs text-gray-400">
-            Max: {fmt(maxQtyBase, 6)} {baseSymbol}
+        </div>
+
+        {sizeMode === "quote" ? (
+          <div>
+            <div className="text-xs text-gray-400 mb-1">
+              Bedrag ({quoteSymbol})
+            </div>
+            <input
+              type="number"
+              value={amountQuoteInput}
+              onChange={(e) => setAmountQuoteInput(e.target.value)}
+              placeholder={`bijv. 1000`}
+              className="w-full bg-[#0b0f1a] p-3 rounded-lg outline-none"
+            />
+          </div>
+        ) : (
+          <div>
+            <div className="text-xs text-gray-400 mb-1">
+              Hoeveelheid ({baseSymbol})
+            </div>
+            <input
+              type="number"
+              value={amountBaseInput}
+              onChange={(e) => setAmountBaseInput(e.target.value)}
+              placeholder={`bijv. 0.01`}
+              className="w-full bg-[#0b0f1a] p-3 rounded-lg outline-none"
+            />
+          </div>
+        )}
+
+        {/* slider blijft bestaan */}
+        <div>
+          <label className="text-gray-400 text-xs">
+            Slider ({fmt(amountPct, 0)}%)
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={amountPct}
+            onChange={(e) => {
+              setAmountPct(Number(e.target.value));
+              // user moves slider -> clear typed input in active mode
+              if (sizeMode === "quote") setAmountQuoteInput("");
+              if (sizeMode === "base") setAmountBaseInput("");
+            }}
+            className="w-full mt-2"
+          />
+
+          <div className="mt-2 text-sm flex items-center justify-between">
+            <div>
+              {fmt(qtyBase, 6)} {baseSymbol}
+            </div>
+            <div className="text-xs text-gray-400">
+              Max: {fmt(maxQtyBase, 6)} {baseSymbol}
+            </div>
           </div>
         </div>
       </div>
@@ -441,7 +620,6 @@ export default function TradePanel({
             onClick={() => {
               const next = !useTpSl;
               setUseTpSl(next);
-              // prefill met strategy als beschikbaar
               if (next) {
                 if (!tpPrice && strategyTargets?.[0]) setTpPrice(String(strategyTargets[0]));
                 if (!slPrice && strategyStop) setSlPrice(String(strategyStop));
@@ -502,6 +680,13 @@ export default function TradePanel({
         </div>
       )}
 
+      {/* ERROR BANNER (from container) */}
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+          {error}
+        </div>
+      )}
+
       {/* VALIDATION BADGE */}
       <div className="flex items-center gap-2 text-xs">
         {validation.ok ? (
@@ -527,7 +712,7 @@ export default function TradePanel({
             : "bg-red-600 hover:bg-red-700"
         } ${!canSubmit ? "opacity-60 cursor-not-allowed hover:bg-none" : ""}`}
       >
-        Plaats order
+        {loading ? "Plaatsen..." : "Plaats order"}
       </button>
     </div>
   );

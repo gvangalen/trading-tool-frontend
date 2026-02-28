@@ -1,68 +1,59 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import TradePanel from "./TradePanel";
-
-import {
-  fetchBotToday,
-  fetchBotPortfolios,
-  fetchTradePlan,
-  createManualOrder,
-} from "@/lib/api/botApi";
-
+import { fetchTradePlan, createManualOrder } from "@/lib/api/botApi";
 import { fetchLatestBTC } from "@/lib/api/market";
 
-export default function TradePanelContainer({ botId }) {
-  const [price, setPrice] = useState(null);
+export default function TradePanelContainer({
+  bot,
+  decision,
+  portfolio,
+  onManualTrade,
+}) {
+  const botId = bot?.id;
+  const decisionId = decision?.id;
 
-  const [balanceQuote, setBalanceQuote] = useState(0); // EUR
-  const [balanceBase, setBalanceBase] = useState(0);   // BTC
+  const [price, setPrice] = useState(null);
+  const [balanceQuote, setBalanceQuote] = useState(0);
+  const [balanceBase, setBalanceBase] = useState(0);
 
   const [watchLevels, setWatchLevels] = useState({});
   const [strategy, setStrategy] = useState({});
-  const [decisionId, setDecisionId] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /* =====================================================
-     LOAD INITIAL DATA
-  ===================================================== */
+  /* ================= LOAD ================= */
+
   useEffect(() => {
     if (!botId) return;
 
-    loadData();
+    setWatchLevels({
+      breakout: decision?.watch_levels?.breakout_trigger ?? null,
+      pullback: decision?.watch_levels?.pullback_zone ?? null,
+    });
+
+    setBalanceQuote(
+      portfolio?.cash_balance_eur ??
+      portfolio?.budget?.available_eur ??
+      0
+    );
+
+    setBalanceBase(portfolio?.btc_balance ?? 0);
+
+    loadPlan();
+    loadPrice();
 
     const interval = setInterval(loadPrice, 60000);
     return () => clearInterval(interval);
-  }, [botId]);
+  }, [botId, decision, portfolio]);
 
-  /* =====================================================
-     LOAD BOT DATA
-  ===================================================== */
-  const loadData = useCallback(async () => {
+  async function loadPlan() {
+    if (!decisionId) return;
+
     try {
-      const today = await fetchBotToday();
-      const portfolios = await fetchBotPortfolios();
-
-      if (!today?.decisions?.length) return;
-
-      const botDecision = today.decisions.find(
-        (d) => d.bot_id === botId
-      );
-
-      if (!botDecision) return;
-
-      setDecisionId(botDecision.id);
-
-      setWatchLevels({
-        breakout:
-          botDecision?.watch_levels?.breakout_trigger ?? null,
-        pullback:
-          botDecision?.watch_levels?.pullback_zone ?? null,
-      });
-
-      const plan = await fetchTradePlan(botDecision.id);
+      const plan = await fetchTradePlan(decisionId);
 
       setStrategy({
         stop_loss: plan?.stop_loss?.price ?? null,
@@ -70,34 +61,12 @@ export default function TradePanelContainer({ botId }) {
           ? plan.targets.map((t) => t.price)
           : [],
       });
-
-      const botPortfolio = portfolios.find(
-        (b) => b.bot_id === botId
-      );
-
-      if (botPortfolio) {
-        setBalanceQuote(
-          botPortfolio.cash_balance_eur ??
-          botPortfolio?.budget?.available_eur ??
-          0
-        );
-
-        setBalanceBase(
-          botPortfolio.btc_balance ??
-          0
-        );
-      }
-
-      await loadPrice();
     } catch (err) {
-      console.error("TradePanel loadData error:", err);
+      console.error("Plan load error:", err);
     }
-  }, [botId]);
+  }
 
-  /* =====================================================
-     LOAD LIVE PRICE
-  ===================================================== */
-  const loadPrice = useCallback(async () => {
+  async function loadPrice() {
     try {
       const btc = await fetchLatestBTC();
       if (btc?.price) {
@@ -106,48 +75,30 @@ export default function TradePanelContainer({ botId }) {
     } catch (err) {
       console.error("Price load error:", err);
     }
-  }, []);
+  }
 
-  /* =====================================================
-     ORDER HANDLER (MATCHES NEW PANEL)
-  ===================================================== */
+  /* ================= ORDER ================= */
+
   async function handleOrder(order) {
     setError(null);
 
     try {
       setLoading(true);
 
-      const isMarket = order.orderType === "market";
-
-      const effectivePrice = isMarket
-        ? price
-        : Number(order.price);
-
-      if (!effectivePrice || effectivePrice <= 0) {
-        throw new Error("Ongeldige prijs");
-      }
+      const effectivePrice =
+        order.orderType === "market"
+          ? price
+          : Number(order.price);
 
       let quantity = Number(order.quantity ?? 0);
       let valueEur = Number(order.value_eur ?? 0);
 
-      // =====================================
-      // SIZE MODE CONVERSION
-      // =====================================
       if (order.size_mode === "quote") {
-        if (!valueEur || valueEur <= 0) {
-          throw new Error("Ongeldige orderwaarde");
-        }
         quantity = valueEur / effectivePrice;
       } else {
-        if (!quantity || quantity <= 0) {
-          throw new Error("Ongeldige hoeveelheid");
-        }
         valueEur = quantity * effectivePrice;
       }
 
-      // =====================================
-      // BUDGET CHECK
-      // =====================================
       if (order.side === "buy" && valueEur > balanceQuote) {
         throw new Error("Onvoldoende budget");
       }
@@ -156,9 +107,6 @@ export default function TradePanelContainer({ botId }) {
         throw new Error("Onvoldoende BTC");
       }
 
-      // =====================================
-      // BACKEND CALL
-      // =====================================
       await createManualOrder({
         bot_id: botId,
         decision_id: decisionId,
@@ -170,9 +118,8 @@ export default function TradePanelContainer({ botId }) {
         value_eur: valueEur,
       });
 
-      await loadData();
+      onManualTrade?.(order);
     } catch (err) {
-      console.error("Manual order error:", err);
       setError(err.message || "Order mislukt");
     } finally {
       setLoading(false);

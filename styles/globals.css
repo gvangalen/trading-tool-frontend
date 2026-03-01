@@ -78,7 +78,7 @@
   --avatar-border: rgba(26, 71, 255, 0.25);
   --avatar-text: #0f172a;
 
-    /* Scores */
+  /* Scores */
   --score-strong-buy: #16a34a;  /* groen */
   --score-buy:        #eab308;  /* GEEL */
   --score-neutral:    #f59e0b;  /* ORANJE */
@@ -95,6 +95,40 @@
   /* Transitions */
   --transition-fast: 0.12s ease-out;
   --transition-medium: 0.25s ease;
+
+  /* ===========================================
+     TRADE PANEL THEME TOKENS (LIGHT)
+     (Nieuw toegevoegd, breekt niks)
+  =========================================== */
+  --trade-panel-bg: var(--surface-1);
+  --trade-panel-border: var(--border);
+  --trade-panel-shadow: var(--shadow-md);
+
+  --trade-surface: var(--surface-2);
+  --trade-surface-2: var(--surface-3);
+
+  --trade-text: var(--text-dark);
+  --trade-muted: var(--text-muted);
+
+  --trade-buy: var(--icon-success);
+  --trade-sell: var(--icon-danger);
+
+  --trade-tab-active-bg: var(--primary-soft);
+  --trade-tab-active-text: var(--primary);
+  --trade-tab-bg: var(--surface-2);
+  --trade-tab-text: var(--text-light);
+
+  --trade-input-bg: var(--surface-1);
+  --trade-input-border: var(--border);
+  --trade-focus-ring: rgba(26,71,255,0.20);
+
+  --trade-slider-accent: var(--primary);
+
+  --trade-badge-ok-bg: rgba(22,163,74,0.10);
+  --trade-badge-ok-text: #15803d;
+
+  --trade-badge-bad-bg: rgba(239,68,68,0.10);
+  --trade-badge-bad-text: #b91c1c;
 }
 
 /* ===========================================
@@ -128,7 +162,7 @@
   --avatar-border: rgba(255, 255, 255, 0.18);
   --avatar-text: #E6EDF3;
 
-   /* Scores */
+  /* Scores */
   --score-strong-buy: #4ade80;
   --score-buy:        #fde047;  /* GEEL */
   --score-neutral:    #facc15;
@@ -141,6 +175,40 @@
   --shadow-sm: 0 2px 6px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 10px rgba(0,0,0,0.5);
   --shadow-lg: 0 6px 16px rgba(0,0,0,0.6);
+
+  /* ===========================================
+     TRADE PANEL THEME TOKENS (DARK)
+     (Nieuw toegevoegd)
+  =========================================== */
+  --trade-panel-bg: var(--surface-2);
+  --trade-panel-border: var(--border);
+  --trade-panel-shadow: var(--shadow-lg);
+
+  --trade-surface: rgba(255,255,255,0.06);
+  --trade-surface-2: rgba(255,255,255,0.10);
+
+  --trade-text: var(--text-dark);
+  --trade-muted: var(--text-muted);
+
+  --trade-buy: var(--score-strong-buy);
+  --trade-sell: var(--score-strong-sell);
+
+  --trade-tab-active-bg: rgba(26,71,255,0.18);
+  --trade-tab-active-text: #c7d2fe;
+  --trade-tab-bg: rgba(255,255,255,0.06);
+  --trade-tab-text: var(--text-light);
+
+  --trade-input-bg: rgba(0,0,0,0.25);
+  --trade-input-border: rgba(255,255,255,0.10);
+  --trade-focus-ring: rgba(99,102,241,0.28);
+
+  --trade-slider-accent: #60a5fa;
+
+  --trade-badge-ok-bg: rgba(34,197,94,0.12);
+  --trade-badge-ok-text: #86efac;
+
+  --trade-badge-bad-bg: rgba(248,113,113,0.12);
+  --trade-badge-bad-text: #fecaca;
 }
 
 /* ===========================================
@@ -388,25 +456,11 @@ textarea:focus {
               background-color var(--transition-medium);
 }
 
-.score-bar-strong-buy {
-  background-color: var(--score-strong-buy);
-}
-
-.score-bar-buy {
-  background-color: var(--score-buy);
-}
-
-.score-bar-neutral {
-  background-color: var(--score-neutral);
-}
-
-.score-bar-sell {
-  background-color: var(--score-sell);
-}
-
-.score-bar-strong-sell {
-  background-color: var(--score-strong-sell);
-}
+.score-bar-strong-buy { background-color: var(--score-strong-buy); }
+.score-bar-buy        { background-color: var(--score-buy); }
+.score-bar-neutral    { background-color: var(--score-neutral); }
+.score-bar-sell       { background-color: var(--score-sell); }
+.score-bar-strong-sell{ background-color: var(--score-strong-sell); }
 
 .settings-item {
   display: flex;
@@ -438,7 +492,6 @@ textarea:focus {
    SCORE BADGES (0–100) — used in IndicatorScoreEditor
    Theme-driven: uses only CSS vars
 =========================================== */
-
 .score-badge {
   display: inline-flex;
   align-items: center;
@@ -489,4 +542,142 @@ textarea:focus {
   border-color: color-mix(in srgb, var(--score-strong-sell) 25%, transparent);
   color: var(--score-strong-sell);
   background: color-mix(in srgb, var(--score-strong-sell) 12%, var(--surface-2));
+}
+
+/* =========================================================
+   TRADE PANEL THEME CLASSES (NEW)
+   Gebruik in TradePanel.jsx zodat je geen hardcoded colors hebt.
+   -> Je kunt later in 1x wisselen naar dark/light met .dark class
+========================================================= */
+
+/* container */
+.trade-panel {
+  background: var(--trade-panel-bg);
+  border: 1px solid var(--trade-panel-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--trade-panel-shadow);
+  color: var(--trade-text);
+}
+
+/* inner blocks */
+.trade-panel .trade-surface {
+  background: var(--trade-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.trade-panel .trade-surface-2 {
+  background: var(--trade-surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* tabs (limit/market/stop etc) */
+.trade-tab {
+  background: var(--trade-tab-bg);
+  color: var(--trade-tab-text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.trade-tab.active {
+  background: var(--trade-tab-active-bg);
+  color: var(--trade-tab-active-text);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+/* inputs */
+.trade-input {
+  background: var(--trade-input-bg);
+  border: 1px solid var(--trade-input-border);
+  border-radius: var(--radius-md);
+  color: var(--trade-text);
+  padding: 0.85rem 1rem;
+  width: 100%;
+  transition: border var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.trade-input::placeholder { color: color-mix(in srgb, var(--trade-muted) 70%, transparent); }
+
+.trade-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--trade-focus-ring);
+}
+
+/* slider */
+.trade-slider {
+  width: 100%;
+  accent-color: var(--trade-slider-accent);
+}
+
+/* buy/sell segmented buttons */
+.trade-segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--trade-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.trade-segment button {
+  padding: 0.85rem 0.9rem;
+  font-weight: 700;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.trade-segment .active-buy {
+  background: color-mix(in srgb, var(--trade-buy) 16%, var(--trade-surface));
+  color: var(--trade-buy);
+}
+
+.trade-segment .active-sell {
+  background: color-mix(in srgb, var(--trade-sell) 16%, var(--trade-surface));
+  color: var(--trade-sell);
+}
+
+/* submit buttons */
+.trade-submit {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-lg);
+  font-weight: 800;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.trade-submit.buy {
+  background: var(--trade-buy);
+  color: #fff;
+}
+
+.trade-submit.sell {
+  background: var(--trade-sell);
+  color: #fff;
+}
+
+.trade-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* validation badges */
+.trade-badge-ok {
+  background: var(--trade-badge-ok-bg);
+  color: var(--trade-badge-ok-text);
+  border: 1px solid color-mix(in srgb, var(--trade-buy) 25%, var(--border));
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.6rem;
+  font-weight: 700;
+}
+
+.trade-badge-bad {
+  background: var(--trade-badge-bad-bg);
+  color: var(--trade-badge-bad-text);
+  border: 1px solid color-mix(in srgb, var(--trade-sell) 25%, var(--border));
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.6rem;
+  font-weight: 700;
 }

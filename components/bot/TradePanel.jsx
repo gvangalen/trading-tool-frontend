@@ -497,13 +497,13 @@ return (
 
     {/* ORDER TYPE */}
     <div className="flex gap-2 text-sm">
-      {["limit", "market", "stop"].map((type) => (
+      {["limit", "market", "tpsl"].map((type) => (
         <button
           key={type}
           onClick={() => setOrderType(type)}
           className={`trade-tab ${orderType === type ? "active" : ""}`}
         >
-          {type === "stop" ? "STOP" : type.toUpperCase()}
+          {type === "tpsl" ? "TP/SL" : type.toUpperCase()}
         </button>
       ))}
     </div>

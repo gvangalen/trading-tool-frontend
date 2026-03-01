@@ -38,6 +38,8 @@ export default function BotHistoryTable({
             <tr className="text-left text-[var(--text-muted)] border-b border-[var(--border)]">
               <th className="py-2">Date</th>
               <th>Action</th>
+              <th>Qty</th>
+              <th>Price</th>
               <th>Amount</th>
               <th>Confidence</th>
               <th>Status</th>
@@ -46,41 +48,81 @@ export default function BotHistoryTable({
 
           <tbody>
             {history.map((h, i) => {
+              /* =====================
+                 Status styling
+              ===================== */
+              let status = h.status || (h.executed ? "executed" : "planned");
               let statusClass = "text-[var(--text-muted)]";
 
-              if (h.executed) statusClass = "icon-success";
-              else if (h.status === "failed") statusClass = "icon-danger";
-              else if (h.status === "skipped") statusClass = "icon-warning";
+              if (status === "executed") statusClass = "icon-success";
+              else if (status === "failed") statusClass = "icon-danger";
+              else if (status === "skipped") statusClass = "icon-warning";
+
+              /* =====================
+                 Helpers
+              ===================== */
+              const qty =
+                h.qty != null
+                  ? `${Number(h.qty).toFixed(6)} ${h.symbol || "BTC"}`
+                  : "—";
+
+              const price =
+                h.price != null
+                  ? `€${h.price}`
+                  : "—";
+
+              const amount =
+                h.amount_eur != null
+                  ? `€${h.amount_eur}`
+                  : h.amount != null
+                  ? `€${h.amount}`
+                  : "€0";
 
               return (
                 <tr
-                  key={i}
+                  key={h.id || i}
                   className="
                     border-b border-[var(--border)] last:border-0
                     hover:bg-[var(--surface-2)]
                     transition
                   "
                 >
+                  {/* DATE */}
                   <td className="py-2">
-                    {h.date || "—"}
+                    {h.date ||
+                      (h.created_at
+                        ? new Date(h.created_at).toLocaleString("nl-NL")
+                        : "—")}
                   </td>
 
+                  {/* ACTION */}
+                  <td className="font-medium capitalize">
+                    {h.action || h.side || "—"}
+                  </td>
+
+                  {/* QTY */}
                   <td>
-                    {h.action || "—"}
+                    {qty}
                   </td>
 
+                  {/* PRICE */}
                   <td>
-                    €{h.amount_eur ?? h.amount ?? 0}
+                    {price}
                   </td>
 
+                  {/* AMOUNT */}
+                  <td>
+                    {amount}
+                  </td>
+
+                  {/* CONFIDENCE */}
                   <td>
                     {h.confidence || "—"}
                   </td>
 
-                  <td className={`font-medium ${statusClass}`}>
-                    {h.executed
-                      ? "Executed"
-                      : h.status || "Planned"}
+                  {/* STATUS */}
+                  <td className={`font-medium capitalize ${statusClass}`}>
+                    {status}
                   </td>
                 </tr>
               );

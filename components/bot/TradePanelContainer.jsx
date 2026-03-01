@@ -27,20 +27,35 @@ export default function TradePanelContainer({
   /* ================= LOAD ================= */
 
   useEffect(() => {
-    if (!botId) return;
+    if (!botId || !portfolio) return;
 
     setWatchLevels({
       breakout: decision?.watch_levels?.breakout_trigger ?? null,
       pullback: decision?.watch_levels?.pullback_zone ?? null,
     });
 
-    setBalanceQuote(
-      portfolio?.cash_balance_eur ??
-      portfolio?.budget?.available_eur ??
-      0
-    );
+    /* ================= BUDGET BEREKENING (MANUAL) ================= */
 
-    setBalanceBase(portfolio?.btc_balance ?? 0);
+    const totalBudget = Number(portfolio?.budget?.total_eur ?? 0);
+    const dailyLimit = Number(portfolio?.budget?.daily_limit_eur ?? 0);
+
+    const invested =
+      Number(portfolio?.stats?.invested_eur ?? 0);
+
+    const spentToday =
+      Number(portfolio?.stats?.spent_today_eur ?? 0);
+
+    const remainingTotal = Math.max(totalBudget - invested, 0);
+    const remainingDaily = Math.max(dailyLimit - spentToday, 0);
+
+    const availableManual =
+      dailyLimit > 0
+        ? Math.min(remainingTotal, remainingDaily)
+        : remainingTotal;
+
+    setBalanceQuote(availableManual);
+
+    setBalanceBase(Number(portfolio?.btc_balance ?? 0));
 
     loadPlan();
     loadPrice();

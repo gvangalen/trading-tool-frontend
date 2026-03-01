@@ -68,10 +68,7 @@ export default function TradePanel({
   onSubmit,
 }) {
   const [side, setSide] = useState("buy");
-
-  // 🔥 STOP vervangen door TPSL
   const [orderType, setOrderType] = useState("limit"); // limit | market | tpsl
-
   const [orderPrice, setOrderPrice] = useState(num(price, 0));
 
   const [amountPct, setAmountPct] = useState(25);
@@ -79,11 +76,10 @@ export default function TradePanel({
   const [amountQuoteInput, setAmountQuoteInput] = useState("");
   const [amountBaseInput, setAmountBaseInput] = useState("");
 
-  // 🔥 TP/SL automatisch gekoppeld aan orderType
-  const useTpSl = orderType === "tpsl";
-
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
+
+  const useTpSl = orderType === "tpsl";
 
   /* =========================
      Strategy defaults
@@ -91,19 +87,21 @@ export default function TradePanel({
   const strategyStop = useMemo(() => {
     const s = strategy?.stop_loss;
     if (!s) return null;
-    if (typeof s === "object") return num(s.price, null);
-    return num(s, null);
+    return typeof s === "object" ? num(s.price, null) : num(s, null);
   }, [strategy]);
 
-  const strategyTargets = useMemo(() => {
-    const t = strategy?.targets;
-    if (!Array.isArray(t)) return [];
-    return t
-      .map((x) =>
-        typeof x === "object" ? num(x.price, null) : num(x, null)
-      )
-      .filter((x) => Number.isFinite(x));
+  const strategyTarget = useMemo(() => {
+    const t = strategy?.targets?.[0];
+    if (!t) return null;
+    return typeof t === "object" ? num(t.price, null) : num(t, null);
   }, [strategy]);
+
+  useEffect(() => {
+    if (useTpSl) {
+      if (strategyStop) setSlPrice(strategyStop);
+      if (strategyTarget) setTpPrice(strategyTarget);
+    }
+  }, [useTpSl, strategyStop, strategyTarget]);
 
   /* =========================
      Effective price
@@ -113,23 +111,16 @@ export default function TradePanel({
     return num(orderPrice, null);
   }, [orderType, price, orderPrice]);
 
-  useEffect(() => {
-    if (useTpSl) {
-      if (strategyStop) setSlPrice(strategyStop);
-      if (strategyTargets[0]) setTpPrice(strategyTargets[0]);
-    }
-  }, [useTpSl, strategyStop, strategyTargets]);
-
   /* =========================
      Max qty base
   ========================= */
   const maxQtyBase = useMemo(() => {
     const p = num(effectivePrice, null);
-    if (side === "buy") {
-      if (!p) return 0;
-      return Math.max(0, num(balanceQuote, 0) / p);
-    }
-    return Math.max(0, num(balanceBase, 0));
+    if (!p) return 0;
+
+    return side === "buy"
+      ? Math.max(0, num(balanceQuote, 0) / p)
+      : Math.max(0, num(balanceBase, 0));
   }, [side, balanceQuote, balanceBase, effectivePrice]);
 
   const qtyFromPct = useMemo(() => {
@@ -162,7 +153,7 @@ export default function TradePanel({
   }, [qtyBase, effectivePrice]);
 
   /* =========================
-     Risk preview
+     Risk Preview (alleen bij TP/SL)
   ========================= */
   const riskPct = useMemo(() => {
     if (!useTpSl) return null;

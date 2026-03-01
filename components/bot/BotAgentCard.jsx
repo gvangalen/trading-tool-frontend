@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import BotDecisionCard from "@/components/bot/BotDecisionCard";
 import BotPortfolioCard from "@/components/bot/BotPortfolioCard";
-import BotTradeTable from "@/components/bot/BotTradeTable";
 import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
@@ -40,7 +39,7 @@ export default function BotAgentCard({
   onOpenSettings,
 
   onSaveTradePlan,
-  onPlaceManualOrder, // 🔥 BELANGRIJK: van BotPage
+  onPlaceManualOrder,
 }) {
   if (!bot) return null;
 
@@ -52,7 +51,6 @@ export default function BotAgentCard({
   const [saveError, setSaveError] = useState(null);
 
   const isAuto = bot?.mode === "auto";
-  const isPaused = bot?.is_active === false;
 
   /* ================= DATA ================= */
 
@@ -60,10 +58,41 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
   const statusLabel = (decision?.action || "OBSERVE").toUpperCase();
-  const confidence = decision?.confidence_label || decision?.confidence || "LOW";
+  const confidence =
+    decision?.confidence_label || decision?.confidence || "LOW";
 
   const exposureMultiplier =
-    decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
+    decision?.exposure_multiplier ??
+    bot?.strategy?.exposure_multiplier ??
+    1;
+
+  /* ================= MERGE TRADES + HISTORY ================= */
+
+  const combinedHistory = useMemo(() => {
+    const botHistory = (history || []).filter(
+      (h) => h.bot_id === bot.id
+    );
+
+    const tradeAsHistory = (trades || []).map((t) => ({
+      id: t.id,
+      bot_id: bot.id,
+      created_at: t.executed_at,
+      side: t.side,
+      qty: t.qty,
+      price: t.price,
+      amount_eur: t.amount_eur,
+      confidence: t.confidence || null,
+      status: "executed",
+      symbol: t.symbol,
+      mode: t.mode,
+    }));
+
+    return [...tradeAsHistory, ...botHistory].sort((a, b) => {
+      const d1 = new Date(a.created_at || a.date || 0);
+      const d2 = new Date(b.created_at || b.date || 0);
+      return d2 - d1;
+    });
+  }, [history, trades, bot.id]);
 
   /* ================= CLOSE SETTINGS ================= */
 
@@ -106,15 +135,17 @@ export default function BotAgentCard({
   };
 
   const risk =
-    riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
-    riskConfig.balanced;
+    riskConfig[
+      String(bot?.risk_profile || "balanced").toLowerCase()
+    ] || riskConfig.balanced;
 
   /* ================= SAVE TRADE PLAN ================= */
 
   const decisionId = decision?.id ?? decision?.decision_id ?? null;
   const botId = decision?.bot_id ?? bot?.id ?? null;
 
-  const canSavePlan = !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
+  const canSavePlan =
+    !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
 
   const handleSaveTradePlan = async (planDraft) => {
     if (!canSavePlan) return;
@@ -264,7 +295,6 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="flex-1 p-5 space-y-6">
-          {/* AI voorstel */}
           <TradePlanCard
             decision={decision}
             tradePlan={planSource}
@@ -273,28 +303,14 @@ export default function BotAgentCard({
             onSave={canSavePlan ? handleSaveTradePlan : undefined}
           />
 
-          {(savingPlan || saveError) && (
-            <div className="rounded-xl border bg-gray-50 p-3 text-sm">
-              {savingPlan ? (
-                <div>Opslaan…</div>
-              ) : (
-                <div className="text-red-600">Save failed: {saveError}</div>
-              )}
-            </div>
-          )}
-
-          {/* Manual Trade UI */}
           {!isAuto && (
             <TradePanelContainer
               bot={bot}
               decision={decision}
               portfolio={portfolio}
-              onManualTrade={handleManualTrade} // 🔥 HIER zit de wiring
+              onManualTrade={handleManualTrade}
             />
           )}
-
-          {/* Executed trades */}
-          <BotTradeTable trades={trades ?? []} />
         </div>
       </div>
 
@@ -310,10 +326,7 @@ export default function BotAgentCard({
 
         {showHistory && (
           <div className="pt-4">
-            <BotHistoryTable
-              history={history.filter((h) => h.bot_id === bot.id)}
-              compact
-            />
+            <BotHistoryTable history={combinedHistory} />
           </div>
         )}
       </div>

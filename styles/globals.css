@@ -545,9 +545,8 @@ textarea:focus {
 }
 
 /* =========================================================
-   TRADE PANEL THEME CLASSES (NEW)
-   Gebruik in TradePanel.jsx zodat je geen hardcoded colors hebt.
-   -> Je kunt later in 1x wisselen naar dark/light met .dark class
+   TRADE PANEL THEME CLASSES (UPDATED PRO VERSION)
+   Geen hardcoded kleuren – volledig theme driven
 ========================================================= */
 
 /* container */
@@ -572,12 +571,60 @@ textarea:focus {
   border-radius: var(--radius-lg);
 }
 
-/* tabs (limit/market/stop etc) */
+/* =========================================================
+   ORDER TYPE SEGMENT (LIMIT / MARKET / STOP)
+   Echte segmented control – geen pill badges meer
+========================================================= */
+
+.trade-order-type {
+  display: flex;
+  background: var(--trade-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  gap: 4px;
+}
+
+.trade-order-type .order-tab {
+  flex: 1;
+  padding: 0.55rem 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+
+  background: transparent;
+  color: var(--trade-muted);
+
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.trade-order-type .order-tab:hover {
+  background: var(--trade-surface-2);
+  color: var(--trade-text);
+}
+
+.trade-order-type .order-tab.active {
+  background: var(--card-bg);
+  color: var(--trade-text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* =========================================================
+   GENERIC SMALL TABS (zoals pullback/breakout)
+========================================================= */
+
 .trade-tab {
   background: var(--trade-tab-bg);
   color: var(--trade-tab-text);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
@@ -587,7 +634,10 @@ textarea:focus {
   border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
 }
 
-/* inputs */
+/* =========================================================
+   INPUTS
+========================================================= */
+
 .trade-input {
   background: var(--trade-input-bg);
   border: 1px solid var(--trade-input-border);
@@ -598,7 +648,9 @@ textarea:focus {
   transition: border var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.trade-input::placeholder { color: color-mix(in srgb, var(--trade-muted) 70%, transparent); }
+.trade-input::placeholder {
+  color: color-mix(in srgb, var(--trade-muted) 70%, transparent);
+}
 
 .trade-input:focus {
   outline: none;
@@ -606,13 +658,19 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--trade-focus-ring);
 }
 
-/* slider */
+/* =========================================================
+   SLIDER
+========================================================= */
+
 .trade-slider {
   width: 100%;
   accent-color: var(--trade-slider-accent);
 }
 
-/* buy/sell segmented buttons */
+/* =========================================================
+   BUY / SELL SEGMENT
+========================================================= */
+
 .trade-segment {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -638,7 +696,10 @@ textarea:focus {
   color: var(--trade-sell);
 }
 
-/* submit buttons */
+/* =========================================================
+   SUBMIT BUTTON
+========================================================= */
+
 .trade-submit {
   width: 100%;
   padding: 0.95rem 1rem;
@@ -663,7 +724,10 @@ textarea:focus {
   transform: none;
 }
 
-/* validation badges */
+/* =========================================================
+   VALIDATION BADGES
+========================================================= */
+
 .trade-badge-ok {
   background: var(--trade-badge-ok-bg);
   color: var(--trade-badge-ok-text);

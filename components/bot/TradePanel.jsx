@@ -68,47 +68,29 @@ export default function TradePanel({
   onSubmit,
 }) {
   const [side, setSide] = useState("buy");
-  const [orderType, setOrderType] = useState("limit"); // limit | market | stop
+
+  // 🔥 STOP vervangen door TPSL
+  const [orderType, setOrderType] = useState("limit"); // limit | market | tpsl
 
   const [orderPrice, setOrderPrice] = useState(num(price, 0));
-  const [stopTrigger, setStopTrigger] = useState("");
 
-  // slider percentage van max allocatie (quote bij buy, base bij sell)
   const [amountPct, setAmountPct] = useState(25);
-
-  // ✅ NEW: input mode (quote/base)
-  const [sizeMode, setSizeMode] = useState("quote"); // "quote" | "base"
-
-  // ✅ NEW: typed input
+  const [sizeMode, setSizeMode] = useState("quote");
   const [amountQuoteInput, setAmountQuoteInput] = useState("");
   const [amountBaseInput, setAmountBaseInput] = useState("");
 
-  // TP/SL
-  const [useTpSl, setUseTpSl] = useState(false);
+  // 🔥 TP/SL automatisch gekoppeld aan orderType
+  const useTpSl = orderType === "tpsl";
+
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
 
   /* =========================
-     Watch levels normalize
-  ========================= */
-  const pullback =
-    watchLevels?.pullback_zone ??
-    watchLevels?.pullback ??
-    watchLevels?.pb ??
-    null;
-
-  const breakout =
-    watchLevels?.breakout_trigger ??
-    watchLevels?.breakout ??
-    watchLevels?.bo ??
-    null;
-
-  /* =========================
-     Strategy derived TP/SL defaults
+     Strategy defaults
   ========================= */
   const strategyStop = useMemo(() => {
     const s = strategy?.stop_loss;
-    if (s == null) return null;
+    if (!s) return null;
     if (typeof s === "object") return num(s.price, null);
     return num(s, null);
   }, [strategy]);
@@ -117,7 +99,9 @@ export default function TradePanel({
     const t = strategy?.targets;
     if (!Array.isArray(t)) return [];
     return t
-      .map((x) => (typeof x === "object" ? num(x.price, null) : num(x, null)))
+      .map((x) =>
+        typeof x === "object" ? num(x.price, null) : num(x, null)
+      )
       .filter((x) => Number.isFinite(x));
   }, [strategy]);
 
@@ -129,18 +113,12 @@ export default function TradePanel({
     return num(orderPrice, null);
   }, [orderType, price, orderPrice]);
 
-  // init orderPrice bij price update
   useEffect(() => {
-    const p = num(price, null);
-    if (!Number.isFinite(p)) return;
-
-    setOrderPrice((prev) => {
-      if (orderType === "market") return p;
-      if (!prev || prev <= 0) return p;
-      return prev;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [price]);
+    if (useTpSl) {
+      if (strategyStop) setSlPrice(strategyStop);
+      if (strategyTargets[0]) setTpPrice(strategyTargets[0]);
+    }
+  }, [useTpSl, strategyStop, strategyTargets]);
 
   /* =========================
      Max qty base
@@ -148,57 +126,136 @@ export default function TradePanel({
   const maxQtyBase = useMemo(() => {
     const p = num(effectivePrice, null);
     if (side === "buy") {
-      if (!p || p <= 0) return 0;
+      if (!p) return 0;
       return Math.max(0, num(balanceQuote, 0) / p);
     }
     return Math.max(0, num(balanceBase, 0));
   }, [side, balanceQuote, balanceBase, effectivePrice]);
 
-  /* =========================
-     Qty from slider
-  ========================= */
   const qtyFromPct = useMemo(() => {
-    const pct = clamp(num(amountPct, 0), 0, 100);
-    return (maxQtyBase * pct) / 100;
+    return (maxQtyBase * clamp(amountPct, 0, 100)) / 100;
   }, [maxQtyBase, amountPct]);
-
-  /* =========================
-     Quantity base (final) + value quote (final)
-     - if user typed input: prefer typed input
-     - else use slider
-  ========================= */
-  const typedBase = num(amountBaseInput, null);
-  const typedQuote = num(amountQuoteInput, null);
 
   const qtyBase = useMemo(() => {
     const p = num(effectivePrice, null);
-    if (!p || p <= 0) return 0;
+    if (!p) return 0;
 
-    // Typed input has priority (only if it has content)
-    if (sizeMode === "base" && amountBaseInput !== "") {
-      return Math.max(0, num(typedBase, 0));
-    }
-    if (sizeMode === "quote" && amountQuoteInput !== "") {
-      return Math.max(0, num(typedQuote, 0) / p);
-    }
+    if (sizeMode === "base" && amountBaseInput !== "")
+      return Math.max(0, num(amountBaseInput, 0));
 
-    // fallback: slider
-    return Math.max(0, qtyFromPct);
+    if (sizeMode === "quote" && amountQuoteInput !== "")
+      return Math.max(0, num(amountQuoteInput, 0) / p);
+
+    return qtyFromPct;
   }, [
     effectivePrice,
     sizeMode,
     amountBaseInput,
     amountQuoteInput,
-    typedBase,
-    typedQuote,
     qtyFromPct,
   ]);
 
   const orderValueQuote = useMemo(() => {
     const p = num(effectivePrice, null);
-    if (!p || p <= 0) return null;
+    if (!p) return null;
     return qtyBase * p;
   }, [qtyBase, effectivePrice]);
+
+  /* =========================
+     Risk preview
+  ========================= */
+  const riskPct = useMemo(() => {
+    if (!useTpSl) return null;
+
+    const p = num(effectivePrice, null);
+    const sl = num(slPrice, null);
+    if (!p || !sl) return null;
+
+    const risk =
+      side === "buy"
+        ? ((p - sl) / p) * 100
+        : ((sl - p) / p) * 100;
+
+    return Math.abs(risk).toFixed(2);
+  }, [useTpSl, effectivePrice, slPrice, side]);
+
+  const rrRatio = useMemo(() => {
+    if (!useTpSl) return null;
+
+    const p = num(effectivePrice, null);
+    const sl = num(slPrice, null);
+    const tp = num(tpPrice, null);
+
+    if (!p || !sl || !tp) return null;
+
+    const reward = side === "buy" ? tp - p : p - tp;
+    const risk = side === "buy" ? p - sl : sl - p;
+
+    if (risk <= 0) return null;
+
+    return (reward / risk).toFixed(2);
+  }, [useTpSl, effectivePrice, slPrice, tpPrice, side]);
+
+  /* =========================
+     Validation
+  ========================= */
+  const validation = useMemo(() => {
+    const p = num(effectivePrice, null);
+    const q = num(qtyBase, null);
+
+    if (!p) return { ok: false, reason: "Geen geldige prijs" };
+    if (!q || q <= 0) return { ok: false, reason: "Aantal is 0" };
+
+    if (side === "buy" && orderValueQuote > balanceQuote)
+      return { ok: false, reason: "Onvoldoende saldo" };
+
+    if (side === "sell" && q > balanceBase)
+      return { ok: false, reason: "Onvoldoende BTC" };
+
+    if (useTpSl) {
+      const tp = num(tpPrice, null);
+      const sl = num(slPrice, null);
+
+      if (!tp || !sl)
+        return { ok: false, reason: "TP/SL verplicht" };
+
+      if (side === "buy" && !(tp > p && sl < p))
+        return { ok: false, reason: "TP/SL niet logisch" };
+
+      if (side === "sell" && !(tp < p && sl > p))
+        return { ok: false, reason: "TP/SL niet logisch" };
+    }
+
+    return { ok: true };
+  }, [
+    effectivePrice,
+    qtyBase,
+    orderValueQuote,
+    balanceQuote,
+    balanceBase,
+    useTpSl,
+    tpPrice,
+    slPrice,
+    side,
+  ]);
+
+  const canSubmit = validation.ok && !loading;
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+
+    onSubmit?.({
+      symbol,
+      side,
+      orderType,
+      quantity: qtyBase,
+      value_eur: orderValueQuote,
+      size_mode: sizeMode,
+      price: effectivePrice,
+      tp: useTpSl ? num(tpPrice, null) : null,
+      sl: useTpSl ? num(slPrice, null) : null,
+    });
+  };
 
   /* =========================
      Keep typed inputs in sync when slider moves

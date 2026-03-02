@@ -307,14 +307,15 @@ export default function TradePanel({
   /* =========================
      Submit
   ========================= */
-  const handleSubmit = () => {
-    if (!canSubmit) return;
+  const handleSubmit = async () => {
+  if (!canSubmit) return;
 
-    const p = num(effectivePrice, null);
-    const q = num(qtyBase, null);
-    const v = num(orderValueQuote, null);
+  const p = num(effectivePrice, null);
+  const q = num(qtyBase, null);
+  const v = num(orderValueQuote, null);
 
-    onSubmit?.({
+  try {
+    await onSubmit?.({
       symbol,
       side,
       orderType,
@@ -325,7 +326,18 @@ export default function TradePanel({
       tp: useTpSl ? num(tpPrice, null) : null,
       sl: useTpSl ? num(slPrice, null) : null,
     });
-  };
+
+    // ✅ RESET PANEL NA SUCCES
+    setAmountPct(25);
+    setAmountQuoteInput("");
+    setAmountBaseInput("");
+    setTpPrice("");
+    setSlPrice("");
+
+  } catch (err) {
+    // error wordt al via props afgehandeld
+  }
+};
 
   /* =========================
      UI

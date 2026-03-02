@@ -32,12 +32,11 @@ const fmtEur = (n) =>
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
-  }).format(n || 0);
+  }).format(Number(n || 0));
 
-const fmtBtc = (n) =>
-  `${Number(n || 0).toFixed(4)} BTC`;
+const fmtBtc = (n) => `${Number(n || 0).toFixed(4)} BTC`;
 
-const fmtPct = (n) => `${(n || 0).toFixed(1)}%`;
+const fmtPct = (n) => `${Number(n || 0).toFixed(1)}%`;
 
 function shortDate(ts, rangeKey) {
   const d = new Date(ts);
@@ -77,8 +76,7 @@ export default function PortfolioBalanceCard({
   const [range, setRange] = useState(defaultRange);
   const [mode, setMode] = useState("equity");
 
-  const rangeConfig =
-    RANGES.find((r) => r.key === range) || RANGES[1];
+  const rangeConfig = RANGES.find((r) => r.key === range) || RANGES[1];
 
   const { data, loading } = usePortfolioBalance({
     bucket: rangeConfig.bucket,
@@ -89,7 +87,7 @@ export default function PortfolioBalanceCard({
      SERIES (with fallback flatline)
   ===================================================== */
   const series = useMemo(() => {
-    if (data && data.length > 0) return data;
+    if (Array.isArray(data) && data.length > 0) return data;
 
     // fallback = flat line
     const now = new Date();
@@ -114,7 +112,7 @@ export default function PortfolioBalanceCard({
     }
 
     return points;
-  }, [data, rangeConfig]);
+  }, [data, rangeConfig.bucket, rangeConfig.limit]);
 
   const { last, delta, pct } = useMemo(
     () => calcDelta(series, mode),
@@ -129,7 +127,7 @@ export default function PortfolioBalanceCard({
   const chartData = useMemo(() => {
     return series.map((p) => ({
       ts: p.ts,
-      value: Number(p[mode] ?? 0),
+      value: Number(p?.[mode] ?? 0),
       label: shortDate(p.ts, range),
     }));
   }, [series, range, mode]);
@@ -145,19 +143,24 @@ export default function PortfolioBalanceCard({
     const max = Math.max(...values);
 
     if (min === max) {
-      const padding =
-        min === 0 ? 100 : Math.max(Math.abs(min) * 0.05, 1);
+      const padding = min === 0 ? 100 : Math.max(Math.abs(min) * 0.05, 1);
       return [min - padding, max + padding];
     }
 
-    const range = max - min;
-    const padding = range * 0.1;
+    const span = max - min;
+    const padding = span * 0.1;
 
     return [min - padding, max + padding];
   }, [chartData]);
 
-  const formatValue = (v) =>
-    mode === "btc_qty" ? fmtBtc(v) : fmtEur(v);
+  const formatValue = (v) => (mode === "btc_qty" ? fmtBtc(v) : fmtEur(v));
+
+  const yTickFormatter = (v) => {
+    const n = Number(v || 0);
+    if (mode === "btc_qty") return n.toFixed(2);
+    if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)}k`;
+    return `${Math.round(n)}`;
+  };
 
   return (
     <div className="card-surface p-6">
@@ -184,15 +187,16 @@ export default function PortfolioBalanceCard({
 
         {/* RANGE + MODE TOGGLES */}
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             {RANGES.map((r) => (
               <button
                 key={r.key}
+                type="button"
                 onClick={() => setRange(r.key)}
-                className={`px-3 py-1 rounded text-xs font-semibold ${
+                className={`px-3 py-1 rounded text-xs font-semibold border transition ${
                   range === r.key
-                    ? "bg-[var(--primary)] text-white"
-                    : "bg-[var(--surface-2)] text-[var(--text-dark)]"
+                    ? "bg-[var(--primary)] text-white border-transparent"
+                    : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
                 }`}
               >
                 {r.label}
@@ -200,15 +204,16 @@ export default function PortfolioBalanceCard({
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             {MODES.map((m) => (
               <button
                 key={m.key}
+                type="button"
                 onClick={() => setMode(m.key)}
-                className={`px-3 py-1 rounded text-xs font-semibold ${
+                className={`px-3 py-1 rounded text-xs font-semibold border transition ${
                   mode === m.key
-                    ? "bg-indigo-600 text-white"
-                    : "bg-[var(--surface-2)] text-[var(--text-dark)]"
+                    ? "bg-indigo-600 text-white border-transparent"
+                    : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
                 }`}
               >
                 {m.label}
@@ -225,11 +230,22 @@ export default function PortfolioBalanceCard({
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <AreaChart
+              data={chartData}
+              margin={{ left: 10, right: 10, top: 10, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.30}/>
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
+                  <stop
+                    offset="0%"
+                    stopColor="var(--primary)"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--primary)"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
 
@@ -240,13 +256,7 @@ export default function PortfolioBalanceCard({
                 axisLine={false}
                 tickLine={false}
                 width={60}
-                tickFormatter={(v) =>
-                  mode === "btc_qty"
-                    ? Number(v).toFixed(2)
-                    : v >= 1000
-                    ? `${Math.round(v / 1000)}k`
-                    : Math.round(v)
-                }
+                tickFormatter={yTickFormatter}
               />
 
               <Tooltip
@@ -255,7 +265,11 @@ export default function PortfolioBalanceCard({
                   background: "var(--surface-1)",
                   border: "1px solid var(--border)",
                   borderRadius: "12px",
+                  boxShadow: "var(--shadow-md)",
+                  color: "var(--text-dark)",
                 }}
+                labelStyle={{ color: "var(--text-light)" }}
+                labelFormatter={(l) => l}
               />
 
               <Area

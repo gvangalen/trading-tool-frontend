@@ -16,6 +16,7 @@ import {
   createBotConfig,
   updateBotConfig,
   deleteBotConfig,
+  createManualOrder as apiCreateManualOrder,
 } from "@/lib/api/botApi";
 
 /**
@@ -359,9 +360,37 @@ export default function useBotData() {
   );
 
   /* =====================================================
+   🔥 MANUAL ORDER (PAPER TRADE)
+===================================================== */
+
+const createManualOrder = useCallback(
+  async (payload) => {
+    setLoading((l) => ({ ...l, action: true }));
+    try {
+      const res = await apiCreateManualOrder(payload);
+
+      // 🔁 refresh relevante data
+      await Promise.all([
+        loadToday(),
+        loadPortfolios(),
+        loadTradesForBot(payload?.bot_id),
+      ]);
+
+      return res;
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Manual order mislukt");
+      throw err;
+    } finally {
+      setLoading((l) => ({ ...l, action: false }));
+    }
+  },
+  [loadToday, loadPortfolios, loadTradesForBot]
+);
+
+  /* =====================================================
      🔁 INIT LOAD
   ===================================================== */
-
   useEffect(() => {
     loadConfigs();
     loadToday();
@@ -369,10 +398,10 @@ export default function useBotData() {
     loadPortfolios();
   }, [loadConfigs, loadToday, loadHistory, loadPortfolios]);
 
+  
   /* =====================================================
      📤 EXPORT
   ===================================================== */
-
   return {
     configs,
     today,
@@ -400,5 +429,6 @@ export default function useBotData() {
 
     // ✅ NEW: save handler voor TradePlanCard
     saveTradePlanForDecision,
+    createManualOrder,
   };
 }

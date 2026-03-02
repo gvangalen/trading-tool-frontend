@@ -39,11 +39,8 @@ export default function TradePanelContainer({
     const totalBudget = Number(portfolio?.budget?.total_eur ?? 0);
     const dailyLimit = Number(portfolio?.budget?.daily_limit_eur ?? 0);
 
-    const invested =
-      Number(portfolio?.stats?.invested_eur ?? 0);
-
-    const spentToday =
-      Number(portfolio?.stats?.spent_today_eur ?? 0);
+    const invested = Number(portfolio?.stats?.invested_eur ?? 0);
+    const spentToday = Number(portfolio?.stats?.today_spent_eur ?? 0);
 
     const remainingTotal = Math.max(totalBudget - invested, 0);
     const remainingDaily = Math.max(dailyLimit - spentToday, 0);
@@ -54,8 +51,7 @@ export default function TradePanelContainer({
         : remainingTotal;
 
     setBalanceQuote(availableManual);
-
-    setBalanceBase(Number(portfolio?.btc_balance ?? 0));
+    setBalanceBase(Number(portfolio?.stats?.net_qty ?? 0));
 
     loadPlan();
     loadPrice();
@@ -108,29 +104,34 @@ export default function TradePanelContainer({
       let quantity = Number(order.quantity ?? 0);
       let valueEur = Number(order.value_eur ?? 0);
 
+      // If user entered EUR amount
       if (order.size_mode === "quote") {
         quantity = valueEur / effectivePrice;
       } else {
         valueEur = quantity * effectivePrice;
       }
 
+      // Safety check
+      if (!quantity || quantity <= 0) {
+        throw new Error("Quantity is verplicht");
+      }
+
+      // Budget check (buy)
       if (order.side === "buy" && valueEur > balanceQuote) {
         throw new Error("Onvoldoende budget");
       }
 
+      // BTC check (sell)
       if (order.side === "sell" && quantity > balanceBase) {
         throw new Error("Onvoldoende BTC");
       }
 
       await createManualOrder({
         bot_id: botId,
-        decision_id: decisionId,
         symbol: "BTC",
         side: order.side,
-        order_type: order.orderType,
+        quantity: quantity,
         price: effectivePrice,
-        quantity_btc: quantity,
-        value_eur: valueEur,
       });
 
       onManualTrade?.(order);

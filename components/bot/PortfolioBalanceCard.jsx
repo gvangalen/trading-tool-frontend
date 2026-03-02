@@ -20,6 +20,13 @@ const RANGES = [
   { key: "ALL", label: "ALL", bucket: "1d", limit: 2000 },
 ];
 
+const MODES = [
+  { key: "equity", label: "Equity" },
+  { key: "cash", label: "Cash" },
+  { key: "btc_value", label: "BTC Value" },
+  { key: "btc_qty", label: "BTC Qty" },
+];
+
 const fmtEur = (n) =>
   new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -27,17 +34,22 @@ const fmtEur = (n) =>
     maximumFractionDigits: 0,
   }).format(n || 0);
 
+const fmtBtc = (n) =>
+  `${Number(n || 0).toFixed(4)} BTC`;
+
 const fmtPct = (n) => `${(n || 0).toFixed(1)}%`;
 
-function calcDelta(series) {
-  if (!Array.isArray(series) || series.length < 2) {
-    return { last: 0, deltaEur: 0, deltaPct: 0 };
+function calcDelta(series, mode) {
+  if (!series || series.length < 2) {
+    return { last: 0, delta: 0, pct: 0 };
   }
-  const first = Number(series[0]?.equity ?? 0);
-  const last = Number(series[series.length - 1]?.equity ?? 0);
-  const deltaEur = last - first;
-  const deltaPct = first > 0 ? (deltaEur / first) * 100 : 0;
-  return { last, deltaEur, deltaPct };
+
+  const first = Number(series[0]?.[mode] ?? 0);
+  const last = Number(series[series.length - 1]?.[mode] ?? 0);
+  const delta = last - first;
+  const pct = first !== 0 ? (delta / first) * 100 : 0;
+
+  return { last, delta, pct };
 }
 
 function shortDate(ts, rangeKey) {
@@ -57,9 +69,9 @@ function shortDate(ts, rangeKey) {
 export default function PortfolioBalanceCard({
   defaultRange = "1W",
   title = "Portfolio balance",
-  currencyLabel = "EUR",
 }) {
   const [range, setRange] = useState(defaultRange);
+  const [mode, setMode] = useState("equity");
 
   const rangeConfig =
     RANGES.find((r) => r.key === range) || RANGES[1];
@@ -69,175 +81,115 @@ export default function PortfolioBalanceCard({
     limit: rangeConfig.limit,
   });
 
-  /* =====================================================
-     SERIES (fallback flat line)
-  ===================================================== */
-  const series = useMemo(() => {
-    if (data && data.length > 0) return data;
+  const series = data || [];
 
-    const now = new Date();
-    const points = [];
-
-    for (let i = rangeConfig.limit - 1; i >= 0; i--) {
-      const d = new Date(now);
-
-      if (rangeConfig.bucket === "1h") {
-        d.setHours(now.getHours() - i);
-      } else {
-        d.setDate(now.getDate() - i);
-      }
-
-      points.push({
-        ts: d.toISOString(),
-        equity: 0,
-      });
-    }
-
-    return points;
-  }, [data, rangeConfig]);
-
-  const { last, deltaEur, deltaPct } = useMemo(
-    () => calcDelta(series),
-    [series]
+  const { last, delta, pct } = useMemo(
+    () => calcDelta(series, mode),
+    [series, mode]
   );
 
-  const isDown = deltaEur < 0;
+  const isDown = delta < 0;
 
   const chartData = useMemo(() => {
     return series.map((p) => ({
       ts: p.ts,
-      equity: Number(p.equity ?? 0),
+      value: Number(p[mode] ?? 0),
       label: shortDate(p.ts, range),
     }));
-  }, [series, range]);
+  }, [series, range, mode]);
 
-  /* =====================================================
-     🔥 FLATLINE PROTECTION
-  ===================================================== */
   const yDomain = useMemo(() => {
     if (!chartData.length) return ["auto", "auto"];
-
-    const values = chartData.map((d) => d.equity);
+    const values = chartData.map((d) => d.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
 
-    // If flat line (min === max)
     if (min === max) {
-      const padding =
-        min === 0 ? 100 : Math.max(Math.abs(min) * 0.05, 1);
-
-      return [min - padding, max + padding];
+      const pad = min === 0 ? 100 : Math.abs(min) * 0.05;
+      return [min - pad, max + pad];
     }
 
-    const range = max - min;
-    const padding = range * 0.1;
-
-    return [min - padding, max + padding];
+    const pad = (max - min) * 0.1;
+    return [min - pad, max + pad];
   }, [chartData]);
+
+  const formatValue = (v) =>
+    mode === "btc_qty" ? fmtBtc(v) : fmtEur(v);
 
   return (
     <div className="card-surface p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <div className="text-sm font-semibold text-[var(--text-dark)]">
+          <div className="text-sm font-semibold">
             {title}
           </div>
 
-          <div className="text-4xl font-semibold text-[var(--text-dark)] tracking-tight">
-            {fmtEur(last)}
+          <div className="text-4xl font-semibold tracking-tight">
+            {formatValue(last)}
           </div>
 
           <div
             className={`text-sm font-semibold ${
-              isDown
-                ? "text-[var(--score-sell)]"
-                : "text-[var(--score-strong-buy)]"
+              isDown ? "text-red-500" : "text-green-500"
             }`}
           >
-            {isDown ? "↘" : "↗"} {fmtPct(deltaPct)} ({fmtEur(deltaEur)})
+            {isDown ? "↘" : "↗"} {fmtPct(pct)} ({formatValue(delta)})
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {RANGES.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              onClick={() => setRange(r.key)}
-              className={`px-3 py-1 rounded-[var(--radius-sm)] text-xs font-semibold border transition ${
-                range === r.key
-                  ? "bg-[var(--primary)] text-white border-transparent"
-                  : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            {RANGES.map((r) => (
+              <button
+                key={r.key}
+                onClick={() => setRange(r.key)}
+                className={`px-3 py-1 text-xs rounded ${
+                  range === r.key
+                    ? "bg-indigo-600 text-white"
+                    : "bg-zinc-800 text-zinc-400"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            {MODES.map((m) => (
+              <button
+                key={m.key}
+                onClick={() => setMode(m.key)}
+                className={`px-3 py-1 text-xs rounded ${
+                  mode === m.key
+                    ? "bg-indigo-500 text-white"
+                    : "bg-zinc-800 text-zinc-400"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="mt-6 h-[240px]">
         {loading ? (
-          <div className="h-full flex items-center justify-center text-sm text-[var(--text-light)]">
+          <div className="flex items-center justify-center h-full text-sm">
             Laden...
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={chartData}
-              margin={{ left: 10, right: 10, top: 10, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.30}/>
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 12, fill: "var(--text-muted)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-
-              <YAxis
-                domain={yDomain}
-                tick={{ fontSize: 12, fill: "var(--text-muted)" }}
-                axisLine={false}
-                tickLine={false}
-                width={55}
-                tickFormatter={(v) =>
-                  v >= 1000
-                    ? `${Math.round(v / 1000)}k`
-                    : Math.round(v)
-                }
-              />
-
-              <Tooltip
-                contentStyle={{
-                  background: "var(--surface-1)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "12px",
-                  boxShadow: "var(--shadow-md)",
-                  color: "var(--text-dark)",
-                }}
-                labelStyle={{ color: "var(--text-light)" }}
-                formatter={(v) => [
-                  fmtEur(Number(v)),
-                  currencyLabel,
-                ]}
-                labelFormatter={(l) => l}
-              />
-
+            <AreaChart data={chartData}>
+              <XAxis dataKey="label" />
+              <YAxis domain={yDomain} />
+              <Tooltip formatter={(v) => formatValue(v)} />
               <Area
                 type="monotone"
-                dataKey="equity"
-                stroke="var(--primary)"
-                strokeWidth={2}
-                fill="url(#balanceFill)"
+                dataKey="value"
+                stroke="#6366f1"
+                fillOpacity={0.2}
+                fill="#6366f1"
                 dot={false}
-                activeDot={{ r: 4 }}
               />
             </AreaChart>
           </ResponsiveContainer>

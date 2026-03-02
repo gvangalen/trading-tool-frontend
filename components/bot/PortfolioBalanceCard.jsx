@@ -39,19 +39,6 @@ const fmtBtc = (n) =>
 
 const fmtPct = (n) => `${(n || 0).toFixed(1)}%`;
 
-function calcDelta(series, mode) {
-  if (!series || series.length < 2) {
-    return { last: 0, delta: 0, pct: 0 };
-  }
-
-  const first = Number(series[0]?.[mode] ?? 0);
-  const last = Number(series[series.length - 1]?.[mode] ?? 0);
-  const delta = last - first;
-  const pct = first !== 0 ? (delta / first) * 100 : 0;
-
-  return { last, delta, pct };
-}
-
 function shortDate(ts, rangeKey) {
   const d = new Date(ts);
   if (rangeKey === "1D") {
@@ -64,6 +51,23 @@ function shortDate(ts, rangeKey) {
     day: "2-digit",
     month: "short",
   });
+}
+
+/* =====================================================
+   GENERIC DELTA CALCULATION (mode aware)
+===================================================== */
+function calcDelta(series, mode) {
+  if (!Array.isArray(series) || series.length < 2) {
+    return { last: 0, delta: 0, pct: 0 };
+  }
+
+  const first = Number(series[0]?.[mode] ?? 0);
+  const last = Number(series[series.length - 1]?.[mode] ?? 0);
+
+  const delta = last - first;
+  const pct = first !== 0 ? (delta / first) * 100 : 0;
+
+  return { last, delta, pct };
 }
 
 export default function PortfolioBalanceCard({
@@ -81,7 +85,36 @@ export default function PortfolioBalanceCard({
     limit: rangeConfig.limit,
   });
 
-  const series = data || [];
+  /* =====================================================
+     SERIES (with fallback flatline)
+  ===================================================== */
+  const series = useMemo(() => {
+    if (data && data.length > 0) return data;
+
+    // fallback = flat line
+    const now = new Date();
+    const points = [];
+
+    for (let i = rangeConfig.limit - 1; i >= 0; i--) {
+      const d = new Date(now);
+
+      if (rangeConfig.bucket === "1h") {
+        d.setHours(now.getHours() - i);
+      } else {
+        d.setDate(now.getDate() - i);
+      }
+
+      points.push({
+        ts: d.toISOString(),
+        equity: 0,
+        cash: 0,
+        btc_value: 0,
+        btc_qty: 0,
+      });
+    }
+
+    return points;
+  }, [data, rangeConfig]);
 
   const { last, delta, pct } = useMemo(
     () => calcDelta(series, mode),
@@ -90,6 +123,9 @@ export default function PortfolioBalanceCard({
 
   const isDown = delta < 0;
 
+  /* =====================================================
+     CHART DATA (mode driven)
+  ===================================================== */
   const chartData = useMemo(() => {
     return series.map((p) => ({
       ts: p.ts,
@@ -98,19 +134,26 @@ export default function PortfolioBalanceCard({
     }));
   }, [series, range, mode]);
 
+  /* =====================================================
+     Y DOMAIN (mode safe)
+  ===================================================== */
   const yDomain = useMemo(() => {
     if (!chartData.length) return ["auto", "auto"];
+
     const values = chartData.map((d) => d.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
 
     if (min === max) {
-      const pad = min === 0 ? 100 : Math.abs(min) * 0.05;
-      return [min - pad, max + pad];
+      const padding =
+        min === 0 ? 100 : Math.max(Math.abs(min) * 0.05, 1);
+      return [min - padding, max + padding];
     }
 
-    const pad = (max - min) * 0.1;
-    return [min - pad, max + pad];
+    const range = max - min;
+    const padding = range * 0.1;
+
+    return [min - padding, max + padding];
   }, [chartData]);
 
   const formatValue = (v) =>
@@ -120,33 +163,36 @@ export default function PortfolioBalanceCard({
     <div className="card-surface p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <div className="text-sm font-semibold">
+          <div className="text-sm font-semibold text-[var(--text-dark)]">
             {title}
           </div>
 
-          <div className="text-4xl font-semibold tracking-tight">
+          <div className="text-4xl font-semibold tracking-tight text-[var(--text-dark)]">
             {formatValue(last)}
           </div>
 
           <div
             className={`text-sm font-semibold ${
-              isDown ? "text-red-500" : "text-green-500"
+              isDown
+                ? "text-[var(--score-sell)]"
+                : "text-[var(--score-strong-buy)]"
             }`}
           >
             {isDown ? "↘" : "↗"} {fmtPct(pct)} ({formatValue(delta)})
           </div>
         </div>
 
+        {/* RANGE + MODE TOGGLES */}
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             {RANGES.map((r) => (
               <button
                 key={r.key}
                 onClick={() => setRange(r.key)}
-                className={`px-3 py-1 text-xs rounded ${
+                className={`px-3 py-1 rounded text-xs font-semibold ${
                   range === r.key
-                    ? "bg-indigo-600 text-white"
-                    : "bg-zinc-800 text-zinc-400"
+                    ? "bg-[var(--primary)] text-white"
+                    : "bg-[var(--surface-2)] text-[var(--text-dark)]"
                 }`}
               >
                 {r.label}
@@ -159,10 +205,10 @@ export default function PortfolioBalanceCard({
               <button
                 key={m.key}
                 onClick={() => setMode(m.key)}
-                className={`px-3 py-1 text-xs rounded ${
+                className={`px-3 py-1 rounded text-xs font-semibold ${
                   mode === m.key
-                    ? "bg-indigo-500 text-white"
-                    : "bg-zinc-800 text-zinc-400"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-[var(--surface-2)] text-[var(--text-dark)]"
                 }`}
               >
                 {m.label}
@@ -174,22 +220,52 @@ export default function PortfolioBalanceCard({
 
       <div className="mt-6 h-[240px]">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-sm">
+          <div className="flex items-center justify-center h-full text-sm text-[var(--text-light)]">
             Laden...
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
-              <XAxis dataKey="label" />
-              <YAxis domain={yDomain} />
-              <Tooltip formatter={(v) => formatValue(v)} />
+              <defs>
+                <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.30}/>
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+
+              <XAxis dataKey="label" axisLine={false} tickLine={false} />
+
+              <YAxis
+                domain={yDomain}
+                axisLine={false}
+                tickLine={false}
+                width={60}
+                tickFormatter={(v) =>
+                  mode === "btc_qty"
+                    ? Number(v).toFixed(2)
+                    : v >= 1000
+                    ? `${Math.round(v / 1000)}k`
+                    : Math.round(v)
+                }
+              />
+
+              <Tooltip
+                formatter={(v) => formatValue(v)}
+                contentStyle={{
+                  background: "var(--surface-1)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "12px",
+                }}
+              />
+
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#6366f1"
-                fillOpacity={0.2}
-                fill="#6366f1"
+                stroke="var(--primary)"
+                strokeWidth={2}
+                fill="url(#balanceFill)"
                 dot={false}
+                activeDot={{ r: 4 }}
               />
             </AreaChart>
           </ResponsiveContainer>

@@ -12,6 +12,9 @@ import {
 
 import usePortfolioBalance from "@/hooks/usePortfolioBalance";
 
+/* =====================================================
+   RANGE CONFIG
+===================================================== */
 const RANGES = [
   { key: "1D", label: "1D", bucket: "1h", limit: 24 },
   { key: "1W", label: "1W", bucket: "1h", limit: 24 * 7 },
@@ -20,13 +23,21 @@ const RANGES = [
   { key: "ALL", label: "ALL", bucket: "1d", limit: 2000 },
 ];
 
+/* =====================================================
+   6 PROFESSIONAL METRICS
+===================================================== */
 const MODES = [
   { key: "equity", label: "Equity" },
   { key: "cash", label: "Cash" },
   { key: "btc_value", label: "BTC Value" },
   { key: "btc_qty", label: "BTC Qty" },
+  { key: "invested", label: "Invested" },
+  { key: "unrealized_pnl", label: "Unrealized PnL" },
 ];
 
+/* =====================================================
+   FORMATTERS
+===================================================== */
 const fmtEur = (n) =>
   new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -53,7 +64,7 @@ function shortDate(ts, rangeKey) {
 }
 
 /* =====================================================
-   GENERIC DELTA CALCULATION (mode aware)
+   GENERIC DELTA CALC
 ===================================================== */
 function calcDelta(series, mode) {
   if (!Array.isArray(series) || series.length < 2) {
@@ -84,12 +95,11 @@ export default function PortfolioBalanceCard({
   });
 
   /* =====================================================
-     SERIES (with fallback flatline)
+     SERIES (fallback safe)
   ===================================================== */
   const series = useMemo(() => {
     if (Array.isArray(data) && data.length > 0) return data;
 
-    // fallback = flat line
     const now = new Date();
     const points = [];
 
@@ -108,6 +118,8 @@ export default function PortfolioBalanceCard({
         cash: 0,
         btc_value: 0,
         btc_qty: 0,
+        invested: 0,
+        unrealized_pnl: 0,
       });
     }
 
@@ -122,7 +134,7 @@ export default function PortfolioBalanceCard({
   const isDown = delta < 0;
 
   /* =====================================================
-     CHART DATA (mode driven)
+     CHART DATA
   ===================================================== */
   const chartData = useMemo(() => {
     return series.map((p) => ({
@@ -133,7 +145,7 @@ export default function PortfolioBalanceCard({
   }, [series, range, mode]);
 
   /* =====================================================
-     Y DOMAIN (mode safe)
+     Y DOMAIN AUTO-SAFE
   ===================================================== */
   const yDomain = useMemo(() => {
     if (!chartData.length) return ["auto", "auto"];
@@ -153,15 +165,27 @@ export default function PortfolioBalanceCard({
     return [min - padding, max + padding];
   }, [chartData]);
 
-  const formatValue = (v) => (mode === "btc_qty" ? fmtBtc(v) : fmtEur(v));
+  /* =====================================================
+     VALUE FORMAT MODE-AWARE
+  ===================================================== */
+  const formatValue = (v) => {
+    if (mode === "btc_qty") return fmtBtc(v);
+    return fmtEur(v);
+  };
 
   const yTickFormatter = (v) => {
     const n = Number(v || 0);
+
     if (mode === "btc_qty") return n.toFixed(2);
+
     if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)}k`;
+
     return `${Math.round(n)}`;
   };
 
+  /* =====================================================
+     UI
+  ===================================================== */
   return (
     <div className="card-surface p-6">
       <div className="flex items-start justify-between gap-4">
@@ -185,7 +209,7 @@ export default function PortfolioBalanceCard({
           </div>
         </div>
 
-        {/* RANGE + MODE TOGGLES */}
+        {/* RANGE + MODE */}
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 flex-wrap justify-end">
             {RANGES.map((r) => (
@@ -236,16 +260,8 @@ export default function PortfolioBalanceCard({
             >
               <defs>
                 <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                 </linearGradient>
               </defs>
 

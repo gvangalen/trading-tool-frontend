@@ -14,20 +14,34 @@ import BotBudgetForm from "@/components/bot/BotBudgetForm";
 import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
+// ✅ NEW (global active bot)
+import {
+  ActiveBotProvider,
+  useActiveBot,
+} from "@/context/ActiveBotContext";
+
+// ✅ NEW (global trade panel right column)
+import GlobalTradePanel from "@/components/bot/GlobalTradePanel";
+
 /**
- * BotPage — TradeLayer 2.6 (COMPLETE / WIRED)
+ * BotPage — TradeLayer 2.6 (GLOBAL TRADE PANEL)
  *
- * - Backend = single source of truth
- * - Trades komen EXCLUSIEF uit bot_ledger
- * - UI is puur renderlaag
- *
- * Updates:
- * ✅ saveTradePlanForDecision wiring (BotAgentCard -> BotPage -> hook)
- * ✅ createManualOrder wiring (BotAgentCard -> BotPage -> hook)
- * ✅ placingOrderBotId loading state
- * ✅ handleOpenBotSettings aanwezig (crash fix)
+ * - 1 TradePanel rechts voor alle bots
+ * - Active bot via context
+ * - Bot cards zijn puur info/select (geen trade panel per bot)
  */
 export default function BotPage() {
+  return (
+    <ActiveBotProvider>
+      <BotPageInner />
+    </ActiveBotProvider>
+  );
+}
+
+/* =====================================================
+   INNER (zodat we useActiveBot kunnen gebruiken)
+===================================================== */
+function BotPageInner() {
   /* =====================================================
      🧠 MODAL / FEEDBACK
   ===================================================== */
@@ -36,11 +50,16 @@ export default function BotPage() {
   const budgetRef = useRef({});
 
   /* =====================================================
+     🧠 ACTIVE BOT (GLOBAL)
+  ===================================================== */
+  const { activeBot, setActiveBot } = useActiveBot();
+
+  /* =====================================================
      🧠 UI STATE
   ===================================================== */
   const [generatingBotId, setGeneratingBotId] = useState(null);
   const [executingBotId, setExecutingBotId] = useState(null);
-  const [placingOrderBotId, setPlacingOrderBotId] = useState(null); // 🔥 NEW
+  const [placingOrderBotId, setPlacingOrderBotId] = useState(null);
 
   /* =====================================================
      🤖 BOT DATA (BACKEND LEIDEND)
@@ -63,10 +82,7 @@ export default function BotPage() {
     executeBot,
     skipBot,
 
-    // ✅ save trade plan
     saveTradePlanForDecision,
-
-    // ✅ manual paper trade (moet bestaan in hook)
     createManualOrder,
   } = useBotData();
 
@@ -78,6 +94,15 @@ export default function BotPage() {
   useEffect(() => {
     loadStrategies();
   }, [loadStrategies]);
+
+  /* =====================================================
+     ✅ AUTO-SELECT FIRST BOT (nice UX)
+  ===================================================== */
+  useEffect(() => {
+    if (activeBot?.id) return;
+    if (!Array.isArray(bots) || bots.length === 0) return;
+    setActiveBot(bots[0]);
+  }, [bots, activeBot?.id, setActiveBot]);
 
   /* =====================================================
      🌍 GLOBAL SCORES
@@ -144,7 +169,6 @@ export default function BotPage() {
       };
     }
 
-    // fallback: probeer uit history te detecteren (oude payloads)
     const detected = (Array.isArray(history) ? history : [])
       .map((p) => {
         const ts = p?.ts || p?.timestamp || p?.date || null;
@@ -163,19 +187,11 @@ export default function BotPage() {
       .filter((p) => p.ts && p.value_eur !== null);
 
     if (detected.length >= 2) {
-      return {
-        "1D": detected,
-        "1W": detected,
-        "1M": detected,
-        "1Y": detected,
-        ALL: detected,
-      };
+      return { "1D": detected, "1W": detected, "1M": detected, "1Y": detected, ALL: detected };
     }
 
-    // fallback: single point
     const now = new Date().toISOString();
     const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
-
     return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
   }, [today, history, totalPortfolioValueEur]);
 
@@ -214,7 +230,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🔥 MANUAL PAPER TRADE
+     🔥 MANUAL PAPER TRADE (GLOBAL PANEL calls this via BotAgentCard props OR directly later)
   ===================================================== */
   const handleManualTrade = async (payload) => {
     if (!createManualOrder) {
@@ -236,7 +252,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ▶️ EXECUTE BOT (decision_id meegeven)
+     ▶️ EXECUTE BOT
   ===================================================== */
   const handleExecuteBot = async ({ bot_id }) => {
     try {
@@ -306,7 +322,7 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     ⚙️ BOT SETTINGS ROUTER (BELANGRIJK!)
+     ⚙️ BOT SETTINGS ROUTER
   ===================================================== */
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;
@@ -402,65 +418,90 @@ export default function BotPage() {
   };
 
   /* =====================================================
-     🧠 PAGE
+     🧠 PAGE LAYOUT (2 COLUMNS)
   ===================================================== */
   return (
-    <div className="bg-[var(--bg)] pt-6 pb-10 space-y-10 animate-fade-slide">
-      <div className="flex items-center gap-3">
-        <Wallet className="icon icon-primary" />
-        <h1 className="text-2xl font-semibold">Portfolio Management</h1>
-      </div>
+    <div className="bg-[var(--bg)] pt-6 pb-10 animate-fade-slide">
+      <div className="max-w-[1400px] mx-auto px-4 space-y-10">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Wallet className="icon icon-primary" />
+          <h1 className="text-2xl font-semibold">Portfolio Management</h1>
+        </div>
 
-      <BotScores scores={dailyScores} loading={loading?.today} />
+        {/* Top: global scores + balance + overview */}
+        <BotScores scores={dailyScores} loading={loading?.today} />
 
-      <PortfolioBalanceCard
-        title="Portfolio balance"
-        defaultRange="1W"
-        dataByRange={portfolioBalanceDataByRange}
-      />
+        <PortfolioBalanceCard
+          title="Portfolio balance"
+          defaultRange="1W"
+          dataByRange={portfolioBalanceDataByRange}
+        />
 
-      <BotPortfolioOverview bots={aggregatedBotsForOverview} />
+        <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Bots</h2>
-        <button
-          onClick={handleAddBot}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Nieuwe bot
-        </button>
-      </div>
+        {/* Bots header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Bots</h2>
+          <button
+            onClick={handleAddBot}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Nieuwe bot
+          </button>
+        </div>
 
-      <div className="space-y-6">
-        {(bots || []).map((bot) => {
-          const portfolio = (portfolios || []).find((p) => p.bot_id === bot.id) ?? null;
-          const decision = decisionsByBot?.[bot.id] ?? null;
-          const trades = tradesByBot?.[bot.id] ?? [];
+        {/* 2-col layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
+          {/* LEFT: bot cards */}
+          <div className="space-y-6">
+            {(bots || []).map((bot) => {
+              const portfolio =
+                (portfolios || []).find((p) => p.bot_id === bot.id) ?? null;
+              const decision = decisionsByBot?.[bot.id] ?? null;
+              const trades = tradesByBot?.[bot.id] ?? [];
 
-          const isLoadingThisBot =
-            generatingBotId === bot.id ||
-            executingBotId === bot.id ||
-            placingOrderBotId === bot.id;
+              const isLoadingThisBot =
+                generatingBotId === bot.id ||
+                executingBotId === bot.id ||
+                placingOrderBotId === bot.id;
 
-          return (
-            <BotAgentCard
-              key={bot.id}
-              bot={bot}
-              decision={decision}
-              portfolio={portfolio}
-              trades={trades}
-              history={history ?? []}
-              loadingDecision={isLoadingThisBot}
-              onGenerate={() => handleGenerateDecision(bot)}
-              onExecute={handleExecuteBot}
-              onSkip={handleSkipBot}
-              onOpenSettings={handleOpenBotSettings}
-              onSaveTradePlan={handleSaveTradePlan}
-              onPlaceManualOrder={handleManualTrade}
-            />
-          );
-        })}
+              const isActive = activeBot?.id === bot.id;
+
+              return (
+                <div
+                  key={bot.id}
+                  onClick={() => setActiveBot(bot)}
+                  className={`cursor-pointer transition ${
+                    isActive ? "ring-2 ring-[var(--primary)] rounded-[var(--radius-lg)]" : ""
+                  }`}
+                >
+                  <BotAgentCard
+                    bot={bot}
+                    decision={decision}
+                    portfolio={portfolio}
+                    trades={trades}
+                    history={history ?? []}
+                    loadingDecision={isLoadingThisBot}
+                    onGenerate={() => handleGenerateDecision(bot)}
+                    onExecute={handleExecuteBot}
+                    onSkip={handleSkipBot}
+                    onOpenSettings={handleOpenBotSettings}
+                    onSaveTradePlan={handleSaveTradePlan}
+                    // ✅ later: trade panel calls this; for now keep wiring consistent
+                    onPlaceManualOrder={handleManualTrade}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* RIGHT: one global trade panel */}
+          <div className="lg:sticky lg:top-6 space-y-4">
+            <GlobalTradePanel />
+          </div>
+        </div>
       </div>
     </div>
   );

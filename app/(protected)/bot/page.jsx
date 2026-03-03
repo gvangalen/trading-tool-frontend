@@ -378,13 +378,25 @@ function BotPageInner() {
               const isActive = activeBot?.id === bot.id;
 
               return (
-                <div
-                  key={bot.id}
-                  onClick={() => setActiveBot(bot)}
-                  className={`cursor-pointer transition ${
-                    isActive ? "ring-2 ring-[var(--primary)] rounded-2xl" : ""
-                  }`}
-                >
+             <div
+               key={bot.id}
+               onClick={(e) => {
+                 if (
+                   e.target.closest("button") ||
+                   e.target.closest("input") ||
+                   e.target.closest("select") ||
+                   e.target.closest("textarea") ||
+                   e.target.closest("[data-no-select]")
+                 ) {
+                   return;
+                   }
+                  
+                   setActiveBot(bot);
+                 }}
+                 className={`cursor-pointer transition ${
+                   isActive ? "ring-2 ring-[var(--primary)] rounded-2xl" : ""
+                 }`}
+               >
                   <BotAgentCard
                     bot={bot}
                     decision={decision}

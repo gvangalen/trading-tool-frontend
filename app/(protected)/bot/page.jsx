@@ -15,17 +15,20 @@ import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 import GlobalTradePanel from "@/components/bot/GlobalTradePanel";
 
-import { ActiveBotProvider, useActiveBot } from "@/app/providers/ActiveBotProvider";
+import {
+  ActiveBotProvider,
+  useActiveBot,
+} from "@/app/providers/ActiveBotProvider";
 
 /* =====================================================
    INNER PAGE
 ===================================================== */
 function BotPageInner() {
   const { openConfirm, showSnackbar } = useModal();
-  const { activeBot, setActiveBot } = useActiveBot();
-
   const formRef = useRef({});
   const budgetRef = useRef({});
+
+  const { activeBot, setActiveBot } = useActiveBot();
 
   const [generatingBotId, setGeneratingBotId] = useState(null);
   const [executingBotId, setExecutingBotId] = useState(null);
@@ -80,6 +83,9 @@ function BotPageInner() {
     setup: 10,
   };
 
+  /* =========================
+     AGGREGATED PORTFOLIO
+  ========================= */
   const aggregatedBotsForOverview = useMemo(() => {
     return bots.map((bot) => {
       const p = portfolios.find((x) => x.bot_id === bot.id);
@@ -91,6 +97,55 @@ function BotPageInner() {
       };
     });
   }, [bots, portfolios]);
+
+  const totalPortfolioValueEur = useMemo(() => {
+    return portfolios.reduce((acc, p) => {
+      const v = Number(p?.stats?.position_value_eur ?? 0);
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+  }, [portfolios]);
+
+  const portfolioBalanceDataByRange = useMemo(() => {
+    const byRange =
+      today?.portfolio_balance_by_range ||
+      today?.portfolio_balance_history_by_range ||
+      null;
+
+    if (byRange && typeof byRange === "object") {
+      const normalizeSeries = (series) =>
+        (Array.isArray(series) ? series : [])
+          .map((p) => ({
+            ts: p?.ts || p?.timestamp || p?.date || null,
+            value_eur: Number(
+              p?.value_eur ??
+                p?.value ??
+                p?.balance_eur ??
+                p?.portfolio_value_eur ??
+                0
+            ),
+          }))
+          .filter((p) => p.ts && Number.isFinite(p.value_eur));
+
+      return {
+        "1D": normalizeSeries(byRange["1D"]),
+        "1W": normalizeSeries(byRange["1W"]),
+        "1M": normalizeSeries(byRange["1M"]),
+        "1Y": normalizeSeries(byRange["1Y"]),
+        ALL: normalizeSeries(byRange["ALL"] || byRange["all"]),
+      };
+    }
+
+    const now = new Date().toISOString();
+    const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
+
+    return {
+      "1D": single,
+      "1W": single,
+      "1M": single,
+      "1Y": single,
+      ALL: single,
+    };
+  }, [today, totalPortfolioValueEur]);
 
   /* =========================
      HANDLERS
@@ -189,20 +244,16 @@ function BotPageInner() {
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;
 
-    switch (type) {
-      case "delete":
-        openConfirm({
-          title: "🗑️ Bot verwijderen",
-          confirmVariant: "danger",
-          confirmText: "Verwijderen",
-          onConfirm: async () => {
-            await deleteBot(bot.id);
-            showSnackbar("Bot verwijderd", "danger");
-          },
-        });
-        break;
-      default:
-        break;
+    if (type === "delete") {
+      openConfirm({
+        title: "🗑️ Bot verwijderen",
+        confirmVariant: "danger",
+        confirmText: "Verwijderen",
+        onConfirm: async () => {
+          await deleteBot(bot.id);
+          showSnackbar("Bot verwijderd", "danger");
+        },
+      });
     }
   };
 
@@ -221,6 +272,12 @@ function BotPageInner() {
           </div>
 
           <BotScores scores={dailyScores} loading={loading?.today} />
+
+          <PortfolioBalanceCard
+            title="Portfolio balance"
+            defaultRange="1W"
+            dataByRange={portfolioBalanceDataByRange}
+          />
 
           <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
@@ -295,7 +352,7 @@ function BotPageInner() {
 }
 
 /* =====================================================
-   EXPORT PAGE
+   EXPORT
 ===================================================== */
 export default function BotPage() {
   return (

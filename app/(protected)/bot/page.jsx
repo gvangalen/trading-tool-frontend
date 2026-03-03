@@ -14,56 +14,23 @@ import BotBudgetForm from "@/components/bot/BotBudgetForm";
 import BotPortfolioOverview from "@/components/bot/BotPortfolioOverview";
 import PortfolioBalanceCard from "@/components/bot/PortfolioBalanceCard";
 
-// ✅ NEW (global active bot)
-import {
-  ActiveBotProvider,
-  useActiveBot,
-} from "@/context/ActiveBotContext";
-
-// ✅ NEW (global trade panel right column)
 import GlobalTradePanel from "@/components/bot/GlobalTradePanel";
-
-/**
- * BotPage — TradeLayer 2.6 (GLOBAL TRADE PANEL)
- *
- * - 1 TradePanel rechts voor alle bots
- * - Active bot via context
- * - Bot cards zijn puur info/select (geen trade panel per bot)
- */
-export default function BotPage() {
-  return (
-    <ActiveBotProvider>
-      <BotPageInner />
-    </ActiveBotProvider>
-  );
-}
+import { ActiveBotProvider, useActiveBot } from "@/app/providers/ActiveBotProvider";
 
 /* =====================================================
-   INNER (zodat we useActiveBot kunnen gebruiken)
+   INNER PAGE (zodat we useActiveBot kunnen gebruiken)
 ===================================================== */
 function BotPageInner() {
-  /* =====================================================
-     🧠 MODAL / FEEDBACK
-  ===================================================== */
   const { openConfirm, showSnackbar } = useModal();
   const formRef = useRef({});
   const budgetRef = useRef({});
 
-  /* =====================================================
-     🧠 ACTIVE BOT (GLOBAL)
-  ===================================================== */
   const { activeBot, setActiveBot } = useActiveBot();
 
-  /* =====================================================
-     🧠 UI STATE
-  ===================================================== */
   const [generatingBotId, setGeneratingBotId] = useState(null);
   const [executingBotId, setExecutingBotId] = useState(null);
   const [placingOrderBotId, setPlacingOrderBotId] = useState(null);
 
-  /* =====================================================
-     🤖 BOT DATA (BACKEND LEIDEND)
-  ===================================================== */
   const {
     configs: bots = [],
     today,
@@ -86,27 +53,11 @@ function BotPageInner() {
     createManualOrder,
   } = useBotData();
 
-  /* =====================================================
-     🧠 STRATEGIES
-  ===================================================== */
   const { strategies = [], loadStrategies } = useStrategyData();
-
   useEffect(() => {
     loadStrategies();
   }, [loadStrategies]);
 
-  /* =====================================================
-     ✅ AUTO-SELECT FIRST BOT (nice UX)
-  ===================================================== */
-  useEffect(() => {
-    if (activeBot?.id) return;
-    if (!Array.isArray(bots) || bots.length === 0) return;
-    setActiveBot(bots[0]);
-  }, [bots, activeBot?.id, setActiveBot]);
-
-  /* =====================================================
-     🌍 GLOBAL SCORES
-  ===================================================== */
   const dailyScores = today?.scores ?? {
     macro: 10,
     technical: 10,
@@ -114,9 +65,6 @@ function BotPageInner() {
     setup: 10,
   };
 
-  /* =====================================================
-     🧩 MERGE bots + portfolio (voor overview)
-  ===================================================== */
   const aggregatedBotsForOverview = useMemo(() => {
     return (bots || []).map((bot) => {
       const p = (portfolios || []).find((x) => x.bot_id === bot.id);
@@ -129,9 +77,6 @@ function BotPageInner() {
     });
   }, [bots, portfolios]);
 
-  /* =====================================================
-     📈 PORTFOLIO BALANCE (ALL BOTS)
-  ===================================================== */
   const totalPortfolioValueEur = useMemo(() => {
     return (portfolios || []).reduce((acc, p) => {
       const v = Number(p?.stats?.position_value_eur ?? 0);
@@ -195,9 +140,6 @@ function BotPageInner() {
     return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
   }, [today, history, totalPortfolioValueEur]);
 
-  /* =====================================================
-     🔁 GENERATE DECISION
-  ===================================================== */
   const handleGenerateDecision = async (bot) => {
     try {
       setGeneratingBotId(bot.id);
@@ -210,15 +152,11 @@ function BotPageInner() {
     }
   };
 
-  /* =====================================================
-     💾 SAVE TRADE PLAN
-  ===================================================== */
   const handleSaveTradePlan = async ({ bot_id, decision_id, draft }) => {
     if (!saveTradePlanForDecision) {
       showSnackbar("Save handler ontbreekt (hook)", "danger");
       return;
     }
-
     try {
       await saveTradePlanForDecision({ bot_id, decision_id, draft });
       showSnackbar("Trade plan opgeslagen", "success");
@@ -229,15 +167,12 @@ function BotPageInner() {
     }
   };
 
-  /* =====================================================
-     🔥 MANUAL PAPER TRADE (GLOBAL PANEL calls this via BotAgentCard props OR directly later)
-  ===================================================== */
+  // ✅ wordt nu gebruikt door GlobalTradePanel / TradePanel intern
   const handleManualTrade = async (payload) => {
     if (!createManualOrder) {
       showSnackbar("createManualOrder ontbreekt (hook)", "danger");
       return;
     }
-
     try {
       setPlacingOrderBotId(payload?.bot_id ?? null);
       await createManualOrder(payload);
@@ -251,9 +186,6 @@ function BotPageInner() {
     }
   };
 
-  /* =====================================================
-     ▶️ EXECUTE BOT
-  ===================================================== */
   const handleExecuteBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
@@ -277,9 +209,6 @@ function BotPageInner() {
     }
   };
 
-  /* =====================================================
-     ⏭️ SKIP BOT
-  ===================================================== */
   const handleSkipBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
@@ -294,19 +223,12 @@ function BotPageInner() {
     }
   };
 
-  /* =====================================================
-     ➕ ADD BOT
-  ===================================================== */
   const handleAddBot = () => {
     formRef.current = {};
-
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
-        <BotForm
-          strategies={strategies}
-          onChange={(v) => (formRef.current = v)}
-        />
+        <BotForm strategies={strategies} onChange={(v) => (formRef.current = v)} />
       ),
       confirmText: "Bot toevoegen",
       onConfirm: async () => {
@@ -314,16 +236,12 @@ function BotPageInner() {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
-
         await createBot(formRef.current);
         showSnackbar("Bot toegevoegd", "success");
       },
     });
   };
 
-  /* =====================================================
-     ⚙️ BOT SETTINGS ROUTER
-  ===================================================== */
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;
 
@@ -417,48 +335,38 @@ function BotPageInner() {
     }
   };
 
-  /* =====================================================
-     🧠 PAGE LAYOUT (2 COLUMNS)
-  ===================================================== */
   return (
     <div className="bg-[var(--bg)] pt-6 pb-10 animate-fade-slide">
-      <div className="max-w-[1400px] mx-auto px-4 space-y-10">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Wallet className="icon icon-primary" />
-          <h1 className="text-2xl font-semibold">Portfolio Management</h1>
-        </div>
+      {/* 2-koloms layout: links content, rechts tradepanel */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
+        {/* LEFT */}
+        <div className="space-y-10">
+          <div className="flex items-center gap-3">
+            <Wallet className="icon icon-primary" />
+            <h1 className="text-2xl font-semibold">Portfolio Management</h1>
+          </div>
 
-        {/* Top: global scores + balance + overview */}
-        <BotScores scores={dailyScores} loading={loading?.today} />
+          <BotScores scores={dailyScores} loading={loading?.today} />
 
-        <PortfolioBalanceCard
-          title="Portfolio balance"
-          defaultRange="1W"
-          dataByRange={portfolioBalanceDataByRange}
-        />
+          <PortfolioBalanceCard
+            title="Portfolio balance"
+            defaultRange="1W"
+            dataByRange={portfolioBalanceDataByRange}
+          />
 
-        <BotPortfolioOverview bots={aggregatedBotsForOverview} />
+          <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
-        {/* Bots header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Bots</h2>
-          <button
-            onClick={handleAddBot}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus size={16} />
-            Nieuwe bot
-          </button>
-        </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Bots</h2>
+            <button onClick={handleAddBot} className="btn-primary flex items-center gap-2">
+              <Plus size={16} />
+              Nieuwe bot
+            </button>
+          </div>
 
-        {/* 2-col layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
-          {/* LEFT: bot cards */}
           <div className="space-y-6">
             {(bots || []).map((bot) => {
-              const portfolio =
-                (portfolios || []).find((p) => p.bot_id === bot.id) ?? null;
+              const portfolio = (portfolios || []).find((p) => p.bot_id === bot.id) ?? null;
               const decision = decisionsByBot?.[bot.id] ?? null;
               const trades = tradesByBot?.[bot.id] ?? [];
 
@@ -474,7 +382,7 @@ function BotPageInner() {
                   key={bot.id}
                   onClick={() => setActiveBot(bot)}
                   className={`cursor-pointer transition ${
-                    isActive ? "ring-2 ring-[var(--primary)] rounded-[var(--radius-lg)]" : ""
+                    isActive ? "ring-2 ring-[var(--primary)] rounded-2xl" : ""
                   }`}
                 >
                   <BotAgentCard
@@ -489,20 +397,30 @@ function BotPageInner() {
                     onSkip={handleSkipBot}
                     onOpenSettings={handleOpenBotSettings}
                     onSaveTradePlan={handleSaveTradePlan}
-                    // ✅ later: trade panel calls this; for now keep wiring consistent
-                    onPlaceManualOrder={handleManualTrade}
+                    onPlaceManualOrder={handleManualTrade} // blijft voor compat / centrale panel gebruikt dit in jouw TradePanel
                   />
                 </div>
               );
             })}
           </div>
+        </div>
 
-          {/* RIGHT: one global trade panel */}
-          <div className="lg:sticky lg:top-6 space-y-4">
-            <GlobalTradePanel />
-          </div>
+        {/* RIGHT: sticky global trade panel */}
+        <div className="lg:sticky lg:top-6 space-y-4">
+          <GlobalTradePanel />
         </div>
       </div>
     </div>
+  );
+}
+
+/* =====================================================
+   EXPORT PAGE (met provider)
+===================================================== */
+export default function BotPage() {
+  return (
+    <ActiveBotProvider>
+      <BotPageInner />
+    </ActiveBotProvider>
   );
 }

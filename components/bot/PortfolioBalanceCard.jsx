@@ -63,7 +63,7 @@ function shortDate(ts, rangeKey) {
 }
 
 /* =====================================================
-   DELTA CALC (SAFE)
+   DELTA CALC
 ===================================================== */
 function calcDelta(series, mode) {
   if (!Array.isArray(series) || series.length < 2) {
@@ -72,7 +72,6 @@ function calcDelta(series, mode) {
 
   const first = Number(series[0]?.[mode] ?? 0);
   const last = Number(series[series.length - 1]?.[mode] ?? 0);
-
   const delta = last - first;
 
   const pct =
@@ -183,20 +182,12 @@ export default function PortfolioBalanceCard({
   const formatValue = (v) =>
     mode === "btc_qty" ? fmtBtc(v) : fmtEur(v);
 
-  const yTickFormatter = (v) => {
-    const n = Number(v || 0);
-
-    if (mode === "btc_qty") return n.toFixed(2);
-
-    if (Math.abs(n) >= 1000)
-      return `${(n / 1000).toFixed(1)}k`;
-
-    return `${Math.round(n)}`;
-  };
-
+  /* =====================================================
+     UI
+  ===================================================== */
   return (
     <div className="card-surface p-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-6 flex-wrap">
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[var(--text-dark)]">
             {title}
@@ -219,16 +210,17 @@ export default function PortfolioBalanceCard({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2 flex-wrap justify-end">
+        {/* CONTROLS */}
+        <div className="flex flex-col gap-3 items-end">
+
+          {/* RANGE SEGMENT */}
+          <div className="segmented-control">
             {RANGES.map((r) => (
               <button
                 key={r.key}
                 onClick={() => setRange(r.key)}
-                className={`px-3 py-1 rounded text-xs font-semibold border transition ${
-                  range === r.key
-                    ? "bg-[var(--primary)] text-white border-transparent"
-                    : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
+                className={`segmented-control-item ${
+                  range === r.key ? "active" : ""
                 }`}
               >
                 {r.label}
@@ -236,24 +228,25 @@ export default function PortfolioBalanceCard({
             ))}
           </div>
 
-          <div className="flex gap-2 flex-wrap justify-end">
+          {/* MODE SEGMENT */}
+          <div className="segmented-control">
             {MODES.map((m) => (
               <button
                 key={m.key}
                 onClick={() => setMode(m.key)}
-                className={`px-3 py-1 rounded text-xs font-semibold border transition ${
-                  mode === m.key
-                    ? "bg-indigo-600 text-white border-transparent"
-                    : "bg-[var(--surface-2)] text-[var(--text-dark)] border-[var(--border)]"
+                className={`segmented-control-item ${
+                  mode === m.key ? "active" : ""
                 }`}
               >
                 {m.label}
               </button>
             ))}
           </div>
+
         </div>
       </div>
 
+      {/* CHART */}
       <div className="mt-6 h-[240px]">
         {loading ? (
           <div className="flex items-center justify-center h-full text-sm text-[var(--text-light)]">
@@ -261,10 +254,7 @@ export default function PortfolioBalanceCard({
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={chartData}
-              margin={{ left: 10, right: 10, top: 10, bottom: 0 }}
-            >
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3} />
@@ -273,14 +263,7 @@ export default function PortfolioBalanceCard({
               </defs>
 
               <XAxis dataKey="label" axisLine={false} tickLine={false} />
-
-              <YAxis
-                domain={yDomain}
-                axisLine={false}
-                tickLine={false}
-                width={60}
-                tickFormatter={yTickFormatter}
-              />
+              <YAxis domain={yDomain} axisLine={false} tickLine={false} width={60} />
 
               <Tooltip
                 formatter={(v) => formatValue(v)}
@@ -291,7 +274,6 @@ export default function PortfolioBalanceCard({
                   boxShadow: "var(--shadow-md)",
                   color: "var(--text-dark)",
                 }}
-                labelStyle={{ color: "var(--text-light)" }}
               />
 
               <Area

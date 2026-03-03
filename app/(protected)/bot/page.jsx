@@ -277,7 +277,6 @@ function BotPageInner() {
       </div>
     </div>
   );
-}
 
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;

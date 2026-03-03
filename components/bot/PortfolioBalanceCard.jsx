@@ -24,7 +24,7 @@ const RANGES = [
 ];
 
 /* =====================================================
-   6 PROFESSIONAL METRICS
+   MODES
 ===================================================== */
 const MODES = [
   { key: "equity", label: "Equity" },
@@ -46,7 +46,6 @@ const fmtEur = (n) =>
   }).format(Number(n || 0));
 
 const fmtBtc = (n) => `${Number(n || 0).toFixed(4)} BTC`;
-
 const fmtPct = (n) => `${Number(n || 0).toFixed(1)}%`;
 
 function shortDate(ts, rangeKey) {
@@ -64,18 +63,22 @@ function shortDate(ts, rangeKey) {
 }
 
 /* =====================================================
-   GENERIC DELTA CALC
+   DELTA CALC (SAFE)
 ===================================================== */
 function calcDelta(series, mode) {
   if (!Array.isArray(series) || series.length < 2) {
-    return { last: 0, delta: 0, pct: 0 };
+    return { last: 0, delta: 0, pct: null };
   }
 
   const first = Number(series[0]?.[mode] ?? 0);
   const last = Number(series[series.length - 1]?.[mode] ?? 0);
 
   const delta = last - first;
-  const pct = first !== 0 ? (delta / first) * 100 : 0;
+
+  const pct =
+    first > 0 && Math.abs(first) > 1
+      ? (delta / first) * 100
+      : null;
 
   return { last, delta, pct };
 }
@@ -95,7 +98,7 @@ export default function PortfolioBalanceCard({
   });
 
   /* =====================================================
-     SERIES (fallback safe)
+     SERIES
   ===================================================== */
   const series = useMemo(() => {
     if (Array.isArray(data) && data.length > 0) return data;
@@ -145,7 +148,7 @@ export default function PortfolioBalanceCard({
   }, [series, range, mode]);
 
   /* =====================================================
-     Y DOMAIN AUTO-SAFE
+     Y DOMAIN
   ===================================================== */
   const yDomain = useMemo(() => {
     if (!chartData.length) return ["auto", "auto"];
@@ -166,26 +169,31 @@ export default function PortfolioBalanceCard({
   }, [chartData]);
 
   /* =====================================================
-     VALUE FORMAT MODE-AWARE
+     COLOR LOGIC
   ===================================================== */
-  const formatValue = (v) => {
-    if (mode === "btc_qty") return fmtBtc(v);
-    return fmtEur(v);
-  };
+  const strokeColor =
+    mode === "unrealized_pnl"
+      ? isDown
+        ? "#ef4444"
+        : "#22c55e"
+      : "var(--primary)";
+
+  const gradientId = `balanceFill-${mode}`;
+
+  const formatValue = (v) =>
+    mode === "btc_qty" ? fmtBtc(v) : fmtEur(v);
 
   const yTickFormatter = (v) => {
     const n = Number(v || 0);
 
     if (mode === "btc_qty") return n.toFixed(2);
 
-    if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)}k`;
+    if (Math.abs(n) >= 1000)
+      return `${(n / 1000).toFixed(1)}k`;
 
     return `${Math.round(n)}`;
   };
 
-  /* =====================================================
-     UI
-  ===================================================== */
   return (
     <div className="card-surface p-6">
       <div className="flex items-start justify-between gap-4">
@@ -205,17 +213,17 @@ export default function PortfolioBalanceCard({
                 : "text-[var(--score-strong-buy)]"
             }`}
           >
-            {isDown ? "↘" : "↗"} {fmtPct(pct)} ({formatValue(delta)})
+            {isDown ? "↘" : "↗"}{" "}
+            {pct !== null ? fmtPct(pct) : ""}{" "}
+            ({formatValue(delta)})
           </div>
         </div>
 
-        {/* RANGE + MODE */}
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 flex-wrap justify-end">
             {RANGES.map((r) => (
               <button
                 key={r.key}
-                type="button"
                 onClick={() => setRange(r.key)}
                 className={`px-3 py-1 rounded text-xs font-semibold border transition ${
                   range === r.key
@@ -232,7 +240,6 @@ export default function PortfolioBalanceCard({
             {MODES.map((m) => (
               <button
                 key={m.key}
-                type="button"
                 onClick={() => setMode(m.key)}
                 className={`px-3 py-1 rounded text-xs font-semibold border transition ${
                   mode === m.key
@@ -259,9 +266,9 @@ export default function PortfolioBalanceCard({
               margin={{ left: 10, right: 10, top: 10, bottom: 0 }}
             >
               <defs>
-                <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
 
@@ -285,15 +292,14 @@ export default function PortfolioBalanceCard({
                   color: "var(--text-dark)",
                 }}
                 labelStyle={{ color: "var(--text-light)" }}
-                labelFormatter={(l) => l}
               />
 
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="var(--primary)"
+                stroke={strokeColor}
                 strokeWidth={2}
-                fill="url(#balanceFill)"
+                fill={`url(#${gradientId})`}
                 dot={false}
                 activeDot={{ r: 4 }}
               />

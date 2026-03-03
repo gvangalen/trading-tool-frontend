@@ -54,9 +54,24 @@ function BotPageInner() {
   } = useBotData();
 
   const { strategies = [], loadStrategies } = useStrategyData();
+
   useEffect(() => {
     loadStrategies();
   }, [loadStrategies]);
+
+  /* =====================================================
+     ✅ AUTO SELECT FIRST BOT (robuuste versie)
+  ===================================================== */
+  useEffect(() => {
+    if (bots.length === 0) {
+      setActiveBot(null);
+      return;
+    }
+
+    if (!activeBot || !bots.find((b) => b.id === activeBot.id)) {
+      setActiveBot(bots[0]);
+    }
+  }, [bots, activeBot, setActiveBot]);
 
   const dailyScores = today?.scores ?? {
     macro: 10,
@@ -84,61 +99,7 @@ function BotPageInner() {
     }, 0);
   }, [portfolios]);
 
-  const portfolioBalanceDataByRange = useMemo(() => {
-    const byRange =
-      today?.portfolio_balance_by_range ||
-      today?.portfolio_balance_history_by_range ||
-      null;
-
-    if (byRange && typeof byRange === "object") {
-      const normalizeSeries = (series) =>
-        (Array.isArray(series) ? series : [])
-          .map((p) => ({
-            ts: p?.ts || p?.timestamp || p?.date || null,
-            value_eur: Number(
-              p?.value_eur ??
-                p?.value ??
-                p?.balance_eur ??
-                p?.portfolio_value_eur ??
-                0
-            ),
-          }))
-          .filter((p) => p.ts && Number.isFinite(p.value_eur));
-
-      return {
-        "1D": normalizeSeries(byRange["1D"]),
-        "1W": normalizeSeries(byRange["1W"]),
-        "1M": normalizeSeries(byRange["1M"]),
-        "1Y": normalizeSeries(byRange["1Y"]),
-        ALL: normalizeSeries(byRange["ALL"] || byRange["all"]),
-      };
-    }
-
-    const detected = (Array.isArray(history) ? history : [])
-      .map((p) => {
-        const ts = p?.ts || p?.timestamp || p?.date || null;
-        const v =
-          p?.portfolio_value_eur ??
-          p?.total_value_eur ??
-          p?.value_eur ??
-          p?.balance_eur ??
-          null;
-        const value_eur = Number(v);
-        return {
-          ts,
-          value_eur: Number.isFinite(value_eur) ? value_eur : null,
-        };
-      })
-      .filter((p) => p.ts && p.value_eur !== null);
-
-    if (detected.length >= 2) {
-      return { "1D": detected, "1W": detected, "1M": detected, "1Y": detected, ALL: detected };
-    }
-
-    const now = new Date().toISOString();
-    const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
-    return { "1D": single, "1W": single, "1M": single, "1Y": single, ALL: single };
-  }, [today, history, totalPortfolioValueEur]);
+  const portfolio = history ?? [];
 
   const handleGenerateDecision = async (bot) => {
     try {
@@ -167,7 +128,6 @@ function BotPageInner() {
     }
   };
 
-  // ✅ wordt nu gebruikt door GlobalTradePanel / TradePanel intern
   const handleManualTrade = async (payload) => {
     if (!createManualOrder) {
       showSnackbar("createManualOrder ontbreekt (hook)", "danger");
@@ -241,6 +201,83 @@ function BotPageInner() {
       },
     });
   };
+
+  return (
+    <div className="bg-[var(--bg)] pt-6 pb-10 animate-fade-slide">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
+        {/* LEFT */}
+        <div className="space-y-10">
+          <div className="flex items-center gap-3">
+            <Wallet className="icon icon-primary" />
+            <h1 className="text-2xl font-semibold">Portfolio Management</h1>
+          </div>
+
+          <BotScores scores={dailyScores} loading={loading?.today} />
+
+          <div className="space-y-6">
+            {(bots || []).map((bot) => {
+              const portfolio =
+                (portfolios || []).find((p) => p.bot_id === bot.id) ?? null;
+
+              const decision = decisionsByBot?.[bot.id] ?? null;
+              const trades = tradesByBot?.[bot.id] ?? [];
+
+              const isLoadingThisBot =
+                generatingBotId === bot.id ||
+                executingBotId === bot.id ||
+                placingOrderBotId === bot.id;
+
+              const isActive = activeBot?.id === bot.id;
+
+              return (
+                <div
+                  key={bot.id}
+                  onClick={(e) => {
+                    if (
+                      e.target.closest("button") ||
+                      e.target.closest("input") ||
+                      e.target.closest("select") ||
+                      e.target.closest("textarea") ||
+                      e.target.closest("[data-no-select]")
+                    ) {
+                      return;
+                    }
+
+                    setActiveBot(bot);
+                  }}
+                  className={`cursor-pointer transition ${
+                    isActive
+                      ? "ring-2 ring-[var(--primary)] rounded-2xl"
+                      : ""
+                  }`}
+                >
+                  <BotAgentCard
+                    bot={bot}
+                    decision={decision}
+                    portfolio={portfolio}
+                    trades={trades}
+                    history={history ?? []}
+                    loadingDecision={isLoadingThisBot}
+                    onGenerate={() => handleGenerateDecision(bot)}
+                    onExecute={handleExecuteBot}
+                    onSkip={handleSkipBot}
+                    onSaveTradePlan={handleSaveTradePlan}
+                    onPlaceManualOrder={handleManualTrade}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT – sticky lager gezet */}
+        <div className="lg:sticky lg:top-24 space-y-4">
+          <GlobalTradePanel />
+        </div>
+      </div>
+    </div>
+  );
+}
 
   const handleOpenBotSettings = (type, bot) => {
     if (!bot) return;

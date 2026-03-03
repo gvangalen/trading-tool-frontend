@@ -8,7 +8,8 @@ import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
 import TradePlanCard from "@/components/bot/TradePlanCard";
-import TradePanelContainer from "@/components/bot/TradePanelContainer";
+// ❌ TradePanelContainer gaat eruit (we gebruiken 1 centrale TradePanel rechts)
+// import TradePanelContainer from "@/components/bot/TradePanelContainer";
 
 import MarketDecisionCard from "@/components/bot/MarketDecisionCard";
 import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
@@ -39,7 +40,7 @@ export default function BotAgentCard({
   onOpenSettings,
 
   onSaveTradePlan,
-  onPlaceManualOrder,
+  onPlaceManualOrder, // ⚠️ blijft bestaan voor de centrale TradePanel (niet meer hier gebruikt)
 }) {
   if (!bot) return null;
 
@@ -58,20 +59,15 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
   const statusLabel = (decision?.action || "OBSERVE").toUpperCase();
-  const confidence =
-    decision?.confidence_label || decision?.confidence || "LOW";
+  const confidence = decision?.confidence_label || decision?.confidence || "LOW";
 
   const exposureMultiplier =
-    decision?.exposure_multiplier ??
-    bot?.strategy?.exposure_multiplier ??
-    1;
+    decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
 
   /* ================= MERGE TRADES + HISTORY ================= */
 
   const combinedHistory = useMemo(() => {
-    const botHistory = (history || []).filter(
-      (h) => h.bot_id === bot.id
-    );
+    const botHistory = (history || []).filter((h) => h.bot_id === bot.id);
 
     const tradeAsHistory = (trades || []).map((t) => ({
       id: t.id,
@@ -135,17 +131,15 @@ export default function BotAgentCard({
   };
 
   const risk =
-    riskConfig[
-      String(bot?.risk_profile || "balanced").toLowerCase()
-    ] || riskConfig.balanced;
+    riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
+    riskConfig.balanced;
 
   /* ================= SAVE TRADE PLAN ================= */
 
   const decisionId = decision?.id ?? decision?.decision_id ?? null;
   const botId = decision?.bot_id ?? bot?.id ?? null;
 
-  const canSavePlan =
-    !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
+  const canSavePlan = !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
 
   const handleSaveTradePlan = async (planDraft) => {
     if (!canSavePlan) return;
@@ -165,17 +159,6 @@ export default function BotAgentCard({
     } finally {
       setSavingPlan(false);
     }
-  };
-
-  /* ================= MANUAL TRADE ================= */
-
-  const handleManualTrade = async (payload) => {
-    if (!onPlaceManualOrder) return;
-
-    await onPlaceManualOrder({
-      bot_id: bot.id,
-      ...payload,
-    });
   };
 
   /* ================= PLAN SOURCE ================= */
@@ -277,7 +260,7 @@ export default function BotAgentCard({
         </div>
       </div>
 
-      {/* Decision + Plan + Manual Trade */}
+      {/* Decision + Plan (TradePanel verhuisd naar rechter sidebar) */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
         <div className="flex-1 p-5">
           <BotDecisionCard
@@ -301,16 +284,12 @@ export default function BotAgentCard({
             loading={loadingDecision}
             allowManual={!isAuto}
             onSave={canSavePlan ? handleSaveTradePlan : undefined}
+            saving={savingPlan}
+            error={saveError}
           />
 
-          {!isAuto && (
-            <TradePanelContainer
-              bot={bot}
-              decision={decision}
-              portfolio={portfolio}
-              onManualTrade={handleManualTrade}
-            />
-          )}
+          {/* ✅ TradePanelContainer zit nu 1x centraal op de pagina
+              en gebruikt activeBot uit context */}
         </div>
       </div>
 

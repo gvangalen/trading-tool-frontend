@@ -8,48 +8,49 @@ import BotPnLBadge from "./BotPnLBadge";
 /**
  * BotPortfolioOverview — READ ONLY
  * --------------------------------------------------
- * ✅ Aggregatie over ALLE bots (zelfde /bot/portfolios data)
- * ✅ Alleen financiële / portfolio data
- * ❌ GEEN status (active / paused)
- * ❌ GEEN acties
- * ✅ Backend = single source of truth
- *
- * Props:
- *  bots: array (zelfde shape als je "bot" object in BotPortfolioSection)
+ * ✅ Aggregatie over ALLE bots
+ * ✅ Budget usage = budget_total - cash_remaining
+ * ✅ Invested = executed trades only
+ * ✅ Backend blijft single source of truth
  */
 export default function BotPortfolioOverview({ bots = [] }) {
   const list = Array.isArray(bots) ? bots : [];
   if (!list.length) return null;
 
   // -----------------------------
-  // Aggregate helpers
+  // Helper
   // -----------------------------
   const sum = (arr, getter) =>
     arr.reduce((acc, x) => acc + (Number(getter(x)) || 0), 0);
 
-  // -----------------------------
-  // Budget aggregates
-  // -----------------------------
+  // =============================
+  // BUDGET AGGREGATES (CORRECT)
+  // =============================
+
   const totalBudgetEur = sum(list, (b) => b?.budget?.total_eur);
   const totalDailyLimitEur = sum(list, (b) => b?.budget?.daily_limit_eur);
   const totalMaxOrderEur = sum(list, (b) => b?.budget?.max_order_eur);
 
-  // Budget context (mag reserves bevatten)
-  const spentTotalForBudget = sum(list, (b) =>
-    Math.abs(b?.stats?.net_cash_delta_eur ?? 0)
-  );
+  // 🔥 Correcte budget usage:
+  // used = total_budget - current_cash
+  const spentTotalForBudget = sum(list, (b) => {
+    const total = Number(b?.budget?.total_eur ?? 0);
+    const cash = Number(b?.stats?.cash_eur ?? 0);
+    return total - cash;
+  });
 
   const todaySpent = sum(list, (b) => b?.stats?.today_spent_eur);
 
   const hasBudget =
     totalBudgetEur > 0 || totalDailyLimitEur > 0 || totalMaxOrderEur > 0;
 
-  // -----------------------------
-  // Portfolio aggregates (ECHTE TRADES)
-  // -----------------------------
+  // =============================
+  // PORTFOLIO AGGREGATES
+  // =============================
+
   const positionValue = sum(list, (b) => b?.stats?.position_value_eur);
 
-  // ❗ Alleen executed trades (invested)
+  // Alleen executed trades tellen als invested capital
   const spentExecuted = sum(list, (b) =>
     Math.abs(b?.stats?.net_executed_cash_delta_eur ?? 0)
   );
@@ -57,11 +58,13 @@ export default function BotPortfolioOverview({ bots = [] }) {
   const pnlEur = positionValue - spentExecuted;
   const pnlPct = spentExecuted > 0 ? (pnlEur / spentExecuted) * 100 : 0;
 
-  // -----------------------------
-  // Symbol breakdown (optioneel, handig bij multi-asset bots)
-  // -----------------------------
+  // =============================
+  // SYMBOL BREAKDOWN
+  // =============================
+
   const bySymbol = list.reduce((acc, b) => {
     const sym = b?.symbol || "—";
+
     if (!acc[sym]) {
       acc[sym] = {
         symbol: sym,
@@ -84,11 +87,13 @@ export default function BotPortfolioOverview({ bots = [] }) {
     (a, b) => b.positionValue - a.positionValue
   );
 
+  // =============================
+  // UI
+  // =============================
+
   return (
     <div className="card-surface p-6 space-y-6">
-      {/* =====================
-         HEADER
-      ===================== */}
+      {/* HEADER */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-[var(--text-dark)]">
@@ -100,13 +105,16 @@ export default function BotPortfolioOverview({ bots = [] }) {
         </div>
 
         <div className="text-xs text-[var(--text-muted)]">
-          Bots: <span className="font-medium text-[var(--text-dark)]">{list.length}</span>
+          Bots:{" "}
+          <span className="font-medium text-[var(--text-dark)]">
+            {list.length}
+          </span>
         </div>
       </div>
 
-      {/* =====================
-         BUDGET (READ ONLY)
-      ===================== */}
+      {/* =============================
+         BUDGET
+      ============================= */}
       <div>
         <div className="flex items-center gap-2 mb-2 text-xs text-[var(--text-muted)]">
           <Wallet size={14} className="icon-muted" />
@@ -139,17 +147,21 @@ export default function BotPortfolioOverview({ bots = [] }) {
             </div>
           </>
         ) : (
-          <div className="text-xs text-[var(--text-muted)]">Geen budget ingesteld</div>
+          <div className="text-xs text-[var(--text-muted)]">
+            Geen budget ingesteld
+          </div>
         )}
       </div>
 
-      {/* =====================
-         PORTFOLIO TOTAAL
-      ===================== */}
+      {/* =============================
+         PORTFOLIO TOTAL
+      ============================= */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border-subtle)]">
         <Stat label="Positions">{symbolRows.length}</Stat>
 
-        <Stat label="Totale waarde">€{Number(positionValue).toFixed(0)}</Stat>
+        <Stat label="Totale waarde">
+          €{Number(positionValue).toFixed(0)}
+        </Stat>
 
         <Stat label="Geïnvesteerd (executed)">
           €{Number(spentExecuted).toFixed(0)}
@@ -160,9 +172,9 @@ export default function BotPortfolioOverview({ bots = [] }) {
         </Stat>
       </div>
 
-      {/* =====================
-         OPTIONAL: PER SYMBOL
-      ===================== */}
+      {/* =============================
+         PER SYMBOL BREAKDOWN
+      ============================= */}
       {symbolRows.length > 1 && (
         <div className="pt-4 border-t border-[var(--border-subtle)]">
           <div className="text-sm font-semibold text-[var(--text-dark)] mb-2">
@@ -173,7 +185,9 @@ export default function BotPortfolioOverview({ bots = [] }) {
             {symbolRows.map((row) => {
               const rowPnl = row.positionValue - row.spentExecuted;
               const rowPct =
-                row.spentExecuted > 0 ? (rowPnl / row.spentExecuted) * 100 : 0;
+                row.spentExecuted > 0
+                  ? (rowPnl / row.spentExecuted) * 100
+                  : 0;
 
               return (
                 <div
@@ -207,9 +221,9 @@ export default function BotPortfolioOverview({ bots = [] }) {
   );
 }
 
-/* =====================================================
-   UI HELPERS
-===================================================== */
+/* =============================
+   UI HELPER
+============================= */
 function Stat({ label, children }) {
   return (
     <div>

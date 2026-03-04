@@ -228,49 +228,76 @@ export default function TradePanel({
   const canSubmit = validation.ok && !loading;
 
   /* =========================
-     ✅ Sync: slider -> input (als user niet typt)
-  ========================= */
-  useEffect(() => {
+   ✅ Sync: slider -> input (als user niet typt)
+   Fix:
+   - Als maxQtyBase 0 is (geen saldo / nog niet geladen) -> forceer 0% en laat inputs leeg
+   - Alleen syncen naar input als input leeg is
+========================= */
+useEffect(() => {
+  const p = num(effectivePrice, null);
+  if (!p || p <= 0) return;
+
+  // Geen max? Dan kan slider niets verdelen → voorkom “spook 25%”
+  if (maxQtyBase <= 0) {
+    if (amountPct !== 0) setAmountPct(0);
+    // inputs bewust leeg laten (niet gaan vullen met 0.00)
+    return;
+  }
+
+  if (sizeMode === "base") {
+    if (amountBaseInput === "") {
+      const q = qtyFromPct;
+      setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
+    }
+  } else {
+    if (amountQuoteInput === "") {
+      const v = qtyFromPct * p;
+      setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
+    }
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+  qtyFromPct,
+  effectivePrice,
+  sizeMode,
+  maxQtyBase,
+  amountPct,
+  amountBaseInput,
+  amountQuoteInput,
+]);
+
+/* =========================
+   ✅ Sync: input -> slider (als user typt)
+   Fix:
+   - Alleen berekenen als maxQtyBase > 0
+   - Als user input leeg maakt -> slider blijft zoals hij is (geen rare jumps)
+========================= */
+useEffect(() => {
+  if (maxQtyBase <= 0) return;
+
+  if (sizeMode === "base" && amountBaseInput !== "") {
+    const q = Math.max(0, num(amountBaseInput, 0));
+    const pct = (q / maxQtyBase) * 100;
+    setAmountPct(clamp(pct, 0, 100));
+  }
+
+  if (sizeMode === "quote" && amountQuoteInput !== "") {
     const p = num(effectivePrice, null);
     if (!p || p <= 0) return;
 
-    if (sizeMode === "base") {
-      if (amountBaseInput === "") {
-        const q = qtyFromPct;
-        setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
-      }
-    } else {
-      if (amountQuoteInput === "") {
-        const v = qtyFromPct * p;
-        setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qtyFromPct, effectivePrice, sizeMode]);
-
-  /* =========================
-     ✅ Sync: input -> slider (als user typt)
-  ========================= */
-  useEffect(() => {
-    if (maxQtyBase <= 0) return;
-
-    if (sizeMode === "base" && amountBaseInput !== "") {
-      const q = Math.max(0, num(amountBaseInput, 0));
-      const pct = (q / maxQtyBase) * 100;
-      setAmountPct(clamp(pct, 0, 100));
-    }
-
-    if (sizeMode === "quote" && amountQuoteInput !== "") {
-      const p = num(effectivePrice, null);
-      if (!p || p <= 0) return;
-
-      const v = Math.max(0, num(amountQuoteInput, 0));
-      const q = v / p;
-      const pct = (q / maxQtyBase) * 100;
-      setAmountPct(clamp(pct, 0, 100));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [amountBaseInput, amountQuoteInput, sizeMode, maxQtyBase, effectivePrice]);
+    const v = Math.max(0, num(amountQuoteInput, 0));
+    const q = v / p;
+    const pct = (q / maxQtyBase) * 100;
+    setAmountPct(clamp(pct, 0, 100));
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+  amountBaseInput,
+  amountQuoteInput,
+  sizeMode,
+  maxQtyBase,
+  effectivePrice,
+]);
 
   /* =========================
      ✅ Toggle EUR/BTC: convert + clear

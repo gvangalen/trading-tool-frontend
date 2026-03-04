@@ -16,6 +16,34 @@ const safeMultiplier = (v) => {
   return n;
 };
 
+/* =====================================================
+   LABEL MAPPINGS
+===================================================== */
+
+const getHealthLabel = (v) => {
+  if (v < 30) return "Weak";
+  if (v < 50) return "Fragile";
+  if (v < 70) return "Good";
+  if (v < 85) return "Strong";
+  return "Very strong";
+};
+
+const getRiskLabel = (v) => {
+  if (v < 25) return "Low";
+  if (v < 50) return "Normal";
+  if (v < 70) return "Elevated";
+  if (v < 85) return "High";
+  return "Extreme";
+};
+
+const getPressureLabel = (v) => {
+  if (v < 30) return "Low";
+  if (v < 50) return "Neutral";
+  if (v < 70) return "Moderate";
+  if (v < 85) return "High";
+  return "Extreme";
+};
+
 const getExposureLabel = (value) => {
   if (value < 0.7) return "DEFENSIVE";
   if (value < 0.95) return "REDUCED";
@@ -36,30 +64,46 @@ const getExposureColor = (value) => {
    📊 BAR COMPONENT
 ===================================================== */
 
-function Bar({ icon, label, value, color }) {
-  const blocks = 8;
+function Bar({ icon, label, value, color, getLabel }) {
+  const blocks = 10;
   const safeValue = clamp(value);
-  const filled = Math.round((safeValue / 100) * blocks);
+  const filled = Math.round(safeValue / 10);
+  const status = getLabel(safeValue);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 text-xs">
 
-      <span className="text-xs">{icon}</span>
+      {/* icon */}
+      <span>{icon}</span>
 
+      {/* label */}
+      <span className="w-16 text-gray-600 dark:text-gray-300">
+        {label}
+      </span>
+
+      {/* blocks */}
       <div className="flex gap-[3px]">
         {[...Array(blocks)].map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 w-4 rounded-sm transition-all duration-300 ${
+            className={`h-1.5 w-4 rounded-sm ${
               i < filled
-                ? `${color} opacity-${Math.min(100, 40 + filled * 8)}`
+                ? color
                 : "bg-gray-200 dark:bg-gray-700"
             }`}
           />
         ))}
       </div>
 
-      <span className="text-[11px] text-gray-500">{label}</span>
+      {/* score */}
+      <span className="w-8 text-right font-medium">
+        {safeValue}
+      </span>
+
+      {/* status label */}
+      <span className="text-gray-500">
+        {status}
+      </span>
     </div>
   );
 }
@@ -90,6 +134,7 @@ export default function MarketConditionsInline({
         label="Health"
         value={safeHealth}
         color="bg-emerald-500"
+        getLabel={getHealthLabel}
       />
 
       <Bar
@@ -97,6 +142,7 @@ export default function MarketConditionsInline({
         label="Risk"
         value={safeRisk}
         color="bg-orange-500"
+        getLabel={getRiskLabel}
       />
 
       <Bar
@@ -104,10 +150,13 @@ export default function MarketConditionsInline({
         label="Pressure"
         value={safePressure}
         color="bg-blue-500"
+        getLabel={getPressureLabel}
       />
 
       {/* Exposure multiplier */}
+
       <div className="flex items-center gap-2 text-xs">
+
         <span>🟣</span>
 
         <span className={`font-semibold ${exposureColor}`}>
@@ -117,7 +166,9 @@ export default function MarketConditionsInline({
         <span className="text-gray-500">
           {exposureLabel}
         </span>
+
       </div>
+
     </div>
   );
 }

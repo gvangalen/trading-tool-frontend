@@ -226,23 +226,18 @@ export default function TradePanel({
   ]);
 
   const canSubmit = validation.ok && !loading;
-
-  /* =========================
+/* =========================
    ✅ Sync: slider -> input (als user niet typt)
    Fix:
-   - Als maxQtyBase 0 is (geen saldo / nog niet geladen) -> forceer 0% en laat inputs leeg
-   - Alleen syncen naar input als input leeg is
+   - NIET meer amountPct forceren naar 0 bij maxQtyBase 0 (dat sloopt slider)
+   - Als maxQtyBase 0 is: gewoon niks syncen naar inputs
 ========================= */
 useEffect(() => {
   const p = num(effectivePrice, null);
   if (!p || p <= 0) return;
 
-  // Geen max? Dan kan slider niets verdelen → voorkom “spook 25%”
-  if (maxQtyBase <= 0) {
-    if (amountPct !== 0) setAmountPct(0);
-    // inputs bewust leeg laten (niet gaan vullen met 0.00)
-    return;
-  }
+  // Geen max/saldo (nog niet geladen of echt 0): laat slider met rust, vul inputs niet
+  if (maxQtyBase <= 0) return;
 
   if (sizeMode === "base") {
     if (amountBaseInput === "") {
@@ -256,21 +251,13 @@ useEffect(() => {
     }
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [
-  qtyFromPct,
-  effectivePrice,
-  sizeMode,
-  maxQtyBase,
-  amountPct,
-  amountBaseInput,
-  amountQuoteInput,
-]);
+}, [qtyFromPct, effectivePrice, sizeMode, maxQtyBase]);
 
 /* =========================
    ✅ Sync: input -> slider (als user typt)
    Fix:
    - Alleen berekenen als maxQtyBase > 0
-   - Als user input leeg maakt -> slider blijft zoals hij is (geen rare jumps)
+   - Als user input leeg maakt -> slider niet “resetten”
 ========================= */
 useEffect(() => {
   if (maxQtyBase <= 0) return;
@@ -291,13 +278,7 @@ useEffect(() => {
     setAmountPct(clamp(pct, 0, 100));
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [
-  amountBaseInput,
-  amountQuoteInput,
-  sizeMode,
-  maxQtyBase,
-  effectivePrice,
-]);
+}, [amountBaseInput, amountQuoteInput, sizeMode, maxQtyBase, effectivePrice]);
 
   /* =========================
      ✅ Toggle EUR/BTC: convert + clear

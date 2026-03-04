@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 /**
- * BotTodayProposal — TradeLayer 3.0
+ * BotTodayProposal — TradeLayer 3.0 (FULL)
  *
  * Backend = single source of truth
  * Frontend toont execution context & sizing logica
@@ -30,6 +30,10 @@ export default function BotTodayProposal({
   onSkip,
   isAuto = false,
 }) {
+  /* =====================================================
+     LOADING / EMPTY
+  ===================================================== */
+
   if (loading) {
     return (
       <div className="py-6">
@@ -61,27 +65,20 @@ export default function BotTodayProposal({
   const multiplier = Number(decision.exposure_multiplier ?? 1);
   const baseAmount = Number(decision.base_amount ?? 0);
 
-  const safeMultiplier = isNaN(multiplier) ? 1 : multiplier;
+  const safeMultiplier = Number.isFinite(multiplier) ? multiplier : 1;
 
   const executionLabel =
-    executionMode === "custom"
-      ? "Curve sizing actief"
-      : "Vast bedrag";
+    executionMode === "custom" ? "Curve sizing actief" : "Vast bedrag";
 
   const allocationPreview =
-    baseAmount > 0
-      ? `€${Math.round(baseAmount * safeMultiplier)}`
-      : null;
+    baseAmount > 0 ? `€${Math.round(baseAmount * safeMultiplier)}` : null;
 
   /* =====================================================
      TIMESTAMP
   ===================================================== */
 
   const decisionTime =
-    decision.updated_at ||
-    decision.decision_ts ||
-    decision.created_at ||
-    null;
+    decision.updated_at || decision.decision_ts || decision.created_at || null;
 
   const formattedDecisionTime = decisionTime
     ? new Date(decisionTime).toLocaleString("nl-NL", {
@@ -100,9 +97,7 @@ export default function BotTodayProposal({
   if (!setupMatch) return null;
 
   const score =
-    typeof setupMatch.score === "number"
-      ? Math.min(setupMatch.score, 100)
-      : 10;
+    typeof setupMatch.score === "number" ? Math.min(setupMatch.score, 100) : 10;
 
   /* =====================================================
      EXECUTE GUARD
@@ -110,12 +105,7 @@ export default function BotTodayProposal({
 
   const hasTrade = !!order;
 
-  const canExecute =
-    !isAuto &&
-    !isFinal &&
-    hasTrade &&
-    !!onExecute &&
-    !!decisionId;
+  const canExecute = !isAuto && !isFinal && hasTrade && !!onExecute && !!decisionId;
 
   /* =====================================================
      HEADER
@@ -138,7 +128,7 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const executionCard = (
-    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
+    <div className="tl-card space-y-2">
       <div className="flex items-center gap-2 font-medium">
         <TrendingUp size={14} />
         Position sizing
@@ -154,17 +144,13 @@ export default function BotTodayProposal({
       <div className="flex items-center gap-2 text-xs">
         <Gauge size={14} />
         Exposure multiplier:
-        <span className="font-medium">
-          {safeMultiplier.toFixed(2)}×
-        </span>
+        <span className="font-medium">{safeMultiplier.toFixed(2)}×</span>
       </div>
 
       {allocationPreview && (
         <div className="text-xs text-[var(--text-muted)]">
           Verwachte allocatie:
-          <span className="font-medium ml-1">
-            {allocationPreview}
-          </span>
+          <span className="font-medium ml-1">{allocationPreview}</span>
         </div>
       )}
     </div>
@@ -175,15 +161,14 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const botScoreCard = (
-    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
+    <div className="tl-card space-y-2">
       <div className="flex items-center gap-2 font-medium">
         <Layers size={14} />
         Strategy match vandaag
       </div>
 
       <div className="font-semibold">
-        {setupMatch.name} · {setupMatch.symbol} ·{" "}
-        {setupMatch.timeframe}
+        {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
       </div>
 
       {formattedDecisionTime && (
@@ -196,16 +181,12 @@ export default function BotTodayProposal({
 
       <div className="text-xs text-[var(--text-muted)]">
         Marktscore:
-        <span className="font-medium ml-1">
-          {score} / 100
-        </span>
+        <span className="font-medium ml-1">{score} / 100</span>
       </div>
 
       <div className="text-xs text-[var(--text-muted)]">
         Strategy discipline:
-        <span className="font-medium uppercase ml-1">
-          {confidence}
-        </span>
+        <span className="font-medium uppercase ml-1">{confidence}</span>
       </div>
 
       {setupMatch.thresholds && (
@@ -223,7 +204,51 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     NO TRADE STATE
+     ACTION BUTTONS
+  ===================================================== */
+
+  const actionButtons = (
+    <div className="flex flex-wrap gap-3 pt-4">
+      {canExecute && (
+        <button
+          onClick={() =>
+            onExecute({
+              bot_id: botId,
+              decision_id: decisionId,
+            })
+          }
+          className="btn-primary flex items-center gap-2"
+        >
+          <Play size={16} />
+          Voer trade uit
+        </button>
+      )}
+
+      {!isAuto && !isFinal && onSkip && (
+        <button
+          onClick={() => onSkip({ bot_id: botId })}
+          className="btn-secondary flex items-center gap-2"
+        >
+          <SkipForward size={16} />
+          {order ? "Sla trade over" : "Sla over"}
+        </button>
+      )}
+
+      {onGenerate && (
+        <button
+          onClick={onGenerate}
+          disabled={isGenerating}
+          className="btn-outline flex items-center gap-2"
+        >
+          <RotateCcw size={16} />
+          Nieuwe analyse uitvoeren
+        </button>
+      )}
+    </div>
+  );
+
+  /* =====================================================
+     NO TRADE STATE (FULL)
   ===================================================== */
 
   if (!order) {
@@ -231,99 +256,42 @@ export default function BotTodayProposal({
       <div className="space-y-5 py-4">
         {header}
 
-        <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
-          <div className="font-medium">
-            Geen trade gepland voor vandaag
+        {/* 3.0 Container (geen blauw) */}
+        <div className="tl-surface space-y-4">
+          <div className="font-medium">Geen trade gepland voor vandaag</div>
+
+          <div className="text-sm text-[var(--text-muted)]">{setupMatch.detail}</div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {botScoreCard}
+            {executionCard}
           </div>
 
-          <div className="text-sm text-[var(--text-muted)]">
-            {setupMatch.detail}
-          </div>
-
-          {botScoreCard}
-          {executionCard}
-
-          <div className="flex flex-wrap gap-3 pt-4">
-            {!isAuto && !isFinal && onSkip && (
-              <button
-                onClick={() => onSkip({ bot_id: botId })}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <SkipForward size={16} />
-                Sla over
-              </button>
-            )}
-
-            {onGenerate && (
-              <button
-                onClick={onGenerate}
-                disabled={isGenerating}
-                className="btn-outline flex items-center gap-2"
-              >
-                <RotateCcw size={16} />
-                Nieuwe analyse uitvoeren
-              </button>
-            )}
-          </div>
+          {actionButtons}
         </div>
       </div>
     );
   }
 
   /* =====================================================
-     TRADE PROPOSAL
+     TRADE PROPOSAL (FULL)
   ===================================================== */
 
   return (
     <div className="space-y-5 py-4">
       {header}
 
-      <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
+      <div className="tl-surface space-y-4">
         <div className="text-2xl font-semibold">
-          {(order.side ?? "buy").toUpperCase()}{" "}
-          {order.symbol ?? "—"}
+          {(order.side ?? "buy").toUpperCase()} {order.symbol ?? "—"}
         </div>
 
-        {botScoreCard}
-        {executionCard}
-
-        <div className="flex flex-wrap gap-3 pt-4">
-          {canExecute && (
-            <button
-              onClick={() =>
-                onExecute({
-                  bot_id: botId,
-                  decision_id: decisionId,
-                })
-              }
-              className="btn-primary flex items-center gap-2"
-            >
-              <Play size={16} />
-              Voer trade uit
-            </button>
-          )}
-
-          {!isAuto && !isFinal && onSkip && (
-            <button
-              onClick={() => onSkip({ bot_id: botId })}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <SkipForward size={16} />
-              Sla trade over
-            </button>
-          )}
-
-          {onGenerate && (
-            <button
-              onClick={onGenerate}
-              disabled={isGenerating}
-              className="btn-outline flex items-center gap-2"
-            >
-              <RotateCcw size={16} />
-              Nieuwe analyse uitvoeren
-            </button>
-          )}
+        <div className="grid gap-4 md:grid-cols-2">
+          {botScoreCard}
+          {executionCard}
         </div>
+
+        {actionButtons}
       </div>
     </div>
   );

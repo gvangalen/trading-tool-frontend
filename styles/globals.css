@@ -23,6 +23,7 @@
   --bg-soft: #FAFBFF;
 
   /* Text */
+  --text: var(--text-dark);
   --text-dark: #0f172a;
   --text-light: #475569;
   --text-muted: #64748b;
@@ -33,7 +34,7 @@
   --surface-3: #E6EDF5;
 
   /* Borders */
-  --border: rgba(0, 0, 0, 0.08);
+  --border: #e2e8f0;
 
   /* Radius */
   --radius-xs: 6px;
@@ -79,10 +80,10 @@
   --avatar-text: #0f172a;
 
   /* Scores */
-  --score-strong-buy: #16a34a;  /* groen */
-  --score-buy:        #eab308;  /* GEEL */
-  --score-neutral:    #f59e0b;  /* ORANJE */
-  --score-sell:       #ef4444;  /* rood */
+  --score-strong-buy: #16a34a;
+  --score-buy: #eab308;
+  --score-neutral: #f59e0b;
+  --score-sell: #ef4444;
   --score-strong-sell:#dc2626;
 
   /* Icons */
@@ -96,10 +97,7 @@
   --transition-fast: 0.12s ease-out;
   --transition-medium: 0.25s ease;
 
-  /* ===========================================
-     TRADE PANEL THEME TOKENS (LIGHT)
-     (Nieuw toegevoegd, breekt niks)
-  =========================================== */
+  /* Trade panel */
   --trade-panel-bg: var(--surface-1);
   --trade-panel-border: var(--border);
   --trade-panel-shadow: var(--shadow-md);
@@ -212,13 +210,24 @@
 }
 
 /* ===========================================
-   CARD SURFACE
+   SURFACE CONTAINER
+=========================================== */
+.surface {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+/* ===========================================
+   CARD SURFACE (UPDATED)
 =========================================== */
 .card-surface {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
+  overflow: hidden;
   transition: box-shadow var(--transition-fast),
               transform var(--transition-fast);
 }

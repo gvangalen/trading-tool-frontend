@@ -262,7 +262,7 @@ function BotPageInner() {
   ========================= */
 
   return (
-    <div className="bg-[var(--bg)] pt-6 pb-10 animate-fade-slide">
+    <div className="bg-[var(--surface-1)] pt-6 pb-10 animate-fade-slide">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
         {/* LEFT */}
         <div className="space-y-10">

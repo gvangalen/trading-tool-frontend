@@ -1,4 +1,4 @@
-use client";
+"use client";
 
 import CardLoader from "@/components/ui/CardLoader";
 import ScoreBar from "@/components/ui/ScoreBar";

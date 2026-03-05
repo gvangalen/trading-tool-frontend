@@ -242,20 +242,92 @@ function BotPageInner() {
   };
 
   const handleOpenBotSettings = (type, bot) => {
-    if (!bot) return;
+  if (!bot) return;
 
-    if (type === "delete") {
-      openConfirm({
-        title: "🗑️ Bot verwijderen",
-        confirmVariant: "danger",
-        confirmText: "Verwijderen",
-        onConfirm: async () => {
-          await deleteBot(bot.id);
-          showSnackbar("Bot verwijderd", "danger");
-        },
-      });
-    }
-  };
+  /* ================= GENERAL ================= */
+
+  if (type === "general") {
+    formRef.current = bot;
+
+    openConfirm({
+      title: "⚙️ Bot instellingen",
+      description: (
+        <BotForm
+          strategies={strategies}
+          initialValues={bot}
+          onChange={(v) => (formRef.current = v)}
+        />
+      ),
+      confirmText: "Opslaan",
+      onConfirm: async () => {
+        await updateBot(bot.id, formRef.current);
+        showSnackbar("Bot bijgewerkt", "success");
+      },
+    });
+
+    return;
+  }
+
+  /* ================= PORTFOLIO ================= */
+
+  if (type === "portfolio") {
+    const portfolio = portfolios.find((p) => p.bot_id === bot.id);
+
+    budgetRef.current = portfolio?.budget ?? {};
+
+    openConfirm({
+      title: "💰 Portfolio & budget",
+      description: (
+        <BotBudgetForm
+          bot={bot}
+          portfolio={portfolio}
+          onChange={(v) => (budgetRef.current = v)}
+        />
+      ),
+      confirmText: "Opslaan",
+      onConfirm: async () => {
+        await updateBudgetForBot({
+          bot_id: bot.id,
+          budget: budgetRef.current,
+        });
+
+        showSnackbar("Budget bijgewerkt", "success");
+      },
+    });
+
+    return;
+  }
+
+  /* ================= PAUSE ================= */
+
+  if (type === "pause") {
+    await updateBot(bot.id, { is_active: false });
+    showSnackbar("Bot gepauzeerd", "info");
+    return;
+  }
+
+  /* ================= RESUME ================= */
+
+  if (type === "resume") {
+    await updateBot(bot.id, { is_active: true });
+    showSnackbar("Bot hervat", "success");
+    return;
+  }
+
+  /* ================= DELETE ================= */
+
+  if (type === "delete") {
+    openConfirm({
+      title: "🗑️ Bot verwijderen",
+      confirmVariant: "danger",
+      confirmText: "Verwijderen",
+      onConfirm: async () => {
+        await deleteBot(bot.id);
+        showSnackbar("Bot verwijderd", "danger");
+      },
+    });
+  }
+};
 
   /* =========================
      RENDER

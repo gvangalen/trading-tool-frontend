@@ -1,4 +1,4 @@
-"use client";
+use client";
 
 import CardLoader from "@/components/ui/CardLoader";
 import ScoreBar from "@/components/ui/ScoreBar";
@@ -13,6 +13,13 @@ import {
   Gauge,
 } from "lucide-react";
 
+/**
+ * BotTodayProposal — TradeLayer 3.0
+ *
+ * Backend = single source of truth
+ * Frontend toont execution context & sizing logica
+ */
+
 export default function BotTodayProposal({
   decision = null,
   order = null,
@@ -23,11 +30,6 @@ export default function BotTodayProposal({
   onSkip,
   isAuto = false,
 }) {
-
-  /* =====================================================
-     LOADING
-  ===================================================== */
-
   if (loading) {
     return (
       <div className="py-6">
@@ -56,11 +58,10 @@ export default function BotTodayProposal({
 
   const executionMode = decision.execution_mode || "fixed";
   const curveName = decision.decision_curve_name || null;
-
   const multiplier = Number(decision.exposure_multiplier ?? 1);
   const baseAmount = Number(decision.base_amount ?? 0);
 
-  const safeMultiplier = Number.isFinite(multiplier) ? multiplier : 1;
+  const safeMultiplier = isNaN(multiplier) ? 1 : multiplier;
 
   const executionLabel =
     executionMode === "custom"
@@ -92,27 +93,16 @@ export default function BotTodayProposal({
     : null;
 
   /* =====================================================
-     SETUP MATCH (SAFE)
+     SETUP MATCH
   ===================================================== */
 
-  const setupMatch = decision.setup_match ?? null;
+  const setupMatch = decision.setup_match;
+  if (!setupMatch) return null;
 
   const score =
-    typeof setupMatch?.score === "number"
+    typeof setupMatch.score === "number"
       ? Math.min(setupMatch.score, 100)
-      : decision.market_score ?? 10;
-
-  const setupName = setupMatch?.name ?? "Geen strategy match";
-  const setupSymbol = setupMatch?.symbol ?? "—";
-  const setupTf = setupMatch?.timeframe ?? "—";
-
-  const summary =
-    setupMatch?.summary ??
-    "De bot ziet momenteel geen setup die aan de voorwaarden voldoet.";
-
-  const detail =
-    setupMatch?.detail ??
-    "De bot wacht op betere marktomstandigheden.";
+      : 10;
 
   /* =====================================================
      EXECUTE GUARD
@@ -134,24 +124,21 @@ export default function BotTodayProposal({
   const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
       <ShoppingCart size={16} className="mt-0.5" />
-
       <div>
         <div className="font-medium text-[var(--text)]">
           Vandaag – voorstel van de bot
         </div>
-
         <div>Maximaal één beslissing per dag.</div>
       </div>
     </div>
   );
 
   /* =====================================================
-     POSITION SIZING
+     POSITION SIZING CARD
   ===================================================== */
 
   const executionCard = (
-    <div className="tl-card space-y-2">
-
+    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
         <TrendingUp size={14} />
         Position sizing
@@ -159,7 +146,6 @@ export default function BotTodayProposal({
 
       <div className="text-xs text-[var(--text-muted)]">
         {executionLabel}
-
         {executionMode === "custom" && curveName && (
           <span className="ml-1">· {curveName}</span>
         )}
@@ -181,7 +167,6 @@ export default function BotTodayProposal({
           </span>
         </div>
       )}
-
     </div>
   );
 
@@ -190,15 +175,15 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const botScoreCard = (
-    <div className="tl-card space-y-2">
-
+    <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
         <Layers size={14} />
         Strategy match vandaag
       </div>
 
       <div className="font-semibold">
-        {setupName} · {setupSymbol} · {setupTf}
+        {setupMatch.name} · {setupMatch.symbol} ·{" "}
+        {setupMatch.timeframe}
       </div>
 
       {formattedDecisionTime && (
@@ -223,7 +208,7 @@ export default function BotTodayProposal({
         </span>
       </div>
 
-      {setupMatch?.thresholds && (
+      {setupMatch.thresholds && (
         <div className="text-xs text-[var(--text-muted)]">
           Drempels: buy ≥ {setupMatch.thresholds.buy} · hold ≥{" "}
           {setupMatch.thresholds.hold}
@@ -231,56 +216,9 @@ export default function BotTodayProposal({
       )}
 
       <div className="text-xs italic text-gray-500">
-        <div className="font-medium">{summary}</div>
-        <div>{detail}</div>
+        <div className="font-medium">{setupMatch.summary}</div>
+        <div>{setupMatch.detail}</div>
       </div>
-
-    </div>
-  );
-
-  /* =====================================================
-     ACTION BUTTONS
-  ===================================================== */
-
-  const actionButtons = (
-    <div className="flex flex-wrap gap-3 pt-4">
-
-      {canExecute && (
-        <button
-          onClick={() =>
-            onExecute({
-              bot_id: botId,
-              decision_id: decisionId,
-            })
-          }
-          className="btn-primary flex items-center gap-2"
-        >
-          <Play size={16} />
-          Voer trade uit
-        </button>
-      )}
-
-      {!isAuto && !isFinal && onSkip && (
-        <button
-          onClick={() => onSkip({ bot_id: botId })}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <SkipForward size={16} />
-          {order ? "Sla trade over" : "Sla over"}
-        </button>
-      )}
-
-      {onGenerate && (
-        <button
-          onClick={onGenerate}
-          disabled={isGenerating}
-          className="btn-outline flex items-center gap-2"
-        >
-          <RotateCcw size={16} />
-          Nieuwe analyse uitvoeren
-        </button>
-      )}
-
     </div>
   );
 
@@ -291,57 +229,102 @@ export default function BotTodayProposal({
   if (!order) {
     return (
       <div className="space-y-5 py-4">
-
         {header}
 
-        <div className="tl-surface space-y-4">
-
+        <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
           <div className="font-medium">
             Geen trade gepland voor vandaag
           </div>
 
           <div className="text-sm text-[var(--text-muted)]">
-            {detail}
+            {setupMatch.detail}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {botScoreCard}
-            {executionCard}
+          {botScoreCard}
+          {executionCard}
+
+          <div className="flex flex-wrap gap-3 pt-4">
+            {!isAuto && !isFinal && onSkip && (
+              <button
+                onClick={() => onSkip({ bot_id: botId })}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <SkipForward size={16} />
+                Sla over
+              </button>
+            )}
+
+            {onGenerate && (
+              <button
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className="btn-outline flex items-center gap-2"
+              >
+                <RotateCcw size={16} />
+                Nieuwe analyse uitvoeren
+              </button>
+            )}
           </div>
-
-          {actionButtons}
-
         </div>
-
       </div>
     );
   }
 
   /* =====================================================
-     TRADE STATE
+     TRADE PROPOSAL
   ===================================================== */
 
   return (
     <div className="space-y-5 py-4">
-
       {header}
 
-      <div className="tl-surface space-y-4">
-
+      <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
         <div className="text-2xl font-semibold">
           {(order.side ?? "buy").toUpperCase()}{" "}
           {order.symbol ?? "—"}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {botScoreCard}
-          {executionCard}
+        {botScoreCard}
+        {executionCard}
+
+        <div className="flex flex-wrap gap-3 pt-4">
+          {canExecute && (
+            <button
+              onClick={() =>
+                onExecute({
+                  bot_id: botId,
+                  decision_id: decisionId,
+                })
+              }
+              className="btn-primary flex items-center gap-2"
+            >
+              <Play size={16} />
+              Voer trade uit
+            </button>
+          )}
+
+          {!isAuto && !isFinal && onSkip && (
+            <button
+              onClick={() => onSkip({ bot_id: botId })}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <SkipForward size={16} />
+              Sla trade over
+            </button>
+          )}
+
+          {onGenerate && (
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="btn-outline flex items-center gap-2"
+            >
+              <RotateCcw size={16} />
+              Nieuwe analyse uitvoeren
+            </button>
+          )}
         </div>
-
-        {actionButtons}
-
       </div>
-
     </div>
   );
 }

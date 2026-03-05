@@ -11,6 +11,7 @@ export default function TradePanelContainer({
   portfolio,
   onManualTrade,
 }) {
+
   const botId = bot?.id;
   const decisionId = decision?.id;
 
@@ -25,38 +26,59 @@ export default function TradePanelContainer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /* ================= WALLET + WATCH ================= */
+  /* =====================================================
+     BOT BUDGET + HOLDINGS
+  ===================================================== */
 
   useEffect(() => {
-    if (!botId || !portfolio) return;
+
+    if (!bot) return;
+
+    /* ---------------- WATCH LEVELS ---------------- */
 
     setWatchLevels({
       breakout: decision?.watch_levels?.breakout_trigger ?? null,
       pullback: decision?.watch_levels?.pullback_zone ?? null,
     });
 
-    const quoteBalance = Number(
-      portfolio?.wallet?.quote_balance ??
-      portfolio?.balances?.quote ??
-      portfolio?.cash ??
+    /* ---------------- BOT BUDGET ---------------- */
+
+    const totalBudget = Number(
+      bot?.budget?.total_eur ??
+      bot?.budget_total_eur ??
       0
     );
 
-    const baseBalance = Number(
-      portfolio?.wallet?.base_balance ??
-      portfolio?.balances?.base ??
+    const usedBudget = Number(
+      bot?.budget?.used_eur ??
+      bot?.budget_used_eur ??
+      portfolio?.stats?.invested ??
+      0
+    );
+
+    const availableBudget = Math.max(0, totalBudget - usedBudget);
+
+    setBalanceQuote(availableBudget);
+
+    /* ---------------- BTC HOLDINGS ---------------- */
+
+    const btcHoldings = Number(
       portfolio?.stats?.net_qty ??
+      portfolio?.holdings?.btc ??
+      portfolio?.wallet?.base_balance ??
       0
     );
 
-    setBalanceQuote(quoteBalance);
-    setBalanceBase(baseBalance);
+    setBalanceBase(btcHoldings);
 
-  }, [botId, portfolio, decision]);
+  }, [bot, portfolio, decision]);
 
-  /* ================= LOAD STRATEGY ================= */
+  /* =====================================================
+     LOAD STRATEGY PLAN
+  ===================================================== */
 
   useEffect(() => {
+
     if (!decisionId) return;
 
     loadPlan();
@@ -84,7 +106,9 @@ export default function TradePanelContainer({
 
   }
 
-  /* ================= PRICE POLLING ================= */
+  /* =====================================================
+     PRICE POLLING
+  ===================================================== */
 
   useEffect(() => {
 
@@ -116,7 +140,9 @@ export default function TradePanelContainer({
 
   }
 
-  /* ================= ORDER ================= */
+  /* =====================================================
+     ORDER HANDLER
+  ===================================================== */
 
   async function handleOrder(order) {
 
@@ -134,23 +160,29 @@ export default function TradePanelContainer({
       let quantity = Number(order.quantity ?? 0);
       let valueEur = Number(order.value_eur ?? 0);
 
+      /* ---------------- SIZE CONVERSION ---------------- */
+
       if (order.size_mode === "quote") {
         quantity = valueEur / effectivePrice;
       } else {
         valueEur = quantity * effectivePrice;
       }
 
+      /* ---------------- VALIDATION ---------------- */
+
       if (!quantity || quantity <= 0) {
         throw new Error("Quantity is verplicht");
       }
 
       if (order.side === "buy" && valueEur > balanceQuote) {
-        throw new Error("Onvoldoende EUR saldo");
+        throw new Error("Onvoldoende budget beschikbaar");
       }
 
       if (order.side === "sell" && quantity > balanceBase) {
         throw new Error("Onvoldoende BTC");
       }
+
+      /* ---------------- CREATE ORDER ---------------- */
 
       await createManualOrder({
         bot_id: botId,
@@ -174,6 +206,10 @@ export default function TradePanelContainer({
 
   }
 
+  /* =====================================================
+     PRICE LOADING STATE
+  ===================================================== */
+
   if (!price) {
     return (
       <div className="p-4 text-sm text-gray-500">
@@ -182,7 +218,9 @@ export default function TradePanelContainer({
     );
   }
 
-  /* ================= UI ================= */
+  /* =====================================================
+     UI
+  ===================================================== */
 
   return (
     <TradePanel
@@ -198,4 +236,5 @@ export default function TradePanelContainer({
       onSubmit={handleOrder}
     />
   );
+
 }

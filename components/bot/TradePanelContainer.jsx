@@ -27,21 +27,21 @@ export default function TradePanelContainer({
   const [error, setError] = useState(null);
 
   /* =====================================================
-     BOT BUDGET + HOLDINGS
+     BOT CAPITAL
   ===================================================== */
 
   useEffect(() => {
 
     if (!bot) return;
 
-    /* ---------------- WATCH LEVELS ---------------- */
+    /* ---------- WATCH LEVELS ---------- */
 
     setWatchLevels({
       breakout: decision?.watch_levels?.breakout_trigger ?? null,
       pullback: decision?.watch_levels?.pullback_zone ?? null,
     });
 
-    /* ---------------- BOT BUDGET ---------------- */
+    /* ---------- TOTAL BOT BUDGET ---------- */
 
     const totalBudget = Number(
       bot?.budget?.total_eur ??
@@ -49,18 +49,22 @@ export default function TradePanelContainer({
       0
     );
 
-    const usedBudget = Number(
-      bot?.budget?.used_eur ??
-      bot?.budget_used_eur ??
+    /* ---------- INVESTED AMOUNT ---------- */
+
+    const invested = Number(
       portfolio?.stats?.invested ??
+      portfolio?.stats?.invested_eur ??
+      bot?.stats?.invested ??
       0
     );
 
-    const availableBudget = Math.max(0, totalBudget - usedBudget);
+    /* ---------- AVAILABLE CAPITAL ---------- */
+
+    const availableBudget = Math.max(0, totalBudget - invested);
 
     setBalanceQuote(availableBudget);
 
-    /* ---------------- BTC HOLDINGS ---------------- */
+    /* ---------- BTC HOLDINGS ---------- */
 
     const btcHoldings = Number(
       portfolio?.stats?.net_qty ??
@@ -160,7 +164,7 @@ export default function TradePanelContainer({
       let quantity = Number(order.quantity ?? 0);
       let valueEur = Number(order.value_eur ?? 0);
 
-      /* ---------------- SIZE CONVERSION ---------------- */
+      /* ---------- SIZE CONVERSION ---------- */
 
       if (order.size_mode === "quote") {
         quantity = valueEur / effectivePrice;
@@ -168,7 +172,7 @@ export default function TradePanelContainer({
         valueEur = quantity * effectivePrice;
       }
 
-      /* ---------------- VALIDATION ---------------- */
+      /* ---------- VALIDATION ---------- */
 
       if (!quantity || quantity <= 0) {
         throw new Error("Quantity is verplicht");
@@ -182,7 +186,7 @@ export default function TradePanelContainer({
         throw new Error("Onvoldoende BTC");
       }
 
-      /* ---------------- CREATE ORDER ---------------- */
+      /* ---------- CREATE ORDER ---------- */
 
       await createManualOrder({
         bot_id: botId,

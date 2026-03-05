@@ -16,7 +16,6 @@ export default function TradePanelContainer({
 
   const [price, setPrice] = useState(null);
 
-  // ✅ wallet balances
   const [balanceQuote, setBalanceQuote] = useState(0);
   const [balanceBase, setBalanceBase] = useState(0);
 
@@ -26,19 +25,15 @@ export default function TradePanelContainer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /* ================= LOAD ================= */
+  /* ================= WALLET + WATCH ================= */
 
   useEffect(() => {
     if (!botId || !portfolio) return;
-
-    /* ================= WATCH LEVELS ================= */
 
     setWatchLevels({
       breakout: decision?.watch_levels?.breakout_trigger ?? null,
       pullback: decision?.watch_levels?.pullback_zone ?? null,
     });
-
-    /* ================= WALLET BALANCES ================= */
 
     const quoteBalance = Number(
       portfolio?.wallet?.quote_balance ??
@@ -57,22 +52,21 @@ export default function TradePanelContainer({
     setBalanceQuote(quoteBalance);
     setBalanceBase(baseBalance);
 
-    /* ================= LOAD DATA ================= */
-
-    loadPlan();
-    loadPrice();
-
-    const interval = setInterval(loadPrice, 60000);
-    return () => clearInterval(interval);
-
-  }, [botId, decision, portfolio]);
+  }, [botId, portfolio, decision]);
 
   /* ================= LOAD STRATEGY ================= */
 
-  async function loadPlan() {
+  useEffect(() => {
     if (!decisionId) return;
 
+    loadPlan();
+
+  }, [decisionId]);
+
+  async function loadPlan() {
+
     try {
+
       const plan = await fetchTradePlan(decisionId);
 
       setStrategy({
@@ -81,15 +75,33 @@ export default function TradePanelContainer({
           ? plan.targets.map((t) => t.price)
           : [],
       });
+
     } catch (err) {
+
       console.error("Plan load error:", err);
+
     }
+
   }
 
-  /* ================= LOAD PRICE ================= */
+  /* ================= PRICE POLLING ================= */
+
+  useEffect(() => {
+
+    if (!botId) return;
+
+    loadPrice();
+
+    const interval = setInterval(loadPrice, 60000);
+
+    return () => clearInterval(interval);
+
+  }, [botId]);
 
   async function loadPrice() {
+
     try {
+
       const btc = await fetchLatestBTC();
 
       if (btc?.price) {
@@ -97,16 +109,21 @@ export default function TradePanelContainer({
       }
 
     } catch (err) {
+
       console.error("Price load error:", err);
+
     }
+
   }
 
   /* ================= ORDER ================= */
 
   async function handleOrder(order) {
+
     setError(null);
 
     try {
+
       setLoading(true);
 
       const effectivePrice =
@@ -117,33 +134,23 @@ export default function TradePanelContainer({
       let quantity = Number(order.quantity ?? 0);
       let valueEur = Number(order.value_eur ?? 0);
 
-      /* ================= SIZE CONVERSION ================= */
-
       if (order.size_mode === "quote") {
         quantity = valueEur / effectivePrice;
       } else {
         valueEur = quantity * effectivePrice;
       }
 
-      /* ================= SAFETY ================= */
-
       if (!quantity || quantity <= 0) {
         throw new Error("Quantity is verplicht");
       }
-
-      /* ================= BUY CHECK ================= */
 
       if (order.side === "buy" && valueEur > balanceQuote) {
         throw new Error("Onvoldoende EUR saldo");
       }
 
-      /* ================= SELL CHECK ================= */
-
       if (order.side === "sell" && quantity > balanceBase) {
         throw new Error("Onvoldoende BTC");
       }
-
-      /* ================= CREATE ORDER ================= */
 
       await createManualOrder({
         bot_id: botId,
@@ -164,9 +171,16 @@ export default function TradePanelContainer({
       setLoading(false);
 
     }
+
   }
 
-  if (!price) return null;
+  if (!price) {
+    return (
+      <div className="p-4 text-sm text-gray-500">
+        Marktprijs laden...
+      </div>
+    );
+  }
 
   /* ================= UI ================= */
 

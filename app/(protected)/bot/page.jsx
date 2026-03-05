@@ -241,7 +241,7 @@ function BotPageInner() {
     });
   };
 
-  const handleOpenBotSettings = (type, bot) => {
+  const handleOpenBotSettings = async (type, bot) => {
   if (!bot) return;
 
   /* ================= GENERAL ================= */

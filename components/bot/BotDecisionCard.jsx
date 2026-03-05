@@ -13,13 +13,6 @@ import {
   Gauge,
 } from "lucide-react";
 
-/**
- * BotTodayProposal — TradeLayer 3.0
- *
- * Backend = single source of truth
- * Frontend toont execution context & sizing logica
- */
-
 export default function BotTodayProposal({
   decision = null,
   order = null,
@@ -96,11 +89,10 @@ export default function BotTodayProposal({
      SETUP MATCH
   ===================================================== */
 
-  const setupMatch = decision.setup_match;
-  if (!setupMatch) return null;
+  const setupMatch = decision.setup_match || null;
 
   const score =
-    typeof setupMatch.score === "number"
+    typeof setupMatch?.score === "number"
       ? Math.min(setupMatch.score, 100)
       : 10;
 
@@ -181,44 +173,52 @@ export default function BotTodayProposal({
         Strategy match vandaag
       </div>
 
-      <div className="font-semibold">
-        {setupMatch.name} · {setupMatch.symbol} ·{" "}
-        {setupMatch.timeframe}
-      </div>
+      {setupMatch ? (
+        <>
+          <div className="font-semibold">
+            {setupMatch.name} · {setupMatch.symbol} ·{" "}
+            {setupMatch.timeframe}
+          </div>
 
-      {formattedDecisionTime && (
-        <div className="text-xs text-[var(--text-muted)]">
-          Laatste analyse: {formattedDecisionTime}
+          {formattedDecisionTime && (
+            <div className="text-xs text-[var(--text-muted)]">
+              Laatste analyse: {formattedDecisionTime}
+            </div>
+          )}
+
+          <ScoreBar score={score} />
+
+          <div className="text-xs text-[var(--text-muted)]">
+            Marktscore:
+            <span className="font-medium ml-1">
+              {score} / 100
+            </span>
+          </div>
+
+          <div className="text-xs text-[var(--text-muted)]">
+            Strategy discipline:
+            <span className="font-medium uppercase ml-1">
+              {confidence}
+            </span>
+          </div>
+
+          {setupMatch.thresholds && (
+            <div className="text-xs text-[var(--text-muted)]">
+              Drempels: buy ≥ {setupMatch.thresholds.buy} · hold ≥{" "}
+              {setupMatch.thresholds.hold}
+            </div>
+          )}
+
+          <div className="text-xs italic text-gray-500">
+            <div className="font-medium">{setupMatch.summary}</div>
+            <div>{setupMatch.detail}</div>
+          </div>
+        </>
+      ) : (
+        <div className="text-xs text-gray-500">
+          Geen strategy match gevonden voor vandaag.
         </div>
       )}
-
-      <ScoreBar score={score} />
-
-      <div className="text-xs text-[var(--text-muted)]">
-        Marktscore:
-        <span className="font-medium ml-1">
-          {score} / 100
-        </span>
-      </div>
-
-      <div className="text-xs text-[var(--text-muted)]">
-        Strategy discipline:
-        <span className="font-medium uppercase ml-1">
-          {confidence}
-        </span>
-      </div>
-
-      {setupMatch.thresholds && (
-        <div className="text-xs text-[var(--text-muted)]">
-          Drempels: buy ≥ {setupMatch.thresholds.buy} · hold ≥{" "}
-          {setupMatch.thresholds.hold}
-        </div>
-      )}
-
-      <div className="text-xs italic text-gray-500">
-        <div className="font-medium">{setupMatch.summary}</div>
-        <div>{setupMatch.detail}</div>
-      </div>
     </div>
   );
 
@@ -234,10 +234,6 @@ export default function BotTodayProposal({
         <div className="bg-[var(--surface-2)] rounded-xl p-5 space-y-4">
           <div className="font-medium">
             Geen trade gepland voor vandaag
-          </div>
-
-          <div className="text-sm text-[var(--text-muted)]">
-            {setupMatch.detail}
           </div>
 
           {botScoreCard}

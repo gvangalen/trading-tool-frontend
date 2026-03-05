@@ -52,8 +52,8 @@ export default function TradePanelContainer({
     /* ---------- INVESTED AMOUNT ---------- */
 
     const invested = Number(
-      portfolio?.stats?.invested ??
       portfolio?.stats?.invested_eur ??
+      portfolio?.stats?.invested ??
       bot?.stats?.invested ??
       0
     );
@@ -75,7 +75,13 @@ export default function TradePanelContainer({
 
     setBalanceBase(btcHoldings);
 
-  }, [bot, portfolio, decision]);
+  }, [
+    bot?.budget?.total_eur,
+    bot?.budget_total_eur,
+    portfolio?.stats?.invested_eur,
+    portfolio?.stats?.net_qty,
+    decision
+  ]);
 
   /* =====================================================
      LOAD STRATEGY PLAN

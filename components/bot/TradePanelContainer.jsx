@@ -15,6 +15,8 @@ export default function TradePanelContainer({
   const decisionId = decision?.id;
 
   const [price, setPrice] = useState(null);
+
+  // ✅ wallet balances
   const [balanceQuote, setBalanceQuote] = useState(0);
   const [balanceBase, setBalanceBase] = useState(0);
 
@@ -29,36 +31,43 @@ export default function TradePanelContainer({
   useEffect(() => {
     if (!botId || !portfolio) return;
 
+    /* ================= WATCH LEVELS ================= */
+
     setWatchLevels({
       breakout: decision?.watch_levels?.breakout_trigger ?? null,
       pullback: decision?.watch_levels?.pullback_zone ?? null,
     });
 
-    /* ================= BUDGET BEREKENING (MANUAL) ================= */
+    /* ================= WALLET BALANCES ================= */
 
-    const totalBudget = Number(portfolio?.budget?.total_eur ?? 0);
-    const dailyLimit = Number(portfolio?.budget?.daily_limit_eur ?? 0);
+    const quoteBalance = Number(
+      portfolio?.wallet?.quote_balance ??
+      portfolio?.balances?.quote ??
+      portfolio?.cash ??
+      0
+    );
 
-    const invested = Number(portfolio?.stats?.invested_eur ?? 0);
-    const spentToday = Number(portfolio?.stats?.today_spent_eur ?? 0);
+    const baseBalance = Number(
+      portfolio?.wallet?.base_balance ??
+      portfolio?.balances?.base ??
+      portfolio?.stats?.net_qty ??
+      0
+    );
 
-    const remainingTotal = Math.max(totalBudget - invested, 0);
-    const remainingDaily = Math.max(dailyLimit - spentToday, 0);
+    setBalanceQuote(quoteBalance);
+    setBalanceBase(baseBalance);
 
-    const availableManual =
-      dailyLimit > 0
-        ? Math.min(remainingTotal, remainingDaily)
-        : remainingTotal;
-
-    setBalanceQuote(availableManual);
-    setBalanceBase(Number(portfolio?.stats?.net_qty ?? 0));
+    /* ================= LOAD DATA ================= */
 
     loadPlan();
     loadPrice();
 
     const interval = setInterval(loadPrice, 60000);
     return () => clearInterval(interval);
+
   }, [botId, decision, portfolio]);
+
+  /* ================= LOAD STRATEGY ================= */
 
   async function loadPlan() {
     if (!decisionId) return;
@@ -77,12 +86,16 @@ export default function TradePanelContainer({
     }
   }
 
+  /* ================= LOAD PRICE ================= */
+
   async function loadPrice() {
     try {
       const btc = await fetchLatestBTC();
+
       if (btc?.price) {
         setPrice(Number(btc.price));
       }
+
     } catch (err) {
       console.error("Price load error:", err);
     }
@@ -104,27 +117,33 @@ export default function TradePanelContainer({
       let quantity = Number(order.quantity ?? 0);
       let valueEur = Number(order.value_eur ?? 0);
 
-      // If user entered EUR amount
+      /* ================= SIZE CONVERSION ================= */
+
       if (order.size_mode === "quote") {
         quantity = valueEur / effectivePrice;
       } else {
         valueEur = quantity * effectivePrice;
       }
 
-      // Safety check
+      /* ================= SAFETY ================= */
+
       if (!quantity || quantity <= 0) {
         throw new Error("Quantity is verplicht");
       }
 
-      // Budget check (buy)
+      /* ================= BUY CHECK ================= */
+
       if (order.side === "buy" && valueEur > balanceQuote) {
-        throw new Error("Onvoldoende budget");
+        throw new Error("Onvoldoende EUR saldo");
       }
 
-      // BTC check (sell)
+      /* ================= SELL CHECK ================= */
+
       if (order.side === "sell" && quantity > balanceBase) {
         throw new Error("Onvoldoende BTC");
       }
+
+      /* ================= CREATE ORDER ================= */
 
       await createManualOrder({
         bot_id: botId,
@@ -135,14 +154,21 @@ export default function TradePanelContainer({
       });
 
       onManualTrade?.(order);
+
     } catch (err) {
+
       setError(err.message || "Order mislukt");
+
     } finally {
+
       setLoading(false);
+
     }
   }
 
   if (!price) return null;
+
+  /* ================= UI ================= */
 
   return (
     <TradePanel

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpCircle,
   ArrowDownCircle,
-  AlertTriangle,
   CheckCircle2,
   XCircle,
 } from "lucide-react";
@@ -50,7 +49,9 @@ export default function TradePanel({
 
   const [side, setSide] = useState("buy");
   const [orderType, setOrderType] = useState("limit");
-  const [orderPrice, setOrderPrice] = useState(num(price, 0));
+
+  // FIX: voorkomt 0 prijs init bug
+  const [orderPrice, setOrderPrice] = useState(null);
 
   const [amountPct, setAmountPct] = useState(25);
   const [sizeMode, setSizeMode] = useState("quote");
@@ -97,13 +98,16 @@ export default function TradePanel({
   }, [orderType, price, orderPrice]);
 
   useEffect(() => {
+
     const live = num(price, null);
     if (!live) return;
 
     if (orderType === "market") return;
 
     const current = num(orderPrice, null);
-    if (!current || current <= 0) setOrderPrice(live);
+    if (!current || current <= 0) {
+      setOrderPrice(live);
+    }
 
   }, [price, orderType]);
 
@@ -172,51 +176,13 @@ export default function TradePanel({
   }, [side, balanceQuote, balanceBase]);
 
   /* =========================
-     Risk preview
-  ========================= */
-
-  const riskPct = useMemo(() => {
-
-    if (!useTpSl) return null;
-
-    const p = num(effectivePrice, null);
-    const sl = num(slPrice, null);
-
-    if (!p || !sl) return null;
-
-    const risk =
-      side === "buy"
-        ? ((p - sl) / p) * 100
-        : ((sl - p) / p) * 100;
-
-    return Math.abs(risk).toFixed(2);
-
-  }, [useTpSl, effectivePrice, slPrice, side]);
-
-  const rrRatio = useMemo(() => {
-
-    if (!useTpSl) return null;
-
-    const p = num(effectivePrice, null);
-    const sl = num(slPrice, null);
-    const tp = num(tpPrice, null);
-
-    if (!p || !sl || !tp) return null;
-
-    const reward = side === "buy" ? tp - p : p - tp;
-    const risk = side === "buy" ? p - sl : sl - p;
-
-    if (risk <= 0) return null;
-
-    return (reward / risk).toFixed(2);
-
-  }, [useTpSl, effectivePrice, slPrice, tpPrice, side]);
-
-  /* =========================
      Validation
   ========================= */
 
   const validation = useMemo(() => {
+
+    if (!hasBalance)
+      return { ok: false, reason: "Geen beschikbaar saldo" };
 
     const p = num(effectivePrice, null);
     const q = num(qtyBase, null);
@@ -228,7 +194,8 @@ export default function TradePanel({
 
     if (side === "buy") {
       if (v == null) return { ok: false, reason: "Orderwaarde onbekend" };
-      if (v > num(balanceQuote, 0)) return { ok: false, reason: "Onvoldoende saldo" };
+      if (v > num(balanceQuote, 0))
+        return { ok: false, reason: "Onvoldoende saldo" };
     }
 
     if (side === "sell" && q > num(balanceBase, 0))
@@ -237,6 +204,7 @@ export default function TradePanel({
     return { ok: true };
 
   }, [
+    hasBalance,
     effectivePrice,
     qtyBase,
     orderValueQuote,
@@ -274,7 +242,14 @@ export default function TradePanel({
 
     }
 
-  }, [qtyFromPct, effectivePrice, sizeMode, maxQtyBase]);
+  }, [
+    qtyFromPct,
+    effectivePrice,
+    sizeMode,
+    maxQtyBase,
+    amountBaseInput,
+    amountQuoteInput
+  ]);
 
   /* =========================
      Toggle size mode
@@ -342,6 +317,7 @@ export default function TradePanel({
       setAmountPct(25);
       setAmountQuoteInput("");
       setAmountBaseInput("");
+
       setTpPrice("");
       setSlPrice("");
 
@@ -356,10 +332,14 @@ export default function TradePanel({
   return (
     <div className="trade-panel p-5 w-full max-w-md space-y-5">
 
+      {/* HEADER */}
+
       <div className="flex justify-between items-center">
+
         <h2 className="text-lg font-semibold">Trade</h2>
 
         <div className="text-xs text-right">
+
           <div className="opacity-80">Beschikbaar saldo</div>
 
           {side === "buy"
@@ -376,6 +356,7 @@ export default function TradePanel({
           }
 
         </div>
+
       </div>
 
       {/* BUY SELL */}
@@ -410,7 +391,7 @@ export default function TradePanel({
 
         <input
           type="number"
-          value={orderType === "market" ? num(price,"") : orderPrice}
+          value={orderType === "market" ? num(price,"") : orderPrice ?? ""}
           disabled={orderType === "market"}
           onChange={(e) => setOrderPrice(Number(e.target.value))}
           className="trade-input mt-1"
@@ -470,7 +451,7 @@ export default function TradePanel({
 
       </div>
 
-      {/* VALUE */}
+      {/* ORDER VALUE */}
 
       <div className="trade-surface p-3">
 
@@ -484,6 +465,12 @@ export default function TradePanel({
         </div>
 
       </div>
+
+      {/* ERROR */}
+
+      {error && (
+        <div className="trade-badge-bad">{error}</div>
+      )}
 
       {/* VALIDATION */}
 

@@ -13,13 +13,6 @@ import {
   Gauge,
 } from "lucide-react";
 
-/**
- * BotTodayProposal — TradeLayer 3.0 (FULL)
- *
- * Backend = single source of truth
- * Frontend toont execution context & sizing logica
- */
-
 export default function BotTodayProposal({
   decision = null,
   order = null,
@@ -30,8 +23,9 @@ export default function BotTodayProposal({
   onSkip,
   isAuto = false,
 }) {
+
   /* =====================================================
-     LOADING / EMPTY
+     LOADING
   ===================================================== */
 
   if (loading) {
@@ -62,23 +56,31 @@ export default function BotTodayProposal({
 
   const executionMode = decision.execution_mode || "fixed";
   const curveName = decision.decision_curve_name || null;
+
   const multiplier = Number(decision.exposure_multiplier ?? 1);
   const baseAmount = Number(decision.base_amount ?? 0);
 
   const safeMultiplier = Number.isFinite(multiplier) ? multiplier : 1;
 
   const executionLabel =
-    executionMode === "custom" ? "Curve sizing actief" : "Vast bedrag";
+    executionMode === "custom"
+      ? "Curve sizing actief"
+      : "Vast bedrag";
 
   const allocationPreview =
-    baseAmount > 0 ? `€${Math.round(baseAmount * safeMultiplier)}` : null;
+    baseAmount > 0
+      ? `€${Math.round(baseAmount * safeMultiplier)}`
+      : null;
 
   /* =====================================================
      TIMESTAMP
   ===================================================== */
 
   const decisionTime =
-    decision.updated_at || decision.decision_ts || decision.created_at || null;
+    decision.updated_at ||
+    decision.decision_ts ||
+    decision.created_at ||
+    null;
 
   const formattedDecisionTime = decisionTime
     ? new Date(decisionTime).toLocaleString("nl-NL", {
@@ -90,14 +92,27 @@ export default function BotTodayProposal({
     : null;
 
   /* =====================================================
-     SETUP MATCH
+     SETUP MATCH (SAFE)
   ===================================================== */
 
-  const setupMatch = decision.setup_match;
-  if (!setupMatch) return null;
+  const setupMatch = decision.setup_match ?? null;
 
   const score =
-    typeof setupMatch.score === "number" ? Math.min(setupMatch.score, 100) : 10;
+    typeof setupMatch?.score === "number"
+      ? Math.min(setupMatch.score, 100)
+      : decision.market_score ?? 10;
+
+  const setupName = setupMatch?.name ?? "Geen strategy match";
+  const setupSymbol = setupMatch?.symbol ?? "—";
+  const setupTf = setupMatch?.timeframe ?? "—";
+
+  const summary =
+    setupMatch?.summary ??
+    "De bot ziet momenteel geen setup die aan de voorwaarden voldoet.";
+
+  const detail =
+    setupMatch?.detail ??
+    "De bot wacht op betere marktomstandigheden.";
 
   /* =====================================================
      EXECUTE GUARD
@@ -105,7 +120,12 @@ export default function BotTodayProposal({
 
   const hasTrade = !!order;
 
-  const canExecute = !isAuto && !isFinal && hasTrade && !!onExecute && !!decisionId;
+  const canExecute =
+    !isAuto &&
+    !isFinal &&
+    hasTrade &&
+    !!onExecute &&
+    !!decisionId;
 
   /* =====================================================
      HEADER
@@ -114,21 +134,24 @@ export default function BotTodayProposal({
   const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
       <ShoppingCart size={16} className="mt-0.5" />
+
       <div>
         <div className="font-medium text-[var(--text)]">
           Vandaag – voorstel van de bot
         </div>
+
         <div>Maximaal één beslissing per dag.</div>
       </div>
     </div>
   );
 
   /* =====================================================
-     POSITION SIZING CARD
+     POSITION SIZING
   ===================================================== */
 
   const executionCard = (
     <div className="tl-card space-y-2">
+
       <div className="flex items-center gap-2 font-medium">
         <TrendingUp size={14} />
         Position sizing
@@ -136,6 +159,7 @@ export default function BotTodayProposal({
 
       <div className="text-xs text-[var(--text-muted)]">
         {executionLabel}
+
         {executionMode === "custom" && curveName && (
           <span className="ml-1">· {curveName}</span>
         )}
@@ -144,15 +168,20 @@ export default function BotTodayProposal({
       <div className="flex items-center gap-2 text-xs">
         <Gauge size={14} />
         Exposure multiplier:
-        <span className="font-medium">{safeMultiplier.toFixed(2)}×</span>
+        <span className="font-medium">
+          {safeMultiplier.toFixed(2)}×
+        </span>
       </div>
 
       {allocationPreview && (
         <div className="text-xs text-[var(--text-muted)]">
           Verwachte allocatie:
-          <span className="font-medium ml-1">{allocationPreview}</span>
+          <span className="font-medium ml-1">
+            {allocationPreview}
+          </span>
         </div>
       )}
+
     </div>
   );
 
@@ -162,13 +191,14 @@ export default function BotTodayProposal({
 
   const botScoreCard = (
     <div className="tl-card space-y-2">
+
       <div className="flex items-center gap-2 font-medium">
         <Layers size={14} />
         Strategy match vandaag
       </div>
 
       <div className="font-semibold">
-        {setupMatch.name} · {setupMatch.symbol} · {setupMatch.timeframe}
+        {setupName} · {setupSymbol} · {setupTf}
       </div>
 
       {formattedDecisionTime && (
@@ -181,15 +211,19 @@ export default function BotTodayProposal({
 
       <div className="text-xs text-[var(--text-muted)]">
         Marktscore:
-        <span className="font-medium ml-1">{score} / 100</span>
+        <span className="font-medium ml-1">
+          {score} / 100
+        </span>
       </div>
 
       <div className="text-xs text-[var(--text-muted)]">
         Strategy discipline:
-        <span className="font-medium uppercase ml-1">{confidence}</span>
+        <span className="font-medium uppercase ml-1">
+          {confidence}
+        </span>
       </div>
 
-      {setupMatch.thresholds && (
+      {setupMatch?.thresholds && (
         <div className="text-xs text-[var(--text-muted)]">
           Drempels: buy ≥ {setupMatch.thresholds.buy} · hold ≥{" "}
           {setupMatch.thresholds.hold}
@@ -197,9 +231,10 @@ export default function BotTodayProposal({
       )}
 
       <div className="text-xs italic text-gray-500">
-        <div className="font-medium">{setupMatch.summary}</div>
-        <div>{setupMatch.detail}</div>
+        <div className="font-medium">{summary}</div>
+        <div>{detail}</div>
       </div>
+
     </div>
   );
 
@@ -209,6 +244,7 @@ export default function BotTodayProposal({
 
   const actionButtons = (
     <div className="flex flex-wrap gap-3 pt-4">
+
       {canExecute && (
         <button
           onClick={() =>
@@ -244,23 +280,29 @@ export default function BotTodayProposal({
           Nieuwe analyse uitvoeren
         </button>
       )}
+
     </div>
   );
 
   /* =====================================================
-     NO TRADE STATE (FULL)
+     NO TRADE STATE
   ===================================================== */
 
   if (!order) {
     return (
       <div className="space-y-5 py-4">
+
         {header}
 
-        {/* 3.0 Container (geen blauw) */}
         <div className="tl-surface space-y-4">
-          <div className="font-medium">Geen trade gepland voor vandaag</div>
 
-          <div className="text-sm text-[var(--text-muted)]">{setupMatch.detail}</div>
+          <div className="font-medium">
+            Geen trade gepland voor vandaag
+          </div>
+
+          <div className="text-sm text-[var(--text-muted)]">
+            {detail}
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             {botScoreCard}
@@ -268,22 +310,27 @@ export default function BotTodayProposal({
           </div>
 
           {actionButtons}
+
         </div>
+
       </div>
     );
   }
 
   /* =====================================================
-     TRADE PROPOSAL (FULL)
+     TRADE STATE
   ===================================================== */
 
   return (
     <div className="space-y-5 py-4">
+
       {header}
 
       <div className="tl-surface space-y-4">
+
         <div className="text-2xl font-semibold">
-          {(order.side ?? "buy").toUpperCase()} {order.symbol ?? "—"}
+          {(order.side ?? "buy").toUpperCase()}{" "}
+          {order.symbol ?? "—"}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -292,7 +339,9 @@ export default function BotTodayProposal({
         </div>
 
         {actionButtons}
+
       </div>
+
     </div>
   );
 }

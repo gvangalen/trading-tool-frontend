@@ -1,9 +1,13 @@
 "use client";
 
 import { useActiveBot } from "@/app/providers/ActiveBotProvider";
-import TradePanel from "./TradePanel";
+import TradePanelContainer from "./TradePanelContainer";
 
-export default function GlobalTradePanel() {
+export default function GlobalTradePanel({
+  decision,
+  portfolio,
+  onManualTrade,
+}) {
   const { activeBot } = useActiveBot();
 
   if (!activeBot) {
@@ -14,15 +18,21 @@ export default function GlobalTradePanel() {
     );
   }
 
-  const symbol =
-    (activeBot?.strategy?.symbol || activeBot?.symbol || "—").toUpperCase();
+  const symbol = (
+    activeBot?.strategy?.symbol ||
+    activeBot?.symbol ||
+    "—"
+  ).toUpperCase();
 
   const timeframe =
-    activeBot?.strategy?.timeframe || activeBot?.timeframe || "—";
+    activeBot?.strategy?.timeframe ||
+    activeBot?.timeframe ||
+    "—";
 
   return (
     <div className="space-y-4">
-      {/* Context header */}
+
+      {/* Bot context */}
       <div className="card-surface p-4">
         <div className="text-sm text-[var(--text-muted)]">
           Handelen voor
@@ -37,8 +47,14 @@ export default function GlobalTradePanel() {
         </div>
       </div>
 
-      {/* Re-use je bestaande TradePanel */}
-      <TradePanel bot={activeBot} />
+      {/* Trade panel */}
+      <TradePanelContainer
+        bot={activeBot}
+        decision={decision}
+        portfolio={portfolio}
+        onManualTrade={onManualTrade}
+      />
+
     </div>
   );
 }

@@ -51,12 +51,13 @@ export default function TradePanelContainer({
 
     /* ---------- INVESTED AMOUNT ---------- */
 
-    const invested = Number(
+    const invested = Math.abs(Number(
+      portfolio?.stats?.net_executed_cash_delta_eur ??
       portfolio?.stats?.invested_eur ??
       portfolio?.stats?.invested ??
       bot?.stats?.invested ??
       0
-    );
+    ));
 
     /* ---------- AVAILABLE CAPITAL ---------- */
 
@@ -78,6 +79,7 @@ export default function TradePanelContainer({
   }, [
     bot?.budget?.total_eur,
     bot?.budget_total_eur,
+    portfolio?.stats?.net_executed_cash_delta_eur,
     portfolio?.stats?.invested_eur,
     portfolio?.stats?.net_qty,
     decision
@@ -201,6 +203,18 @@ export default function TradePanelContainer({
         quantity: quantity,
         price: effectivePrice,
       });
+
+      /* ---------- REFRESH LOCAL BALANCE ---------- */
+
+      if (order.side === "buy") {
+        setBalanceQuote((prev) => Math.max(0, prev - valueEur));
+        setBalanceBase((prev) => prev + quantity);
+      }
+
+      if (order.side === "sell") {
+        setBalanceQuote((prev) => prev + valueEur);
+        setBalanceBase((prev) => Math.max(0, prev - quantity));
+      }
 
       onManualTrade?.(order);
 

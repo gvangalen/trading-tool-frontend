@@ -125,7 +125,7 @@ export default function TradePanel({
       ? Math.max(0, num(availableQuote, 0) / p)
       : Math.max(0, num(balanceBase, 0));
 
-  }, [side, balanceQuote, balanceBase, effectivePrice]);
+  }, [side, availableQuote, balanceBase, effectivePrice]);
 
   const qtyFromPct = useMemo(() => {
     return (maxQtyBase * clamp(amountPct, 0, 100)) / 100;
@@ -171,10 +171,10 @@ export default function TradePanel({
 
   const hasBalance = useMemo(() => {
 
-    if (side === "buy") return num(balanceQuote, 0) > 0;
+    if (side === "buy") return num(availableQuote, 0) > 0;
     return num(balanceBase, 0) > 0;
 
-  }, [side, balanceQuote, balanceBase]);
+  }, [side, availableQuote, balanceBase]);
 
   /* =========================
      Validation

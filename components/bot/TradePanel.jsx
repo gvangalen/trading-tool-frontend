@@ -34,6 +34,7 @@ export default function TradePanel({
   price = 66744,
   balanceQuote = 0,
   balanceBase = 0,
+  availableQuote = balanceQuote,
   quoteSymbol = "EUR",
   baseSymbol = "BTC",
   strategy = {},
@@ -121,7 +122,7 @@ export default function TradePanel({
     if (!p) return 0;
 
     return side === "buy"
-      ? Math.max(0, num(balanceQuote, 0) / p)
+      ? Math.max(0, num(availableQuote, 0) / p)
       : Math.max(0, num(balanceBase, 0));
 
   }, [side, balanceQuote, balanceBase, effectivePrice]);
@@ -194,7 +195,7 @@ export default function TradePanel({
 
     if (side === "buy") {
       if (v == null) return { ok: false, reason: "Orderwaarde onbekend" };
-      if (v > num(balanceQuote, 0))
+      if (v > num(availableQuote, 0))
         return { ok: false, reason: "Onvoldoende saldo" };
     }
 
@@ -345,7 +346,7 @@ export default function TradePanel({
           {side === "buy"
             ? (
               <div className="font-semibold">
-                {fmt(balanceQuote)} {quoteSymbol}
+                {fmt(availableQuote)} {quoteSymbol}
               </div>
             )
             : (

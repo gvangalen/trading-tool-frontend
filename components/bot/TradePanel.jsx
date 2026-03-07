@@ -54,7 +54,7 @@ export default function TradePanel({
   // FIX: voorkomt 0 prijs init bug
   const [orderPrice, setOrderPrice] = useState(null);
 
-  const [amountPct, setAmountPct] = useState(25);
+  const [amountPct, setAmountPct] = useState(0);
   const [sizeMode, setSizeMode] = useState("quote");
 
   const [amountQuoteInput, setAmountQuoteInput] = useState("");
@@ -219,38 +219,40 @@ export default function TradePanel({
   /* =========================
      Sync slider -> input
   ========================= */
+useEffect(() => {
 
-  useEffect(() => {
+  const p = num(effectivePrice, null);
+  if (!p || p <= 0) return;
 
-    const p = num(effectivePrice, null);
-    if (!p || p <= 0) return;
+  if (maxQtyBase <= 0) return;
 
-    if (maxQtyBase <= 0) return;
+  if (amountPct === 0) return;
 
-    if (sizeMode === "base") {
+  if (sizeMode === "base") {
 
-      if (amountBaseInput === "") {
-        const q = qtyFromPct;
-        setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
-      }
-
-    } else {
-
-      if (amountQuoteInput === "") {
-        const v = qtyFromPct * p;
-        setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
-      }
-
+    if (amountBaseInput === "") {
+      const q = qtyFromPct;
+      setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
     }
 
-  }, [
-    qtyFromPct,
-    effectivePrice,
-    sizeMode,
-    maxQtyBase,
-    amountBaseInput,
-    amountQuoteInput
-  ]);
+  } else {
+
+    if (amountQuoteInput === "") {
+      const v = qtyFromPct * p;
+      setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
+    }
+
+  }
+
+}, [
+  qtyFromPct,
+  effectivePrice,
+  sizeMode,
+  maxQtyBase,
+  amountPct,
+  amountBaseInput,
+  amountQuoteInput
+]);
 
   /* =========================
      Toggle size mode

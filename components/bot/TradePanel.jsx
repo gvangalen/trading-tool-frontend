@@ -315,7 +315,7 @@ export default function TradePanel({
         sl: useTpSl ? num(slPrice, null) : null,
       });
 
-      setAmountPct(25);
+      setAmountPct(0);
       setAmountQuoteInput("");
       setAmountBaseInput("");
 

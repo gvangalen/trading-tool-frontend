@@ -123,17 +123,35 @@ export default function TradePlanCard({
         {derived.entry_plan.length === 0 ? (
           <div className="text-sm text-gray-500">—</div>
         ) : (
-          derived.entry_plan.map((e, i) => (
-            <div
-              key={i}
-              className="flex justify-between bg-gray-50 p-3 rounded-lg"
-            >
-              <div>{(e.type || "buy").toUpperCase()}</div>
-              <div className="font-semibold">
-                €{fmtPrice(e.price)}
+          derived.entry_plan.map((e, i) => {
+            const label =
+              e.label ||
+              (e.type === "limit"
+                ? "Limit entry"
+                : e.type === "market"
+                ? "Market entry"
+                : e.type === "watch"
+                ? "Watch level"
+                : "Entry");
+
+            const isWatch = e.type === "watch";
+
+            return (
+              <div
+                key={i}
+                className={`flex justify-between p-3 rounded-lg ${
+                  isWatch
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-gray-50 text-gray-800"
+                }`}
+              >
+                <div className="font-medium">{label}</div>
+                <div className="font-semibold">
+                  €{fmtPrice(e.price)}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

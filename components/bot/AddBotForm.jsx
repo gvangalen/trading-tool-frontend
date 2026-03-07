@@ -22,23 +22,13 @@ const RISK_PROFILES = [
 
 /**
  * AddBotForm — TradeLayer 2.5 (FINAL)
- * --------------------------------------------------
- * ✔ Create + Edit
- * ✔ GEEN submit knop
- * ✔ GEEN eigen submit logica
- * ✔ ALTIJD live sync naar parent
- *
- * Props:
- * - initialData?: bot | null
- * - strategies: []
- * - onChange: (formState) => void
  */
 export default function AddBotForm({
   initialData = null,
   strategies = [],
   onChange,
 }) {
-  // robuust: backend kan id of bot_id gebruiken
+
   const isEdit = Boolean(initialData?.id ?? initialData?.bot_id);
 
   const [form, setForm] = useState({
@@ -51,7 +41,7 @@ export default function AddBotForm({
   });
 
   /* =====================================================
-     🔁 INIT / PREFILL
+     INIT / PREFILL
   ===================================================== */
   useEffect(() => {
     if (!initialData) return;
@@ -70,15 +60,14 @@ export default function AddBotForm({
   }, [initialData]);
 
   /* =====================================================
-     📤 LIVE SYNC NAAR PARENT (CRUCIAAL)
-     → DIT is waarom risk_profile nu wél werkt
+     LIVE SYNC NAAR PARENT
   ===================================================== */
   useEffect(() => {
     onChange?.(form);
   }, [form, onChange]);
 
   /* =====================================================
-     🧠 DERIVED
+     DERIVED
   ===================================================== */
   const selectedStrategy = useMemo(() => {
     return (
@@ -92,16 +81,21 @@ export default function AddBotForm({
     RISK_PROFILES.find((r) => r.value === form.risk_profile) ??
     RISK_PROFILES[1];
 
+  const getStrategyType = (s) =>
+    (s?.strategy_type || s?.type || "manual").toUpperCase();
+
   /* =====================================================
-     🧠 RENDER
+     RENDER
   ===================================================== */
   return (
     <div className="space-y-6">
-      {/* ================= NAAM ================= */}
+
+      {/* ================= BOT NAME ================= */}
       <div>
         <label className="block text-sm font-medium mb-1">
           Bot naam
         </label>
+
         <input
           className="input w-full"
           placeholder="DCA BTC Bot"
@@ -112,23 +106,26 @@ export default function AddBotForm({
         />
       </div>
 
-      {/* ================= STRATEGIE ================= */}
+      {/* ================= STRATEGY ================= */}
       <div>
         <label className="block text-sm font-medium mb-1">
           Strategie
         </label>
 
         {isEdit ? (
+
           <div className="input w-full bg-[var(--surface-2)] cursor-not-allowed">
             {selectedStrategy
-              ? `${selectedStrategy.name} · ${String(
-                  selectedStrategy.type
-                ).toUpperCase()} · ${selectedStrategy.symbol} · ${
+              ? `${selectedStrategy.name} · ${getStrategyType(
+                  selectedStrategy
+                )} · ${selectedStrategy.symbol} · ${
                   selectedStrategy.timeframe
                 }`
               : "—"}
           </div>
+
         ) : (
+
           <select
             className="input w-full"
             value={form.strategy_id ?? ""}
@@ -141,43 +138,52 @@ export default function AddBotForm({
               }))
             }
           >
+
             <option value="">— Selecteer een strategie —</option>
+
             {strategies.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} · {String(s.type).toUpperCase()} ·{" "}
-                {s.symbol} · {s.timeframe}
+                {s.display_name || `${s.name} · ${s.symbol} · ${s.timeframe}`}
               </option>
             ))}
+
           </select>
+
         )}
       </div>
 
       {/* ================= STRATEGY PREVIEW ================= */}
       {selectedStrategy && (
         <div className="rounded-[var(--radius-sm)] bg-[var(--surface-2)] border border-[var(--border)] p-3 text-sm space-y-1">
+
           <div>
-            <b>Type:</b>{" "}
-            {String(selectedStrategy.type).toUpperCase()}
+            <b>Type:</b> {getStrategyType(selectedStrategy)}
           </div>
+
           <div>
             <b>Asset:</b> {selectedStrategy.symbol}
           </div>
+
           <div>
             <b>Timeframe:</b> {selectedStrategy.timeframe}
           </div>
+
           {selectedStrategy.description && (
             <div className="text-[var(--text-muted)]">
               {selectedStrategy.description}
             </div>
           )}
+
         </div>
       )}
 
       {/* ================= MODE ================= */}
       <div>
+
         <label className="block text-sm font-medium mb-1">
           Mode
         </label>
+
         <select
           className="input w-full"
           value={form.mode}
@@ -185,17 +191,22 @@ export default function AddBotForm({
             setForm((s) => ({ ...s, mode: e.target.value }))
           }
         >
+
           <option value="manual">Manual</option>
           <option value="semi">Semi-auto</option>
           <option value="auto">Auto</option>
+
         </select>
+
       </div>
 
       {/* ================= RISK PROFILE ================= */}
       <div>
+
         <label className="block text-sm font-medium mb-1">
           Risk profile
         </label>
+
         <select
           className="input w-full"
           value={form.risk_profile}
@@ -206,17 +217,21 @@ export default function AddBotForm({
             }))
           }
         >
+
           {RISK_PROFILES.map((r) => (
             <option key={r.value} value={r.value}>
               {r.label}
             </option>
           ))}
+
         </select>
 
         <div className="mt-1 text-xs text-[var(--text-muted)]">
           {selectedRisk.description}
         </div>
+
       </div>
+
     </div>
   );
 }

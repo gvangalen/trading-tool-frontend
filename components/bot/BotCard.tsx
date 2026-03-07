@@ -19,6 +19,10 @@ export default function BotCard({
 
   const { id, name, is_active, strategy } = bot;
 
+  // 🔧 FIX: backend gebruikt strategy_type
+  const getStrategyType = (s) =>
+    (s?.strategy_type || s?.type || "manual").toUpperCase();
+
   return (
     <div
       data-bot-id={id}
@@ -45,7 +49,7 @@ export default function BotCard({
 
             {strategy ? (
               <p className="text-xs text-[var(--text-muted)]">
-                {String(strategy.type).toUpperCase()} •{" "}
+                {getStrategyType(strategy)} •{" "}
                 {strategy.symbol} • {strategy.timeframe}
               </p>
             ) : (
@@ -89,7 +93,7 @@ export default function BotCard({
             <b>Strategie:</b> {strategy.name}
           </div>
           <div className="text-[var(--text-muted)]">
-            Type: {String(strategy.type).toUpperCase()}
+            Type: {getStrategyType(strategy)}
           </div>
         </div>
       )}

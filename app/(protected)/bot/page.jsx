@@ -288,9 +288,10 @@ function BotPageInner() {
     ),
     confirmText: "Opslaan",
     onConfirm: async () => {
-      await updateBudgetForBot({
-        bot_id: bot.id,
-        budget: budgetRef.current,
+      await updateBot(bot.id, {
+        budget_total_eur: budgetRef.current.total_eur,
+        budget_daily_limit_eur: budgetRef.current.daily_limit_eur,
+        budget_max_order_eur: budgetRef.current.max_order_eur,
       });
 
       showSnackbar("Budget bijgewerkt", "success");

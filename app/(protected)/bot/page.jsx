@@ -269,37 +269,38 @@ function BotPageInner() {
   }
 
   /* ================= PORTFOLIO ================= */
-
   if (type === "portfolio") {
-    const portfolio = portfolios.find((p) => p.bot_id === bot.id);
+  const portfolio = portfolios.find((p) => p.bot_id === bot.id);
 
-    budgetRef.current = portfolio?.budget ?? {};
+  budgetRef.current = {
+    total_eur: portfolio?.budget?.total_eur ?? 0,
+    daily_limit_eur: portfolio?.budget?.daily_limit_eur ?? 0,
+    max_order_eur: portfolio?.budget?.max_order_eur ?? 0,
+  };
 
-    openConfirm({
-      title: "💰 Portfolio & budget",
-      description: (
-        <BotBudgetForm
-          bot={bot}
-          portfolio={portfolio}
-          onChange={(v) => (budgetRef.current = v)}
-        />
-      ),
-      confirmText: "Opslaan",
-      onConfirm: async () => {
-        await updateBudgetForBot({
-          bot_id: bot.id,
-          budget: budgetRef.current,
-        });
+  openConfirm({
+    title: "💰 Portfolio & budget",
+    description: (
+      <BotBudgetForm
+        initialBudget={budgetRef.current}
+        onChange={(v) => (budgetRef.current = v)}
+      />
+    ),
+    confirmText: "Opslaan",
+    onConfirm: async () => {
+      await updateBudgetForBot({
+        bot_id: bot.id,
+        budget: budgetRef.current,
+      });
 
-        showSnackbar("Budget bijgewerkt", "success");
-      },
-    });
+      showSnackbar("Budget bijgewerkt", "success");
+    },
+  });
 
-    return;
-  }
+  return;
+}
 
   /* ================= PAUSE ================= */
-
   if (type === "pause") {
     await updateBot(bot.id, { is_active: false });
     showSnackbar("Bot gepauzeerd", "info");
@@ -307,7 +308,6 @@ function BotPageInner() {
   }
 
   /* ================= RESUME ================= */
-
   if (type === "resume") {
     await updateBot(bot.id, { is_active: true });
     showSnackbar("Bot hervat", "success");
@@ -315,7 +315,6 @@ function BotPageInner() {
   }
 
   /* ================= DELETE ================= */
-
   if (type === "delete") {
     openConfirm({
       title: "🗑️ Bot verwijderen",

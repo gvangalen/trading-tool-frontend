@@ -9,7 +9,7 @@ import BotPnLBadge from "./BotPnLBadge";
  * BotPortfolioOverview — READ ONLY
  * --------------------------------------------------
  * ✅ Aggregatie over ALLE bots
- * ✅ Budget usage = budget_total - cash_remaining
+ * ✅ Budget usage = executed trades
  * ✅ Invested = executed trades only
  * ✅ Backend blijft single source of truth
  */
@@ -24,20 +24,17 @@ export default function BotPortfolioOverview({ bots = [] }) {
     arr.reduce((acc, x) => acc + (Number(getter(x)) || 0), 0);
 
   // =============================
-  // BUDGET AGGREGATES (CORRECT)
+  // BUDGET AGGREGATES
   // =============================
 
   const totalBudgetEur = sum(list, (b) => b?.budget?.total_eur);
   const totalDailyLimitEur = sum(list, (b) => b?.budget?.daily_limit_eur);
   const totalMaxOrderEur = sum(list, (b) => b?.budget?.max_order_eur);
 
-  // 🔥 Correcte budget usage:
-  // used = total_budget - current_cash
-  const spentTotalForBudget = sum(list, (b) => {
-    const total = Number(b?.budget?.total_eur ?? 0);
-    const cash = Number(b?.stats?.cash_eur ?? 0);
-    return total - cash;
-  });
+  // ✅ Alleen executed trades tellen voor budget usage
+  const spentExecuted = sum(list, (b) =>
+    Math.abs(b?.stats?.net_executed_cash_delta_eur ?? 0)
+  );
 
   const todaySpent = sum(list, (b) => b?.stats?.today_spent_eur);
 
@@ -49,11 +46,6 @@ export default function BotPortfolioOverview({ bots = [] }) {
   // =============================
 
   const positionValue = sum(list, (b) => b?.stats?.position_value_eur);
-
-  // Alleen executed trades tellen als invested capital
-  const spentExecuted = sum(list, (b) =>
-    Math.abs(b?.stats?.net_executed_cash_delta_eur ?? 0)
-  );
 
   const pnlEur = positionValue - spentExecuted;
   const pnlPct = spentExecuted > 0 ? (pnlEur / spentExecuted) * 100 : 0;
@@ -133,11 +125,11 @@ export default function BotPortfolioOverview({ bots = [] }) {
             <BotBudgetBar
               label="Alle bots"
               total={totalBudgetEur}
-              spent={spentTotalForBudget}
+              spent={spentExecuted}
             />
 
             <div className="text-xs text-[var(--text-muted)] mt-2">
-              Vandaag besteed €{Number(todaySpent).toFixed(0)}
+              Vandaag besteed €{Number(todaySpent ?? 0).toFixed(0)}
               {totalDailyLimitEur
                 ? ` · Totale daglimiet €${Number(totalDailyLimitEur).toFixed(0)}`
                 : ""}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useModal } from "@/components/modal/ModalProvider";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpCircle,
@@ -44,6 +45,8 @@ export default function TradePanel({
   onSubmit,
 }) {
 
+  const { showSnackbar } = useModal();
+  
   /* =========================
      State
   ========================= */
@@ -294,39 +297,54 @@ useEffect(() => {
   /* =========================
      Submit
   ========================= */
-
   const handleSubmit = async () => {
 
-    if (!canSubmit) return;
+  if (!canSubmit) return;
 
-    const p = num(effectivePrice, null);
-    const q = num(qtyBase, null);
-    const v = num(orderValueQuote, null);
+  const p = num(effectivePrice, null);
+  const q = num(qtyBase, null);
+  const v = num(orderValueQuote, null);
 
-    try {
+  try {
 
-      await onSubmit?.({
-        symbol,
-        side,
-        orderType,
-        quantity: q,
-        value_eur: v,
-        size_mode: sizeMode,
-        price: p,
-        tp: useTpSl ? num(tpPrice, null) : null,
-        sl: useTpSl ? num(slPrice, null) : null,
-      });
+    const result = await onSubmit?.({
+      symbol,
+      side,
+      orderType,
+      quantity: q,
+      value_eur: v,
+      size_mode: sizeMode,
+      price: p,
+      tp: useTpSl ? num(tpPrice, null) : null,
+      sl: useTpSl ? num(slPrice, null) : null,
+    });
 
-      setAmountPct(0);
-      setAmountQuoteInput("");
-      setAmountBaseInput("");
+    // snackbar success
+    showSnackbar(
+      `${side === "buy" ? "Koop" : "Verkoop"} order geplaatst ✔ ${fmt(q,6)} ${baseSymbol} @ ${fmt(p)}`,
+      "success"
+    );
 
-      setTpPrice("");
-      setSlPrice("");
+    // reset form
+    setAmountPct(0);
+    setAmountQuoteInput("");
+    setAmountBaseInput("");
 
-    } catch {}
+    setTpPrice("");
+    setSlPrice("");
 
-  };
+  } catch (err) {
+
+    console.error("❌ Order error:", err);
+
+    showSnackbar(
+      err?.message || "Order plaatsen mislukt",
+      "danger"
+    );
+
+  }
+
+};
 
   /* =========================
      UI

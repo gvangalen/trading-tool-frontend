@@ -319,13 +319,16 @@ useEffect(() => {
       sl: useTpSl ? num(slPrice, null) : null,
     });
 
-    // snackbar success
+    // SUCCESS MESSAGE
     showSnackbar(
       `${side === "buy" ? "Koop" : "Verkoop"} order geplaatst ✔ ${fmt(q,6)} ${baseSymbol} @ ${fmt(p)}`,
       "success"
     );
 
-    // reset form
+    // 🔥 TRIGGER LIVE PORTFOLIO UPDATE
+    window.dispatchEvent(new Event("portfolio:updated"));
+
+    // RESET FORM
     setAmountPct(0);
     setAmountQuoteInput("");
     setAmountBaseInput("");

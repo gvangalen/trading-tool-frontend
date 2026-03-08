@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -91,10 +91,22 @@ export default function PortfolioBalanceCard({
 
   const rangeConfig = RANGES.find((r) => r.key === range) || RANGES[1];
 
-  const { data, loading } = usePortfolioBalance({
+  const { data, loading, reload } = usePortfolioBalance({
     bucket: rangeConfig.bucket,
     limit: rangeConfig.limit,
   });
+
+  /* =====================================================
+     LIVE PORTFOLIO REFRESH
+  ===================================================== */
+  useEffect(() => {
+    const handler = () => reload();
+
+    window.addEventListener("portfolio:updated", handler);
+
+    return () =>
+      window.removeEventListener("portfolio:updated", handler);
+  }, [reload]);
 
   /* =====================================================
      SERIES
@@ -162,7 +174,7 @@ export default function PortfolioBalanceCard({
     }
 
     const span = max - min;
-    const padding = span * 0.1;
+    const padding = Math.max(span * 0.1, 5); // FIX
 
     return [min - padding, max + padding];
   }, [chartData]);
@@ -186,7 +198,7 @@ export default function PortfolioBalanceCard({
      UI
   ===================================================== */
   return (
-    <div className="card-surface p-6">
+    <div className="card-surface p-6 w-full min-w-0">
       <div className="flex items-start justify-between gap-6 flex-wrap">
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[var(--text-dark)]">
@@ -213,7 +225,6 @@ export default function PortfolioBalanceCard({
         {/* CONTROLS */}
         <div className="flex flex-col gap-3 items-end">
 
-          {/* RANGE SEGMENT */}
           <div className="segmented-control">
             {RANGES.map((r) => (
               <button
@@ -228,7 +239,6 @@ export default function PortfolioBalanceCard({
             ))}
           </div>
 
-          {/* MODE SEGMENT */}
           <div className="segmented-control">
             {MODES.map((m) => (
               <button
@@ -247,7 +257,7 @@ export default function PortfolioBalanceCard({
       </div>
 
       {/* CHART */}
-      <div className="mt-6 h-[240px]">
+      <div className="mt-6 h-[240px] w-full min-w-0">
         {loading ? (
           <div className="flex items-center justify-center h-full text-sm text-[var(--text-light)]">
             Laden...

@@ -29,17 +29,18 @@ export default function BotPortfolioSection({ bot }) {
     (budget.max_order_eur ?? 0) > 0;
 
   // =====================================================
-  // ✅ BACKEND-LED STATS
+  // BACKEND-LED STATS
   // =====================================================
+
   const netQty = stats.net_qty ?? 0;
   const positionValue = stats.position_value_eur ?? 0;
 
-  // ❗ Alleen ECHTE trades (execute)
+  // ✔ Alleen ECHTE uitgevoerde trades
   const spentExecuted = Math.abs(
     stats.net_executed_cash_delta_eur ?? 0
   );
 
-  // Budget context (mag reserves bevatten)
+  // (optioneel context — nu niet gebruikt voor budget bar)
   const spentTotalForBudget = Math.abs(
     stats.net_cash_delta_eur ?? 0
   );
@@ -52,6 +53,7 @@ export default function BotPortfolioSection({ bot }) {
       {/* =====================
          BUDGET (READ ONLY)
       ===================== */}
+
       <div>
         <div className="flex items-center gap-2 mb-2 text-xs text-[var(--text-muted)]">
           <Wallet size={14} className="icon-muted" />
@@ -67,17 +69,20 @@ export default function BotPortfolioSection({ bot }) {
 
         {hasBudget ? (
           <>
+            {/* ✔ FIX: gebruikt alleen executed trades */}
             <BotBudgetBar
               label="Totaal budget"
               total={budget.total_eur ?? 0}
-              spent={spentTotalForBudget}
+              spent={spentExecuted}
             />
 
             <div className="text-xs text-[var(--text-muted)] mt-2">
-              Vandaag besteed €{todaySpent.toFixed(0)}
+              Vandaag besteed €{(todaySpent ?? 0).toFixed(0)}
+
               {budget.daily_limit_eur
                 ? ` · Daglimiet €${budget.daily_limit_eur}`
                 : ""}
+
               {budget.max_order_eur
                 ? ` · Max per trade €${budget.max_order_eur}`
                 : ""}
@@ -93,7 +98,9 @@ export default function BotPortfolioSection({ bot }) {
       {/* =====================
          PORTFOLIO (ECHTE TRADES)
       ===================== */}
+
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border-subtle)]">
+
         <Stat label="Holdings">
           {netQty.toFixed(6)} {symbol}
         </Stat>
@@ -116,6 +123,7 @@ export default function BotPortfolioSection({ bot }) {
             }
           />
         </Stat>
+
       </div>
     </div>
   );
@@ -124,6 +132,7 @@ export default function BotPortfolioSection({ bot }) {
 /* =====================================================
    UI HELPERS
 ===================================================== */
+
 function Stat({ label, children }) {
   return (
     <div>

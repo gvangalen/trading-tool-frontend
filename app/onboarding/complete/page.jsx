@@ -1,9 +1,32 @@
 "use client";
 
 import { CheckCircle2, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import useBootstrapAgents from "@/hooks/useBootstrapAgents";
 
 export default function OnboardingCompletePage() {
+
+  const router = useRouter();
+  const { runBootstrap, loading } = useBootstrapAgents();
+
+  const handleGoToDashboard = async () => {
+
+    try {
+
+      await runBootstrap();
+
+    } catch (err) {
+
+      console.error("Bootstrap agents error:", err);
+
+    } finally {
+
+      router.push("/");
+
+    }
+
+  };
+
   return (
     <div className="max-w-screen-md mx-auto py-20 px-6 animate-fade-slide text-center">
 
@@ -25,19 +48,21 @@ export default function OnboardingCompletePage() {
       </p>
 
       {/* Button */}
-      <Link
-        href="/"
+      <button
+        onClick={handleGoToDashboard}
+        disabled={loading}
         className="
           inline-flex items-center gap-2
           bg-[var(--primary)] hover:bg-[var(--primary-dark)]
           text-white px-6 py-3
           rounded-xl font-semibold shadow-md hover:shadow-lg
           transition
+          disabled:opacity-60
         "
       >
-        Ga naar Dashboard
+        {loading ? "AI agents initialiseren..." : "Ga naar Dashboard"}
         <ArrowRight size={18} />
-      </Link>
+      </button>
 
       {/* Optional note */}
       <p className="mt-6 text-sm text-[var(--text-light)]">

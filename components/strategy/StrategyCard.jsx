@@ -20,7 +20,6 @@ import {
   Star,
   StarOff,
   Trash,
-  Pencil,
   Clock,
   Euro,
   Tags,
@@ -41,6 +40,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
   ========================================================== */
   const {
     id,
+    name,
     symbol,
     timeframe,
     strategy_type,
@@ -62,7 +62,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     strategy.data?.curve_name ||
     null;
 
-  const setupName =
+  /* 🔥 FIX: gebruik strategie naam */
+  const strategyName =
+    name ||
     strategy.setup_name ||
     strategy.setupName ||
     strategy.setup?.name ||
@@ -81,7 +83,9 @@ export default function StrategyCard({ strategy, onRefresh }) {
     : [];
 
   const isDCA = strategy_type === "dca";
-  const display = (v) => (v !== undefined && v !== null && v !== "" ? v : "-");
+
+  const display = (v) =>
+    v !== undefined && v !== null && v !== "" ? v : "-";
 
   /* ==========================================================
      🧠 AI ANALYSE
@@ -163,9 +167,10 @@ export default function StrategyCard({ strategy, onRefresh }) {
       </button>
 
       {/* Header */}
-      <h3 className="font-bold text-xl mb-1">{setupName}</h3>
+      <h3 className="font-bold text-xl mb-1">{strategyName}</h3>
+
       <p className="text-sm text-gray-500 mb-2">
-        {strategy_type} | {symbol} {timeframe}
+        {strategy_type?.toUpperCase()} · {symbol} {timeframe}
       </p>
 
       {/* 🧠 Curve name */}
@@ -182,12 +187,15 @@ export default function StrategyCard({ strategy, onRefresh }) {
           <div className="flex items-center gap-2">
             <Euro size={14} /> €{display(base_amount)}
           </div>
+
           <div className="flex items-center gap-2">
             <Clock size={14} /> {display(frequency)}
           </div>
+
           <div className="flex items-center gap-2">
             <Activity size={14} /> {display(risk_profile)}
           </div>
+
           <div className="flex items-center gap-2">
             <Tags size={14} /> {tags.length ? tags.join(", ") : "-"}
           </div>
@@ -201,10 +209,12 @@ export default function StrategyCard({ strategy, onRefresh }) {
             <ArrowRightLeft className="inline w-4 h-4" /> Entry:{" "}
             {display(entry)}
           </div>
+
           <div>
             <Target className="inline w-4 h-4" /> Targets:{" "}
             {targets.length ? targets.join(", ") : "-"}
           </div>
+
           <div>
             <ShieldAlert className="inline w-4 h-4" /> SL:{" "}
             {display(stop_loss)}

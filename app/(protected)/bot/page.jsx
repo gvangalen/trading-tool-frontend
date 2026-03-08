@@ -316,17 +316,16 @@ function BotPageInner() {
 
   /* ================= DELETE ================= */
   if (type === "delete") {
-    openConfirm({
-      title: "🗑️ Bot verwijderen",
-      confirmVariant: "danger",
-      confirmText: "Verwijderen",
-      onConfirm: async () => {
-        await deleteBot(bot.id);
-        showSnackbar("Bot verwijderd", "danger");
-      },
-    });
-  }
-};
+  openConfirm({
+    title: "🗑️ Bot verwijderen",
+    tone: "danger",
+    confirmText: "Verwijderen",
+    onConfirm: async () => {
+      await deleteBot(bot.id);
+      showSnackbar("Bot verwijderd", "danger");
+    },
+  });
+}
 
   /* =========================
      RENDER

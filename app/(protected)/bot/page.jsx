@@ -314,7 +314,6 @@ function BotPageInner() {
     return;
   }
 
-  /* ================= DELETE ================= */
   if (type === "delete") {
   openConfirm({
     title: "🗑️ Bot verwijderen",
@@ -325,7 +324,11 @@ function BotPageInner() {
       showSnackbar("Bot verwijderd", "danger");
     },
   });
+
+  return;
 }
+
+};
 
   /* =========================
      RENDER

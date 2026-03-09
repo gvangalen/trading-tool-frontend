@@ -9,6 +9,8 @@ import {
   Brain,
 } from "lucide-react";
 
+import MarketConditionsInline from "@/components/market/MarketConditionsInline";
+
 /**
  * MarketDecisionCard
  *
@@ -38,6 +40,9 @@ export default function MarketDecisionCard({
   const riskState = decision.risk_state || "normal";
   const pressure = Number(decision.market_pressure ?? 50);
   const transitionRisk = Number(decision.transition_risk ?? 0);
+
+  const health = Number(decision.health ?? 50);
+  const exposureMultiplier = Number(decision.exposure_multiplier ?? 1);
 
   /* ======================================
      INTERPRETED STATE
@@ -345,6 +350,14 @@ export default function MarketDecisionCard({
             {transitionLabel}
           </span>
         </div>
+
+        {/* Inline Engine Metrics */}
+        <MarketConditionsInline
+          health={health}
+          transitionRisk={transitionRisk}
+          pressure={pressure}
+          multiplier={exposureMultiplier}
+        />
 
       </div>
 

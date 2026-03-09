@@ -50,12 +50,14 @@ const fmtPct = (n) => `${Number(n || 0).toFixed(1)}%`;
 
 function shortDate(ts, rangeKey) {
   const d = new Date(ts);
+
   if (rangeKey === "1D") {
     return d.toLocaleTimeString("nl-NL", {
       hour: "2-digit",
       minute: "2-digit",
     });
   }
+
   return d.toLocaleDateString("nl-NL", {
     day: "2-digit",
     month: "short",
@@ -72,6 +74,7 @@ function calcDelta(series, mode) {
 
   const first = Number(series[0]?.[mode] ?? 0);
   const last = Number(series[series.length - 1]?.[mode] ?? 0);
+
   const delta = last - first;
 
   const pct =
@@ -82,6 +85,10 @@ function calcDelta(series, mode) {
   return { last, delta, pct };
 }
 
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 export default function PortfolioBalanceCard({
   defaultRange = "1W",
   title = "Portfolio balance",
@@ -89,7 +96,8 @@ export default function PortfolioBalanceCard({
   const [range, setRange] = useState(defaultRange);
   const [mode, setMode] = useState("equity");
 
-  const rangeConfig = RANGES.find((r) => r.key === range) || RANGES[1];
+  const rangeConfig =
+    RANGES.find((r) => r.key === range) || RANGES[1];
 
   const { data, loading, reload } = usePortfolioBalance({
     bucket: rangeConfig.bucket,
@@ -99,18 +107,23 @@ export default function PortfolioBalanceCard({
   /* =====================================================
      LIVE PORTFOLIO REFRESH
   ===================================================== */
+
   useEffect(() => {
     const handler = () => reload();
 
     window.addEventListener("portfolio:updated", handler);
 
     return () =>
-      window.removeEventListener("portfolio:updated", handler);
+      window.removeEventListener(
+        "portfolio:updated",
+        handler
+      );
   }, [reload]);
 
   /* =====================================================
      SERIES
   ===================================================== */
+
   const series = useMemo(() => {
     if (Array.isArray(data) && data.length > 0) return data;
 
@@ -150,6 +163,7 @@ export default function PortfolioBalanceCard({
   /* =====================================================
      CHART DATA
   ===================================================== */
+
   const chartData = useMemo(() => {
     return series.map((p) => ({
       ts: p.ts,
@@ -161,20 +175,26 @@ export default function PortfolioBalanceCard({
   /* =====================================================
      Y DOMAIN
   ===================================================== */
+
   const yDomain = useMemo(() => {
     if (!chartData.length) return ["auto", "auto"];
 
     const values = chartData.map((d) => d.value);
+
     const min = Math.min(...values);
     const max = Math.max(...values);
 
     if (min === max) {
-      const padding = min === 0 ? 100 : Math.max(Math.abs(min) * 0.05, 1);
+      const padding =
+        min === 0
+          ? 100
+          : Math.max(Math.abs(min) * 0.05, 1);
+
       return [min - padding, max + padding];
     }
 
     const span = max - min;
-    const padding = Math.max(span * 0.1, 5); // FIX
+    const padding = Math.max(span * 0.1, 5);
 
     return [min - padding, max + padding];
   }, [chartData]);
@@ -182,6 +202,7 @@ export default function PortfolioBalanceCard({
   /* =====================================================
      COLOR LOGIC
   ===================================================== */
+
   const strokeColor =
     mode === "unrealized_pnl"
       ? isDown
@@ -197,10 +218,13 @@ export default function PortfolioBalanceCard({
   /* =====================================================
      UI
   ===================================================== */
+
   return (
     <div className="card-surface p-6 w-full min-w-0">
       <div className="flex items-start justify-between gap-6 flex-wrap">
+
         <div className="space-y-2">
+
           <div className="text-sm font-semibold text-[var(--text-dark)]">
             {title}
           </div>
@@ -220,9 +244,11 @@ export default function PortfolioBalanceCard({
             {pct !== null ? fmtPct(pct) : ""}{" "}
             ({formatValue(delta)})
           </div>
+
         </div>
 
         {/* CONTROLS */}
+
         <div className="flex flex-col gap-3 items-end">
 
           <div className="segmented-control">
@@ -257,23 +283,55 @@ export default function PortfolioBalanceCard({
       </div>
 
       {/* CHART */}
+
       <div className="mt-6 h-[240px] w-full min-w-0">
+
         {loading ? (
           <div className="flex items-center justify-center h-full text-sm text-[var(--text-light)]">
             Laden...
           </div>
         ) : (
+
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <AreaChart
+              data={chartData}
+              margin={{ left: 10, right: 10 }}
+            >
+
               <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
+                <linearGradient
+                  id={gradientId}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor={strokeColor}
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={strokeColor}
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
 
-              <XAxis dataKey="label" axisLine={false} tickLine={false} />
-              <YAxis domain={yDomain} axisLine={false} tickLine={false} width={60} />
+              <XAxis
+                dataKey="label"
+                axisLine={false}
+                tickLine={false}
+              />
+
+              <YAxis
+                domain={yDomain}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+                tickFormatter={(v) => fmtEur(v)}
+              />
 
               <Tooltip
                 formatter={(v) => formatValue(v)}
@@ -295,9 +353,12 @@ export default function PortfolioBalanceCard({
                 dot={false}
                 activeDot={{ r: 4 }}
               />
+
             </AreaChart>
           </ResponsiveContainer>
+
         )}
+
       </div>
     </div>
   );

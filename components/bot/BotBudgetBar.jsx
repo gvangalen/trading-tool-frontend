@@ -17,9 +17,10 @@ export default function BotBudgetBar({
 
   const remaining = Math.max(total - spent, 0);
 
-  let barClass = "score-buy";
-  if (pct > 90) barClass = "score-sell";
-  else if (pct > 70) barClass = "score-neutral";
+  let barClass = "bg-green-500";
+
+  if (pct > 90) barClass = "bg-red-500";
+  else if (pct > 70) barClass = "bg-yellow-400";
 
   return (
     <div className="space-y-2">
@@ -35,7 +36,7 @@ export default function BotBudgetBar({
       {/* BAR */}
       <div className="h-2 rounded-[var(--radius-xs)] bg-[var(--surface-3)] overflow-hidden">
         <div
-          className={`h-full ${barClass}`}
+          className={`h-full ${barClass} transition-all duration-500`}
           style={{ width: `${pct}%` }}
         />
       </div>

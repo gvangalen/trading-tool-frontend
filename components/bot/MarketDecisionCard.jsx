@@ -15,21 +15,15 @@ import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
  * MarketDecisionCard
  *
  * Visualiseert:
- * - Market phase
- * - Market temperature
+ * - Market cycle (phase + temperature)
  * - Trends
  * - Bot mode
  * - AI explanation
  *
- * Engine metrics (regime / pressure / risk)
- * blijven zichtbaar onderaan.
- *
- * Backend = single source of truth
+ * Engine metrics worden onderaan weergegeven
  */
 
-export default function MarketDecisionCard({
-  decision = {},
-}) {
+export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
@@ -139,7 +133,7 @@ export default function MarketDecisionCard({
       : "text-emerald-600";
 
   /* ======================================
-     MARKET PHASE VISUAL
+     MARKET CYCLE
   ====================================== */
 
   const phases = [
@@ -149,16 +143,13 @@ export default function MarketDecisionCard({
     "Correction",
   ];
 
-  const phaseIndex = {
-    accumulation: 0,
-    expansion: 1,
-    distribution: 2,
-    correction: 3,
-  }[phase?.toLowerCase()] ?? 1;
-
-  /* ======================================
-     TEMPERATURE COLOR
-  ====================================== */
+  const phaseIndex =
+    {
+      accumulation: 0,
+      expansion: 1,
+      distribution: 2,
+      correction: 3,
+    }[phase?.toLowerCase()] ?? 1;
 
   const temperatureColor =
     temperature === "cold"
@@ -177,56 +168,66 @@ export default function MarketDecisionCard({
     <div className="rounded-xl border bg-white p-5 space-y-5">
 
       {/* Header */}
+
       <div className="flex items-center gap-2 font-semibold">
         <Activity size={16} />
         Market Intelligence
       </div>
 
       {/* =========================
-          MARKET PHASE
+          MARKET CYCLE
       ========================== */}
 
       <div className="space-y-2">
+
         <div className="text-xs text-gray-500">
-          Market Phase
+          Market Cycle
         </div>
 
-        <div className="font-semibold capitalize">
-          {phase}
-        </div>
+        <div className="flex items-center gap-2 text-sm">
 
-        <div className="flex items-center gap-2 text-xs text-gray-400">
           {phases.map((p, i) => (
-            <div
-              key={p}
-              className={`flex items-center gap-1 ${
-                i === phaseIndex
-                  ? "text-blue-600 font-semibold"
-                  : ""
-              }`}
-            >
-              {p}
-              {i < phases.length - 1 && "→"}
+            <div key={p} className="flex items-center gap-1">
+
+              <span
+                className={
+                  i === phaseIndex
+                    ? "text-blue-600 font-semibold"
+                    : "text-gray-400"
+                }
+              >
+                {p}
+              </span>
+
+              {i === phaseIndex && (
+                <span className="text-blue-600">▲</span>
+              )}
+
+              {i < phases.length - 1 && (
+                <span className="text-gray-400">→</span>
+              )}
+
             </div>
           ))}
+
         </div>
-      </div>
 
-      {/* =========================
-          MARKET TEMPERATURE
-      ========================== */}
+        <div className="flex items-center gap-2 text-sm">
 
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500 flex items-center gap-2">
-          <Thermometer size={14} />
-          Market temperature
-        </span>
+          <Thermometer size={14} className="text-gray-500" />
 
-        <span
-          className={`font-semibold capitalize ${temperatureColor}`}
-        >
-          {temperature}
-        </span>
+          <span className="text-gray-500">
+            Temperature
+          </span>
+
+          <span
+            className={`font-semibold capitalize ${temperatureColor}`}
+          >
+            {temperature}
+          </span>
+
+        </div>
+
       </div>
 
       {/* =========================
@@ -264,11 +265,10 @@ export default function MarketDecisionCard({
 
       </div>
 
-      {/* =========================
-          BOT MODE
-      ========================== */}
+      {/* BOT MODE */}
 
       <div className="flex items-center justify-between text-sm">
+
         <span className="text-gray-500 flex items-center gap-2">
           <Brain size={14} />
           Bot mode
@@ -277,11 +277,10 @@ export default function MarketDecisionCard({
         <span className="font-semibold capitalize">
           {botMode}
         </span>
+
       </div>
 
-      {/* =========================
-          AI EXPLANATION
-      ========================== */}
+      {/* AI EXPLANATION */}
 
       {explanation && (
         <div className="text-xs text-gray-600 border-t pt-3">
@@ -289,36 +288,44 @@ export default function MarketDecisionCard({
         </div>
       )}
 
-      {/* =========================
-          ENGINE METRICS
-      ========================== */}
+      {/* ENGINE METRICS */}
 
       <div className="border-t pt-4 space-y-3">
 
         {/* Regime */}
+
         <div className="flex items-center justify-between text-sm">
+
           <span className="text-gray-500 flex items-center gap-2">
             <TrendingUp size={14} />
             Regime
           </span>
+
           <span className={`font-semibold ${regimeColor}`}>
             {regimeLabel}
           </span>
+
         </div>
 
         {/* Risk state */}
+
         <div className="flex items-center justify-between text-sm">
+
           <span className="text-gray-500 flex items-center gap-2">
             <ShieldAlert size={14} />
             Risk state
           </span>
+
           <span className={`font-semibold ${riskColor}`}>
             {riskLabel}
           </span>
+
         </div>
 
         {/* Market pressure */}
+
         <div className="space-y-1">
+
           <div className="flex justify-between text-xs text-gray-500">
             <span>Market pressure</span>
             <span>{pressure}</span>
@@ -336,22 +343,26 @@ export default function MarketDecisionCard({
               />
             ))}
           </div>
+
         </div>
 
         {/* Transition risk */}
+
         <div className="flex items-center justify-between text-sm">
+
           <span className="text-gray-500 flex items-center gap-2">
             <AlertTriangle size={14} />
             Transition risk
           </span>
-          <span
-            className={`font-semibold ${transitionColor}`}
-          >
+
+          <span className={`font-semibold ${transitionColor}`}>
             {transitionLabel}
           </span>
+
         </div>
 
-        {/* Inline Engine Metrics */}
+        {/* System metrics */}
+
         <MarketConditionsPanel
           health={health}
           transitionRisk={transitionRisk}

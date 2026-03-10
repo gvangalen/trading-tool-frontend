@@ -9,7 +9,7 @@ import {
   Brain,
 } from "lucide-react";
 
-import MarketConditionsInline from "@/components/bot/MarketConditionsInline";
+import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
 
 /**
  * MarketDecisionCard
@@ -352,7 +352,7 @@ export default function MarketDecisionCard({
         </div>
 
         {/* Inline Engine Metrics */}
-        <MarketConditionsInline
+        <MarketConditionsPanel
           health={health}
           transitionRisk={transitionRisk}
           pressure={pressure}

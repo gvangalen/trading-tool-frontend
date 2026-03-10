@@ -2,11 +2,9 @@
 
 import {
   Activity,
-  ShieldAlert,
   TrendingUp,
   AlertTriangle,
   Thermometer,
-  Brain,
 } from "lucide-react";
 
 import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
@@ -15,12 +13,11 @@ import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
  * MarketDecisionCard
  *
  * Visualiseert:
- * - Market cycle (phase + temperature)
- * - Trends
- * - Bot mode
- * - AI explanation
- *
- * Engine metrics worden onderaan weergegeven
+ * - Market cycle
+ * - Temperature
+ * - Market trends
+ * - Transition risk
+ * - Bot risk engine metrics (via MarketConditionsPanel)
  */
 
 export default function MarketDecisionCard({ decision = {} }) {
@@ -30,8 +27,6 @@ export default function MarketDecisionCard({ decision = {} }) {
      ENGINE METRICS
   ====================================== */
 
-  const regime = decision.regime || "unknown";
-  const riskState = decision.risk_state || "normal";
   const pressure = Number(decision.market_pressure ?? 50);
   const transitionRisk = Number(decision.transition_risk ?? 0);
 
@@ -39,68 +34,43 @@ export default function MarketDecisionCard({ decision = {} }) {
   const exposureMultiplier = Number(decision.exposure_multiplier ?? 1);
 
   /* ======================================
-     INTERPRETED STATE
+     MARKET STRUCTURE
   ====================================== */
 
-  const phase = decision.phase || "consolidation";
+  const phase = decision.phase || "expansion";
   const temperature = decision.temperature || "warm";
 
-  const trendShort = decision.trend_short || "neutral";
-  const trendMid = decision.trend_mid || "neutral";
-  const trendLong = decision.trend_long || "neutral";
+  /* ======================================
+     TRENDS
+  ====================================== */
 
-  const botMode = decision.bot_mode || "normal";
+  const trendShort = decision.trend_short || "trading range";
+  const trendMid = decision.trend_mid || "trading range";
+  const trendLong = decision.trend_long || "trading range";
+
   const explanation = decision.explanation || null;
 
   /* ======================================
-     REGIME LABEL
+     TREND LABELS
   ====================================== */
 
-  const regimeLabel =
-    regime === "risk_on"
-      ? "Risk-On"
-      : regime === "risk_off"
-      ? "Risk-Off"
-      : regime === "transition"
-      ? "Transition"
-      : "Neutral";
+  const formatTrend = (trend) => {
+    const t = String(trend).toLowerCase();
 
-  const regimeColor =
-    regime === "risk_on"
-      ? "text-emerald-600"
-      : regime === "risk_off"
-      ? "text-red-600"
-      : regime === "transition"
-      ? "text-orange-600"
-      : "text-gray-500";
+    if (t === "bullish") return "Bullish";
+    if (t === "bearish") return "Bearish";
+    if (t === "range" || t === "sideways" || t === "trading range")
+      return "Trading range";
 
-  /* ======================================
-     RISK STATE
-  ====================================== */
-
-  const riskLabel =
-    riskState === "low"
-      ? "Low risk"
-      : riskState === "elevated"
-      ? "Elevated risk"
-      : riskState === "high"
-      ? "High stress"
-      : "Normal";
-
-  const riskColor =
-    riskState === "low"
-      ? "text-emerald-600"
-      : riskState === "elevated"
-      ? "text-orange-600"
-      : riskState === "high"
-      ? "text-red-600"
-      : "text-gray-600";
+    return "Trading range";
+  };
 
   /* ======================================
      PRESSURE BAR
   ====================================== */
 
   const pressureBlocks = 8;
+
   const filledPressure = Math.round(
     (Math.min(pressure, 100) / 100) * pressureBlocks
   );
@@ -212,6 +182,8 @@ export default function MarketDecisionCard({ decision = {} }) {
 
         </div>
 
+        {/* Temperature */}
+
         <div className="flex items-center gap-2 text-sm">
 
           <Thermometer size={14} className="text-gray-500" />
@@ -231,7 +203,7 @@ export default function MarketDecisionCard({ decision = {} }) {
       </div>
 
       {/* =========================
-          TRENDS
+          MARKET TRENDS
       ========================== */}
 
       <div className="space-y-1 text-sm">
@@ -240,8 +212,8 @@ export default function MarketDecisionCard({ decision = {} }) {
           <span className="text-gray-500">
             Short term trend
           </span>
-          <span className="font-semibold capitalize">
-            {trendShort}
+          <span className="font-semibold">
+            {formatTrend(trendShort)}
           </span>
         </div>
 
@@ -249,8 +221,8 @@ export default function MarketDecisionCard({ decision = {} }) {
           <span className="text-gray-500">
             Mid term trend
           </span>
-          <span className="font-semibold capitalize">
-            {trendMid}
+          <span className="font-semibold">
+            {formatTrend(trendMid)}
           </span>
         </div>
 
@@ -258,29 +230,14 @@ export default function MarketDecisionCard({ decision = {} }) {
           <span className="text-gray-500">
             Long term trend
           </span>
-          <span className="font-semibold capitalize">
-            {trendLong}
+          <span className="font-semibold">
+            {formatTrend(trendLong)}
           </span>
         </div>
 
       </div>
 
-      {/* BOT MODE */}
-
-      <div className="flex items-center justify-between text-sm">
-
-        <span className="text-gray-500 flex items-center gap-2">
-          <Brain size={14} />
-          Bot mode
-        </span>
-
-        <span className="font-semibold capitalize">
-          {botMode}
-        </span>
-
-      </div>
-
-      {/* AI EXPLANATION */}
+      {/* AI explanation */}
 
       {explanation && (
         <div className="text-xs text-gray-600 border-t pt-3">
@@ -288,41 +245,11 @@ export default function MarketDecisionCard({ decision = {} }) {
         </div>
       )}
 
-      {/* ENGINE METRICS */}
+      {/* =========================
+          MARKET PRESSURE
+      ========================== */}
 
       <div className="border-t pt-4 space-y-3">
-
-        {/* Regime */}
-
-        <div className="flex items-center justify-between text-sm">
-
-          <span className="text-gray-500 flex items-center gap-2">
-            <TrendingUp size={14} />
-            Regime
-          </span>
-
-          <span className={`font-semibold ${regimeColor}`}>
-            {regimeLabel}
-          </span>
-
-        </div>
-
-        {/* Risk state */}
-
-        <div className="flex items-center justify-between text-sm">
-
-          <span className="text-gray-500 flex items-center gap-2">
-            <ShieldAlert size={14} />
-            Risk state
-          </span>
-
-          <span className={`font-semibold ${riskColor}`}>
-            {riskLabel}
-          </span>
-
-        </div>
-
-        {/* Market pressure */}
 
         <div className="space-y-1">
 
@@ -361,7 +288,7 @@ export default function MarketDecisionCard({ decision = {} }) {
 
         </div>
 
-        {/* System metrics */}
+        {/* Bot risk engine */}
 
         <MarketConditionsPanel
           health={health}

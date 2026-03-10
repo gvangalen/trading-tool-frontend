@@ -9,7 +9,7 @@ import {
   Brain,
 } from "lucide-react";
 
-import MarketConditionsInline from "@/components/market/MarketConditionsInline";
+import MarketConditionsInline from "@/components/bot/MarketConditionsInline";
 
 /**
  * MarketDecisionCard

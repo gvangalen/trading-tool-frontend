@@ -8,11 +8,8 @@ import BotHistoryTable from "@/components/bot/BotHistoryTable";
 import BotSettingsMenu from "@/components/bot/BotSettingsMenu";
 
 import TradePlanCard from "@/components/bot/TradePlanCard";
-// ❌ TradePanelContainer gaat eruit (we gebruiken 1 centrale TradePanel rechts)
-// import TradePanelContainer from "@/components/bot/TradePanelContainer";
 
 import MarketDecisionCard from "@/components/bot/MarketDecisionCard";
-import MarketConditionsInline from "@/components/bot/MarketConditionsPanel";
 import GuardrailsPanel from "@/components/bot/GuardrailsPanel";
 
 import {
@@ -40,7 +37,7 @@ export default function BotAgentCard({
   onOpenSettings,
 
   onSaveTradePlan,
-  onPlaceManualOrder, // ⚠️ blijft bestaan voor de centrale TradePanel (niet meer hier gebruikt)
+  onPlaceManualOrder,
 }) {
   if (!bot) return null;
 
@@ -249,18 +246,9 @@ export default function BotAgentCard({
       {/* Market Intelligence */}
       <div className="rounded-xl border p-5">
         <MarketDecisionCard decision={decision} />
-
-        <div className="mt-4 pt-4 border-t">
-          <MarketConditionsInline
-            health={decision?.market_health}
-            transitionRisk={decision?.transition_risk}
-            pressure={decision?.market_pressure}
-            multiplier={exposureMultiplier}
-          />
-        </div>
       </div>
 
-      {/* Decision + Plan (TradePanel verhuisd naar rechter sidebar) */}
+      {/* Decision + Plan */}
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
         <div className="flex-1 p-5">
           <BotDecisionCard
@@ -287,9 +275,6 @@ export default function BotAgentCard({
             saving={savingPlan}
             error={saveError}
           />
-
-          {/* ✅ TradePanelContainer zit nu 1x centraal op de pagina
-              en gebruikt activeBot uit context */}
         </div>
       </div>
 

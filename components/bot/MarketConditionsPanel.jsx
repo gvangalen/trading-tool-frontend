@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  BarChart3,
+  AlertTriangle,
+  Target,
+  Zap,
+  TrendingUp,
+  Scale
+} from "lucide-react";
+
 /* =====================================================
    HELPERS
 ===================================================== */
@@ -17,7 +26,7 @@ const safeMultiplier = (v) => {
 };
 
 /* =====================================================
-   LABELS (TRADER FRIENDLY)
+   LABELS
 ===================================================== */
 
 const getPressureLabel = (v) => {
@@ -91,7 +100,9 @@ function Bar({ icon, label, value, color, getLabel }) {
     <div className="flex items-center gap-4 text-sm w-full">
 
       {/* icon */}
-      <span className="w-5">{icon}</span>
+      <span className="w-5 flex items-center justify-center">
+        {icon}
+      </span>
 
       {/* label */}
       <span className="w-40 text-gray-600 dark:text-gray-300">
@@ -152,7 +163,7 @@ export default function MarketConditionsInline({
       {/* MARKET PRESSURE */}
 
       <Bar
-        icon="📊"
+        icon={<BarChart3 size={16} />}
         label="Market pressure"
         value={safePressure}
         color="bg-blue-500"
@@ -162,7 +173,7 @@ export default function MarketConditionsInline({
       {/* TRANSITION RISK */}
 
       <Bar
-        icon="⚠️"
+        icon={<AlertTriangle size={16} />}
         label="Transition risk"
         value={safeRisk}
         color="bg-orange-500"
@@ -172,7 +183,7 @@ export default function MarketConditionsInline({
       {/* SETUP QUALITY */}
 
       <Bar
-        icon="🟢"
+        icon={<Target size={16} />}
         label="Setup quality"
         value={safeHealth}
         color="bg-emerald-500"
@@ -182,7 +193,7 @@ export default function MarketConditionsInline({
       {/* MARKET VOLATILITY */}
 
       <Bar
-        icon="🟠"
+        icon={<Zap size={16} />}
         label="Market volatility"
         value={safeRisk}
         color="bg-orange-500"
@@ -192,7 +203,7 @@ export default function MarketConditionsInline({
       {/* TREND STRENGTH */}
 
       <Bar
-        icon="🔵"
+        icon={<TrendingUp size={16} />}
         label="Trend strength"
         value={safePressure}
         color="bg-blue-500"
@@ -203,7 +214,9 @@ export default function MarketConditionsInline({
 
       <div className="flex items-center gap-4 text-sm w-full pt-1">
 
-        <span className="w-5">🟣</span>
+        <span className="w-5 flex items-center justify-center">
+          <Scale size={16} />
+        </span>
 
         <span className="w-40 text-gray-600 dark:text-gray-300">
           Position size

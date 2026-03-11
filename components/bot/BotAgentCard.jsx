@@ -31,6 +31,10 @@ export default function BotAgentCard({
   trades = [],
   loadingDecision = false,
 
+  /* ⭐ NIEUW */
+  marketIntelligence,
+  loadingMarketIntelligence = false,
+
   onGenerate,
   onExecute,
   onSkip,
@@ -168,9 +172,13 @@ export default function BotAgentCard({
 
   return (
     <div className="w-full rounded-2xl border bg-white shadow-sm space-y-6 p-6">
+
       {/* HEADER */}
+
       <div className="space-y-4 border-b pb-5">
+
         <div className="flex items-center justify-between">
+
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
@@ -199,6 +207,7 @@ export default function BotAgentCard({
                 />
               </div>
             )}
+
           </div>
         </div>
 
@@ -207,6 +216,7 @@ export default function BotAgentCard({
         </div>
 
         <div className="flex gap-3">
+
           <span
             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}
           >
@@ -217,6 +227,7 @@ export default function BotAgentCard({
           <span className="px-3 py-1.5 rounded-lg border text-sm font-semibold bg-blue-50 text-blue-700">
             Mode: {isAuto ? "Auto" : "Manual"}
           </span>
+
         </div>
 
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
@@ -228,10 +239,13 @@ export default function BotAgentCard({
             Confidence <strong>{confidence}</strong>
           </span>
         </div>
+
       </div>
 
       {/* Portfolio + Guardrails */}
+
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
+
         <div className="flex-1 p-5">
           <BotPortfolioCard bot={portfolio} />
         </div>
@@ -241,15 +255,27 @@ export default function BotAgentCard({
         <div className="lg:w-[340px] p-5 bg-gray-50">
           <GuardrailsPanel decision={decision} bot={bot} />
         </div>
+
       </div>
 
-      {/* Market Intelligence */}
+      {/* ⭐ MARKET INTELLIGENCE (BOT BRAIN) */}
+
       <div className="rounded-xl border p-5">
-        <MarketDecisionCard decision={decision} />
+
+        {loadingMarketIntelligence ? (
+          <div className="text-sm text-gray-400">
+            Loading market intelligence...
+          </div>
+        ) : (
+          <MarketDecisionCard decision={marketIntelligence} />
+        )}
+
       </div>
 
       {/* Decision + Plan */}
+
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
+
         <div className="flex-1 p-5">
           <BotDecisionCard
             bot={bot}
@@ -266,6 +292,7 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="flex-1 p-5 space-y-6">
+
           <TradePlanCard
             decision={decision}
             tradePlan={planSource}
@@ -275,11 +302,15 @@ export default function BotAgentCard({
             saving={savingPlan}
             error={saveError}
           />
+
         </div>
+
       </div>
 
       {/* History */}
+
       <div className="pt-2 border-t">
+
         <button
           onClick={() => setShowHistory((v) => !v)}
           className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-2"
@@ -293,7 +324,9 @@ export default function BotAgentCard({
             <BotHistoryTable history={combinedHistory} />
           </div>
         )}
+
       </div>
+
     </div>
   );
 }

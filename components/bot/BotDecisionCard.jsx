@@ -23,10 +23,6 @@ export default function BotTodayProposal({
   isAuto = false,
 }) {
 
-  /* =====================================================
-     LOADING
-  ===================================================== */
-
   if (loading) {
     return (
       <div className="py-6">
@@ -36,10 +32,6 @@ export default function BotTodayProposal({
   }
 
   if (!decision) return null;
-
-  /* =====================================================
-     CORE STATE
-  ===================================================== */
 
   const botId = decision.bot_id;
   const decisionId = decision.decision_id;
@@ -58,8 +50,6 @@ export default function BotTodayProposal({
   const safeStrategyMultiplier = Number.isFinite(strategyMultiplier)
     ? strategyMultiplier
     : 1;
-
-  /* MARKET SUGGESTION (Bot Brain metrics) */
 
   const marketMultiplier = Number(
     decision?.metrics?.position_size ?? 1
@@ -146,10 +136,6 @@ export default function BotTodayProposal({
     setupMatch?.detail ??
     "De bot wacht op betere marktomstandigheden.";
 
-  /* =====================================================
-     EXECUTE GUARD
-  ===================================================== */
-
   const hasTrade = !!order;
 
   const canExecute =
@@ -166,12 +152,10 @@ export default function BotTodayProposal({
   const header = (
     <div className="flex items-start gap-3 text-sm text-[var(--text-muted)]">
       <ShoppingCart size={16} className="mt-0.5" />
-
       <div>
         <div className="font-medium text-[var(--text)]">
           Vandaag – voorstel van de bot
         </div>
-
         <div>Maximaal één beslissing per dag.</div>
       </div>
     </div>
@@ -191,7 +175,6 @@ export default function BotTodayProposal({
 
       <div className="text-xs text-[var(--text-muted)]">
         {executionLabel}
-
         {executionMode === "custom" && curveName && (
           <span className="ml-1">· {curveName}</span>
         )}
@@ -203,7 +186,6 @@ export default function BotTodayProposal({
         <span className="text-[var(--text-muted)]">
           Market suggestion
         </span>
-
         <span className="font-medium">
           {safeMarketMultiplier.toFixed(2)}×
         </span>
@@ -215,23 +197,27 @@ export default function BotTodayProposal({
         <span className="text-[var(--text-muted)]">
           Strategy exposure
         </span>
-
         <span className="font-medium">
           {safeStrategyMultiplier.toFixed(2)}×
         </span>
       </div>
 
-      {/* Deviation */}
+      {/* Deviation FIX */}
 
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex items-start justify-between text-xs gap-2">
         <span className="text-[var(--text-muted)]">
           Deviation
         </span>
 
-        <span className={`font-medium ${deviationColor}`}>
-          {deviation >= 0 ? "+" : ""}
-          {deviation.toFixed(2)} · {deviationLabel}
-        </span>
+        <div className={`font-medium text-right leading-tight ${deviationColor}`}>
+          <div>
+            {deviation >= 0 ? "+" : ""}
+            {deviation.toFixed(2)}
+          </div>
+          <div className="text-[11px]">
+            {deviationLabel}
+          </div>
+        </div>
       </div>
 
       {allocationPreview && (
@@ -377,10 +363,6 @@ export default function BotTodayProposal({
       </div>
     );
   }
-
-  /* =====================================================
-     TRADE STATE
-  ===================================================== */
 
   return (
     <div className="space-y-5 py-4">

@@ -17,39 +17,39 @@ const safeMultiplier = (v) => {
 };
 
 /* =====================================================
-   LABEL MAPPINGS
+   TRADER FRIENDLY LABELS
 ===================================================== */
 
-const getHealthLabel = (v) => {
-  if (v < 30) return "Weak";
-  if (v < 50) return "Fragile";
-  if (v < 70) return "Good";
-  if (v < 85) return "Strong";
-  return "Very strong";
+const getSetupQualityLabel = (v) => {
+  if (v < 30) return "Weak setups";
+  if (v < 50) return "Mixed setups";
+  if (v < 70) return "Decent setups";
+  if (v < 85) return "High quality";
+  return "Very strong setups";
 };
 
-const getRiskLabel = (v) => {
-  if (v < 25) return "Low";
+const getVolatilityLabel = (v) => {
+  if (v < 25) return "Very calm";
   if (v < 50) return "Normal";
-  if (v < 70) return "Elevated";
-  if (v < 85) return "High";
-  return "Extreme";
+  if (v < 70) return "Volatile";
+  if (v < 85) return "High volatility";
+  return "Extreme volatility";
 };
 
-const getPressureLabel = (v) => {
-  if (v < 30) return "Low";
-  if (v < 50) return "Neutral";
-  if (v < 70) return "Moderate";
-  if (v < 85) return "High";
-  return "Extreme";
+const getTrendStrengthLabel = (v) => {
+  if (v < 30) return "Weak trend";
+  if (v < 50) return "Sideways";
+  if (v < 70) return "Trending";
+  if (v < 85) return "Strong trend";
+  return "Very strong trend";
 };
 
 const getExposureLabel = (value) => {
-  if (value < 0.7) return "DEFENSIVE";
-  if (value < 0.95) return "REDUCED";
-  if (value <= 1.05) return "NORMAL";
-  if (value <= 1.25) return "ELEVATED";
-  return "AGGRESSIVE";
+  if (value < 0.7) return "Defensive";
+  if (value < 0.95) return "Reduced size";
+  if (value <= 1.05) return "Normal size";
+  if (value <= 1.25) return "Increased size";
+  return "Aggressive size";
 };
 
 const getExposureColor = (value) => {
@@ -77,7 +77,7 @@ function Bar({ icon, label, value, color, getLabel }) {
       <span>{icon}</span>
 
       {/* label */}
-      <span className="w-16 text-gray-600 dark:text-gray-300">
+      <span className="w-28 text-gray-600 dark:text-gray-300">
         {label}
       </span>
 
@@ -131,29 +131,29 @@ export default function MarketConditionsInline({
 
       <Bar
         icon="🟢"
-        label="Health"
+        label="Setup quality"
         value={safeHealth}
         color="bg-emerald-500"
-        getLabel={getHealthLabel}
+        getLabel={getSetupQualityLabel}
       />
 
       <Bar
         icon="🟠"
-        label="Risk"
+        label="Market volatility"
         value={safeRisk}
         color="bg-orange-500"
-        getLabel={getRiskLabel}
+        getLabel={getVolatilityLabel}
       />
 
       <Bar
         icon="🔵"
-        label="Pressure"
+        label="Trend strength"
         value={safePressure}
         color="bg-blue-500"
-        getLabel={getPressureLabel}
+        getLabel={getTrendStrengthLabel}
       />
 
-      {/* Exposure multiplier */}
+      {/* Position size */}
 
       <div className="flex items-center gap-2 text-xs">
 

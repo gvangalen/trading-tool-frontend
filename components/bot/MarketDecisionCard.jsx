@@ -2,8 +2,6 @@
 
 import {
   Activity,
-  TrendingUp,
-  AlertTriangle,
   Thermometer,
 } from "lucide-react";
 
@@ -16,15 +14,17 @@ import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
  * - Market cycle
  * - Temperature
  * - Market trends
- * - Transition risk
- * - Bot risk engine metrics (via MarketConditionsPanel)
+ * - AI explanation
+ *
+ * Risk engine metrics worden gerenderd
+ * via MarketConditionsPanel
  */
 
 export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
-     ENGINE METRICS
+     ENGINE METRICS (doorgegeven aan panel)
   ====================================== */
 
   const pressure = Number(decision.market_pressure ?? 50);
@@ -64,43 +64,6 @@ export default function MarketDecisionCard({ decision = {} }) {
 
     return "Trading range";
   };
-
-  /* ======================================
-     PRESSURE BAR
-  ====================================== */
-
-  const pressureBlocks = 8;
-
-  const filledPressure = Math.round(
-    (Math.min(pressure, 100) / 100) * pressureBlocks
-  );
-
-  const pressureColor =
-    pressure > 70
-      ? "bg-red-500"
-      : pressure > 50
-      ? "bg-orange-500"
-      : pressure > 30
-      ? "bg-blue-500"
-      : "bg-emerald-500";
-
-  /* ======================================
-     TRANSITION RISK
-  ====================================== */
-
-  const transitionLabel =
-    transitionRisk > 70
-      ? "High shift risk"
-      : transitionRisk > 40
-      ? "Moderate shift risk"
-      : "Stable regime";
-
-  const transitionColor =
-    transitionRisk > 70
-      ? "text-red-600"
-      : transitionRisk > 40
-      ? "text-orange-600"
-      : "text-emerald-600";
 
   /* ======================================
      MARKET CYCLE
@@ -246,49 +209,10 @@ export default function MarketDecisionCard({ decision = {} }) {
       )}
 
       {/* =========================
-          MARKET PRESSURE
+          BOT RISK ENGINE
       ========================== */}
 
-      <div className="border-t pt-4 space-y-3">
-
-        <div className="space-y-1">
-
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Market pressure</span>
-            <span>{pressure}</span>
-          </div>
-
-          <div className="flex gap-[3px]">
-            {[...Array(pressureBlocks)].map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 w-4 rounded-sm ${
-                  i < filledPressure
-                    ? pressureColor
-                    : "bg-gray-200"
-                }`}
-              />
-            ))}
-          </div>
-
-        </div>
-
-        {/* Transition risk */}
-
-        <div className="flex items-center justify-between text-sm">
-
-          <span className="text-gray-500 flex items-center gap-2">
-            <AlertTriangle size={14} />
-            Transition risk
-          </span>
-
-          <span className={`font-semibold ${transitionColor}`}>
-            {transitionLabel}
-          </span>
-
-        </div>
-
-        {/* Bot risk engine */}
+      <div className="border-t pt-4">
 
         <MarketConditionsPanel
           health={health}

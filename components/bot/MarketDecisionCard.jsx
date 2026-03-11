@@ -16,8 +16,7 @@ import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
  * - Market trends
  * - AI explanation
  *
- * Risk engine metrics worden gerenderd
- * via MarketConditionsPanel
+ * Risk engine metrics komen uit Bot Brain API
  */
 
 export default function MarketDecisionCard({ decision = {} }) {
@@ -28,10 +27,10 @@ export default function MarketDecisionCard({ decision = {} }) {
   ====================================== */
 
   const pressure =
-    Number(decision?.metrics?.market_pressure ?? 0) * 100;
+    Math.round(Number(decision?.metrics?.market_pressure ?? 0) * 100);
 
   const transitionRisk =
-    Number(decision?.metrics?.transition_risk ?? 0) * 100;
+    Math.round(Number(decision?.metrics?.transition_risk ?? 0) * 100);
 
   const health =
     Number(decision?.metrics?.setup_quality ?? 50);
@@ -70,12 +69,14 @@ export default function MarketDecisionCard({ decision = {} }) {
 
     if (t === "bullish") return "Bullish";
     if (t === "bearish") return "Bearish";
+
     if (
       t === "range" ||
       t === "sideways" ||
       t === "trading range"
-    )
+    ) {
       return "Trading range";
+    }
 
     return "Trading range";
   };
@@ -115,7 +116,7 @@ export default function MarketDecisionCard({ decision = {} }) {
   return (
     <div className="rounded-xl border bg-white p-5 space-y-5">
 
-      {/* Header */}
+      {/* HEADER */}
 
       <div className="flex items-center gap-2 font-semibold">
         <Activity size={16} />

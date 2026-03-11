@@ -7,6 +7,7 @@ import useBotData from "@/hooks/useBotData";
 import { useStrategyData } from "@/hooks/useStrategyData";
 import { useModal } from "@/components/modal/ModalProvider";
 
+import { useMarketIntelligence } from "@/hooks/useMarketIntelligence";
 import BotAgentCard from "@/components/bot/BotAgentCard";
 import BotScores from "@/components/bot/BotScores";
 import BotForm from "@/components/bot/AddBotForm";
@@ -57,6 +58,8 @@ function BotPageInner() {
   } = useBotData();
 
   const { strategies = [], loadStrategies } = useStrategyData();
+  const { data: marketIntelligence, loading: loadingMarketIntelligence } =
+  useMarketIntelligence();
 
   useEffect(() => {
     loadStrategies();
@@ -400,6 +403,8 @@ function BotPageInner() {
                   <BotAgentCard
                     bot={bot}
                     decision={decision}
+                    marketIntelligence={marketIntelligence}
+                    loadingMarketIntelligence={loadingMarketIntelligence}
                     portfolio={portfolio}
                     trades={trades}
                     history={history}

@@ -24,28 +24,31 @@ export default function MarketDecisionCard({ decision = {} }) {
 
   /* ======================================
    ENGINE METRICS (Bot Brain API)
-====================================== */
-const pressure =
-  Number(decision?.metrics?.market_pressure ?? 0);
+  ====================================== */
 
-const transitionRisk =
-  Number(decision?.metrics?.transition_risk ?? 0);
+  const pressure =
+    Number(decision?.metrics?.market_pressure ?? 0);
 
-const health =
-  Number(decision?.metrics?.setup_quality ?? 50);
+  const transitionRisk =
+    Number(decision?.metrics?.transition_risk ?? 0);
 
-const exposureMultiplier =
-  Number(decision?.metrics?.position_size ?? 1);
+  const health =
+    Number(decision?.metrics?.setup_quality ?? 50);
+
+  const exposureMultiplier =
+    Number(decision?.metrics?.position_size ?? 1);
 
   /* ======================================
      MARKET STRUCTURE
   ====================================== */
+
   const phase = decision?.cycle || "expansion";
   const temperature = decision?.temperature || "warm";
 
   /* ======================================
      TRENDS
   ====================================== */
+
   const trendShort =
     decision?.trend?.short || "trading range";
 
@@ -60,6 +63,7 @@ const exposureMultiplier =
   /* ======================================
      TREND LABELS
   ====================================== */
+
   const formatTrend = (trend) => {
     const t = String(trend).toLowerCase();
 
@@ -80,6 +84,7 @@ const exposureMultiplier =
   /* ======================================
      MARKET CYCLE
   ====================================== */
+
   const phases = [
     "Accumulation",
     "Expansion",
@@ -109,11 +114,11 @@ const exposureMultiplier =
   ====================================== */
 
   return (
-    <div className="rounded-xl border bg-white p-5 space-y-5">
+    <div className="space-y-5">
 
       {/* HEADER */}
 
-      <div className="flex items-center gap-2 font-semibold">
+      <div className="flex items-center gap-2 font-semibold text-base">
         <Activity size={16} />
         Market Intelligence — Global Analysis
       </div>

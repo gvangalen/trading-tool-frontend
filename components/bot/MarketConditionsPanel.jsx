@@ -145,12 +145,16 @@ export default function MarketConditionsInline({
   health = 50,
   transitionRisk = 20,
   pressure = 50,
+  volatility = 50,
+  trendStrength = 50,
   multiplier = 1,
 }) {
 
   const safeHealth = clamp(health);
   const safeRisk = clamp(transitionRisk);
   const safePressure = clamp(pressure);
+  const safeVolatility = clamp(volatility);
+  const safeTrend = clamp(trendStrength);
   const safeMulti = safeMultiplier(multiplier);
 
   const exposureLabel = getExposureLabel(safeMulti);
@@ -195,8 +199,8 @@ export default function MarketConditionsInline({
       <Bar
         icon={<Zap size={16} />}
         label="Market volatility"
-        value={safeRisk}
-        color="bg-orange-500"
+        value={safeVolatility}
+        color="bg-purple-500"
         getLabel={getVolatilityLabel}
       />
 
@@ -205,8 +209,8 @@ export default function MarketConditionsInline({
       <Bar
         icon={<TrendingUp size={16} />}
         label="Trend strength"
-        value={safePressure}
-        color="bg-blue-500"
+        value={safeTrend}
+        color="bg-indigo-500"
         getLabel={getTrendStrengthLabel}
       />
 

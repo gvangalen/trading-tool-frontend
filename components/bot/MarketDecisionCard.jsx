@@ -23,32 +23,29 @@ export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
-     ENGINE METRICS (Bot Brain API)
-  ====================================== */
+   ENGINE METRICS (Bot Brain API)
+====================================== */
+const pressure =
+  Number(decision?.metrics?.market_pressure ?? 0);
 
-  const pressure =
-    Math.round(Number(decision?.metrics?.market_pressure ?? 0) * 100);
+const transitionRisk =
+  Number(decision?.metrics?.transition_risk ?? 0);
 
-  const transitionRisk =
-    Math.round(Number(decision?.metrics?.transition_risk ?? 0) * 100);
+const health =
+  Number(decision?.metrics?.setup_quality ?? 50);
 
-  const health =
-    Number(decision?.metrics?.setup_quality ?? 50);
-
-  const exposureMultiplier =
-    Number(decision?.metrics?.position_size ?? 1);
+const exposureMultiplier =
+  Number(decision?.metrics?.position_size ?? 1);
 
   /* ======================================
      MARKET STRUCTURE
   ====================================== */
-
   const phase = decision?.cycle || "expansion";
   const temperature = decision?.temperature || "warm";
 
   /* ======================================
      TRENDS
   ====================================== */
-
   const trendShort =
     decision?.trend?.short || "trading range";
 
@@ -63,7 +60,6 @@ export default function MarketDecisionCard({ decision = {} }) {
   /* ======================================
      TREND LABELS
   ====================================== */
-
   const formatTrend = (trend) => {
     const t = String(trend).toLowerCase();
 
@@ -84,7 +80,6 @@ export default function MarketDecisionCard({ decision = {} }) {
   /* ======================================
      MARKET CYCLE
   ====================================== */
-
   const phases = [
     "Accumulation",
     "Expansion",

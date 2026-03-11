@@ -54,17 +54,20 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const strategyMultiplier = Number(decision.exposure_multiplier ?? 1);
+
   const safeStrategyMultiplier = Number.isFinite(strategyMultiplier)
     ? strategyMultiplier
     : 1;
 
+  /* MARKET SUGGESTION (Bot Brain metrics) */
+
   const marketMultiplier = Number(
-    decision.market_exposure_multiplier ?? safeStrategyMultiplier
+    decision?.metrics?.position_size ?? 1
   );
 
   const safeMarketMultiplier = Number.isFinite(marketMultiplier)
     ? marketMultiplier
-    : safeStrategyMultiplier;
+    : 1;
 
   const deviation = safeStrategyMultiplier - safeMarketMultiplier;
 
@@ -121,7 +124,7 @@ export default function BotTodayProposal({
     : null;
 
   /* =====================================================
-     SETUP MATCH (SAFE)
+     SETUP MATCH
   ===================================================== */
 
   const setupMatch = decision.setup_match ?? null;
@@ -195,6 +198,7 @@ export default function BotTodayProposal({
       </div>
 
       {/* Market suggestion */}
+
       <div className="flex items-center justify-between text-xs">
         <span className="text-[var(--text-muted)]">
           Market suggestion
@@ -206,6 +210,7 @@ export default function BotTodayProposal({
       </div>
 
       {/* Strategy exposure */}
+
       <div className="flex items-center justify-between text-xs">
         <span className="text-[var(--text-muted)]">
           Strategy exposure
@@ -217,6 +222,7 @@ export default function BotTodayProposal({
       </div>
 
       {/* Deviation */}
+
       <div className="flex items-center justify-between text-xs">
         <span className="text-[var(--text-muted)]">
           Deviation

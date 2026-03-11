@@ -20,6 +20,22 @@ const safeMultiplier = (v) => {
    LABELS (TRADER FRIENDLY)
 ===================================================== */
 
+const getPressureLabel = (v) => {
+  if (v < 30) return "Calm market";
+  if (v < 50) return "Neutral pressure";
+  if (v < 70) return "Moderate pressure";
+  if (v < 85) return "High pressure";
+  return "Extreme pressure";
+};
+
+const getTransitionRiskLabel = (v) => {
+  if (v < 30) return "Stable regime";
+  if (v < 50) return "Minor shifts possible";
+  if (v < 70) return "Regime pressure building";
+  if (v < 85) return "High transition risk";
+  return "Regime change risk";
+};
+
 const getSetupQualityLabel = (v) => {
   if (v < 30) return "Weak setups";
   if (v < 50) return "Mixed setups";
@@ -65,6 +81,7 @@ const getExposureColor = (value) => {
 ===================================================== */
 
 function Bar({ icon, label, value, color, getLabel }) {
+
   const blocks = 10;
   const safeValue = clamp(value);
   const filled = Math.round(safeValue / 10);
@@ -87,7 +104,9 @@ function Bar({ icon, label, value, color, getLabel }) {
           <div
             key={i}
             className={`h-2 flex-1 rounded-sm ${
-              i < filled ? color : "bg-gray-200 dark:bg-gray-700"
+              i < filled
+                ? color
+                : "bg-gray-200 dark:bg-gray-700"
             }`}
           />
         ))}
@@ -102,6 +121,7 @@ function Bar({ icon, label, value, color, getLabel }) {
       <span className="w-36 text-gray-500">
         {status}
       </span>
+
     </div>
   );
 }
@@ -112,7 +132,7 @@ function Bar({ icon, label, value, color, getLabel }) {
 
 export default function MarketConditionsInline({
   health = 50,
-  transitionRisk = 50,
+  transitionRisk = 20,
   pressure = 50,
   multiplier = 1,
 }) {
@@ -126,7 +146,30 @@ export default function MarketConditionsInline({
   const exposureColor = getExposureColor(safeMulti);
 
   return (
+
     <div className="flex flex-col gap-3 w-full">
+
+      {/* MARKET PRESSURE */}
+
+      <Bar
+        icon="📊"
+        label="Market pressure"
+        value={safePressure}
+        color="bg-blue-500"
+        getLabel={getPressureLabel}
+      />
+
+      {/* TRANSITION RISK */}
+
+      <Bar
+        icon="⚠️"
+        label="Transition risk"
+        value={safeRisk}
+        color="bg-orange-500"
+        getLabel={getTransitionRiskLabel}
+      />
+
+      {/* SETUP QUALITY */}
 
       <Bar
         icon="🟢"
@@ -136,6 +179,8 @@ export default function MarketConditionsInline({
         getLabel={getSetupQualityLabel}
       />
 
+      {/* MARKET VOLATILITY */}
+
       <Bar
         icon="🟠"
         label="Market volatility"
@@ -143,6 +188,8 @@ export default function MarketConditionsInline({
         color="bg-orange-500"
         getLabel={getVolatilityLabel}
       />
+
+      {/* TREND STRENGTH */}
 
       <Bar
         icon="🔵"

@@ -100,7 +100,7 @@ function Bar({ icon, label, value, color, getLabel }) {
         {safeValue}
       </span>
 
-      {/* status label */}
+      {/* status */}
       <span className="text-gray-500">
         {status}
       </span>
@@ -127,7 +127,7 @@ export default function MarketConditionsInline({
   const exposureColor = getExposureColor(safeMulti);
 
   return (
-    <div className="flex flex-wrap items-center gap-6">
+    <div className="flex flex-col gap-3">
 
       <Bar
         icon="🟢"
@@ -155,7 +155,7 @@ export default function MarketConditionsInline({
 
       {/* Position size */}
 
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-2 text-xs pt-1">
 
         <span>🟣</span>
 

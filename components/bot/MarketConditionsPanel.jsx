@@ -1,7 +1,7 @@
 "use client";
 
 /* =====================================================
-   🎯 HELPERS
+   HELPERS
 ===================================================== */
 
 const clamp = (v, min = 0, max = 100) => {
@@ -17,7 +17,7 @@ const safeMultiplier = (v) => {
 };
 
 /* =====================================================
-   TRADER FRIENDLY LABELS
+   LABELS (TRADER FRIENDLY)
 ===================================================== */
 
 const getSetupQualityLabel = (v) => {
@@ -61,7 +61,7 @@ const getExposureColor = (value) => {
 };
 
 /* =====================================================
-   📊 BAR COMPONENT
+   BAR COMPONENT
 ===================================================== */
 
 function Bar({ icon, label, value, color, getLabel }) {
@@ -71,37 +71,35 @@ function Bar({ icon, label, value, color, getLabel }) {
   const status = getLabel(safeValue);
 
   return (
-    <div className="flex items-center gap-3 text-xs">
+    <div className="flex items-center gap-4 text-sm w-full">
 
       {/* icon */}
-      <span>{icon}</span>
+      <span className="w-5">{icon}</span>
 
       {/* label */}
-      <span className="w-28 text-gray-600 dark:text-gray-300">
+      <span className="w-40 text-gray-600 dark:text-gray-300">
         {label}
       </span>
 
-      {/* blocks */}
-      <div className="flex gap-[3px]">
+      {/* bar */}
+      <div className="flex-1 flex gap-[3px]">
         {[...Array(blocks)].map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 w-4 rounded-sm ${
-              i < filled
-                ? color
-                : "bg-gray-200 dark:bg-gray-700"
+            className={`h-2 flex-1 rounded-sm ${
+              i < filled ? color : "bg-gray-200 dark:bg-gray-700"
             }`}
           />
         ))}
       </div>
 
       {/* score */}
-      <span className="w-8 text-right font-medium">
-        {safeValue}
+      <span className="w-20 text-right font-medium">
+        {safeValue} / 100
       </span>
 
       {/* status */}
-      <span className="text-gray-500">
+      <span className="w-36 text-gray-500">
         {status}
       </span>
     </div>
@@ -109,7 +107,7 @@ function Bar({ icon, label, value, color, getLabel }) {
 }
 
 /* =====================================================
-   📈 MAIN COMPONENT
+   MAIN COMPONENT
 ===================================================== */
 
 export default function MarketConditionsInline({
@@ -118,6 +116,7 @@ export default function MarketConditionsInline({
   pressure = 50,
   multiplier = 1,
 }) {
+
   const safeHealth = clamp(health);
   const safeRisk = clamp(transitionRisk);
   const safePressure = clamp(pressure);
@@ -127,7 +126,7 @@ export default function MarketConditionsInline({
   const exposureColor = getExposureColor(safeMulti);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 w-full">
 
       <Bar
         icon="🟢"
@@ -153,17 +152,23 @@ export default function MarketConditionsInline({
         getLabel={getTrendStrengthLabel}
       />
 
-      {/* Position size */}
+      {/* POSITION SIZE */}
 
-      <div className="flex items-center gap-2 text-xs pt-1">
+      <div className="flex items-center gap-4 text-sm w-full pt-1">
 
-        <span>🟣</span>
+        <span className="w-5">🟣</span>
 
-        <span className={`font-semibold ${exposureColor}`}>
+        <span className="w-40 text-gray-600 dark:text-gray-300">
+          Position size
+        </span>
+
+        <div className="flex-1" />
+
+        <span className={`w-20 text-right font-semibold ${exposureColor}`}>
           {safeMulti.toFixed(2)}×
         </span>
 
-        <span className="text-gray-500">
+        <span className="w-36 text-gray-500">
           {exposureLabel}
         </span>
 

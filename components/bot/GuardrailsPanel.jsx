@@ -17,18 +17,26 @@ export default function GuardrailsPanel({
      🔐 GUARDRAILS STATE (NEW ENGINE STRUCTURE)
   ===================================================== */
 
-  const guardrails = decision?.guardrails ?? {};
+  // ⭐ NIEUW: eerst uit scores_json lezen
+  const guardrails =
+    decision?.scores_json?.guardrails ??
+    decision?.guardrails ??
+    {};
 
   const killSwitch =
-    guardrails?.kill_switch ?? bot?.kill_switch ?? true;
+    guardrails?.kill_switch ??
+    bot?.kill_switch ??
+    true;
 
   const maxRisk =
     guardrails?.max_trade_risk_eur ??
+    decision?.scores_json?.max_risk_per_trade ??
     decision?.max_risk_per_trade ??
     0;
 
   const maxDaily =
     guardrails?.daily_allocation_eur ??
+    decision?.scores_json?.max_daily_allocation ??
     decision?.max_daily_allocation ??
     0;
 
@@ -38,11 +46,17 @@ export default function GuardrailsPanel({
   const maxExposure =
     guardrails?.max_asset_exposure_pct ?? null;
 
-  const warnings = Array.isArray(decision?.warnings)
+  const warnings = Array.isArray(decision?.scores_json?.warnings)
+    ? decision.scores_json.warnings
+    : Array.isArray(decision?.warnings)
     ? decision.warnings
     : [];
 
-  const transitionRisk = Number(decision?.transition_risk) || 0;
+  // ⭐ transition risk ook uit scores_json
+  const transitionRisk =
+    Number(decision?.scores_json?.transition_risk) ||
+    Number(decision?.transition_risk) ||
+    0;
 
   /* =====================================================
      🎯 RISK LABEL + COLOR

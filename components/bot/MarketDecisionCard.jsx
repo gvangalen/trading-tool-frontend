@@ -115,7 +115,7 @@ const exposureMultiplier =
 
       <div className="flex items-center gap-2 font-semibold">
         <Activity size={16} />
-        Market Intelligence
+        Market Intelligence — Global Analysis
       </div>
 
       {/* =========================

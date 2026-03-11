@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   Layers,
   TrendingUp,
-  Gauge,
 } from "lucide-react";
 
 export default function BotTodayProposal({
@@ -51,16 +50,46 @@ export default function BotTodayProposal({
   const confidence = decision.confidence ?? "low";
 
   /* =====================================================
+     EXPOSURE FRAMEWORK
+  ===================================================== */
+
+  const strategyMultiplier = Number(decision.exposure_multiplier ?? 1);
+  const safeStrategyMultiplier = Number.isFinite(strategyMultiplier)
+    ? strategyMultiplier
+    : 1;
+
+  const marketMultiplier = Number(
+    decision.market_exposure_multiplier ?? safeStrategyMultiplier
+  );
+
+  const safeMarketMultiplier = Number.isFinite(marketMultiplier)
+    ? marketMultiplier
+    : safeStrategyMultiplier;
+
+  const deviation = safeStrategyMultiplier - safeMarketMultiplier;
+
+  const deviationLabel =
+    deviation > 0
+      ? "Higher risk"
+      : deviation < 0
+      ? "Safer than market"
+      : "Aligned";
+
+  const deviationColor =
+    deviation > 0
+      ? "text-red-600"
+      : deviation < 0
+      ? "text-emerald-600"
+      : "text-[var(--text-muted)]";
+
+  /* =====================================================
      EXECUTION CONTEXT
   ===================================================== */
 
   const executionMode = decision.execution_mode || "fixed";
   const curveName = decision.decision_curve_name || null;
 
-  const multiplier = Number(decision.exposure_multiplier ?? 1);
   const baseAmount = Number(decision.base_amount ?? 0);
-
-  const safeMultiplier = Number.isFinite(multiplier) ? multiplier : 1;
 
   const executionLabel =
     executionMode === "custom"
@@ -69,7 +98,7 @@ export default function BotTodayProposal({
 
   const allocationPreview =
     baseAmount > 0
-      ? `€${Math.round(baseAmount * safeMultiplier)}`
+      ? `€${Math.round(baseAmount * safeStrategyMultiplier)}`
       : null;
 
   /* =====================================================
@@ -150,7 +179,7 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const executionCard = (
-    <div className="tl-card space-y-2">
+    <div className="tl-card space-y-3">
 
       <div className="flex items-center gap-2 font-medium">
         <TrendingUp size={14} />
@@ -165,11 +194,37 @@ export default function BotTodayProposal({
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-xs">
-        <Gauge size={14} />
-        Exposure multiplier:
+      {/* Market suggestion */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-[var(--text-muted)]">
+          Market suggestion
+        </span>
+
         <span className="font-medium">
-          {safeMultiplier.toFixed(2)}×
+          {safeMarketMultiplier.toFixed(2)}×
+        </span>
+      </div>
+
+      {/* Strategy exposure */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-[var(--text-muted)]">
+          Strategy exposure
+        </span>
+
+        <span className="font-medium">
+          {safeStrategyMultiplier.toFixed(2)}×
+        </span>
+      </div>
+
+      {/* Deviation */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-[var(--text-muted)]">
+          Deviation
+        </span>
+
+        <span className={`font-medium ${deviationColor}`}>
+          {deviation >= 0 ? "+" : ""}
+          {deviation.toFixed(2)} · {deviationLabel}
         </span>
       </div>
 

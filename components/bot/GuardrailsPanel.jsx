@@ -12,18 +12,31 @@ export default function GuardrailsPanel({
   decision = {},
   bot = {},
 }) {
+
   /* =====================================================
-     🔐 GUARDRAILS STATE
+     🔐 GUARDRAILS STATE (NEW ENGINE STRUCTURE)
   ===================================================== */
 
-  // kill switch default = ON
-  const killSwitch = bot?.kill_switch !== false;
+  const guardrails = decision?.guardrails ?? {};
+
+  const killSwitch =
+    guardrails?.kill_switch ?? bot?.kill_switch ?? true;
 
   const maxRisk =
-    decision?.max_risk_per_trade ?? bot?.max_risk_per_trade ?? 0;
+    guardrails?.max_trade_risk_eur ??
+    decision?.max_risk_per_trade ??
+    0;
 
   const maxDaily =
-    decision?.max_daily_allocation ?? bot?.max_daily_allocation ?? 0;
+    guardrails?.daily_allocation_eur ??
+    decision?.max_daily_allocation ??
+    0;
+
+  const currentExposure =
+    guardrails?.current_asset_exposure_pct ?? null;
+
+  const maxExposure =
+    guardrails?.max_asset_exposure_pct ?? null;
 
   const warnings = Array.isArray(decision?.warnings)
     ? decision.warnings
@@ -76,22 +89,48 @@ export default function GuardrailsPanel({
       {/* LIVE STATUS */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500">Protection status</span>
-        <span className="text-green-600 font-semibold">LIVE</span>
+
+        <span
+          className={`font-semibold ${
+            killSwitch
+              ? "text-green-600"
+              : "text-red-500"
+          }`}
+        >
+          {killSwitch ? "LIVE" : "DISABLED"}
+        </span>
       </div>
 
       {/* Max risk per trade */}
-      {maxRisk != null && (
+      {maxRisk !== null && (
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Max risk / trade</span>
-          <span className="font-medium">{formatEUR(maxRisk)}</span>
+          <span className="font-medium">
+            {formatEUR(maxRisk)}
+          </span>
         </div>
       )}
 
       {/* Max daily allocation */}
-      {maxDaily != null && (
+      {maxDaily !== null && (
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Max per day</span>
-          <span className="font-medium">{formatEUR(maxDaily)}</span>
+          <span className="font-medium">
+            {formatEUR(maxDaily)}
+          </span>
+        </div>
+      )}
+
+      {/* BTC Exposure */}
+      {currentExposure !== null && maxExposure !== null && (
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">
+            BTC exposure
+          </span>
+
+          <span className="font-medium">
+            {currentExposure.toFixed(0)}% / {maxExposure}%
+          </span>
         </div>
       )}
 
@@ -103,12 +142,16 @@ export default function GuardrailsPanel({
           {killSwitch ? (
             <>
               <ToggleRight className="text-green-500" size={20} />
-              <span className="text-green-600 font-medium">Active</span>
+              <span className="text-green-600 font-medium">
+                Active
+              </span>
             </>
           ) : (
             <>
               <ToggleLeft className="text-gray-400" size={20} />
-              <span className="text-gray-400">Off</span>
+              <span className="text-gray-400">
+                Off
+              </span>
             </>
           )}
         </div>

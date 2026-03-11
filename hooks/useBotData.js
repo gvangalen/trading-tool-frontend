@@ -77,17 +77,28 @@ export default function useBotData() {
   }, []);
 
   const loadToday = useCallback(async () => {
-    setLoading((l) => ({ ...l, today: true }));
-    try {
-      const data = await fetchBotToday();
-      setToday(data ?? null);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Today data laden mislukt");
-    } finally {
-      setLoading((l) => ({ ...l, today: false }));
+  setLoading((l) => ({ ...l, today: true }));
+
+  try {
+    const data = await fetchBotToday();
+
+    if (data?.decisions) {
+      data.decisions = data.decisions.map((d) => ({
+        ...d,
+        ...d.scores_json,              // flatten metrics
+        guardrails: d.scores_json?.guardrails || {},
+      }));
     }
-  }, []);
+
+    setToday(data ?? null);
+
+  } catch (err) {
+    console.error(err);
+    setError(err.message || "Today data laden mislukt");
+  } finally {
+    setLoading((l) => ({ ...l, today: false }));
+  }
+}, []);
 
   const loadHistory = useCallback(async (days = 30) => {
     setLoading((l) => ({ ...l, history: true }));

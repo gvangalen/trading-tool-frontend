@@ -24,31 +24,42 @@ export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
-     ENGINE METRICS (doorgegeven aan panel)
+     ENGINE METRICS (Bot Brain API)
   ====================================== */
 
-  const pressure = Number(decision.market_pressure ?? 50);
-  const transitionRisk = Number(decision.transition_risk ?? 0);
+  const pressure =
+    Number(decision?.metrics?.market_pressure ?? 0) * 100;
 
-  const health = Number(decision.health ?? 50);
-  const exposureMultiplier = Number(decision.exposure_multiplier ?? 1);
+  const transitionRisk =
+    Number(decision?.metrics?.transition_risk ?? 0) * 100;
+
+  const health =
+    Number(decision?.metrics?.setup_quality ?? 50);
+
+  const exposureMultiplier =
+    Number(decision?.metrics?.position_size ?? 1);
 
   /* ======================================
      MARKET STRUCTURE
   ====================================== */
 
-  const phase = decision.phase || "expansion";
-  const temperature = decision.temperature || "warm";
+  const phase = decision?.cycle || "expansion";
+  const temperature = decision?.temperature || "warm";
 
   /* ======================================
      TRENDS
   ====================================== */
 
-  const trendShort = decision.trend_short || "trading range";
-  const trendMid = decision.trend_mid || "trading range";
-  const trendLong = decision.trend_long || "trading range";
+  const trendShort =
+    decision?.trend?.short || "trading range";
 
-  const explanation = decision.explanation || null;
+  const trendMid =
+    decision?.trend?.mid || "trading range";
+
+  const trendLong =
+    decision?.trend?.long || "trading range";
+
+  const explanation = decision?.explanation || null;
 
   /* ======================================
      TREND LABELS
@@ -59,7 +70,11 @@ export default function MarketDecisionCard({ decision = {} }) {
 
     if (t === "bullish") return "Bullish";
     if (t === "bearish") return "Bearish";
-    if (t === "range" || t === "sideways" || t === "trading range")
+    if (
+      t === "range" ||
+      t === "sideways" ||
+      t === "trading range"
+    )
       return "Trading range";
 
     return "Trading range";

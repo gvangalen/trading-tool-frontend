@@ -253,7 +253,13 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="lg:w-[340px] p-5 bg-gray-50">
-          <GuardrailsPanel decision={decision} bot={bot} />
+          <GuardrailsPanel
+            decision={{
+              ...decision,
+              guardrails: decision?.guardrails || {},
+            }}
+            bot={bot}
+          />
         </div>
 
       </div>

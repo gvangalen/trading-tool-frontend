@@ -31,7 +31,6 @@ export default function BotAgentCard({
   trades = [],
   loadingDecision = false,
 
-  /* ⭐ NIEUW */
   marketIntelligence,
   loadingMarketIntelligence = false,
 
@@ -60,15 +59,47 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
   const statusLabel = (decision?.action || "OBSERVE").toUpperCase();
-  const confidence = decision?.confidence_label || decision?.confidence || "LOW";
+  const confidence =
+    decision?.confidence_label || decision?.confidence || "LOW";
 
   const exposureMultiplier =
-    decision?.exposure_multiplier ?? bot?.strategy?.exposure_multiplier ?? 1;
+    decision?.exposure_multiplier ??
+    bot?.strategy?.exposure_multiplier ??
+    1;
+
+  /* ================= NORMALIZE DECISION ================= */
+
+  const normalizedDecision = useMemo(() => {
+    if (!decision) return {};
+
+    const scores = decision?.scores_json || {};
+
+    return {
+      ...decision,
+
+      guardrails:
+        scores?.guardrails ??
+        decision?.guardrails ??
+        {},
+
+      transition_risk:
+        scores?.transition_risk ??
+        decision?.transition_risk ??
+        0,
+
+      warnings:
+        scores?.warnings ??
+        decision?.warnings ??
+        [],
+    };
+  }, [decision]);
 
   /* ================= MERGE TRADES + HISTORY ================= */
 
   const combinedHistory = useMemo(() => {
-    const botHistory = (history || []).filter((h) => h.bot_id === bot.id);
+    const botHistory = (history || []).filter(
+      (h) => h.bot_id === bot.id
+    );
 
     const tradeAsHistory = (trades || []).map((t) => ({
       id: t.id,
@@ -116,31 +147,37 @@ export default function BotAgentCard({
   const riskConfig = {
     conservative: {
       label: "Risk: Conservative",
-      className: "bg-green-100 text-green-700 border-green-200",
+      className:
+        "bg-green-100 text-green-700 border-green-200",
       icon: <Shield size={12} />,
     },
     balanced: {
       label: "Risk: Balanced",
-      className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      className:
+        "bg-yellow-100 text-yellow-700 border-yellow-200",
       icon: <Scale size={12} />,
     },
     aggressive: {
       label: "Risk: Aggressive",
-      className: "bg-red-100 text-red-700 border-red-200",
+      className:
+        "bg-red-100 text-red-700 border-red-200",
       icon: <Rocket size={12} />,
     },
   };
 
   const risk =
-    riskConfig[String(bot?.risk_profile || "balanced").toLowerCase()] ||
-    riskConfig.balanced;
+    riskConfig[
+      String(bot?.risk_profile || "balanced").toLowerCase()
+    ] || riskConfig.balanced;
 
   /* ================= SAVE TRADE PLAN ================= */
 
-  const decisionId = decision?.id ?? decision?.decision_id ?? null;
+  const decisionId =
+    decision?.id ?? decision?.decision_id ?? null;
   const botId = decision?.bot_id ?? bot?.id ?? null;
 
-  const canSavePlan = !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
+  const canSavePlan =
+    !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
 
   const handleSaveTradePlan = async (planDraft) => {
     if (!canSavePlan) return;
@@ -183,7 +220,9 @@ export default function BotAgentCard({
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
             </div>
-            <div className="text-2xl font-bold">{bot?.name}</div>
+            <div className="text-2xl font-bold">
+              {bot?.name}
+            </div>
           </div>
 
           <div className="relative" ref={settingsRef}>
@@ -207,7 +246,6 @@ export default function BotAgentCard({
                 />
               </div>
             )}
-
           </div>
         </div>
 
@@ -232,7 +270,9 @@ export default function BotAgentCard({
 
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
           <Activity size={16} className="text-gray-500" />
-          <span className="font-medium text-gray-600">Status:</span>
+          <span className="font-medium text-gray-600">
+            Status:
+          </span>
           <span className="font-bold">{statusLabel}</span>
           <span className="text-gray-400">•</span>
           <span>
@@ -254,17 +294,14 @@ export default function BotAgentCard({
 
         <div className="lg:w-[340px] p-5 bg-gray-50">
           <GuardrailsPanel
-            decision={{
-              ...decision,
-              guardrails: decision?.guardrails || {},
-            }}
+            decision={normalizedDecision}
             bot={bot}
           />
         </div>
 
       </div>
 
-      {/* ⭐ MARKET INTELLIGENCE (BOT BRAIN) */}
+      {/* MARKET INTELLIGENCE */}
 
       <div className="rounded-xl border p-5">
 

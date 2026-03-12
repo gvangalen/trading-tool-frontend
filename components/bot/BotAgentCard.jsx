@@ -72,15 +72,13 @@ export default function BotAgentCard({
   if (!decision) return {};
 
   const scores = decision?.scores_json || {};
+  const guardrails = decision?.guardrails_result || {};
 
   return {
     ...decision,
 
-    guardrails:
-      decision?.guardrails ??
-      decision?.guardrails_result ??
-      scores?.guardrails_result ??
-      {},
+    guardrails_result: guardrails,
+    guardrails: guardrails, // alias voor UI
 
     transition_risk:
       scores?.transition_risk ??

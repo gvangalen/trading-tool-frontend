@@ -24,8 +24,10 @@ import {
 /* =====================================================
    INNER PAGE
 ===================================================== */
+
 function BotPageInner() {
   const { openConfirm, showSnackbar } = useModal();
+
   const formRef = useRef({});
   const budgetRef = useRef({});
 
@@ -47,7 +49,6 @@ function BotPageInner() {
     createBot,
     updateBot,
     deleteBot,
-    updateBudgetForBot,
 
     generateDecisionForBot,
     executeBot,
@@ -58,8 +59,11 @@ function BotPageInner() {
   } = useBotData();
 
   const { strategies = [], loadStrategies } = useStrategyData();
-  const { data: marketIntelligence, loading: loadingMarketIntelligence } =
-  useMarketIntelligence();
+
+  const {
+    data: marketIntelligence,
+    loading: loadingMarketIntelligence,
+  } = useMarketIntelligence();
 
   useEffect(() => {
     loadStrategies();
@@ -68,6 +72,7 @@ function BotPageInner() {
   /* =========================
      AUTO SELECT FIRST BOT
   ========================= */
+
   useEffect(() => {
     if (bots.length === 0) {
       setActiveBot(null);
@@ -79,19 +84,27 @@ function BotPageInner() {
     }
   }, [bots, activeBot, setActiveBot]);
 
-  const dailyScores = today?.scores ?? {
-    macro: 10,
-    technical: 10,
-    market: 10,
-    setup: 10,
-  };
+  /* =========================
+     DAILY SCORES
+  ========================= */
+
+  const dailyScores =
+    today?.daily_scores ??
+    today?.scores ?? {
+      macro: 10,
+      technical: 10,
+      market: 10,
+      setup: 10,
+    };
 
   /* =========================
      AGGREGATED PORTFOLIO
   ========================= */
+
   const aggregatedBotsForOverview = useMemo(() => {
     return bots.map((bot) => {
       const p = portfolios.find((x) => x.bot_id === bot.id);
+
       return {
         bot_id: bot.id,
         symbol: p?.symbol ?? bot?.symbol ?? "—",
@@ -107,6 +120,10 @@ function BotPageInner() {
       return acc + (Number.isFinite(v) ? v : 0);
     }, 0);
   }, [portfolios]);
+
+  /* =========================
+     PORTFOLIO BALANCE
+  ========================= */
 
   const portfolioBalanceDataByRange = useMemo(() => {
     const byRange =
@@ -139,6 +156,7 @@ function BotPageInner() {
     }
 
     const now = new Date().toISOString();
+
     const single = [{ ts: now, value_eur: totalPortfolioValueEur }];
 
     return {
@@ -157,7 +175,9 @@ function BotPageInner() {
   const handleGenerateDecision = async (bot) => {
     try {
       setGeneratingBotId(bot.id);
+
       await generateDecisionForBot({ bot_id: bot.id });
+
       showSnackbar(`Nieuw voorstel voor ${bot.name}`, "success");
     } catch {
       showSnackbar("Fout bij genereren voorstel", "danger");
@@ -169,6 +189,7 @@ function BotPageInner() {
   const handleSaveTradePlan = async ({ bot_id, decision_id, draft }) => {
     try {
       await saveTradePlanForDecision({ bot_id, decision_id, draft });
+
       showSnackbar("Trade plan opgeslagen", "success");
     } catch (e) {
       showSnackbar("Opslaan trade plan mislukt", "danger");
@@ -179,7 +200,9 @@ function BotPageInner() {
   const handleManualTrade = async (payload) => {
     try {
       setPlacingOrderBotId(payload?.bot_id ?? null);
+
       await createManualOrder(payload);
+
       showSnackbar("Paper trade geplaatst", "success");
     } catch (e) {
       showSnackbar("Paper trade mislukt", "danger");
@@ -202,6 +225,7 @@ function BotPageInner() {
       }
 
       await executeBot({ bot_id, decision_id });
+
       showSnackbar("Bot uitgevoerd", "success");
     } catch {
       showSnackbar("Uitvoeren mislukt", "danger");
@@ -213,7 +237,9 @@ function BotPageInner() {
   const handleSkipBot = async ({ bot_id }) => {
     try {
       setExecutingBotId(bot_id);
+
       await skipBot({ bot_id });
+
       showSnackbar("Bot overgeslagen", "info");
     } catch {
       showSnackbar("Overslaan mislukt", "danger");
@@ -222,8 +248,13 @@ function BotPageInner() {
     }
   };
 
+  /* =========================
+     ADD BOT
+  ========================= */
+
   const handleAddBot = () => {
     formRef.current = {};
+
     openConfirm({
       title: "➕ Nieuwe bot",
       description: (
@@ -238,101 +269,101 @@ function BotPageInner() {
           showSnackbar("Vul alle velden in", "danger");
           return;
         }
+
         await createBot(formRef.current);
+
         showSnackbar("Bot toegevoegd", "success");
       },
     });
   };
 
+  /* =========================
+     SETTINGS
+  ========================= */
+
   const handleOpenBotSettings = async (type, bot) => {
-  if (!bot) return;
+    if (!bot) return;
 
-  /* ================= GENERAL ================= */
+    if (type === "general") {
+      formRef.current = bot;
 
-  if (type === "general") {
-    formRef.current = bot;
+      openConfirm({
+        title: "⚙️ Bot instellingen",
+        description: (
+          <BotForm
+            strategies={strategies}
+            initialValues={bot}
+            onChange={(v) => (formRef.current = v)}
+          />
+        ),
+        confirmText: "Opslaan",
+        onConfirm: async () => {
+          await updateBot(bot.id, formRef.current);
 
-    openConfirm({
-      title: "⚙️ Bot instellingen",
-      description: (
-        <BotForm
-          strategies={strategies}
-          initialValues={bot}
-          onChange={(v) => (formRef.current = v)}
-        />
-      ),
-      confirmText: "Opslaan",
-      onConfirm: async () => {
-        await updateBot(bot.id, formRef.current);
-        showSnackbar("Bot bijgewerkt", "success");
-      },
-    });
-
-    return;
-  }
-
-  /* ================= PORTFOLIO ================= */
-  if (type === "portfolio") {
-  const portfolio = portfolios.find((p) => p.bot_id === bot.id);
-
-  budgetRef.current = {
-    total_eur: portfolio?.budget?.total_eur ?? 0,
-    daily_limit_eur: portfolio?.budget?.daily_limit_eur ?? 0,
-    max_order_eur: portfolio?.budget?.max_order_eur ?? 0,
-  };
-
-  openConfirm({
-    title: "💰 Portfolio & budget",
-    description: (
-      <BotBudgetForm
-        initialBudget={budgetRef.current}
-        onChange={(v) => (budgetRef.current = v)}
-      />
-    ),
-    confirmText: "Opslaan",
-    onConfirm: async () => {
-      await updateBot(bot.id, {
-        budget_total_eur: budgetRef.current.total_eur,
-        budget_daily_limit_eur: budgetRef.current.daily_limit_eur,
-        budget_max_order_eur: budgetRef.current.max_order_eur,
+          showSnackbar("Bot bijgewerkt", "success");
+        },
       });
 
-      showSnackbar("Budget bijgewerkt", "success");
-    },
-  });
+      return;
+    }
 
-  return;
-}
+    if (type === "portfolio") {
+      const portfolio = portfolios.find((p) => p.bot_id === bot.id);
 
-  /* ================= PAUSE ================= */
-  if (type === "pause") {
-    await updateBot(bot.id, { is_active: false });
-    showSnackbar("Bot gepauzeerd", "info");
-    return;
-  }
+      budgetRef.current = {
+        total_eur: portfolio?.budget?.total_eur ?? 0,
+        daily_limit_eur: portfolio?.budget?.daily_limit_eur ?? 0,
+        max_order_eur: portfolio?.budget?.max_order_eur ?? 0,
+      };
 
-  /* ================= RESUME ================= */
-  if (type === "resume") {
-    await updateBot(bot.id, { is_active: true });
-    showSnackbar("Bot hervat", "success");
-    return;
-  }
+      openConfirm({
+        title: "💰 Portfolio & budget",
+        description: (
+          <BotBudgetForm
+            initialBudget={budgetRef.current}
+            onChange={(v) => (budgetRef.current = v)}
+          />
+        ),
+        confirmText: "Opslaan",
+        onConfirm: async () => {
+          await updateBot(bot.id, {
+            budget_total_eur: budgetRef.current.total_eur,
+            budget_daily_limit_eur: budgetRef.current.daily_limit_eur,
+            budget_max_order_eur: budgetRef.current.max_order_eur,
+          });
 
-  if (type === "delete") {
-  openConfirm({
-    title: "🗑️ Bot verwijderen",
-    tone: "danger",
-    confirmText: "Verwijderen",
-    onConfirm: async () => {
-      await deleteBot(bot.id);
-      showSnackbar("Bot verwijderd", "danger");
-    },
-  });
+          showSnackbar("Budget bijgewerkt", "success");
+        },
+      });
 
-  return;
-}
+      return;
+    }
 
-};
+    if (type === "pause") {
+      await updateBot(bot.id, { is_active: false });
+      showSnackbar("Bot gepauzeerd", "info");
+      return;
+    }
+
+    if (type === "resume") {
+      await updateBot(bot.id, { is_active: true });
+      showSnackbar("Bot hervat", "success");
+      return;
+    }
+
+    if (type === "delete") {
+      openConfirm({
+        title: "🗑️ Bot verwijderen",
+        tone: "danger",
+        confirmText: "Verwijderen",
+        onConfirm: async () => {
+          await deleteBot(bot.id);
+
+          showSnackbar("Bot verwijderd", "danger");
+        },
+      });
+    }
+  };
 
   /* =========================
      RENDER
@@ -341,7 +372,6 @@ function BotPageInner() {
   return (
     <div className="bg-[var(--surface-1)] pt-6 pb-10 animate-fade-slide">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
-        {/* LEFT */}
         <div className="space-y-10">
           <div className="flex items-center gap-3">
             <Wallet />
@@ -360,6 +390,7 @@ function BotPageInner() {
 
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Bots</h2>
+
             <button
               onClick={handleAddBot}
               className="btn-primary flex items-center gap-2"
@@ -374,7 +405,12 @@ function BotPageInner() {
               const portfolio = portfolios.find(
                 (p) => p.bot_id === bot.id
               );
+
               const decision = decisionsByBot?.[bot.id];
+              const order = today?.orders?.find(
+                (o) => o.bot_id === bot.id
+              );
+
               const trades = tradesByBot?.[bot.id] ?? [];
 
               const isActive = activeBot?.id === bot.id;
@@ -392,6 +428,7 @@ function BotPageInner() {
                     ) {
                       return;
                     }
+
                     setActiveBot(bot);
                   }}
                   className={`cursor-pointer transition ${
@@ -403,11 +440,13 @@ function BotPageInner() {
                   <BotAgentCard
                     bot={bot}
                     decision={decision}
+                    order={order}
                     marketIntelligence={marketIntelligence}
                     loadingMarketIntelligence={loadingMarketIntelligence}
                     portfolio={portfolio}
                     trades={trades}
                     history={history}
+                    loadingDecision={generatingBotId === bot.id}
                     onGenerate={() => handleGenerateDecision(bot)}
                     onExecute={handleExecuteBot}
                     onSkip={handleSkipBot}
@@ -421,7 +460,6 @@ function BotPageInner() {
           </div>
         </div>
 
-        {/* RIGHT */}
         <div className="lg:sticky lg:top-24 space-y-4">
           <GlobalTradePanel />
         </div>
@@ -433,6 +471,7 @@ function BotPageInner() {
 /* =====================================================
    EXPORT
 ===================================================== */
+
 export default function BotPage() {
   return (
     <ActiveBotProvider>

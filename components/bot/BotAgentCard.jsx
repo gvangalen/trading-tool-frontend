@@ -68,34 +68,33 @@ export default function BotAgentCard({
     1;
 
   /* ================= NORMALIZE DECISION ================= */
-
   const normalizedDecision = useMemo(() => {
-    if (!decision) return {};
+  if (!decision) return {};
 
-    const scores = decision?.scores_json || {};
+  const scores = decision?.scores_json || {};
 
-    return {
-      ...decision,
+  return {
+    ...decision,
 
-      guardrails:
-        scores?.guardrails ??
-        decision?.guardrails ??
-        {},
+    guardrails:
+      decision?.guardrails ??
+      decision?.guardrails_result ??
+      scores?.guardrails_result ??
+      {},
 
-      transition_risk:
-        scores?.transition_risk ??
-        decision?.transition_risk ??
-        0,
+    transition_risk:
+      scores?.transition_risk ??
+      decision?.transition_risk ??
+      0,
 
-      warnings:
-        scores?.warnings ??
-        decision?.warnings ??
-        [],
-    };
-  }, [decision]);
+    warnings:
+      scores?.warnings ??
+      decision?.warnings ??
+      [],
+  };
+}, [decision]);
 
   /* ================= MERGE TRADES + HISTORY ================= */
-
   const combinedHistory = useMemo(() => {
     const botHistory = (history || []).filter(
       (h) => h.bot_id === bot.id

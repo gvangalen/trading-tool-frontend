@@ -35,8 +35,12 @@ export default function GuardrailsPanel({
     decision?.execution?.guardrails ??
     {};
 
+  const hasGuardrails =
+    decision?.guardrails_result != null;
+
   const allowed =
-    result?.allowed ?? true;
+    result?.allowed ??
+    (hasGuardrails ? false : true);
 
   const adjusted =
     Number(
@@ -196,6 +200,7 @@ export default function GuardrailsPanel({
 
       {warnings.length > 1 && (
         <div className="pt-2 space-y-1">
+
           <div className="text-xs text-gray-500 uppercase">
             Warnings
           </div>

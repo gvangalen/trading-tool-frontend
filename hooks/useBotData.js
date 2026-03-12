@@ -85,13 +85,23 @@ export default function useBotData() {
     if (data?.decisions) {
       data.decisions = data.decisions.map((d) => ({
         ...d,
-        ...d.scores_json,              // flatten metrics
-        guardrails: d.scores_json?.guardrails || {},
+
+        // flatten metrics uit scores_json
+        ...(d.scores_json || {}),
+
+        // ✅ CORRECT: backend gebruikt guardrails_result
+        guardrails: d.guardrails_result || {},
+
+        // handig voor UI
+        requested_amount_eur:
+          d.requested_amount_eur ?? d.scores_json?.requested_amount_eur,
+
+        amount_eur:
+          d.amount_eur ?? d.scores_json?.amount_eur,
       }));
     }
 
     setToday(data ?? null);
-
   } catch (err) {
     console.error(err);
     setError(err.message || "Today data laden mislukt");
@@ -131,25 +141,27 @@ export default function useBotData() {
   ===================================================== */
 
   const loadTradesForBot = useCallback(
-    async (bot_id, limit = 50) => {
-      if (!bot_id || loading.trades) return;
+  async (bot_id, limit = 50) => {
+    if (!bot_id) return;
 
-      setLoading((l) => ({ ...l, trades: true }));
-      try {
-        const data = await fetchBotTrades(bot_id, limit);
-        setTradesByBot((prev) => ({
-          ...prev,
-          [bot_id]: Array.isArray(data) ? data : [],
-        }));
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Trades laden mislukt");
-      } finally {
-        setLoading((l) => ({ ...l, trades: false }));
-      }
-    },
-    [loading.trades]
-  );
+    setLoading((l) => ({ ...l, trades: true }));
+
+    try {
+      const data = await fetchBotTrades(bot_id, limit);
+
+      setTradesByBot((prev) => ({
+        ...prev,
+        [bot_id]: Array.isArray(data) ? data : [],
+      }));
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Trades laden mislukt");
+    } finally {
+      setLoading((l) => ({ ...l, trades: false }));
+    }
+  },
+  []
+);
 
   /* =====================================================
      📊 TRADE PLAN (LOAD + CACHE)
@@ -187,37 +199,41 @@ export default function useBotData() {
   ===================================================== */
 
   const saveTradePlanForDecision = useCallback(
-    async ({ bot_id = null, decision_id, draft }) => {
-      if (!decision_id) throw new Error("decision_id is verplicht");
+  async ({ bot_id = null, decision_id, draft }) => {
+    if (!decision_id) throw new Error("decision_id is verplicht");
 
-      setLoading((l) => ({ ...l, saveTradePlan: true }));
-      try {
-        const saved = await saveTradePlan(decision_id, draft);
+    setLoading((l) => ({ ...l, saveTradePlan: true }));
 
-        // ✅ update cache direct (zodat UI meteen updated)
-        setTradePlans((prev) => ({
-          ...prev,
-          [decision_id]: saved,
-        }));
+    try {
+      const saved = await saveTradePlan(decision_id, draft);
 
-        // ✅ refresh today/portfolio (als backend decision.trade_plan ook gebruikt)
-        await Promise.all([
-          loadToday(),
-          loadPortfolios(),
-          ...(bot_id ? [loadTradesForBot(bot_id)] : []),
-        ]);
+      // ✅ FIX: backend returnt { ok, decision_id, trade_plan }
+      const plan = saved?.trade_plan || {};
 
-        return saved;
-      } catch (err) {
-        console.error("saveTradePlan failed", err);
-        setError(err.message || "Trade plan opslaan mislukt");
-        throw err;
-      } finally {
-        setLoading((l) => ({ ...l, saveTradePlan: false }));
-      }
-    },
-    [loadToday, loadPortfolios, loadTradesForBot]
-  );
+      // cache update
+      setTradePlans((prev) => ({
+        ...prev,
+        [decision_id]: plan,
+      }));
+
+      // refresh relevante data
+      await Promise.all([
+        loadToday(),
+        loadPortfolios(),
+        ...(bot_id ? [loadTradesForBot(bot_id)] : []),
+      ]);
+
+      return plan;
+    } catch (err) {
+      console.error("saveTradePlan failed", err);
+      setError(err.message || "Trade plan opslaan mislukt");
+      throw err;
+    } finally {
+      setLoading((l) => ({ ...l, saveTradePlan: false }));
+    }
+  },
+  [loadToday, loadPortfolios, loadTradesForBot]
+);
 
   /* =====================================================
      🧠 DERIVED

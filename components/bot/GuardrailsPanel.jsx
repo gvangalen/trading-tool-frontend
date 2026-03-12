@@ -1,26 +1,16 @@
 "use client";
 
-import {
-  Shield,
-  AlertTriangle,
-  ToggleRight,
-  ToggleLeft,
-  Gauge,
-} from "lucide-react";
+import { Shield, AlertTriangle } from "lucide-react";
 
 export default function GuardrailsPanel({
   decision = {},
   bot = {},
 }) {
 
-  /* =====================================================
-     DEBUG LOGGING
-  ===================================================== */
-
   console.log("🧠 GuardrailsPanel decision RAW:", decision);
 
   /* =====================================================
-     SCORES RESOLVE (BACKEND SAFE)
+     SCORES RESOLVE
   ===================================================== */
 
   let scores =
@@ -28,47 +18,50 @@ export default function GuardrailsPanel({
     decision?.scores_json ??
     {};
 
-  // parse JSON string indien nodig
   if (typeof scores === "string") {
     try {
       scores = JSON.parse(scores);
-      console.log("🧠 scores parsed:", scores);
-    } catch (err) {
-      console.error("❌ scores parse error:", err);
+    } catch {
       scores = {};
     }
   }
 
-  console.log("🧠 scores object:", scores);
+  /* =====================================================
+     GUARDRAILS RESULT (BELANGRIJK)
+  ===================================================== */
+
+  const result =
+    decision?.guardrails_result ??
+    decision?.execution?.guardrails ??
+    {};
+
+  const allowed = result?.allowed ?? true;
+
+  const adjusted =
+    result?.adjusted_amount_eur ??
+    0;
+
+  const original =
+    result?.original_amount_eur ??
+    adjusted;
+
+  const blockedBy =
+    result?.blocked_by ??
+    null;
+
+  const warnings =
+    result?.warnings ??
+    [];
 
   /* =====================================================
-     🔐 GUARDRAILS STATE
+     GUARDRAILS SETTINGS (voor exposure)
   ===================================================== */
 
   const guardrails =
+    result?.guardrails ??
     scores?.guardrails ??
     decision?.guardrails ??
     {};
-
-  console.log("🧠 guardrails resolved:", guardrails);
-
-  const killSwitch =
-    guardrails?.kill_switch ??
-    bot?.kill_switch ??
-    true;
-
-  const maxRisk =
-    guardrails?.max_trade_risk_eur ??
-    decision?.max_risk_per_trade ??
-    0;
-
-  const maxDaily =
-    guardrails?.daily_allocation_eur ??
-    decision?.max_daily_allocation ??
-    0;
-
-  console.log("🧠 maxRisk:", maxRisk);
-  console.log("🧠 maxDaily:", maxDaily);
 
   const currentExposure =
     guardrails?.current_asset_exposure_pct ?? null;
@@ -76,44 +69,14 @@ export default function GuardrailsPanel({
   const maxExposure =
     guardrails?.max_asset_exposure_pct ?? null;
 
-  const warnings = Array.isArray(scores?.warnings)
-    ? scores.warnings
-    : Array.isArray(decision?.warnings)
-    ? decision.warnings
-    : [];
-
-  const transitionRisk =
-    Number(scores?.transition_risk) ||
-    Number(decision?.transition_risk) ||
-    0;
-
-  console.log("🧠 transitionRisk:", transitionRisk);
+  console.log("🧠 guardrails_result:", result);
 
   /* =====================================================
-     🎯 RISK LABEL + COLOR
-  ===================================================== */
-
-  const riskLabel =
-    transitionRisk > 70
-      ? "High"
-      : transitionRisk > 40
-      ? "Moderate"
-      : "Low";
-
-  const riskColor =
-    transitionRisk > 70
-      ? "text-red-600"
-      : transitionRisk > 40
-      ? "text-orange-500"
-      : "text-green-600";
-
-  /* =====================================================
-     💰 SAFE EUR FORMAT
+     FORMATTERS
   ===================================================== */
 
   const formatEUR = (value) => {
     const num = Number(value);
-
     if (!Number.isFinite(num)) return "€0";
 
     return num.toLocaleString("nl-NL", {
@@ -122,6 +85,15 @@ export default function GuardrailsPanel({
       maximumFractionDigits: 0,
     });
   };
+
+  /* =====================================================
+     REASON TEXT
+  ===================================================== */
+
+  const reason =
+    blockedBy ??
+    warnings?.[0] ??
+    null;
 
   /* =====================================================
      UI
@@ -136,36 +108,37 @@ export default function GuardrailsPanel({
         Guardrails
       </div>
 
-      {/* Protection status */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500">Protection status</span>
-
+      {/* Trade status */}
+      <div className="flex justify-between text-sm">
+        <span className="text-gray-500">Trade status</span>
         <span
-          className={`font-semibold ${
-            killSwitch
+          className={`font-medium ${
+            allowed
               ? "text-green-600"
-              : "text-red-500"
+              : "text-red-600"
           }`}
         >
-          {killSwitch ? "LIVE" : "DISABLED"}
+          {allowed ? "Trade allowed" : "Trade blocked"}
         </span>
       </div>
 
-      {/* Max risk per trade */}
+      {/* Adjusted trade */}
       <div className="flex justify-between text-sm">
-        <span className="text-gray-500">Max risk / trade</span>
+        <span className="text-gray-500">Adjusted trade</span>
         <span className="font-medium">
-          {formatEUR(maxRisk)}
+          {formatEUR(adjusted)} (requested {formatEUR(original)})
         </span>
       </div>
 
-      {/* Max daily allocation */}
-      <div className="flex justify-between text-sm">
-        <span className="text-gray-500">Max per day</span>
-        <span className="font-medium">
-          {formatEUR(maxDaily)}
-        </span>
-      </div>
+      {/* Reason */}
+      {reason && (
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Reason</span>
+          <span className="font-medium text-orange-600">
+            {reason}
+          </span>
+        </div>
+      )}
 
       {/* BTC Exposure */}
       {currentExposure !== null && maxExposure !== null && (
@@ -175,48 +148,13 @@ export default function GuardrailsPanel({
           </span>
 
           <span className="font-medium">
-            {currentExposure.toFixed(0)}% / {maxExposure}%
+            {Number(currentExposure).toFixed(0)}% / {Number(maxExposure).toFixed(0)}%
           </span>
         </div>
       )}
 
-      {/* Kill switch */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500">Kill switch</span>
-
-        <div className="flex items-center gap-2">
-          {killSwitch ? (
-            <>
-              <ToggleRight className="text-green-500" size={20} />
-              <span className="text-green-600 font-medium">
-                Active
-              </span>
-            </>
-          ) : (
-            <>
-              <ToggleLeft className="text-gray-400" size={20} />
-              <span className="text-gray-400">
-                Off
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Transition risk */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500 flex items-center gap-1">
-          <Gauge size={14} />
-          Transition risk
-        </span>
-
-        <span className={`font-medium ${riskColor}`}>
-          {riskLabel}
-        </span>
-      </div>
-
-      {/* WARNINGS */}
-      {warnings.length > 0 && (
+      {/* Warnings */}
+      {warnings?.length > 0 && (
         <div className="pt-2 space-y-1">
           <div className="text-xs text-gray-500 uppercase">
             Warnings
@@ -233,6 +171,7 @@ export default function GuardrailsPanel({
           ))}
         </div>
       )}
+
     </div>
   );
 }

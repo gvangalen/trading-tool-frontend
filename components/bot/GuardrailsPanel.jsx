@@ -14,14 +14,36 @@ export default function GuardrailsPanel({
 }) {
 
   /* =====================================================
-     🔐 GUARDRAILS STATE (NEW ENGINE STRUCTURE)
+     DEBUG LOGGING
   ===================================================== */
 
-  // ⭐ NIEUW: eerst uit scores_json lezen
+  console.log("🧠 GuardrailsPanel decision RAW:", decision);
+
+  let scores = decision?.scores_json;
+
+  // parse string JSON indien nodig
+  if (typeof scores === "string") {
+    try {
+      scores = JSON.parse(scores);
+      console.log("🧠 scores_json parsed:", scores);
+    } catch (err) {
+      console.error("❌ scores_json parse error:", err);
+      scores = {};
+    }
+  }
+
+  console.log("🧠 scores_json object:", scores);
+
+  /* =====================================================
+     🔐 GUARDRAILS STATE
+  ===================================================== */
+
   const guardrails =
-    decision?.scores_json?.guardrails ??
+    scores?.guardrails ??
     decision?.guardrails ??
     {};
+
+  console.log("🧠 guardrails resolved:", guardrails);
 
   const killSwitch =
     guardrails?.kill_switch ??
@@ -30,15 +52,16 @@ export default function GuardrailsPanel({
 
   const maxRisk =
     guardrails?.max_trade_risk_eur ??
-    decision?.scores_json?.max_risk_per_trade ??
     decision?.max_risk_per_trade ??
     0;
 
   const maxDaily =
     guardrails?.daily_allocation_eur ??
-    decision?.scores_json?.max_daily_allocation ??
     decision?.max_daily_allocation ??
     0;
+
+  console.log("🧠 maxRisk:", maxRisk);
+  console.log("🧠 maxDaily:", maxDaily);
 
   const currentExposure =
     guardrails?.current_asset_exposure_pct ?? null;
@@ -46,17 +69,18 @@ export default function GuardrailsPanel({
   const maxExposure =
     guardrails?.max_asset_exposure_pct ?? null;
 
-  const warnings = Array.isArray(decision?.scores_json?.warnings)
-    ? decision.scores_json.warnings
+  const warnings = Array.isArray(scores?.warnings)
+    ? scores.warnings
     : Array.isArray(decision?.warnings)
     ? decision.warnings
     : [];
 
-  // ⭐ transition risk ook uit scores_json
   const transitionRisk =
-    Number(decision?.scores_json?.transition_risk) ||
+    Number(scores?.transition_risk) ||
     Number(decision?.transition_risk) ||
     0;
+
+  console.log("🧠 transitionRisk:", transitionRisk);
 
   /* =====================================================
      🎯 RISK LABEL + COLOR
@@ -82,6 +106,7 @@ export default function GuardrailsPanel({
 
   const formatEUR = (value) => {
     const num = Number(value);
+
     if (!num) return "€0";
 
     return num.toLocaleString("nl-NL", {
@@ -90,6 +115,10 @@ export default function GuardrailsPanel({
       maximumFractionDigits: 0,
     });
   };
+
+  /* =====================================================
+     UI
+  ===================================================== */
 
   return (
     <div className="rounded-xl border bg-white dark:bg-gray-900 p-5 space-y-4">
@@ -100,7 +129,7 @@ export default function GuardrailsPanel({
         Guardrails
       </div>
 
-      {/* LIVE STATUS */}
+      {/* Protection status */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500">Protection status</span>
 
@@ -116,24 +145,20 @@ export default function GuardrailsPanel({
       </div>
 
       {/* Max risk per trade */}
-      {maxRisk !== null && (
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Max risk / trade</span>
-          <span className="font-medium">
-            {formatEUR(maxRisk)}
-          </span>
-        </div>
-      )}
+      <div className="flex justify-between text-sm">
+        <span className="text-gray-500">Max risk / trade</span>
+        <span className="font-medium">
+          {formatEUR(maxRisk)}
+        </span>
+      </div>
 
       {/* Max daily allocation */}
-      {maxDaily !== null && (
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Max per day</span>
-          <span className="font-medium">
-            {formatEUR(maxDaily)}
-          </span>
-        </div>
-      )}
+      <div className="flex justify-between text-sm">
+        <span className="text-gray-500">Max per day</span>
+        <span className="font-medium">
+          {formatEUR(maxDaily)}
+        </span>
+      </div>
 
       {/* BTC Exposure */}
       {currentExposure !== null && maxExposure !== null && (

@@ -19,20 +19,27 @@ export default function GuardrailsPanel({
 
   console.log("🧠 GuardrailsPanel decision RAW:", decision);
 
-  let scores = decision?.scores_json;
+  /* =====================================================
+     SCORES RESOLVE (BACKEND SAFE)
+  ===================================================== */
 
-  // parse string JSON indien nodig
+  let scores =
+    decision?.scores ??
+    decision?.scores_json ??
+    {};
+
+  // parse JSON string indien nodig
   if (typeof scores === "string") {
     try {
       scores = JSON.parse(scores);
-      console.log("🧠 scores_json parsed:", scores);
+      console.log("🧠 scores parsed:", scores);
     } catch (err) {
-      console.error("❌ scores_json parse error:", err);
+      console.error("❌ scores parse error:", err);
       scores = {};
     }
   }
 
-  console.log("🧠 scores_json object:", scores);
+  console.log("🧠 scores object:", scores);
 
   /* =====================================================
      🔐 GUARDRAILS STATE
@@ -107,7 +114,7 @@ export default function GuardrailsPanel({
   const formatEUR = (value) => {
     const num = Number(value);
 
-    if (!num) return "€0";
+    if (!Number.isFinite(num)) return "€0";
 
     return num.toLocaleString("nl-NL", {
       style: "currency",

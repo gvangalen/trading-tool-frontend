@@ -9,7 +9,7 @@ import {
   fetchBotPortfolios,
   fetchBotTrades,
   fetchTradePlan,
-  saveTradePlan,            // ✅ NEW (SAVE)
+  saveTradePlan,
   generateBotDecision,
   markBotExecuted,
   skipBotToday,
@@ -29,6 +29,7 @@ import {
  */
 
 export default function useBotData() {
+
   /* =====================================================
      📦 STATE
   ===================================================== */
@@ -38,8 +39,6 @@ export default function useBotData() {
   const [history, setHistory] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
   const [tradesByBot, setTradesByBot] = useState({});
-
-  // ✅ trade plans cache (decision_id -> plan)
   const [tradePlans, setTradePlans] = useState({});
 
   const [loading, setLoading] = useState({
@@ -48,8 +47,8 @@ export default function useBotData() {
     history: false,
     portfolios: false,
     trades: false,
-    tradePlan: false,      // ✅ NEW (load plan)
-    saveTradePlan: false,  // ✅ NEW (save plan)
+    tradePlan: false,
+    saveTradePlan: false,
     generate: false,
     action: false,
     create: false,
@@ -76,39 +75,74 @@ export default function useBotData() {
     }
   }, []);
 
+  /**
+   * ⚠️ BELANGRIJK
+   *
+   * Backend = single source of truth.
+   * We transformeren hier NIET de data.
+   *
+   * Alleen veilige alias velden voor UI backward compatibility.
+   */
   const loadToday = useCallback(async () => {
-  setLoading((l) => ({ ...l, today: true }));
+    setLoading((l) => ({ ...l, today: true }));
 
-  try {
-    const data = await fetchBotToday();
+    try {
 
-    if (data?.decisions) {
-      data.decisions = data.decisions.map((d) => ({
-        ...d,
+      const data = await fetchBotToday();
 
-        // flatten metrics uit scores_json
-        ...(d.scores_json || {}),
+      if (data?.decisions) {
 
-        // ✅ CORRECT: backend gebruikt guardrails_result
-        guardrails: d.guardrails_result || {},
+        data.decisions = data.decisions.map((d) => {
 
-        // handig voor UI
-        requested_amount_eur:
-          d.requested_amount_eur ?? d.scores_json?.requested_amount_eur,
+          const scores = d.scores_json || {};
 
-        amount_eur:
-          d.amount_eur ?? d.scores_json?.amount_eur,
-      }));
+          return {
+            ...d,
+
+            scores_json: scores,
+
+            /**
+             * ⚠️ Guardrails contract
+             *
+             * Backend veld:
+             * decision.guardrails_result
+             *
+             * UI compat:
+             * decision.guardrails
+             */
+            guardrails_result: d.guardrails_result || null,
+            guardrails: d.guardrails_result || null,
+
+            /**
+             * Backwards compatibility
+             */
+            requested_amount_eur:
+              d.requested_amount_eur ??
+              scores.requested_amount_eur ??
+              0,
+
+            amount_eur:
+              d.amount_eur ??
+              scores.amount_eur ??
+              0,
+          };
+        });
+      }
+
+      setToday(data ?? null);
+
+    } catch (err) {
+
+      console.error(err);
+      setError(err.message || "Today data laden mislukt");
+
+    } finally {
+
+      setLoading((l) => ({ ...l, today: false }));
+
     }
 
-    setToday(data ?? null);
-  } catch (err) {
-    console.error(err);
-    setError(err.message || "Today data laden mislukt");
-  } finally {
-    setLoading((l) => ({ ...l, today: false }));
-  }
-}, []);
+  }, []);
 
   const loadHistory = useCallback(async (days = 30) => {
     setLoading((l) => ({ ...l, history: true }));
@@ -141,41 +175,50 @@ export default function useBotData() {
   ===================================================== */
 
   const loadTradesForBot = useCallback(
-  async (bot_id, limit = 50) => {
-    if (!bot_id) return;
+    async (bot_id, limit = 50) => {
 
-    setLoading((l) => ({ ...l, trades: true }));
+      if (!bot_id) return;
 
-    try {
-      const data = await fetchBotTrades(bot_id, limit);
+      setLoading((l) => ({ ...l, trades: true }));
 
-      setTradesByBot((prev) => ({
-        ...prev,
-        [bot_id]: Array.isArray(data) ? data : [],
-      }));
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Trades laden mislukt");
-    } finally {
-      setLoading((l) => ({ ...l, trades: false }));
-    }
-  },
-  []
-);
+      try {
+
+        const data = await fetchBotTrades(bot_id, limit);
+
+        setTradesByBot((prev) => ({
+          ...prev,
+          [bot_id]: Array.isArray(data) ? data : [],
+        }));
+
+      } catch (err) {
+
+        console.error(err);
+        setError(err.message || "Trades laden mislukt");
+
+      } finally {
+
+        setLoading((l) => ({ ...l, trades: false }));
+
+      }
+    },
+    []
+  );
 
   /* =====================================================
-     📊 TRADE PLAN (LOAD + CACHE)
+     📊 TRADE PLAN
   ===================================================== */
 
   const loadTradePlan = useCallback(
     async (decision_id, { force = false } = {}) => {
+
       if (!decision_id) return;
 
-      // voorkom dubbele calls (tenzij force)
       if (!force && tradePlans[decision_id]) return;
 
       setLoading((l) => ({ ...l, tradePlan: true }));
+
       try {
+
         const plan = await fetchTradePlan(decision_id);
 
         setTradePlans((prev) => ({
@@ -184,56 +227,67 @@ export default function useBotData() {
         }));
 
         return plan;
+
       } catch (err) {
+
         console.error("Trade plan load failed", err);
         return null;
+
       } finally {
+
         setLoading((l) => ({ ...l, tradePlan: false }));
+
       }
+
     },
     [tradePlans]
   );
 
   /* =====================================================
-     💾 TRADE PLAN (SAVE) ✅ NEW
+     💾 SAVE TRADE PLAN
   ===================================================== */
 
   const saveTradePlanForDecision = useCallback(
-  async ({ bot_id = null, decision_id, draft }) => {
-    if (!decision_id) throw new Error("decision_id is verplicht");
+    async ({ bot_id = null, decision_id, draft }) => {
 
-    setLoading((l) => ({ ...l, saveTradePlan: true }));
+      if (!decision_id) throw new Error("decision_id is verplicht");
 
-    try {
-      const saved = await saveTradePlan(decision_id, draft);
+      setLoading((l) => ({ ...l, saveTradePlan: true }));
 
-      // ✅ FIX: backend returnt { ok, decision_id, trade_plan }
-      const plan = saved?.trade_plan || {};
+      try {
 
-      // cache update
-      setTradePlans((prev) => ({
-        ...prev,
-        [decision_id]: plan,
-      }));
+        const saved = await saveTradePlan(decision_id, draft);
 
-      // refresh relevante data
-      await Promise.all([
-        loadToday(),
-        loadPortfolios(),
-        ...(bot_id ? [loadTradesForBot(bot_id)] : []),
-      ]);
+        const plan = saved?.trade_plan || {};
 
-      return plan;
-    } catch (err) {
-      console.error("saveTradePlan failed", err);
-      setError(err.message || "Trade plan opslaan mislukt");
-      throw err;
-    } finally {
-      setLoading((l) => ({ ...l, saveTradePlan: false }));
-    }
-  },
-  [loadToday, loadPortfolios, loadTradesForBot]
-);
+        setTradePlans((prev) => ({
+          ...prev,
+          [decision_id]: plan,
+        }));
+
+        await Promise.all([
+          loadToday(),
+          loadPortfolios(),
+          ...(bot_id ? [loadTradesForBot(bot_id)] : []),
+        ]);
+
+        return plan;
+
+      } catch (err) {
+
+        console.error("saveTradePlan failed", err);
+        setError(err.message || "Trade plan opslaan mislukt");
+        throw err;
+
+      } finally {
+
+        setLoading((l) => ({ ...l, saveTradePlan: false }));
+
+      }
+
+    },
+    [loadToday, loadPortfolios, loadTradesForBot]
+  );
 
   /* =====================================================
      🧠 DERIVED
@@ -261,51 +315,96 @@ export default function useBotData() {
 
   const createBot = useCallback(
     async (payload) => {
+
       setLoading((l) => ({ ...l, create: true }));
+
       try {
+
         const res = await createBotConfig(payload);
-        await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
+
+        await Promise.all([
+          loadConfigs(),
+          loadPortfolios(),
+          loadToday()
+        ]);
+
         return res;
+
       } catch (err) {
+
         console.error(err);
         setError(err.message);
+
       } finally {
+
         setLoading((l) => ({ ...l, create: false }));
+
       }
+
     },
     [loadConfigs, loadPortfolios, loadToday]
   );
 
   const updateBot = useCallback(
     async (bot_id, payload) => {
+
       setLoading((l) => ({ ...l, update: true }));
+
       try {
+
         const res = await updateBotConfig(bot_id, payload);
-        await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
+
+        await Promise.all([
+          loadConfigs(),
+          loadPortfolios(),
+          loadToday()
+        ]);
+
         return res;
+
       } catch (err) {
+
         console.error(err);
         setError(err.message);
+
       } finally {
+
         setLoading((l) => ({ ...l, update: false }));
+
       }
+
     },
     [loadConfigs, loadPortfolios, loadToday]
   );
 
   const deleteBot = useCallback(
     async (bot_id) => {
+
       setLoading((l) => ({ ...l, delete: true }));
+
       try {
+
         const res = await deleteBotConfig(bot_id);
-        await Promise.all([loadConfigs(), loadPortfolios(), loadToday()]);
+
+        await Promise.all([
+          loadConfigs(),
+          loadPortfolios(),
+          loadToday()
+        ]);
+
         return res;
+
       } catch (err) {
+
         console.error(err);
         setError(err.message);
+
       } finally {
+
         setLoading((l) => ({ ...l, delete: false }));
+
       }
+
     },
     [loadConfigs, loadPortfolios, loadToday]
   );
@@ -316,17 +415,12 @@ export default function useBotData() {
 
   const generateDecisionForBot = useCallback(
     async ({ bot_id }) => {
-      setLoading((l) => ({ ...l, generate: true }));
-      try {
-        const res = await generateBotDecision({ bot_id });
 
-        // ✅ trade plans cache reset (optioneel maar netjes)
-        setTradePlans((prev) => {
-          const next = { ...prev };
-          // decision ids veranderen vaak; we houden cache, maar je kan ook flushen:
-          // return {};
-          return next;
-        });
+      setLoading((l) => ({ ...l, generate: true }));
+
+      try {
+
+        const res = await generateBotDecision({ bot_id });
 
         await Promise.all([
           loadToday(),
@@ -336,100 +430,41 @@ export default function useBotData() {
         ]);
 
         return res;
+
       } catch (err) {
+
         console.error(err);
         setError(err.message);
+
       } finally {
+
         setLoading((l) => ({ ...l, generate: false }));
+
       }
+
     },
     [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
   );
 
   /* =====================================================
-     ✅ EXECUTE / SKIP
-  ===================================================== */
-
-  const executeBot = useCallback(
-    async ({ bot_id, decision_id }) => {
-      setLoading((l) => ({ ...l, action: true }));
-      try {
-        const res = await markBotExecuted({ bot_id, decision_id });
-
-        await Promise.all([loadToday(), loadPortfolios(), loadTradesForBot(bot_id)]);
-
-        return res;
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading((l) => ({ ...l, action: false }));
-      }
-    },
-    [loadToday, loadPortfolios, loadTradesForBot]
-  );
-
-  const skipBot = useCallback(
-    async ({ bot_id }) => {
-      setLoading((l) => ({ ...l, action: true }));
-      try {
-        const res = await skipBotToday({ bot_id });
-        await Promise.all([loadToday(), loadHistory(30), loadPortfolios()]);
-        return res;
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading((l) => ({ ...l, action: false }));
-      }
-    },
-    [loadToday, loadHistory, loadPortfolios]
-  );
-
-  /* =====================================================
-   🔥 MANUAL ORDER (PAPER TRADE)
-===================================================== */
-
-const createManualOrder = useCallback(
-  async (payload) => {
-    setLoading((l) => ({ ...l, action: true }));
-    try {
-      const res = await apiCreateManualOrder(payload);
-
-      // 🔁 refresh relevante data
-      await Promise.all([
-        loadToday(),
-        loadPortfolios(),
-        loadTradesForBot(payload?.bot_id),
-      ]);
-
-      return res;
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Manual order mislukt");
-      throw err;
-    } finally {
-      setLoading((l) => ({ ...l, action: false }));
-    }
-  },
-  [loadToday, loadPortfolios, loadTradesForBot]
-);
-
-  /* =====================================================
      🔁 INIT LOAD
   ===================================================== */
+
   useEffect(() => {
+
     loadConfigs();
     loadToday();
     loadHistory(30);
     loadPortfolios();
+
   }, [loadConfigs, loadToday, loadHistory, loadPortfolios]);
 
-  
   /* =====================================================
      📤 EXPORT
   ===================================================== */
+
   return {
+
     configs,
     today,
     history,
@@ -448,14 +483,10 @@ const createManualOrder = useCallback(
     deleteBot,
 
     generateDecisionForBot,
-    executeBot,
-    skipBot,
-
     loadTradesForBot,
     loadTradePlan,
-
-    // ✅ NEW: save handler voor TradePlanCard
     saveTradePlanForDecision,
-    createManualOrder,
+    createManualOrder: apiCreateManualOrder,
   };
+
 }

@@ -7,11 +7,11 @@ export default function GuardrailsPanel({
   bot = {},
 }) {
 
-  console.log("🧠 GuardrailsPanel decision RAW:", decision);
+  console.log("Guardrails decision:", decision);
 
-  /* =====================================================
-     SCORES RESOLVE
-  ===================================================== */
+  /* ============================
+     SCORES
+  ============================ */
 
   let scores =
     decision?.scores ??
@@ -26,36 +26,38 @@ export default function GuardrailsPanel({
     }
   }
 
-  /* =====================================================
-     GUARDRAILS RESULT (BELANGRIJK)
-  ===================================================== */
+  /* ============================
+     GUARDRAILS RESULT
+  ============================ */
 
   const result =
     decision?.guardrails_result ??
     decision?.execution?.guardrails ??
     {};
 
-  const allowed = result?.allowed ?? true;
+  const allowed =
+    result?.allowed ?? true;
 
   const adjusted =
-    result?.adjusted_amount_eur ??
-    0;
+    Number(result?.adjusted_amount_eur ?? 0);
 
   const original =
-    result?.original_amount_eur ??
-    adjusted;
-
-  const blockedBy =
-    result?.blocked_by ??
-    null;
+    Number(result?.original_amount_eur ?? 0);
 
   const warnings =
-    result?.warnings ??
-    [];
+    result?.warnings ?? [];
 
-  /* =====================================================
-     GUARDRAILS SETTINGS (voor exposure)
-  ===================================================== */
+  const blockedBy =
+    result?.blocked_by ?? null;
+
+  const reason =
+    blockedBy ??
+    warnings?.[0] ??
+    "No guardrail triggered";
+
+  /* ============================
+     GUARDRAILS SETTINGS
+  ============================ */
 
   const guardrails =
     result?.guardrails ??
@@ -63,54 +65,60 @@ export default function GuardrailsPanel({
     decision?.guardrails ??
     {};
 
+  const maxRisk =
+    guardrails?.max_trade_risk_eur ??
+    decision?.max_risk_per_trade ??
+    bot?.max_risk_per_trade ??
+    0;
+
   const currentExposure =
-    guardrails?.current_asset_exposure_pct ?? null;
+    guardrails?.current_asset_exposure_pct ??
+    decision?.current_asset_exposure_pct ??
+    0;
 
   const maxExposure =
-    guardrails?.max_asset_exposure_pct ?? null;
+    guardrails?.max_asset_exposure_pct ??
+    decision?.max_asset_exposure_pct ??
+    0;
 
-  console.log("🧠 guardrails_result:", result);
+  /* ============================
+     FORMAT
+  ============================ */
 
-  /* =====================================================
-     FORMATTERS
-  ===================================================== */
+  const eur = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "€0";
 
-  const formatEUR = (value) => {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return "€0";
-
-    return num.toLocaleString("nl-NL", {
+    return n.toLocaleString("nl-NL", {
       style: "currency",
       currency: "EUR",
       maximumFractionDigits: 0,
     });
   };
 
-  /* =====================================================
-     REASON TEXT
-  ===================================================== */
+  const pct = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "0%";
+    return `${n.toFixed(0)}%`;
+  };
 
-  const reason =
-    blockedBy ??
-    warnings?.[0] ??
-    null;
-
-  /* =====================================================
+  /* ============================
      UI
-  ===================================================== */
+  ============================ */
 
   return (
     <div className="rounded-xl border bg-white dark:bg-gray-900 p-5 space-y-4">
 
-      {/* Header */}
       <div className="flex items-center gap-2 font-semibold">
         <Shield size={16} />
         Guardrails
       </div>
 
       {/* Trade status */}
+
       <div className="flex justify-between text-sm">
         <span className="text-gray-500">Trade status</span>
+
         <span
           className={`font-medium ${
             allowed
@@ -118,49 +126,67 @@ export default function GuardrailsPanel({
               : "text-red-600"
           }`}
         >
-          {allowed ? "Trade allowed" : "Trade blocked"}
+          {allowed ? "Allowed" : "Blocked"}
         </span>
       </div>
 
       {/* Adjusted trade */}
+
       <div className="flex justify-between text-sm">
-        <span className="text-gray-500">Adjusted trade</span>
+        <span className="text-gray-500">
+          Adjusted trade size
+        </span>
+
         <span className="font-medium">
-          {formatEUR(adjusted)} (requested {formatEUR(original)})
+          {eur(adjusted)} (requested {eur(original)})
         </span>
       </div>
 
       {/* Reason */}
-      {reason && (
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Reason</span>
-          <span className="font-medium text-orange-600">
-            {reason}
-          </span>
-        </div>
-      )}
 
-      {/* BTC Exposure */}
-      {currentExposure !== null && maxExposure !== null && (
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">
-            BTC exposure
-          </span>
+      <div className="flex justify-between text-sm">
+        <span className="text-gray-500">
+          Reason
+        </span>
 
-          <span className="font-medium">
-            {Number(currentExposure).toFixed(0)}% / {Number(maxExposure).toFixed(0)}%
-          </span>
-        </div>
-      )}
+        <span className="font-medium text-orange-600">
+          {reason}
+        </span>
+      </div>
 
-      {/* Warnings */}
-      {warnings?.length > 0 && (
+      {/* Max risk */}
+
+      <div className="flex justify-between text-sm">
+        <span className="text-gray-500">
+          Max risk / trade
+        </span>
+
+        <span className="font-medium">
+          {eur(maxRisk)}
+        </span>
+      </div>
+
+      {/* BTC exposure */}
+
+      <div className="flex justify-between text-sm">
+        <span className="text-gray-500">
+          BTC exposure
+        </span>
+
+        <span className="font-medium">
+          {pct(currentExposure)} / {pct(maxExposure)}
+        </span>
+      </div>
+
+      {/* warnings */}
+
+      {warnings.length > 1 && (
         <div className="pt-2 space-y-1">
           <div className="text-xs text-gray-500 uppercase">
             Warnings
           </div>
 
-          {warnings.map((w, i) => (
+          {warnings.slice(1).map((w, i) => (
             <div
               key={i}
               className="flex items-center gap-2 text-sm text-orange-600"

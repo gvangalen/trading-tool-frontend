@@ -39,10 +39,18 @@ export default function GuardrailsPanel({
     result?.allowed ?? true;
 
   const adjusted =
-    Number(result?.adjusted_amount_eur ?? 0);
+    Number(
+      result?.adjusted_amount_eur ??
+      decision?.amount_eur ??
+      0
+    );
 
   const original =
-    Number(result?.original_amount_eur ?? 0);
+    Number(
+      result?.original_amount_eur ??
+      decision?.requested_amount_eur ??
+      adjusted
+    );
 
   const warnings =
     result?.warnings ?? [];
@@ -51,6 +59,7 @@ export default function GuardrailsPanel({
     result?.blocked_by ?? null;
 
   const reason =
+    decision?.guardrail_reason ??
     blockedBy ??
     warnings?.[0] ??
     "No guardrail triggered";
@@ -102,6 +111,9 @@ export default function GuardrailsPanel({
     return `${n.toFixed(0)}%`;
   };
 
+  const tradeAdjusted =
+    original !== adjusted;
+
   /* ============================
      UI
   ============================ */
@@ -130,15 +142,17 @@ export default function GuardrailsPanel({
         </span>
       </div>
 
-      {/* Adjusted trade */}
+      {/* Trade size */}
 
       <div className="flex justify-between text-sm">
         <span className="text-gray-500">
-          Adjusted trade size
+          Trade size
         </span>
 
         <span className="font-medium">
-          {eur(adjusted)} (requested {eur(original)})
+          {tradeAdjusted
+            ? `${eur(adjusted)} (requested ${eur(original)})`
+            : eur(adjusted)}
         </span>
       </div>
 

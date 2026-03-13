@@ -40,7 +40,6 @@ export default function BotAgentCard({
   onOpenSettings,
 
   onSaveTradePlan,
-  onPlaceManualOrder,
 }) {
   if (!bot) return null;
 
@@ -59,41 +58,56 @@ export default function BotAgentCard({
   const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
 
   const statusLabel = (decision?.action || "OBSERVE").toUpperCase();
-  const confidence =
-    decision?.confidence_label || decision?.confidence || "LOW";
 
-  const exposureMultiplier =
-    decision?.exposure_multiplier ??
-    bot?.strategy?.exposure_multiplier ??
-    1;
+  const confidence =
+    decision?.confidence_label ||
+    decision?.confidence ||
+    "LOW";
+
+  /* ================= DEBUG RAW INPUT ================= */
+
+  useEffect(() => {
+    console.log("🤖 BOT", bot);
+    console.log("📊 DECISION RAW", decision);
+    console.log("📦 SCORES_JSON", decision?.scores_json);
+    console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
+  }, [bot, decision]);
 
   /* ================= NORMALIZE DECISION ================= */
+
   const normalizedDecision = useMemo(() => {
-  if (!decision) return {};
+    if (!decision) return {};
 
-  const scores = decision?.scores_json || {};
-  const guardrails = decision?.guardrails_result || {};
+    const scores = decision?.scores_json || {};
+    const guardrails = decision?.guardrails_result || {};
 
-  return {
-    ...decision,
+    const normalized = {
+      ...decision,
 
-    guardrails_result: guardrails,
-    guardrails: guardrails,
+      guardrails_result: guardrails,
+      guardrails: guardrails,
 
-    transition_risk:
-      scores?.transition_risk ??
-      decision?.transition_risk ??
-      0,
+      transition_risk:
+        scores?.transition_risk ??
+        decision?.transition_risk ??
+        0,
 
-    warnings:
-      scores?.warnings ??
-      decision?.warnings ??
-      [],
-  };
-}, [decision]);
+      warnings:
+        scores?.warnings ??
+        decision?.warnings ??
+        [],
+    };
 
-  /* ================= MERGE TRADES + HISTORY ================= */
+    console.log("🧠 NORMALIZED DECISION", normalized);
+
+    return normalized;
+
+  }, [decision]);
+
+  /* ================= HISTORY ================= */
+
   const combinedHistory = useMemo(() => {
+
     const botHistory = (history || []).filter(
       (h) => h.bot_id === bot.id
     );
@@ -112,21 +126,30 @@ export default function BotAgentCard({
       mode: t.mode,
     }));
 
-    return [...tradeAsHistory, ...botHistory].sort((a, b) => {
+    const merged = [...tradeAsHistory, ...botHistory].sort((a, b) => {
       const d1 = new Date(a.created_at || a.date || 0);
       const d2 = new Date(b.created_at || b.date || 0);
       return d2 - d1;
     });
+
+    console.log("📜 HISTORY MERGED", merged);
+
+    return merged;
+
   }, [history, trades, bot.id]);
 
   /* ================= CLOSE SETTINGS ================= */
 
   useEffect(() => {
+
     if (!showSettings) return;
 
     const handler = (e) => {
+
       if (!settingsRef.current) return;
+
       if (settingsRef.current.contains(e.target)) return;
+
       setShowSettings(false);
     };
 
@@ -134,32 +157,35 @@ export default function BotAgentCard({
     document.addEventListener("touchstart", handler);
 
     return () => {
+
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("touchstart", handler);
     };
+
   }, [showSettings]);
 
   /* ================= RISK BADGE ================= */
 
   const riskConfig = {
+
     conservative: {
       label: "Risk: Conservative",
-      className:
-        "bg-green-100 text-green-700 border-green-200",
+      className: "bg-green-100 text-green-700 border-green-200",
       icon: <Shield size={12} />,
     },
+
     balanced: {
       label: "Risk: Balanced",
-      className:
-        "bg-yellow-100 text-yellow-700 border-yellow-200",
+      className: "bg-yellow-100 text-yellow-700 border-yellow-200",
       icon: <Scale size={12} />,
     },
+
     aggressive: {
       label: "Risk: Aggressive",
-      className:
-        "bg-red-100 text-red-700 border-red-200",
+      className: "bg-red-100 text-red-700 border-red-200",
       icon: <Rocket size={12} />,
     },
+
   };
 
   const risk =
@@ -170,41 +196,65 @@ export default function BotAgentCard({
   /* ================= SAVE TRADE PLAN ================= */
 
   const decisionId =
-    decision?.id ?? decision?.decision_id ?? null;
-  const botId = decision?.bot_id ?? bot?.id ?? null;
+    decision?.id ??
+    decision?.decision_id ??
+    null;
+
+  const botId =
+    decision?.bot_id ??
+    bot?.id ??
+    null;
 
   const canSavePlan =
-    !isAuto && !!onSaveTradePlan && !!decisionId && !!botId;
+    !isAuto &&
+    !!onSaveTradePlan &&
+    !!decisionId &&
+    !!botId;
 
   const handleSaveTradePlan = async (planDraft) => {
+
     if (!canSavePlan) return;
 
     setSaveError(null);
     setSavingPlan(true);
 
     try {
+
       await onSaveTradePlan({
         bot_id: botId,
         decision_id: decisionId,
         draft: planDraft,
       });
+
+      console.log("✅ Trade plan saved");
+
     } catch (e) {
+
+      console.error("❌ Save plan error", e);
+
       setSaveError(e?.message || "Opslaan mislukt");
+
       throw e;
+
     } finally {
+
       setSavingPlan(false);
+
     }
+
   };
 
   /* ================= PLAN SOURCE ================= */
 
   const planSource = useMemo(() => {
+    console.log("📈 TRADE PLAN SOURCE", decision?.trade_plan);
     return decision?.trade_plan || null;
   }, [decision]);
 
   /* ================= RENDER ================= */
 
   return (
+
     <div className="w-full rounded-2xl border bg-white shadow-sm space-y-6 p-6">
 
       {/* HEADER */}
@@ -214,15 +264,19 @@ export default function BotAgentCard({
         <div className="flex items-center justify-between">
 
           <div className="flex items-center gap-3">
+
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Bot size={22} />
             </div>
+
             <div className="text-2xl font-bold">
               {bot?.name}
             </div>
+
           </div>
 
           <div className="relative" ref={settingsRef}>
+
             <button
               className="text-gray-400 hover:text-gray-700"
               onClick={(e) => {
@@ -243,7 +297,9 @@ export default function BotAgentCard({
                 />
               </div>
             )}
+
           </div>
+
         </div>
 
         <div className="text-sm text-gray-500">
@@ -266,15 +322,23 @@ export default function BotAgentCard({
         </div>
 
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
+
           <Activity size={16} className="text-gray-500" />
+
           <span className="font-medium text-gray-600">
             Status:
           </span>
-          <span className="font-bold">{statusLabel}</span>
+
+          <span className="font-bold">
+            {statusLabel}
+          </span>
+
           <span className="text-gray-400">•</span>
+
           <span>
             Confidence <strong>{confidence}</strong>
           </span>
+
         </div>
 
       </div>
@@ -290,10 +354,12 @@ export default function BotAgentCard({
         <div className="hidden lg:block w-px bg-gray-200" />
 
         <div className="lg:w-[340px] p-5">
+
           <GuardrailsPanel
             decision={normalizedDecision}
             bot={bot}
           />
+
         </div>
 
       </div>
@@ -317,6 +383,7 @@ export default function BotAgentCard({
       <div className="flex flex-col lg:flex-row border rounded-xl overflow-hidden">
 
         <div className="flex-1 p-5">
+
           <BotDecisionCard
             bot={bot}
             decision={decision}
@@ -327,6 +394,7 @@ export default function BotAgentCard({
             onExecute={!isAuto ? onExecute : undefined}
             onSkip={!isAuto ? onSkip : undefined}
           />
+
         </div>
 
         <div className="hidden lg:block w-px bg-gray-200" />
@@ -368,5 +436,6 @@ export default function BotAgentCard({
       </div>
 
     </div>
+
   );
 }

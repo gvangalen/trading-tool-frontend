@@ -14,7 +14,7 @@ export default function GuardrailsPanel({
      CORE VALUES
   ============================ */
 
-  const allowed = result?.allowed ?? true;
+  const allowed = result?.allowed === true;
 
   const adjustedAmount =
     Number(result?.adjusted_amount_eur ?? 0);
@@ -30,6 +30,7 @@ export default function GuardrailsPanel({
 
   const reason =
     blockedBy ||
+    decision?.guardrail_reason ||
     warnings?.[0] ||
     "No guardrail triggered";
 

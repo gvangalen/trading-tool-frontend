@@ -7,54 +7,20 @@ export default function GuardrailsPanel({
   bot = {},
 }) {
 
-  console.log("Guardrails decision:", decision);
+  const result = decision?.guardrails_result || {};
+  const guardrails = result?.guardrails || {};
 
   /* ============================
-     SCORES
+     CORE VALUES
   ============================ */
 
-  let scores =
-    decision?.scores ??
-    decision?.scores_json ??
-    {};
+  const allowed = result?.allowed ?? true;
 
-  if (typeof scores === "string") {
-    try {
-      scores = JSON.parse(scores);
-    } catch {
-      scores = {};
-    }
-  }
+  const adjustedAmount =
+    Number(result?.adjusted_amount_eur ?? 0);
 
-  /* ============================
-     GUARDRAILS RESULT
-  ============================ */
-
-  const result =
-    decision?.guardrails_result ??
-    decision?.execution?.guardrails ??
-    {};
-
-  const hasGuardrails =
-    decision?.guardrails_result != null;
-
-  const allowed =
-    result?.allowed ??
-    (hasGuardrails ? false : true);
-
-  const adjusted =
-    Number(
-      result?.adjusted_amount_eur ??
-      decision?.amount_eur ??
-      0
-    );
-
-  const original =
-    Number(
-      result?.original_amount_eur ??
-      decision?.requested_amount_eur ??
-      adjusted
-    );
+  const originalAmount =
+    Number(result?.original_amount_eur ?? adjustedAmount);
 
   const warnings =
     result?.warnings ?? [];
@@ -63,36 +29,24 @@ export default function GuardrailsPanel({
     result?.blocked_by ?? null;
 
   const reason =
-    decision?.guardrail_reason ??
-    blockedBy ??
-    warnings?.[0] ??
+    blockedBy ||
+    warnings?.[0] ||
     "No guardrail triggered";
 
   /* ============================
-     GUARDRAILS SETTINGS
+     GUARDRAIL SETTINGS
   ============================ */
-
-  const guardrails =
-    result?.guardrails ??
-    scores?.guardrails ??
-    decision?.guardrails ??
-    {};
 
   const maxRisk =
     guardrails?.max_trade_risk_eur ??
-    decision?.max_risk_per_trade ??
     bot?.max_risk_per_trade ??
     0;
 
   const currentExposure =
-    guardrails?.current_asset_exposure_pct ??
-    decision?.current_asset_exposure_pct ??
-    0;
+    guardrails?.current_asset_exposure_pct ?? 0;
 
   const maxExposure =
-    guardrails?.max_asset_exposure_pct ??
-    decision?.max_asset_exposure_pct ??
-    0;
+    guardrails?.max_asset_exposure_pct ?? 0;
 
   /* ============================
      FORMAT
@@ -116,7 +70,7 @@ export default function GuardrailsPanel({
   };
 
   const tradeAdjusted =
-    original !== adjusted;
+    originalAmount !== adjustedAmount;
 
   /* ============================
      UI
@@ -133,7 +87,9 @@ export default function GuardrailsPanel({
       {/* Trade status */}
 
       <div className="flex justify-between text-sm">
-        <span className="text-gray-500">Trade status</span>
+        <span className="text-gray-500">
+          Trade status
+        </span>
 
         <span
           className={`font-medium ${
@@ -155,8 +111,8 @@ export default function GuardrailsPanel({
 
         <span className="font-medium">
           {tradeAdjusted
-            ? `${eur(adjusted)} (requested ${eur(original)})`
-            : eur(adjusted)}
+            ? `${eur(adjustedAmount)} (requested ${eur(originalAmount)})`
+            : eur(adjustedAmount)}
         </span>
       </div>
 
@@ -214,6 +170,7 @@ export default function GuardrailsPanel({
               {w}
             </div>
           ))}
+
         </div>
       )}
 

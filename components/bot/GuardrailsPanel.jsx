@@ -77,7 +77,7 @@ export default function GuardrailsPanel({
   ============================ */
 
   return (
-    <div className="rounded-xl border bg-white dark:bg-gray-900 p-5 space-y-4">
+    <div className="h-full flex flex-col space-y-4">
 
       <div className="flex items-center gap-2 font-semibold">
         <Shield size={16} />

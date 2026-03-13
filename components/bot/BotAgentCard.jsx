@@ -78,7 +78,7 @@ export default function BotAgentCard({
     ...decision,
 
     guardrails_result: guardrails,
-    guardrails: guardrails, // alias voor UI
+    guardrails: guardrails,
 
     transition_risk:
       scores?.transition_risk ??
@@ -289,7 +289,7 @@ export default function BotAgentCard({
 
         <div className="hidden lg:block w-px bg-gray-200" />
 
-        <div className="lg:w-[340px] p-5 bg-gray-50">
+        <div className="lg:w-[340px] p-5">
           <GuardrailsPanel
             decision={normalizedDecision}
             bot={bot}

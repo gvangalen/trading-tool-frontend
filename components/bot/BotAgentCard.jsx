@@ -339,10 +339,10 @@ export default function BotAgentCard({
             {symbol} · {timeframe}
           </div>
 
-          {(bot?.strategy?.setup_name || bot?.strategy?.name) && (
+          {(bot?.strategy?.setup?.name || bot?.strategy?.name) && (
             <div className="text-xs text-gray-400">
-              {bot?.strategy?.setup_name && `Setup: ${bot.strategy.setup_name}`}
-              {bot?.strategy?.setup_name && bot?.strategy?.name && " · "}
+              {bot?.strategy?.setup?.name && `Setup: ${bot.strategy.setup.name}`}
+              {bot?.strategy?.setup?.name && bot?.strategy?.name && " · "}
               {bot?.strategy?.name && `Strategy: ${bot.strategy.name}`}
             </div>
           )}

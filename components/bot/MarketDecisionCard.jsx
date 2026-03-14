@@ -187,33 +187,33 @@ export default function MarketDecisionCard({ decision = {} }) {
 
       <div className="space-y-1 text-sm">
 
-        <div className="flex justify-between">
+        <div className="grid grid-cols-[1fr_120px] items-center">
           <span className="text-gray-500">
             Short term trend
           </span>
-          <span className="font-semibold">
+          <span className="font-semibold text-left">
             {formatTrend(trendShort)}
           </span>
         </div>
-
-        <div className="flex justify-between">
+      
+        <div className="grid grid-cols-[1fr_120px] items-center">
           <span className="text-gray-500">
             Mid term trend
           </span>
-          <span className="font-semibold">
+          <span className="font-semibold text-left">
             {formatTrend(trendMid)}
           </span>
         </div>
-
-        <div className="flex justify-between">
+      
+        <div className="grid grid-cols-[1fr_120px] items-center">
           <span className="text-gray-500">
             Long term trend
           </span>
-          <span className="font-semibold">
+          <span className="font-semibold text-left">
             {formatTrend(trendLong)}
           </span>
         </div>
-
+      
       </div>
 
       {/* AI explanation */}

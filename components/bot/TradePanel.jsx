@@ -1,6 +1,7 @@
 "use client";
 
 import { useModal } from "@/components/modal/ModalProvider";
+import { TradingSlider } from "@/components/ui/Slider";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpCircle,
@@ -447,60 +448,94 @@ useEffect(() => {
         }
 
         {/* =========================
-           TRADING SLIDER
+           TRADING SLIDER (exchange style)
         ========================= */}
         
-        <div className={`space-y-3 ${!hasBalance ? "opacity-40" : ""}`}>
+        <div className={`space-y-4 ${!hasBalance ? "opacity-40" : ""}`}>
         
-          {/* Slider track */}
-          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="relative h-2 bg-gray-200 rounded-full cursor-pointer"
+            onClick={(e) => {
         
-            {/* Progress */}
+              if (!hasBalance) return;
+        
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pct = ((e.clientX - rect.left) / rect.width) * 100;
+        
+              setAmountPct(clamp(Math.round(pct),0,100));
+              setAmountQuoteInput("");
+              setAmountBaseInput("");
+        
+            }}
+          >
+        
+            {/* progress bar */}
             <div
-              className="absolute h-full bg-green-500 transition-all duration-200"
+              className="absolute h-full bg-green-500 rounded-full transition-all"
               style={{ width: `${amountPct}%` }}
             />
         
-            {/* Invisible range input */}
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={amountPct}
-              disabled={!hasBalance}
-              onChange={(e) => {
-                setAmountPct(Number(e.target.value));
-                setAmountQuoteInput("");
-                setAmountBaseInput("");
+            {/* draggable handle */}
+            <div
+              className="absolute w-5 h-5 bg-white border-2 border-green-500 rounded-full shadow cursor-grab active:cursor-grabbing"
+              style={{
+                left: `${amountPct}%`,
+                transform: "translate(-50%, -7px)"
               }}
-              className="absolute w-full h-2 opacity-0 cursor-pointer"
+              onMouseDown={(e) => {
+        
+                if (!hasBalance) return;
+        
+                const slider = e.currentTarget.parentElement;
+        
+                const move = (ev) => {
+        
+                  const rect = slider.getBoundingClientRect();
+                  const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+        
+                  setAmountPct(clamp(Math.round(pct),0,100));
+                  setAmountQuoteInput("");
+                  setAmountBaseInput("");
+        
+                };
+        
+                const stop = () => {
+                  window.removeEventListener("mousemove", move);
+                  window.removeEventListener("mouseup", stop);
+                };
+        
+                window.addEventListener("mousemove", move);
+                window.addEventListener("mouseup", stop);
+        
+              }}
             />
         
-          </div>
-        
-          {/* Step markers */}
-          <div className="relative flex justify-between items-center">
-        
-            {[0, 25, 50, 75, 100].map((step) => {
+            {/* step markers */}
+            {[0,25,50,75,100].map((step)=>{
         
               const active = amountPct >= step;
         
               return (
-                <button
+                <div
                   key={step}
-                  type="button"
-                  disabled={!hasBalance}
-                  onClick={() => {
+                  onClick={(e)=>{
+                    e.stopPropagation();
+        
+                    if (!hasBalance) return;
+        
                     setAmountPct(step);
                     setAmountQuoteInput("");
                     setAmountBaseInput("");
                   }}
-                  className={`w-4 h-4 rounded-full border transition
-                    ${active
-                      ? "bg-green-500 border-green-500"
-                      : "bg-gray-200 border-gray-300"
-                    }`}
+                  className={`absolute w-4 h-4 rounded-full border-2 cursor-pointer
+                  ${active
+                    ? "bg-green-500 border-green-500"
+                    : "bg-white border-gray-300"
+                  }`}
+                  style={{
+                    left:`${step}%`,
+                    transform:"translate(-50%, -6px)"
+                  }}
                 />
               );
         
@@ -508,7 +543,7 @@ useEffect(() => {
         
           </div>
         
-          {/* Labels */}
+          {/* labels */}
           <div className="flex justify-between text-xs text-[var(--text-muted)]">
         
             <span>0%</span>

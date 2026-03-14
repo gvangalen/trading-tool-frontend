@@ -446,19 +446,80 @@ useEffect(() => {
           )
         }
 
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={amountPct}
-          disabled={!hasBalance}
-          onChange={(e)=>{
-            setAmountPct(Number(e.target.value));
-            setAmountQuoteInput("");
-            setAmountBaseInput("");
-          }}
-          className={`trade-slider ${!hasBalance ? "opacity-40 cursor-not-allowed":""}`}
-        />
+        {/* =========================
+           TRADING SLIDER
+        ========================= */}
+        
+        <div className={`space-y-3 ${!hasBalance ? "opacity-40" : ""}`}>
+        
+          {/* Slider track */}
+          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+        
+            {/* Progress */}
+            <div
+              className="absolute h-full bg-green-500 transition-all duration-200"
+              style={{ width: `${amountPct}%` }}
+            />
+        
+            {/* Invisible range input */}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={amountPct}
+              disabled={!hasBalance}
+              onChange={(e) => {
+                setAmountPct(Number(e.target.value));
+                setAmountQuoteInput("");
+                setAmountBaseInput("");
+              }}
+              className="absolute w-full h-2 opacity-0 cursor-pointer"
+            />
+        
+          </div>
+        
+          {/* Step markers */}
+          <div className="relative flex justify-between items-center">
+        
+            {[0, 25, 50, 75, 100].map((step) => {
+        
+              const active = amountPct >= step;
+        
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  disabled={!hasBalance}
+                  onClick={() => {
+                    setAmountPct(step);
+                    setAmountQuoteInput("");
+                    setAmountBaseInput("");
+                  }}
+                  className={`w-4 h-4 rounded-full border transition
+                    ${active
+                      ? "bg-green-500 border-green-500"
+                      : "bg-gray-200 border-gray-300"
+                    }`}
+                />
+              );
+        
+            })}
+        
+          </div>
+        
+          {/* Labels */}
+          <div className="flex justify-between text-xs text-[var(--text-muted)]">
+        
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+            <span>75%</span>
+            <span>100%</span>
+        
+          </div>
+
+</div>
 
         {!hasBalance && (
           <div className="text-xs text-gray-400">

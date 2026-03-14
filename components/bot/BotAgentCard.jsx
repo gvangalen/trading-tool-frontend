@@ -66,12 +66,32 @@ export default function BotAgentCard({
 
   /* ================= DEBUG RAW INPUT ================= */
 
-  useEffect(() => {
-    console.log("🤖 BOT", bot);
-    console.log("📊 DECISION RAW", decision);
-    console.log("📦 SCORES_JSON", decision?.scores_json);
-    console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
-  }, [bot, decision]);
+useEffect(() => {
+  console.log("🤖 BOT", bot);
+  console.log("📊 DECISION RAW", decision);
+  console.log("📦 SCORES_JSON", decision?.scores_json);
+  console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
+}, [bot, decision]);
+
+/* ================= REFRESH BOT WHEN BUDGET CHANGES ================= */
+
+useEffect(() => {
+
+  const handleBudgetUpdate = () => {
+
+    console.log("🔄 Budget updated → refreshing bot decision");
+
+    onGenerate?.(bot);
+
+  };
+
+  window.addEventListener("bot:budget-updated", handleBudgetUpdate);
+
+  return () => {
+    window.removeEventListener("bot:budget-updated", handleBudgetUpdate);
+  };
+
+}, [bot, onGenerate]);
 
   /* ================= NORMALIZE DECISION ================= */
 

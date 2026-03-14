@@ -55,8 +55,18 @@ export default function BotAgentCard({
 
   /* ================= DATA ================= */
 
-  const symbol = (bot?.strategy?.symbol || bot?.symbol || "BTC").toUpperCase();
-  const timeframe = bot?.strategy?.timeframe || bot?.timeframe || "—";
+  const symbol = (
+  bot?.strategy?.setup?.symbol ||
+  bot?.strategy?.symbol ||
+  bot?.symbol ||
+  "BTC"
+).toUpperCase();
+
+const timeframe =
+  bot?.strategy?.setup?.timeframe ||
+  bot?.strategy?.timeframe ||
+  bot?.timeframe ||
+  "—";
 
   const statusLabel = (decision?.action || "OBSERVE").toUpperCase();
 
@@ -334,18 +344,29 @@ export default function BotAgentCard({
         {/* SYMBOL + SETUP */}
 
         <div className="text-sm text-gray-500 space-y-1">
-
+        
           <div>
             {symbol} · {timeframe}
           </div>
-
-          {(bot?.strategy?.setup?.name || bot?.strategy?.name) && (
-            <div className="text-xs text-gray-400">
-              {bot?.strategy?.setup?.name && `Setup: ${bot.strategy.setup.name}`}
-              {bot?.strategy?.setup?.name && bot?.strategy?.name && " · "}
-              {bot?.strategy?.name && `Strategy: ${bot.strategy.name}`}
+        
+          {bot?.strategy && (
+            <div className="text-xs text-gray-400 flex flex-col">
+        
+              {bot?.strategy?.setup?.name && (
+                <div>
+                  Setup: <span className="text-gray-600">{bot.strategy.setup.name}</span>
+                </div>
+              )}
+        
+              {bot?.strategy?.name && (
+                <div>
+                  Strategy: <span className="text-gray-600">{bot.strategy.name}</span>
+                </div>
+              )}
+        
             </div>
           )}
+        
         </div>
 
         {/* RISK + MODE */}

@@ -314,6 +314,8 @@ function BotPageInner() {
         total_eur: portfolio?.budget?.total_eur ?? 0,
         daily_limit_eur: portfolio?.budget?.daily_limit_eur ?? 0,
         max_order_eur: portfolio?.budget?.max_order_eur ?? 0,
+        max_asset_exposure_pct:
+          portfolio?.budget?.max_asset_exposure_pct ?? 100,
       };
 
       openConfirm({
@@ -330,6 +332,7 @@ function BotPageInner() {
             budget_total_eur: budgetRef.current.total_eur,
             budget_daily_limit_eur: budgetRef.current.daily_limit_eur,
             budget_max_order_eur: budgetRef.current.max_order_eur,
+            max_asset_exposure_pct: budgetRef.current.max_asset_exposure_pct,
           });
 
           showSnackbar("Budget bijgewerkt", "success");

@@ -47,15 +47,9 @@ export default function TradePanel({
 }) {
 
   const { showSnackbar } = useModal();
-  
-  /* =========================
-     State
-  ========================= */
 
   const [side, setSide] = useState("buy");
   const [orderType, setOrderType] = useState("limit");
-
-  // FIX: voorkomt 0 prijs init bug
   const [orderPrice, setOrderPrice] = useState(null);
 
   const [amountPct, setAmountPct] = useState(0);
@@ -213,7 +207,6 @@ export default function TradePanel({
     effectivePrice,
     qtyBase,
     orderValueQuote,
-    balanceQuote,
     balanceBase,
     side,
   ]);
@@ -223,132 +216,93 @@ export default function TradePanel({
   /* =========================
      Sync slider -> input
   ========================= */
-useEffect(() => {
 
-  const p = num(effectivePrice, null);
-  if (!p || p <= 0) return;
-
-  if (maxQtyBase <= 0) return;
-
-  if (amountPct === 0) return;
-
-  if (sizeMode === "base") {
-
-    if (amountBaseInput === "") {
-      const q = qtyFromPct;
-      setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
-    }
-
-  } else {
-
-    if (amountQuoteInput === "") {
-      const v = qtyFromPct * p;
-      setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
-    }
-
-  }
-
-}, [
-  qtyFromPct,
-  effectivePrice,
-  sizeMode,
-  maxQtyBase,
-  amountPct,
-  amountBaseInput,
-  amountQuoteInput
-]);
-
-  /* =========================
-     Toggle size mode
-  ========================= */
-
-  const toggleSizeMode = (nextMode) => {
+  useEffect(() => {
 
     const p = num(effectivePrice, null);
+    if (!p || p <= 0) return;
 
-    if (!p || p <= 0) {
-      setSizeMode(nextMode);
-      return;
-    }
+    if (maxQtyBase <= 0) return;
 
-    if (nextMode === "base") {
+    if (amountPct === 0) return;
 
-      setAmountBaseInput(
-        qtyBase > 0 ? String(Number(qtyBase.toFixed(6))) : ""
-      );
+    if (sizeMode === "base") {
 
-      setAmountQuoteInput("");
+      if (amountBaseInput === "") {
+        const q = qtyFromPct;
+        setAmountBaseInput(q > 0 ? String(Number(q.toFixed(6))) : "");
+      }
 
     } else {
 
-      const v = qtyBase * p;
-
-      setAmountQuoteInput(
-        v > 0 ? String(Number(v.toFixed(2))) : ""
-      );
-
-      setAmountBaseInput("");
+      if (amountQuoteInput === "") {
+        const v = qtyFromPct * p;
+        setAmountQuoteInput(v > 0 ? String(Number(v.toFixed(2))) : "");
+      }
 
     }
 
-    setSizeMode(nextMode);
-
-  };
+  }, [
+    qtyFromPct,
+    effectivePrice,
+    sizeMode,
+    maxQtyBase,
+    amountPct,
+    amountBaseInput,
+    amountQuoteInput
+  ]);
 
   /* =========================
      Submit
   ========================= */
+
   const handleSubmit = async () => {
 
-  if (!canSubmit) return;
+    if (!canSubmit) return;
 
-  const p = num(effectivePrice, null);
-  const q = num(qtyBase, null);
-  const v = num(orderValueQuote, null);
+    const p = num(effectivePrice, null);
+    const q = num(qtyBase, null);
+    const v = num(orderValueQuote, null);
 
-  try {
+    try {
 
-    const result = await onSubmit?.({
-      symbol,
-      side,
-      orderType,
-      quantity: q,
-      value_eur: v,
-      size_mode: sizeMode,
-      price: p,
-      tp: useTpSl ? num(tpPrice, null) : null,
-      sl: useTpSl ? num(slPrice, null) : null,
-    });
+      await onSubmit?.({
+        symbol,
+        side,
+        orderType,
+        quantity: q,
+        value_eur: v,
+        size_mode: sizeMode,
+        price: p,
+        tp: useTpSl ? num(tpPrice, null) : null,
+        sl: useTpSl ? num(slPrice, null) : null,
+      });
 
-    // SUCCESS MESSAGE
-    showSnackbar(
-      `${side === "buy" ? "Koop" : "Verkoop"} order geplaatst ✔ ${fmt(q,6)} ${baseSymbol} @ ${fmt(p)}`,
-      "success"
-    );
+      showSnackbar(
+        `${side === "buy" ? "Koop" : "Verkoop"} order geplaatst ✔ ${fmt(q,6)} ${baseSymbol} @ ${fmt(p)}`,
+        "success"
+      );
 
-    // 🔥 TRIGGER LIVE PORTFOLIO UPDATE
-    window.dispatchEvent(new Event("portfolio:updated"));
+      window.dispatchEvent(new Event("portfolio:updated"));
 
-    // RESET FORM
-    setAmountPct(0);
-    setAmountQuoteInput("");
-    setAmountBaseInput("");
+      setAmountPct(0);
+      setAmountQuoteInput("");
+      setAmountBaseInput("");
+      setTpPrice("");
+      setSlPrice("");
 
-    setTpPrice("");
-    setSlPrice("");
+    } catch (err) {
 
-  } catch (err) {
+      console.error("❌ Order error:", err);
 
-    console.error("❌ Order error:", err);
+      showSnackbar(
+        err?.message || "Order plaatsen mislukt",
+        "danger"
+      );
 
-    showSnackbar(
-      err?.message || "Order plaatsen mislukt",
-      "danger"
-    );
+    }
 
-  }
-
-};
+  };
 
   /* =========================
      UI
@@ -357,27 +311,16 @@ useEffect(() => {
   return (
     <div className="trade-panel p-5 w-full max-w-md space-y-5">
 
-      {/* HEADER */}
-
       <div className="flex justify-between items-center">
 
         <h2 className="text-lg font-semibold">Trade</h2>
 
         <div className="text-xs text-right">
-
           <div className="opacity-80">Beschikbaar saldo</div>
 
           {side === "buy"
-            ? (
-              <div className="font-semibold">
-                {fmt(availableQuote)} {quoteSymbol}
-              </div>
-            )
-            : (
-              <div className="font-semibold">
-                {fmt(balanceBase,6)} {baseSymbol}
-              </div>
-            )
+            ? <div className="font-semibold">{fmt(availableQuote)} {quoteSymbol}</div>
+            : <div className="font-semibold">{fmt(balanceBase,6)} {baseSymbol}</div>
           }
 
         </div>
@@ -393,8 +336,7 @@ useEffect(() => {
           onClick={() => setSide("buy")}
           className={side === "buy" ? "active-buy" : ""}
         >
-          <ArrowUpCircle size={18}/>
-          Kopen
+          <ArrowUpCircle size={18}/> Kopen
         </button>
 
         <button
@@ -402,8 +344,7 @@ useEffect(() => {
           onClick={() => setSide("sell")}
           className={side === "sell" ? "active-sell" : ""}
         >
-          <ArrowDownCircle size={18}/>
-          Verkopen
+          <ArrowDownCircle size={18}/> Verkopen
         </button>
 
       </div>
@@ -447,114 +388,16 @@ useEffect(() => {
           )
         }
 
-        {/* =========================
-           TRADING SLIDER (exchange style)
-        ========================= */}
-        
-        <div className={`space-y-4 ${!hasBalance ? "opacity-40" : ""}`}>
-        
-          <div
-            className="relative h-2 bg-gray-200 rounded-full cursor-pointer"
-            onClick={(e) => {
-        
-              if (!hasBalance) return;
-        
-              const rect = e.currentTarget.getBoundingClientRect();
-              const pct = ((e.clientX - rect.left) / rect.width) * 100;
-        
-              setAmountPct(clamp(Math.round(pct),0,100));
-              setAmountQuoteInput("");
-              setAmountBaseInput("");
-        
-            }}
-          >
-        
-            {/* progress bar */}
-            <div
-              className="absolute h-full bg-green-500 rounded-full transition-all"
-              style={{ width: `${amountPct}%` }}
-            />
-        
-            {/* draggable handle */}
-            <div
-              className="absolute w-5 h-5 bg-white border-2 border-green-500 rounded-full shadow cursor-grab active:cursor-grabbing"
-              style={{
-                left: `${amountPct}%`,
-                transform: "translate(-50%, -7px)"
-              }}
-              onMouseDown={(e) => {
-        
-                if (!hasBalance) return;
-        
-                const slider = e.currentTarget.parentElement;
-        
-                const move = (ev) => {
-        
-                  const rect = slider.getBoundingClientRect();
-                  const pct = ((ev.clientX - rect.left) / rect.width) * 100;
-        
-                  setAmountPct(clamp(Math.round(pct),0,100));
-                  setAmountQuoteInput("");
-                  setAmountBaseInput("");
-        
-                };
-        
-                const stop = () => {
-                  window.removeEventListener("mousemove", move);
-                  window.removeEventListener("mouseup", stop);
-                };
-        
-                window.addEventListener("mousemove", move);
-                window.addEventListener("mouseup", stop);
-        
-              }}
-            />
-        
-            {/* step markers */}
-            {[0,25,50,75,100].map((step)=>{
-        
-              const active = amountPct >= step;
-        
-              return (
-                <div
-                  key={step}
-                  onClick={(e)=>{
-                    e.stopPropagation();
-        
-                    if (!hasBalance) return;
-        
-                    setAmountPct(step);
-                    setAmountQuoteInput("");
-                    setAmountBaseInput("");
-                  }}
-                  className={`absolute w-4 h-4 rounded-full border-2 cursor-pointer
-                  ${active
-                    ? "bg-green-500 border-green-500"
-                    : "bg-white border-gray-300"
-                  }`}
-                  style={{
-                    left:`${step}%`,
-                    transform:"translate(-50%, -6px)"
-                  }}
-                />
-              );
-        
-            })}
-        
-          </div>
-        
-          {/* labels */}
-          <div className="flex justify-between text-xs text-[var(--text-muted)]">
-        
-            <span>0%</span>
-            <span>25%</span>
-            <span>50%</span>
-            <span>75%</span>
-            <span>100%</span>
-        
-          </div>
-
-</div>
+        <TradingSlider
+          value={amountPct}
+          steps={[0,25,50,75,100]}
+          onChange={(v)=>{
+            if (!hasBalance) return;
+            setAmountPct(v);
+            setAmountQuoteInput("");
+            setAmountBaseInput("");
+          }}
+        />
 
         {!hasBalance && (
           <div className="text-xs text-gray-400">
@@ -586,12 +429,6 @@ useEffect(() => {
 
       </div>
 
-      {/* ERROR */}
-
-      {error && (
-        <div className="trade-badge-bad">{error}</div>
-      )}
-
       {/* VALIDATION */}
 
       <div className="text-xs">
@@ -599,14 +436,12 @@ useEffect(() => {
         {validation.ok
           ? (
             <span className="trade-badge-ok flex items-center gap-1">
-              <CheckCircle2 size={14}/>
-              Klaar om te plaatsen
+              <CheckCircle2 size={14}/> Klaar om te plaatsen
             </span>
           )
           : (
             <span className="trade-badge-bad flex items-center gap-1">
-              <XCircle size={14}/>
-              {validation.reason}
+              <XCircle size={14}/> {validation.reason}
             </span>
           )
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /* =====================================================
    BASIC SLIDER (voor settings)
@@ -35,7 +35,6 @@ export function BasicSlider({
       />
 
       <div className="flex justify-between text-xs text-[var(--text-muted)]">
-
         <span>{min}{suffix}</span>
 
         <span className="font-medium text-[var(--text-primary)]">
@@ -43,7 +42,6 @@ export function BasicSlider({
         </span>
 
         <span>{max}{suffix}</span>
-
       </div>
 
     </div>
@@ -51,7 +49,7 @@ export function BasicSlider({
 }
 
 /* =====================================================
-   TRADING SLIDER (Bybit style)
+   TRADING SLIDER (Exchange / Bybit style)
 ===================================================== */
 
 export function TradingSlider({
@@ -62,67 +60,106 @@ export function TradingSlider({
 }) {
 
   const [internalValue, setInternalValue] = useState(value);
+  const trackRef = useRef(null);
 
   useEffect(() => {
     setInternalValue(value);
   }, [value]);
 
-  const handleChange = (v) => {
-    setInternalValue(v);
-    onChange?.(v);
+  const percent = Math.min(Math.max(internalValue, 0), 100);
+
+  const updateValue = (v) => {
+    const clamped = Math.min(Math.max(v, 0), 100);
+    setInternalValue(clamped);
+    onChange?.(clamped);
   };
 
-  const percent = internalValue;
+  /* ===============================
+     CLICK / DRAG HANDLING
+  =============================== */
+
+  const calculatePercentFromEvent = (e) => {
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = (x / rect.width) * 100;
+    return Math.round(pct);
+  };
+
+  const handleTrackClick = (e) => {
+    updateValue(calculatePercentFromEvent(e));
+  };
+
+  const handleDrag = (e) => {
+    updateValue(calculatePercentFromEvent(e));
+  };
+
+  const startDrag = () => {
+    document.addEventListener("mousemove", handleDrag);
+    document.addEventListener("mouseup", stopDrag);
+  };
+
+  const stopDrag = () => {
+    document.removeEventListener("mousemove", handleDrag);
+    document.removeEventListener("mouseup", stopDrag);
+  };
 
   return (
     <div className="space-y-3">
 
-      {/* Slider track */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+      {/* SLIDER TRACK */}
+      <div
+        ref={trackRef}
+        onClick={handleTrackClick}
+        className="relative h-2 bg-gray-200 rounded-full cursor-pointer"
+      >
 
-        {/* Progress */}
+        {/* PROGRESS */}
         <div
-          className="absolute h-full bg-green-500 transition-all duration-200"
+          className="absolute h-full bg-green-500 rounded-full transition-all duration-200"
           style={{ width: `${percent}%` }}
         />
 
-        {/* Input */}
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          value={percent}
-          onChange={(e) => handleChange(Number(e.target.value))}
-          className="absolute w-full h-2 opacity-0 cursor-pointer"
-        />
-
-      </div>
-
-      {/* Step points */}
-      <div className="relative flex justify-between items-center">
-
+        {/* STEP MARKERS */}
         {steps.map((s) => {
 
           const active = percent >= s;
 
           return (
-            <button
+            <div
               key={s}
-              type="button"
-              onClick={() => handleChange(s)}
-              className={`w-4 h-4 rounded-full border transition
+              onClick={(e) => {
+                e.stopPropagation();
+                updateValue(s);
+              }}
+              className={`absolute w-4 h-4 rounded-full border-2 cursor-pointer
                 ${active
                   ? "bg-green-500 border-green-500"
-                  : "bg-gray-200 border-gray-300"
+                  : "bg-white border-gray-300"
                 }`}
+              style={{
+                left: `${s}%`,
+                transform: "translate(-50%, -6px)",
+              }}
             />
           );
         })}
 
+        {/* DRAG HANDLE */}
+        <div
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            startDrag();
+          }}
+          className="absolute w-5 h-5 bg-white border-2 border-green-500 rounded-full shadow cursor-grab active:cursor-grabbing"
+          style={{
+            left: `${percent}%`,
+            transform: "translate(-50%, -7px)",
+          }}
+        />
+
       </div>
 
-      {/* Labels */}
+      {/* LABELS */}
       <div className="flex justify-between text-xs text-[var(--text-muted)]">
         {steps.map((s) => (
           <span key={s}>

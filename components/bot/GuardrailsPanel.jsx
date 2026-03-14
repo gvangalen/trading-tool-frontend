@@ -1,14 +1,40 @@
 "use client";
 
 import { Shield, AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 
 export default function GuardrailsPanel({
   decision = {},
   bot = {},
+  onRefresh, // optional refresh callback
 }) {
 
   const result = decision?.guardrails_result || {};
   const guardrails = result?.guardrails || {};
+
+  /* ============================
+     LISTEN FOR BUDGET CHANGES
+  ============================ */
+
+  useEffect(() => {
+
+    const handleBudgetUpdate = () => {
+      onRefresh?.(); // parent kan guardrails opnieuw ophalen
+    };
+
+    window.addEventListener(
+      "bot:budget-updated",
+      handleBudgetUpdate
+    );
+
+    return () => {
+      window.removeEventListener(
+        "bot:budget-updated",
+        handleBudgetUpdate
+      );
+    };
+
+  }, [onRefresh]);
 
   /* ============================
      CORE VALUES

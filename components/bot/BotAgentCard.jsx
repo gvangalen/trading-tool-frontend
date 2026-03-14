@@ -41,6 +41,7 @@ export default function BotAgentCard({
 
   onSaveTradePlan,
 }) {
+
   if (!bot) return null;
 
   const [showHistory, setShowHistory] = useState(false);
@@ -64,38 +65,52 @@ export default function BotAgentCard({
     decision?.confidence ||
     "LOW";
 
+  /* ================= BOT STATE ================= */
+
+  const botState = bot?.is_active
+    ? decision?.action === "OBSERVE"
+      ? "waiting"
+      : "live"
+    : "paused";
+
+  const lastRun =
+    decision?.created_at
+      ? new Date(decision.created_at).toLocaleTimeString("nl-NL", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
   /* ================= DEBUG RAW INPUT ================= */
 
-useEffect(() => {
-  console.log("🤖 BOT", bot);
-  console.log("📊 DECISION RAW", decision);
-  console.log("📦 SCORES_JSON", decision?.scores_json);
-  console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
-}, [bot, decision]);
+  useEffect(() => {
+    console.log("🤖 BOT", bot);
+    console.log("📊 DECISION RAW", decision);
+    console.log("📦 SCORES_JSON", decision?.scores_json);
+    console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
+  }, [bot, decision]);
 
-/* ================= REFRESH BOT WHEN BUDGET CHANGES ================= */
+  /* ================= REFRESH BOT WHEN BUDGET CHANGES ================= */
 
-useEffect(() => {
+  useEffect(() => {
 
-  const handleBudgetUpdate = () => {
+    const handleBudgetUpdate = () => {
+      console.log("🔄 Budget updated → refreshing bot decision");
+      onGenerate?.(bot);
+    };
 
-    console.log("🔄 Budget updated → refreshing bot decision");
+    window.addEventListener("bot:budget-updated", handleBudgetUpdate);
 
-    onGenerate?.(bot);
+    return () => {
+      window.removeEventListener("bot:budget-updated", handleBudgetUpdate);
+    };
 
-  };
-
-  window.addEventListener("bot:budget-updated", handleBudgetUpdate);
-
-  return () => {
-    window.removeEventListener("bot:budget-updated", handleBudgetUpdate);
-  };
-
-}, [bot, onGenerate]);
+  }, [bot, onGenerate]);
 
   /* ================= NORMALIZE DECISION ================= */
 
   const normalizedDecision = useMemo(() => {
+
     if (!decision) return {};
 
     const scores = decision?.scores_json || {};
@@ -152,8 +167,6 @@ useEffect(() => {
       return d2 - d1;
     });
 
-    console.log("📜 HISTORY MERGED", merged);
-
     return merged;
 
   }, [history, trades, bot.id]);
@@ -167,10 +180,10 @@ useEffect(() => {
     const handler = (e) => {
 
       if (!settingsRef.current) return;
-
       if (settingsRef.current.contains(e.target)) return;
 
       setShowSettings(false);
+
     };
 
     document.addEventListener("mousedown", handler);
@@ -180,6 +193,7 @@ useEffect(() => {
 
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("touchstart", handler);
+
     };
 
   }, [showSettings]);
@@ -246,14 +260,10 @@ useEffect(() => {
         draft: planDraft,
       });
 
-      console.log("✅ Trade plan saved");
-
     } catch (e) {
 
       console.error("❌ Save plan error", e);
-
       setSaveError(e?.message || "Opslaan mislukt");
-
       throw e;
 
     } finally {
@@ -267,7 +277,6 @@ useEffect(() => {
   /* ================= PLAN SOURCE ================= */
 
   const planSource = useMemo(() => {
-    console.log("📈 TRADE PLAN SOURCE", decision?.trade_plan);
     return decision?.trade_plan || null;
   }, [decision]);
 
@@ -322,11 +331,27 @@ useEffect(() => {
 
         </div>
 
-        <div className="text-sm text-gray-500">
-          {symbol} · {timeframe}
+        {/* SYMBOL + SETUP */}
+
+        <div className="text-sm text-gray-500 space-y-1">
+
+          <div>
+            {symbol} · {timeframe}
+          </div>
+
+          {(bot?.setup_name || bot?.strategy_name) && (
+            <div className="text-xs text-gray-400">
+              {bot?.setup_name && `Setup: ${bot.setup_name}`}
+              {bot?.setup_name && bot?.strategy_name && " · "}
+              {bot?.strategy_name && `Strategy: ${bot.strategy_name}`}
+            </div>
+          )}
+
         </div>
 
-        <div className="flex gap-3">
+        {/* RISK + MODE */}
+
+        <div className="flex gap-3 flex-wrap">
 
           <span
             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-semibold ${risk.className}`}
@@ -340,6 +365,50 @@ useEffect(() => {
           </span>
 
         </div>
+
+        {/* BOT STATUS */}
+
+        <div className="flex items-center gap-3 text-sm font-semibold">
+
+          <span
+            className={`px-3 py-1 rounded-lg border ${
+              botState === "live"
+                ? "bg-green-50 text-green-700 border-green-200"
+                : "text-gray-400 border-gray-200"
+            }`}
+          >
+            🟢 Live
+          </span>
+
+          <span
+            className={`px-3 py-1 rounded-lg border ${
+              botState === "waiting"
+                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                : "text-gray-400 border-gray-200"
+            }`}
+          >
+            🟡 Waiting
+          </span>
+
+          <span
+            className={`px-3 py-1 rounded-lg border ${
+              botState === "paused"
+                ? "bg-red-50 text-red-700 border-red-200"
+                : "text-gray-400 border-gray-200"
+            }`}
+          >
+            🔴 Paused
+          </span>
+
+        </div>
+
+        {lastRun && (
+          <div className="text-xs text-gray-400">
+            Last run: {lastRun}
+          </div>
+        )}
+
+        {/* DECISION STATUS */}
 
         <div className="bg-gray-50 border rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
 
@@ -456,6 +525,5 @@ useEffect(() => {
       </div>
 
     </div>
-
   );
 }

@@ -7,6 +7,7 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
     total_eur: 0,
     daily_limit_eur: 0,
     max_order_eur: 0,
+    max_asset_exposure_pct: 100,
   });
 
   useEffect(() => {
@@ -16,6 +17,7 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
       total_eur: initialBudget.total_eur ?? 0,
       daily_limit_eur: initialBudget.daily_limit_eur ?? 0,
       max_order_eur: initialBudget.max_order_eur ?? 0,
+      max_asset_exposure_pct: initialBudget.max_asset_exposure_pct ?? 100,
     });
   }, [initialBudget]);
 
@@ -66,6 +68,30 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
             }))
           }
         />
+      </Field>
+
+      {/* ============================
+          NEW: ASSET EXPOSURE LIMIT
+      ============================ */}
+
+      <Field label="Max asset exposure (%)">
+        <input
+          type="number"
+          min="1"
+          max="100"
+          className="input w-full"
+          value={form.max_asset_exposure_pct}
+          onChange={(e) =>
+            setForm((s) => ({
+              ...s,
+              max_asset_exposure_pct: Number(e.target.value),
+            }))
+          }
+        />
+
+        <div className="text-xs text-[var(--text-muted)] mt-1">
+          Maximum percentage van botkapitaal dat in één asset mag zitten
+        </div>
       </Field>
     </div>
   );

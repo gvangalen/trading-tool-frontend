@@ -6,7 +6,7 @@ import { useEffect } from "react";
 export default function GuardrailsPanel({
   decision = {},
   bot = {},
-  onRefresh, // optional refresh callback
+  onRefresh,
 }) {
 
   const result = decision?.guardrails_result || {};
@@ -19,7 +19,7 @@ export default function GuardrailsPanel({
   useEffect(() => {
 
     const handleBudgetUpdate = () => {
-      onRefresh?.(); // parent kan guardrails opnieuw ophalen
+      onRefresh?.();
     };
 
     window.addEventListener(
@@ -53,9 +53,6 @@ export default function GuardrailsPanel({
 
   const blockedBy =
     result?.blocked_by ?? null;
-
-  const blockedBy =
-  result?.blocked_by ?? null;
 
   const reason =
     result?.reason ||

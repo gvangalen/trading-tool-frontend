@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TradingSlider } from "@/components/ui/Slider";
 
 /* =====================================================
    Field wrapper
@@ -11,73 +12,6 @@ function Field({ label, children }) {
     <div>
       <label className="block font-medium mb-1">{label}</label>
       {children}
-    </div>
-  );
-}
-
-/* =====================================================
-   Slider (zelfde stijl als TradePanel)
-===================================================== */
-
-function Slider({ value, min = 1, max = 100, onChange }) {
-  return (
-    <div className="space-y-3">
-
-      {/* track */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-
-        <div
-          className="absolute h-full bg-green-500 transition-all duration-200"
-          style={{ width: `${value}%` }}
-        />
-
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step="1"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="absolute w-full h-2 opacity-0 cursor-pointer"
-        />
-
-      </div>
-
-      {/* markers */}
-      <div className="relative flex justify-between items-center">
-
-        {[1, 25, 50, 75, 100].map((step) => {
-
-          const active = value >= step;
-
-          return (
-            <button
-              key={step}
-              type="button"
-              onClick={() => onChange(step)}
-              className={`w-4 h-4 rounded-full border transition
-                ${
-                  active
-                    ? "bg-green-500 border-green-500"
-                    : "bg-gray-200 border-gray-300"
-                }`}
-            />
-          );
-        })}
-
-      </div>
-
-      {/* labels */}
-      <div className="flex justify-between text-xs text-[var(--text-muted)]">
-
-        <span>1%</span>
-        <span>25%</span>
-        <span>50%</span>
-        <span>75%</span>
-        <span>100%</span>
-
-      </div>
-
     </div>
   );
 }
@@ -169,10 +103,9 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
 
       <Field label="Max asset exposure (%)">
 
-        <Slider
+        <TradingSlider
           value={form.max_asset_exposure_pct}
-          min={1}
-          max={100}
+          steps={[1, 25, 50, 75, 100]}
           onChange={(value) =>
             setForm((s) => ({
               ...s,

@@ -75,27 +75,39 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
       ============================ */}
 
       <Field label="Max asset exposure (%)">
-        <input
-          type="number"
-          min="1"
-          max="100"
-          className="input w-full"
-          value={form.max_asset_exposure_pct}
-          onChange={(e) =>
-            setForm((s) => ({
-              ...s,
-              max_asset_exposure_pct: Number(e.target.value),
-            }))
-          }
-        />
 
-        <div className="text-xs text-[var(--text-muted)] mt-1">
-          Maximum percentage van botkapitaal dat in één asset mag zitten
-        </div>
-      </Field>
+  <div className="space-y-2">
+
+    <input
+      type="range"
+      min="1"
+      max="100"
+      step="1"
+      value={form.max_asset_exposure_pct}
+      onChange={(e) =>
+        setForm((s) => ({
+          ...s,
+          max_asset_exposure_pct: Number(e.target.value),
+        }))
+      }
+      className="w-full"
+    />
+
+    <div className="flex justify-between text-xs text-[var(--text-muted)]">
+      <span>1%</span>
+      <span className="font-medium text-[var(--text-primary)]">
+        {form.max_asset_exposure_pct}%
+      </span>
+      <span>100%</span>
     </div>
-  );
-}
+
+  </div>
+
+  <div className="text-xs text-[var(--text-muted)] mt-1">
+    Maximum percentage van botkapitaal dat in één asset mag zitten
+  </div>
+
+</Field>
 
 function Field({ label, children }) {
   return (

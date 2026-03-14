@@ -54,10 +54,14 @@ export default function GuardrailsPanel({
   const blockedBy =
     result?.blocked_by ?? null;
 
+  const blockedBy =
+  result?.blocked_by ?? null;
+
   const reason =
-    blockedBy ||
+    result?.reason ||
     decision?.guardrail_reason ||
     warnings?.[0] ||
+    blockedBy ||
     "No guardrail triggered";
 
   /* ============================

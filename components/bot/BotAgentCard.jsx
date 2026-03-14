@@ -339,14 +339,13 @@ export default function BotAgentCard({
             {symbol} · {timeframe}
           </div>
 
-          {(bot?.setup_name || bot?.strategy_name) && (
+          {(bot?.strategy?.setup_name || bot?.strategy?.name) && (
             <div className="text-xs text-gray-400">
-              {bot?.setup_name && `Setup: ${bot.setup_name}`}
-              {bot?.setup_name && bot?.strategy_name && " · "}
-              {bot?.strategy_name && `Strategy: ${bot.strategy_name}`}
+              {bot?.strategy?.setup_name && `Setup: ${bot.strategy.setup_name}`}
+              {bot?.strategy?.setup_name && bot?.strategy?.name && " · "}
+              {bot?.strategy?.name && `Strategy: ${bot.strategy.name}`}
             </div>
           )}
-
         </div>
 
         {/* RISK + MODE */}
@@ -368,45 +367,29 @@ export default function BotAgentCard({
 
         {/* BOT STATUS */}
 
-        <div className="flex items-center gap-3 text-sm font-semibold">
-
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        
           <span
-            className={`px-3 py-1 rounded-lg border ${
+            className={`w-2.5 h-2.5 rounded-full ${
               botState === "live"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : "text-gray-400 border-gray-200"
+                ? "bg-green-500"
+                : botState === "waiting"
+                ? "bg-yellow-500"
+                : "bg-red-500"
             }`}
-          >
-            🟢 Live
+          />
+        
+          <span className="capitalize">
+            {botState}
           </span>
-
-          <span
-            className={`px-3 py-1 rounded-lg border ${
-              botState === "waiting"
-                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                : "text-gray-400 border-gray-200"
-            }`}
-          >
-            🟡 Waiting
-          </span>
-
-          <span
-            className={`px-3 py-1 rounded-lg border ${
-              botState === "paused"
-                ? "bg-red-50 text-red-700 border-red-200"
-                : "text-gray-400 border-gray-200"
-            }`}
-          >
-            🔴 Paused
-          </span>
-
+        
+          {lastRun && (
+            <span className="text-gray-400">
+              · Last run {lastRun}
+            </span>
+          )}
+        
         </div>
-
-        {lastRun && (
-          <div className="text-xs text-gray-400">
-            Last run: {lastRun}
-          </div>
-        )}
 
         {/* DECISION STATUS */}
 

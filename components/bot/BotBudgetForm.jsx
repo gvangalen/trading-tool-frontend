@@ -41,7 +41,14 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
   }, [initialBudget]);
 
   useEffect(() => {
+
     onChange?.(form);
+
+    // notify rest of UI (Guardrails / Portfolio / Bot cards)
+    window.dispatchEvent(
+      new CustomEvent("bot:budget-updated", { detail: form })
+    );
+
   }, [form, onChange]);
 
   return (
@@ -105,7 +112,7 @@ export default function BotBudgetForm({ initialBudget, onChange }) {
 
         <TradingSlider
           value={form.max_asset_exposure_pct}
-          steps={[1, 25, 50, 75, 100]}
+          steps={[0, 25, 50, 75, 100]}
           onChange={(value) =>
             setForm((s) => ({
               ...s,

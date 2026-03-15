@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 export default function StrategyCard({ strategy, onRefresh }) {
-  if (!strategy) return null;
+  if (!strategy || typeof strategy !== "object") return null;
 
   const { openConfirm, showSnackbar } = useModal();
 
@@ -38,6 +38,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
   /* ==========================================================
      DATA (DEFENSIEF & BACKWARD SAFE)
   ========================================================== */
+
   const {
     id,
     name,
@@ -62,7 +63,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
     strategy.data?.curve_name ||
     null;
 
-  /* 🔥 FIX: gebruik strategie naam */
+  /* 🔥 Strategie naam fallback */
   const strategyName =
     name ||
     strategy.setup_name ||
@@ -70,16 +71,28 @@ export default function StrategyCard({ strategy, onRefresh }) {
     strategy.setup?.name ||
     "Strategie";
 
+  /* ==========================================================
+     TARGETS (object / array safe)
+  ========================================================== */
+
   const targets = Array.isArray(strategy.targets)
-    ? strategy.targets
+    ? strategy.targets.map((t) =>
+        typeof t === "object" ? t.price ?? t.value ?? "-" : t
+      )
     : strategy.target
     ? [strategy.target]
     : [];
+
+  /* ==========================================================
+     TAGS (string / array / object safe)
+  ========================================================== */
 
   const tags = Array.isArray(strategy.tags)
     ? strategy.tags
     : typeof strategy.tags === "string"
     ? strategy.tags.split(",").map((t) => t.trim())
+    : strategy.tags
+    ? [String(strategy.tags)]
     : [];
 
   const isDCA = strategy_type === "dca";
@@ -90,11 +103,14 @@ export default function StrategyCard({ strategy, onRefresh }) {
   /* ==========================================================
      🧠 AI ANALYSE
   ========================================================== */
+
   async function handleAnalyze() {
     try {
       setLoading(true);
       await analyzeStrategy(id);
+
       showSnackbar("AI-uitleg bijgewerkt", "success");
+
       flashUpdate();
       onRefresh?.();
     } catch (err) {
@@ -138,6 +154,7 @@ export default function StrategyCard({ strategy, onRefresh }) {
   /* ==========================================================
      UI
   ========================================================== */
+
   return (
     <div
       className={`
@@ -258,4 +275,5 @@ export default function StrategyCard({ strategy, onRefresh }) {
       </div>
     </div>
   );
+}
 }

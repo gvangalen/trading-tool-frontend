@@ -30,7 +30,15 @@ const fmtPrice = (v) => {
   return n.toLocaleString("nl-NL");
 };
 
-const clampArr = (arr) => (Array.isArray(arr) ? arr : []);
+const clampArr = (arr) => {
+  if (Array.isArray(arr)) return arr;
+
+  if (typeof arr === "string") {
+    return arr.split(",").map((v) => Number(v.trim()));
+  }
+
+  return [];
+};
 
 /* =========================
    UI
@@ -68,12 +76,39 @@ export default function TradePlanCard({
       };
     }
 
+    const normalizedTargets = clampArr(fallbackPlan.targets)
+      .map((t, i) => {
+        // number targets
+        if (typeof t === "number") {
+          return {
+            label: `TP${i + 1}`,
+            price: t,
+          };
+        }
+
+        // object targets
+        if (typeof t === "object") {
+          return {
+            label: t.label || `TP${i + 1}`,
+            price: t.price,
+          };
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+
     return {
       ...fallbackPlan,
+
       entry_plan: clampArr(fallbackPlan.entry_plan),
-      targets: clampArr(fallbackPlan.targets),
+
+      targets: normalizedTargets,
+
       symbol: fallbackPlan.symbol || decision?.symbol || "BTC",
+
       side: fallbackPlan.side || decision?.action || "observe",
+
       stop_loss: fallbackPlan.stop_loss || { price: null },
     };
   }, [tradePlan, decision]);

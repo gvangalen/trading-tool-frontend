@@ -9,21 +9,27 @@ export default function StrategyList({
   onDelete,
   onUpdate,
 }) {
+
   /* ---------------------------------------------------------
    * 🔍 Zoeken / filteren
    * --------------------------------------------------------- */
-  const filtered = strategies.filter((s) => {
+  const filtered = (Array.isArray(strategies) ? strategies : []).filter((s) => {
     if (!s || !s.id) return false;
 
-    const lower = searchTerm.toLowerCase();
+    const lower = String(searchTerm || "").toLowerCase();
+
+    /* 🛡 tags veilig maken */
+    const tags = Array.isArray(s.tags)
+      ? s.tags
+      : typeof s.tags === "string"
+      ? s.tags.split(",").map((t) => t.trim())
+      : [];
 
     return (
       !searchTerm ||
-      (s.symbol || "").toLowerCase().includes(lower) ||
-      (s.setup_name || "").toLowerCase().includes(lower) ||
-      (s.tags || [])
-        .map((t) => t.toLowerCase())
-        .some((t) => t.includes(lower))
+      String(s.symbol || "").toLowerCase().includes(lower) ||
+      String(s.setup_name || "").toLowerCase().includes(lower) ||
+      tags.some((t) => String(t).toLowerCase().includes(lower))
     );
   });
 
@@ -31,7 +37,9 @@ export default function StrategyList({
    * 🗂 Sorteren (nieuwste eerst)
    * --------------------------------------------------------- */
   const sortedStrategies = [...filtered].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    (a, b) =>
+      new Date(b?.created_at || 0).getTime() -
+      new Date(a?.created_at || 0).getTime()
   );
 
   /* ---------------------------------------------------------

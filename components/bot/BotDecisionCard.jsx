@@ -332,34 +332,35 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     NO TRADE STATE
+   NO TRADE STATE
   ===================================================== */
-
+  
   if (!order) {
     return (
       <div className="space-y-5 py-4">
-
+  
         {header}
-
+  
         <div className="tl-surface space-y-4">
-
+  
           <div className="font-medium">
             Geen trade gepland voor vandaag
           </div>
-
+  
+          {/* korte uitleg van de bot */}
           <div className="text-sm text-[var(--text-muted)]">
-            {detail}
+            {summary}
           </div>
-
+  
           <div className="grid gap-4 md:grid-cols-2">
             {botScoreCard}
             {executionCard}
           </div>
-
+  
           {actionButtons}
-
+  
         </div>
-
+  
       </div>
     );
   }

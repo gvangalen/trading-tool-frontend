@@ -78,11 +78,11 @@ const getExposureLabel = (value) => {
 };
 
 const getExposureColor = (value) => {
-  if (value < 0.7) return "text-red-600";
-  if (value < 0.95) return "text-orange-600";
-  if (value <= 1.05) return "text-gray-600 dark:text-gray-300";
-  if (value <= 1.25) return "text-blue-600";
-  return "text-purple-600";
+  if (value < 0.7) return "bg-red-500";
+  if (value < 0.95) return "bg-orange-500";
+  if (value <= 1.05) return "bg-gray-500";
+  if (value <= 1.25) return "bg-blue-500";
+  return "bg-purple-500";
 };
 
 /* =====================================================
@@ -160,6 +160,9 @@ export default function MarketConditionsInline({
   const exposureLabel = getExposureLabel(safeMulti);
   const exposureColor = getExposureColor(safeMulti);
 
+  /* multiplier → score schaal */
+  const exposureScore = clamp(safeMulti * 80);
+
   return (
 
     <div className="flex flex-col gap-3 w-full">
@@ -214,29 +217,15 @@ export default function MarketConditionsInline({
         getLabel={getTrendStrengthLabel}
       />
 
-      {/* POSITION SIZE */}
+      {/* POSITION SIZE (UPDATED) */}
 
-      <div className="flex items-center gap-4 text-sm w-full pt-1">
-
-        <span className="w-5 flex items-center justify-center">
-          <Scale size={16} />
-        </span>
-
-        <span className="w-40 text-gray-600 dark:text-gray-300">
-          Position size
-        </span>
-
-        <div className="flex-1" />
-
-        <span className={`w-20 text-right font-semibold ${exposureColor}`}>
-          {safeMulti.toFixed(2)}×
-        </span>
-
-        <span className="w-36 text-gray-500">
-          {exposureLabel}
-        </span>
-
-      </div>
+      <Bar
+        icon={<Scale size={16} />}
+        label="Position size"
+        value={exposureScore}
+        color={exposureColor}
+        getLabel={() => exposureLabel}
+      />
 
     </div>
   );

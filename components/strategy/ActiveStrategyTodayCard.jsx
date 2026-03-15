@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 
 import { useActiveStrategyToday } from "@/hooks/useAgentData";
-import { useMarketData } from "@/hooks/useMarketData"; // ✅ juiste hook
+import { useMarketData } from "@/hooks/useMarketData";
 
 export default function ActiveStrategyTodayCard() {
   const { strategy, loading } = useActiveStrategyToday();
-  const { btcLive } = useMarketData(); // ✅ live BTC prijs
+  const { btcLive } = useMarketData();
 
   if (loading) {
     return (
@@ -47,10 +47,24 @@ export default function ActiveStrategyTodayCard() {
     confidence_score,
   } = strategy;
 
-  const isDCA = entry === null || entry === undefined;
+  const isDCA = entry === null || entry === undefined || entry === "";
+
   const currentPrice = btcLive?.price ?? null;
 
-  // 🔑 Referentieprijs
+  /* ===============================
+     TARGETS SAFE PARSER
+  =============================== */
+
+  const parsedTargets = Array.isArray(targets)
+    ? targets
+    : typeof targets === "string"
+    ? targets.split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
+
+  /* ===============================
+     REFERENTIE PRIJS
+  =============================== */
+
   const referencePrice = isDCA ? currentPrice : entry;
 
   const priceDiff =
@@ -75,7 +89,7 @@ export default function ActiveStrategyTodayCard() {
         {setup_name} · {symbol} · {timeframe}
       </p>
 
-      {/* Entry / Startprijs */}
+      {/* Entry / Referentie */}
       <div className="flex items-center gap-2 mb-2">
         <Target className="w-4 h-4 text-blue-500" />
         <span className="text-sm text-[var(--text-dark)]">
@@ -83,13 +97,13 @@ export default function ActiveStrategyTodayCard() {
             <>
               <strong>Startprijs (referentie):</strong>{" "}
               {referencePrice
-                ? referencePrice.toLocaleString()
+                ? Number(referencePrice).toLocaleString()
                 : "—"}
             </>
           ) : (
             <>
               <strong>Entry:</strong>{" "}
-              {entry?.toLocaleString() ?? "—"}
+              {entry ? Number(entry).toLocaleString() : "—"}
             </>
           )}
         </span>
@@ -103,7 +117,7 @@ export default function ActiveStrategyTodayCard() {
         </p>
       )}
 
-      {/* Live prijs + performance */}
+      {/* Live prijs */}
       {currentPrice && referencePrice && (
         <div className="flex items-center gap-2 mb-4 text-sm">
           {isPositive ? (
@@ -113,7 +127,7 @@ export default function ActiveStrategyTodayCard() {
           )}
           <span className="text-[var(--text-dark)]">
             <strong>Huidige prijs:</strong>{" "}
-            {currentPrice.toLocaleString()}
+            {Number(currentPrice).toLocaleString()}
             <span
               className={
                 isPositive
@@ -121,22 +135,22 @@ export default function ActiveStrategyTodayCard() {
                   : "text-red-600 ml-1"
               }
             >
-              ({priceDiff.toFixed(2)}%)
+              ({priceDiff?.toFixed(2)}%)
             </span>
           </span>
         </div>
       )}
 
       {/* Targets */}
-      {targets && (
+      {parsedTargets.length > 0 && (
         <div className="mb-3">
           <p className="text-sm font-medium text-[var(--text-dark)] mb-1">
             Targets
           </p>
           <ul className="ml-4 space-y-1">
-            {targets.split(",").map((t, i) => (
+            {parsedTargets.map((t, i) => (
               <li key={i} className="text-sm text-[var(--text-dark)]">
-                • {t.trim()}
+                • {Number(t).toLocaleString()}
               </li>
             ))}
           </ul>
@@ -148,7 +162,7 @@ export default function ActiveStrategyTodayCard() {
         <Shield className="w-4 h-4 text-red-500" />
         <span className="text-sm text-[var(--text-dark)]">
           <strong>Stop-loss:</strong>{" "}
-          {stop_loss?.toLocaleString() ?? "—"}
+          {stop_loss ? Number(stop_loss).toLocaleString() : "—"}
         </span>
       </div>
 

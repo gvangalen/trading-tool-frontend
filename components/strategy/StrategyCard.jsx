@@ -276,4 +276,4 @@ export default function StrategyCard({ strategy, onRefresh }) {
     </div>
   );
 }
-}
+

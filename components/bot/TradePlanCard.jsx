@@ -30,14 +30,161 @@ const fmtPrice = (v) => {
   return n.toLocaleString("nl-NL");
 };
 
-const clampArr = (arr) => {
-  if (Array.isArray(arr)) return arr;
+const toArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (value == null) return [];
 
-  if (typeof arr === "string") {
-    return arr.split(",").map((v) => Number(v.trim()));
+  // JSON string array
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // fall through
+    }
+
+    // comma-separated fallback
+    return trimmed
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
   }
 
-  return [];
+  return [value];
+};
+
+const normalizeTargets = (value) => {
+  const arr = toArray(value);
+
+  return arr
+    .map((item, i) => {
+      // number target
+      if (typeof item === "number") {
+        return {
+          label: `TP${i + 1}`,
+          price: item,
+        };
+      }
+
+      // string target
+      if (typeof item === "string") {
+        const parsed = num(item);
+        if (parsed == null) return null;
+
+        return {
+          label: `TP${i + 1}`,
+          price: parsed,
+        };
+      }
+
+      // object target
+      if (item && typeof item === "object") {
+        const price =
+          num(item.price) ??
+          num(item.target) ??
+          num(item.value) ??
+          null;
+
+        if (price == null) return null;
+
+        return {
+          label: item.label || item.name || `TP${i + 1}`,
+          price,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+};
+
+const normalizeEntryPlan = (value) => {
+  const arr = toArray(value);
+
+  return arr
+    .map((item, i) => {
+      // number entry
+      if (typeof item === "number") {
+        return {
+          type: "watch",
+          label: i === 0 ? "Watch level" : `Watch level ${i + 1}`,
+          price: item,
+        };
+      }
+
+      // string entry
+      if (typeof item === "string") {
+        const parsed = num(item);
+        if (parsed == null) return null;
+
+        return {
+          type: "watch",
+          label: i === 0 ? "Watch level" : `Watch level ${i + 1}`,
+          price: parsed,
+        };
+      }
+
+      // object entry
+      if (item && typeof item === "object") {
+        const price =
+          num(item.price) ??
+          num(item.entry) ??
+          num(item.value) ??
+          null;
+
+        if (price == null) return null;
+
+        return {
+          type: item.type || "watch",
+          label: item.label || item.name || "Entry",
+          price,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+};
+
+const normalizeStopLoss = (value) => {
+  if (value == null) return { price: null };
+
+  if (typeof value === "number") {
+    return { price: value };
+  }
+
+  if (typeof value === "string") {
+    const parsed = num(value);
+    return { price: parsed };
+  }
+
+  if (typeof value === "object") {
+    return {
+      ...value,
+      price:
+        num(value.price) ??
+        num(value.stop_loss) ??
+        num(value.value) ??
+        null,
+    };
+  }
+
+  return { price: null };
+};
+
+const normalizeRisk = (value) => {
+  if (!value || typeof value !== "object") {
+    return { rr: null, risk_eur: null };
+  }
+
+  return {
+    rr: value.rr ?? value.risk_reward ?? null,
+    risk_eur: num(value.risk_eur) ?? null,
+  };
 };
 
 /* =========================
@@ -65,51 +212,24 @@ export default function TradePlanCard({
   const derived = useMemo(() => {
     const fallbackPlan = tradePlan || decision?.trade_plan || null;
 
-    if (!fallbackPlan) {
+    if (!fallbackPlan || typeof fallbackPlan !== "object") {
       return {
         symbol: decision?.symbol || "BTC",
         side: decision?.action || "observe",
         entry_plan: [],
         stop_loss: { price: null },
         targets: [],
-        risk: null,
+        risk: { rr: null, risk_eur: null },
       };
     }
 
-    const normalizedTargets = clampArr(fallbackPlan.targets)
-      .map((t, i) => {
-        // number targets
-        if (typeof t === "number") {
-          return {
-            label: `TP${i + 1}`,
-            price: t,
-          };
-        }
-
-        // object targets
-        if (typeof t === "object") {
-          return {
-            label: t.label || `TP${i + 1}`,
-            price: t.price,
-          };
-        }
-
-        return null;
-      })
-      .filter(Boolean);
-
     return {
-      ...fallbackPlan,
-
-      entry_plan: clampArr(fallbackPlan.entry_plan),
-
-      targets: normalizedTargets,
-
       symbol: fallbackPlan.symbol || decision?.symbol || "BTC",
-
       side: fallbackPlan.side || decision?.action || "observe",
-
-      stop_loss: fallbackPlan.stop_loss || { price: null },
+      entry_plan: normalizeEntryPlan(fallbackPlan.entry_plan),
+      stop_loss: normalizeStopLoss(fallbackPlan.stop_loss),
+      targets: normalizeTargets(fallbackPlan.targets),
+      risk: normalizeRisk(fallbackPlan.risk),
     };
   }, [tradePlan, decision]);
 
@@ -160,16 +280,16 @@ export default function TradePlanCard({
         ) : (
           derived.entry_plan.map((e, i) => {
             const label =
-              e.label ||
-              (e.type === "limit"
+              e?.label ||
+              (e?.type === "limit"
                 ? "Limit entry"
-                : e.type === "market"
+                : e?.type === "market"
                 ? "Market entry"
-                : e.type === "watch"
+                : e?.type === "watch"
                 ? "Watch level"
                 : "Entry");
 
-            const isWatch = e.type === "watch";
+            const isWatch = e?.type === "watch";
 
             return (
               <div
@@ -181,9 +301,7 @@ export default function TradePlanCard({
                 }`}
               >
                 <div className="font-medium">{label}</div>
-                <div className="font-semibold">
-                  €{fmtPrice(e.price)}
-                </div>
+                <div className="font-semibold">€{fmtPrice(e?.price)}</div>
               </div>
             );
           })
@@ -207,10 +325,8 @@ export default function TradePlanCard({
         ) : (
           derived.targets.map((t, i) => (
             <div key={i} className="flex justify-between">
-              <span>{t.label}</span>
-              <span className="font-semibold">
-                €{fmtPrice(t.price)}
-              </span>
+              <span>{t?.label || `TP${i + 1}`}</span>
+              <span className="font-semibold">€{fmtPrice(t?.price)}</span>
             </div>
           ))
         )}

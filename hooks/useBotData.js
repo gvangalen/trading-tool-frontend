@@ -209,85 +209,80 @@ export default function useBotData() {
   ===================================================== */
 
   const loadTradePlan = useCallback(
-    async (decision_id, { force = false } = {}) => {
+  async (decision_id) => {
 
-      if (!decision_id) return;
+    if (!decision_id) return;
 
-      if (!force && tradePlans[decision_id]) return;
+    setLoading((l) => ({ ...l, tradePlan: true }));
+    setError(null);
 
-      setLoading((l) => ({ ...l, tradePlan: true }));
+    try {
 
-      try {
+      // 🔥 ALTIJD ophalen → GEEN cache block
+      const plan = await fetchTradePlan(decision_id);
 
-        const plan = await fetchTradePlan(decision_id);
+      setTradePlans((prev) => ({
+        ...prev,
+        [decision_id]: plan || {},
+      }));
 
-        setTradePlans((prev) => ({
-          ...prev,
-          [decision_id]: plan,
-        }));
+      return plan;
 
-        return plan;
+    } catch (err) {
 
-      } catch (err) {
+      console.error("Trade plan load failed", err);
+      setError(err.message || "Trade plan laden mislukt");
+      return null;
 
-        console.error("Trade plan load failed", err);
-        return null;
+    } finally {
 
-      } finally {
+      setLoading((l) => ({ ...l, tradePlan: false }));
 
-        setLoading((l) => ({ ...l, tradePlan: false }));
+    }
 
-      }
-
-    },
-    [tradePlans]
-  );
+  },
+  []
+);
 
   /* =====================================================
      💾 SAVE TRADE PLAN
   ===================================================== */
 
   const saveTradePlanForDecision = useCallback(
-    async ({ bot_id = null, decision_id, draft }) => {
+  async ({ decision_id, draft }) => {
 
-      if (!decision_id) throw new Error("decision_id is verplicht");
+    if (!decision_id) throw new Error("decision_id is verplicht");
 
-      setLoading((l) => ({ ...l, saveTradePlan: true }));
+    setLoading((l) => ({ ...l, saveTradePlan: true }));
+    setError(null);
 
-      try {
+    try {
 
-        const saved = await saveTradePlan(decision_id, draft);
+      const saved = await saveTradePlan(decision_id, draft);
 
-        const plan = saved?.trade_plan || {};
+      // 🔥 DIRECT UI UPDATE → GEEN reload nodig
+      setTradePlans((prev) => ({
+        ...prev,
+        [decision_id]: saved || {},
+      }));
 
-        setTradePlans((prev) => ({
-          ...prev,
-          [decision_id]: plan,
-        }));
+      return saved;
 
-        await Promise.all([
-          loadToday(),
-          loadPortfolios(),
-          ...(bot_id ? [loadTradesForBot(bot_id)] : []),
-        ]);
+    } catch (err) {
 
-        return plan;
+      console.error("saveTradePlan failed", err);
+      setError(err.message || "Opslaan mislukt");
+      throw err;
 
-      } catch (err) {
+    } finally {
 
-        console.error("saveTradePlan failed", err);
-        setError(err.message || "Trade plan opslaan mislukt");
-        throw err;
+      setLoading((l) => ({ ...l, saveTradePlan: false }));
 
-      } finally {
+    }
 
-        setLoading((l) => ({ ...l, saveTradePlan: false }));
-
-      }
-
-    },
-    [loadToday, loadPortfolios, loadTradesForBot]
-  );
+  },
+  []
+);
 
   /* =====================================================
      🧠 DERIVED

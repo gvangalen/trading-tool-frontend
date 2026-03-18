@@ -388,109 +388,121 @@ function BotPageInner() {
   };
 
   /* =========================
-     RENDER
-  ========================= */
+   RENDER
+========================= */
 
-  return (
-    <div className="bg-[var(--surface-1)] pt-6 pb-10 animate-fade-slide">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
-        <div className="space-y-10">
-          <div className="flex items-center gap-3">
-            <Wallet />
-            <h1 className="text-2xl font-semibold">Portfolio Management</h1>
-          </div>
+return (
+  <div className="bg-[var(--surface-1)] pt-6 pb-10 animate-fade-slide">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
 
-          <BotScores scores={dailyScores} loading={loading?.today} />
+      {/* LEFT */}
+      <div className="space-y-10">
 
-          <PortfolioBalanceCard
-            title="Portfolio balance"
-            defaultRange="1W"
-            dataByRange={portfolioBalanceDataByRange}
-          />
+        <div className="flex items-center gap-3">
+          <Wallet />
+          <h1 className="text-2xl font-semibold">Portfolio Management</h1>
+        </div>
 
-          <BotPortfolioOverview bots={aggregatedBotsForOverview} />
+        <BotScores scores={dailyScores} loading={loading?.today} />
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Bots</h2>
+        <PortfolioBalanceCard
+          title="Portfolio balance"
+          defaultRange="1W"
+          dataByRange={portfolioBalanceDataByRange}
+        />
 
-            <button
-              onClick={handleAddBot}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Nieuwe bot
-            </button>
-          </div>
+        <BotPortfolioOverview bots={aggregatedBotsForOverview} />
 
-          <div className="space-y-6">
-            {bots.map((bot) => {
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Bots</h2>
 
-              const portfolio = portfolios.find(
-                (p) => p.bot_id === bot.id
-              );
-            
-              const decision = decisionsByBot?.[bot.id];
-            
-              const order = (today?.orders || []).find(
-                (o) => o.bot_id === bot.id
-              );
-            
-              const trades = tradesByBot?.[bot.id] ?? [];
-            
-              const isActive = activeBot?.id === bot.id;
-            
-              return (
-                <div
-                  key={bot.id}
-                  onClick={(e) => {
-                    if (
-                      e.target.closest("button") ||
-                      e.target.closest("input") ||
-                      e.target.closest("select") ||
-                      e.target.closest("textarea") ||
-                      e.target.closest("[data-no-select]")
-                    ) {
-                      return;
-                    }
-            
-                    setActiveBot(bot);
-                  }}
-                  className={`cursor-pointer transition ${
-                    isActive
-                      ? "ring-2 ring-[var(--primary)] rounded-2xl"
-                      : ""
-                  }`}
-                >
-                  <BotAgentCard
-                    bot={bot}
-                    decision={decision}
-                    order={order}
-                    marketIntelligence={marketIntelligence}
-                    loadingMarketIntelligence={loadingMarketIntelligence}
-                    portfolio={portfolio}
-                    trades={trades}
-                    history={history}
-                    loadingDecision={generatingBotId === bot.id}
-            
-                    onGenerate={() => handleGenerateDecision(bot)}
-                    onExecute={() => handleExecuteBot(bot)}
-                    onSkip={() => handleSkipBot(bot)}
-            
-                    onOpenSettings={handleOpenBotSettings}
-                    onSaveTradePlan={handleSaveTradePlan}
-                    onPlaceManualOrder={handleManualTrade}
-                  />
-                </div>
-              );
-            })}
-            
-            </div> {/* 🔥 DEZE MISte bij jou */}
-            
-            </div> {/* linker kolom */}
-            
-            <div className="lg:sticky lg:top-24 space-y-4">
-              <GlobalTradePanel />
-            </div>
+          <button
+            onClick={handleAddBot}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Nieuwe bot
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {bots.map((bot) => {
+
+            const portfolio = portfolios.find(
+              (p) => p.bot_id === bot.id
+            );
+
+            const decision = decisionsByBot?.[bot.id];
+
+            const order = (today?.orders || []).find(
+              (o) => o.bot_id === bot.id
+            );
+
+            const trades = tradesByBot?.[bot.id] ?? [];
+
+            const isActive = activeBot?.id === bot.id;
+
+            return (
+              <div
+                key={bot.id}
+                onClick={(e) => {
+                  if (
+                    e.target.closest("button") ||
+                    e.target.closest("input") ||
+                    e.target.closest("select") ||
+                    e.target.closest("textarea") ||
+                    e.target.closest("[data-no-select]")
+                  ) {
+                    return;
+                  }
+
+                  setActiveBot(bot);
+                }}
+                className={`cursor-pointer transition ${
+                  isActive
+                    ? "ring-2 ring-[var(--primary)] rounded-2xl"
+                    : ""
+                }`}
+              >
+                <BotAgentCard
+                  bot={bot}
+                  decision={decision}
+                  order={order}
+                  marketIntelligence={marketIntelligence}
+                  loadingMarketIntelligence={loadingMarketIntelligence}
+                  portfolio={portfolio}
+                  trades={trades}
+                  history={history}
+                  loadingDecision={generatingBotId === bot.id}
+
+                  onGenerate={() => handleGenerateDecision(bot)}
+                  onExecute={() => handleExecuteBot(bot)}
+                  onSkip={() => handleSkipBot(bot)}
+
+                  onOpenSettings={handleOpenBotSettings}
+                  onSaveTradePlan={handleSaveTradePlan}
+                  onPlaceManualOrder={handleManualTrade}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+      </div> {/* END LEFT */}
+
+      {/* RIGHT */}
+      <div className="lg:sticky lg:top-24 space-y-4">
+        <GlobalTradePanel />
+      </div>
+
+    </div> {/* END GRID */}
+  </div>
+);
+
+/* =========================
+   END COMPONENT
+========================= */
+}
 
 /* =====================================================
    EXPORT

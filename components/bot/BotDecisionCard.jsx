@@ -23,6 +23,10 @@ export default function BotTodayProposal({
   isAuto = false,
 }) {
 
+  /* =====================================================
+     LOADING / EMPTY
+  ===================================================== */
+
   if (loading) {
     return (
       <div className="py-6">
@@ -46,43 +50,37 @@ export default function BotTodayProposal({
   ===================================================== */
 
   const strategyMultiplier = Number(decision.exposure_multiplier ?? 1);
+  const safeStrategyMultiplier = Number.isFinite(strategyMultiplier) ? strategyMultiplier : 1;
 
-  const safeStrategyMultiplier = Number.isFinite(strategyMultiplier)
-    ? strategyMultiplier
-    : 1;
-
-  const marketMultiplier = Number(
-    decision?.metrics?.position_size ?? 1
-  );
-
-  const safeMarketMultiplier = Number.isFinite(marketMultiplier)
-    ? marketMultiplier
-    : 1;
+  const marketMultiplier = Number(decision?.metrics?.position_size ?? 1);
+  const safeMarketMultiplier = Number.isFinite(marketMultiplier) ? marketMultiplier : 1;
 
   const deviation = safeStrategyMultiplier - safeMarketMultiplier;
 
   const deviationLabel =
-    deviation > 0
-      ? "Higher risk"
-      : deviation < 0
-      ? "Safer than market"
-      : "Aligned";
+    deviation > 0 ? "Higher risk"
+    : deviation < 0 ? "Safer than market"
+    : "Aligned";
 
   const deviationColor =
-    deviation > 0
-      ? "text-red-600"
-      : deviation < 0
-      ? "text-emerald-600"
-      : "text-[var(--text-muted)]";
+    deviation > 0 ? "text-red-600"
+    : deviation < 0 ? "text-emerald-600"
+    : "text-[var(--text-muted)]";
 
   /* =====================================================
-     EXECUTION CONTEXT
+     EXECUTION CONTEXT (🔥 FIXED)
   ===================================================== */
 
   const executionMode = decision.execution_mode || "fixed";
   const curveName = decision.decision_curve_name || null;
 
-  const baseAmount = Number(decision.base_amount ?? 0);
+  // 🔥 FIX: juiste fallback chain
+  const baseAmount = Number(
+    decision.base_amount ??
+    decision.requested_amount_eur ??
+    decision.amount_eur ??
+    0
+  );
 
   const executionLabel =
     executionMode === "custom"
@@ -114,15 +112,21 @@ export default function BotTodayProposal({
     : null;
 
   /* =====================================================
-     SETUP MATCH
+     SETUP MATCH (🔥 FIXED)
   ===================================================== */
 
-  const setupMatch = decision.setup_match ?? null;
+  const setupMatch = decision.setup_match || null;
 
-  const score =
-    typeof setupMatch?.score === "number"
-      ? Math.min(setupMatch.score, 100)
-      : decision.market_score ?? 10;
+  // 🔥 FIX: correcte score fallback
+  const score = (() => {
+    if (typeof setupMatch?.score === "number") {
+      return Math.min(setupMatch.score, 100);
+    }
+    if (typeof decision?.scores?.total === "number") {
+      return Math.min(decision.scores.total, 100);
+    }
+    return 10;
+  })();
 
   const setupName = setupMatch?.name ?? "Geen strategy match";
   const setupSymbol = setupMatch?.symbol ?? "—";
@@ -136,7 +140,16 @@ export default function BotTodayProposal({
     setupMatch?.detail ??
     "De bot wacht op betere marktomstandigheden.";
 
-  const hasTrade = !!order;
+  /* =====================================================
+     TRADE DETECTIE (🔥 BELANGRIJK FIX)
+  ===================================================== */
+
+  const hasTrade =
+    !!order ||
+    (
+      decision.action !== "hold" &&
+      Number(decision.amount_eur ?? 0) > 0
+    );
 
   const canExecute =
     !isAuto &&
@@ -180,8 +193,6 @@ export default function BotTodayProposal({
         )}
       </div>
 
-      {/* Market suggestion */}
-
       <div className="flex items-center justify-between text-xs">
         <span className="text-[var(--text-muted)]">
           Market suggestion
@@ -191,8 +202,6 @@ export default function BotTodayProposal({
         </span>
       </div>
 
-      {/* Strategy exposure */}
-
       <div className="flex items-center justify-between text-xs">
         <span className="text-[var(--text-muted)]">
           Strategy exposure
@@ -201,8 +210,6 @@ export default function BotTodayProposal({
           {safeStrategyMultiplier.toFixed(2)}×
         </span>
       </div>
-
-      {/* Deviation FIX */}
 
       <div className="flex items-start justify-between text-xs gap-2">
         <span className="text-[var(--text-muted)]">
@@ -233,7 +240,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     STRATEGY MATCH CARD
+     STRATEGY CARD
   ===================================================== */
 
   const botScoreCard = (
@@ -286,7 +293,7 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-     ACTION BUTTONS
+     ACTIONS
   ===================================================== */
 
   const actionButtons = (
@@ -313,7 +320,7 @@ export default function BotTodayProposal({
           className="btn-secondary flex items-center gap-2"
         >
           <SkipForward size={16} />
-          {order ? "Sla trade over" : "Sla over"}
+          {hasTrade ? "Sla trade over" : "Sla over"}
         </button>
       )}
 
@@ -332,38 +339,39 @@ export default function BotTodayProposal({
   );
 
   /* =====================================================
-   NO TRADE STATE
+     NO TRADE
   ===================================================== */
-  
-  if (!order) {
+
+  if (!hasTrade) {
     return (
       <div className="space-y-5 py-4">
-  
         {header}
-  
+
         <div className="tl-surface space-y-4">
-  
+
           <div className="font-medium">
             Geen trade gepland voor vandaag
           </div>
-  
-          {/* korte uitleg van de bot */}
+
           <div className="text-sm text-[var(--text-muted)]">
             {summary}
           </div>
-  
+
           <div className="grid gap-4 md:grid-cols-2">
             {botScoreCard}
             {executionCard}
           </div>
-  
+
           {actionButtons}
-  
+
         </div>
-  
       </div>
     );
   }
+
+  /* =====================================================
+     WITH TRADE
+  ===================================================== */
 
   return (
     <div className="space-y-5 py-4">
@@ -373,8 +381,8 @@ export default function BotTodayProposal({
       <div className="tl-surface space-y-4">
 
         <div className="text-2xl font-semibold">
-          {(order.side ?? "buy").toUpperCase()}{" "}
-          {order.symbol ?? "—"}
+          {(order?.side ?? decision.action ?? "buy").toUpperCase()}{" "}
+          {order?.symbol ?? decision.symbol ?? "—"}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

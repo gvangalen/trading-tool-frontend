@@ -210,7 +210,7 @@ export default function TradePlanCard({
   loading = false,
 }) {
   const derived = useMemo(() => {
-    const fallbackPlan = tradePlan || decision?.trade_plan || null;
+    const fallbackPlan = decision?.trade_plan || tradePlan || null;
 
     if (!fallbackPlan || typeof fallbackPlan !== "object") {
       return {

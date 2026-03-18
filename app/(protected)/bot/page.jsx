@@ -473,28 +473,24 @@ function BotPageInner() {
                     loadingDecision={generatingBotId === bot.id}
             
                     onGenerate={() => handleGenerateDecision(bot)}
-            
-                    /* 🔥 FIX */
                     onExecute={() => handleExecuteBot(bot)}
                     onSkip={() => handleSkipBot(bot)}
             
                     onOpenSettings={handleOpenBotSettings}
                     onSaveTradePlan={handleSaveTradePlan}
-            
                     onPlaceManualOrder={handleManualTrade}
                   />
                 </div>
               );
             })}
-          </div>
-
-        <div className="lg:sticky lg:top-24 space-y-4">
-          <GlobalTradePanel />
-        </div>
-      </div>
-    </div>
-  );
-}
+            
+            </div> {/* 🔥 DEZE MISte bij jou */}
+            
+            </div> {/* linker kolom */}
+            
+            <div className="lg:sticky lg:top-24 space-y-4">
+              <GlobalTradePanel />
+            </div>
 
 /* =====================================================
    EXPORT

@@ -212,36 +212,55 @@ function BotPageInner() {
     }
   };
 
-  const handleExecuteBot = async ({ bot_id }) => {
+  const handleExecuteBot = async (bot) => {
     try {
-      setExecutingBotId(bot_id);
-
-      const decision = decisionsByBot?.[bot_id];
+      if (!bot?.id) {
+        showSnackbar("Geen bot_id", "danger");
+        return;
+      }
+  
+      setExecutingBotId(bot.id);
+  
+      const decision = decisionsByBot?.[bot.id];
       const decision_id = decision?.id ?? decision?.decision_id;
-
+  
       if (!decision_id) {
         showSnackbar("Geen decision_id gevonden", "danger");
         return;
       }
-
-      await executeBot({ bot_id, decision_id });
-
+  
+      await executeBot({
+        bot_id: bot.id,
+        decision_id,
+      });
+  
       showSnackbar("Bot uitgevoerd", "success");
-    } catch {
+  
+    } catch (e) {
+      console.error(e);
       showSnackbar("Uitvoeren mislukt", "danger");
     } finally {
       setExecutingBotId(null);
     }
   };
 
-  const handleSkipBot = async ({ bot_id }) => {
+  const handleSkipBot = async (bot) => {
     try {
-      setExecutingBotId(bot_id);
-
-      await skipBot({ bot_id });
-
+      if (!bot?.id) {
+        showSnackbar("Geen bot_id", "danger");
+        return;
+      }
+  
+      setExecutingBotId(bot.id);
+  
+      await skipBot({
+        bot_id: bot.id,
+      });
+  
       showSnackbar("Bot overgeslagen", "info");
-    } catch {
+  
+    } catch (e) {
+      console.error(e);
       showSnackbar("Overslaan mislukt", "danger");
     } finally {
       setExecutingBotId(null);
@@ -405,19 +424,21 @@ function BotPageInner() {
 
           <div className="space-y-6">
             {bots.map((bot) => {
+
               const portfolio = portfolios.find(
                 (p) => p.bot_id === bot.id
               );
-
+            
               const decision = decisionsByBot?.[bot.id];
-              const order = today?.orders?.find(
+            
+              const order = (today?.orders || []).find(
                 (o) => o.bot_id === bot.id
               );
-
+            
               const trades = tradesByBot?.[bot.id] ?? [];
-
+            
               const isActive = activeBot?.id === bot.id;
-
+            
               return (
                 <div
                   key={bot.id}
@@ -431,7 +452,7 @@ function BotPageInner() {
                     ) {
                       return;
                     }
-
+            
                     setActiveBot(bot);
                   }}
                   className={`cursor-pointer transition ${
@@ -450,18 +471,21 @@ function BotPageInner() {
                     trades={trades}
                     history={history}
                     loadingDecision={generatingBotId === bot.id}
+            
                     onGenerate={() => handleGenerateDecision(bot)}
-                    onExecute={handleExecuteBot}
-                    onSkip={handleSkipBot}
+            
+                    /* 🔥 FIX */
+                    onExecute={() => handleExecuteBot(bot)}
+                    onSkip={() => handleSkipBot(bot)}
+            
                     onOpenSettings={handleOpenBotSettings}
                     onSaveTradePlan={handleSaveTradePlan}
+            
                     onPlaceManualOrder={handleManualTrade}
                   />
                 </div>
               );
             })}
-          </div>
-        </div>
 
         <div className="lg:sticky lg:top-24 space-y-4">
           <GlobalTradePanel />

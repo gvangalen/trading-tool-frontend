@@ -97,7 +97,7 @@ export default function BotAgentCard({
   useEffect(() => {
     console.log("🤖 BOT", bot);
     console.log("📊 DECISION RAW", decision);
-    console.log("📦 SCORES_JSON", decision?.scores_json);
+    console.log("📦 SCORES_JSON", normalizedDecision?.scores_json);
     console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
     console.log("🧭 TRADE PLAN RAW", decision?.trade_plan);
   }, [bot, decision]);
@@ -480,7 +480,7 @@ export default function BotAgentCard({
             Loading market intelligence...
           </div>
         ) : (
-          <MarketDecisionCard decision={marketIntelligence} />
+          <MarketDecisionCard decision={normalizedDecision} />
         )}
       </div>
 

@@ -30,33 +30,37 @@ const scores = decision?.scores_json || {};
 const metrics = decision?.metrics || {};
 
 // 🔥 combine beide (safety)
+const rawPressure =
+  scores?.market_pressure ??
+  metrics?.market_pressure ??
+  null;
+
+const rawTransitionRisk =
+  scores?.transition_risk ??
+  metrics?.transition_risk ??
+  null;
+
+const rawHealth =
+  scores?.setup_quality ??
+  metrics?.setup_quality ??
+  50;
+
+const rawMultiplier =
+  scores?.position_size ??
+  metrics?.position_size ??
+  1;
+
 const pressure =
-  Number(
-    scores?.market_pressure ??
-    metrics?.market_pressure ??
-    null
-  );
+  rawPressure === null ? null : Number(rawPressure);
 
 const transitionRisk =
-  Number(
-    scores?.transition_risk ??
-    metrics?.transition_risk ??
-    null
-  );
+  rawTransitionRisk === null ? null : Number(rawTransitionRisk);
 
 const health =
-  Number(
-    scores?.setup_quality ??
-    metrics?.setup_quality ??
-    50
-  );
+  rawHealth === null ? null : Number(rawHealth);
 
 const exposureMultiplier =
-  Number(
-    scores?.position_size ??
-    metrics?.position_size ??
-    1
-  );
+  rawMultiplier === null ? null : Number(rawMultiplier);
 
   /* ======================================
      MARKET STRUCTURE

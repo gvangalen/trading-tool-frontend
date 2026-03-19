@@ -77,7 +77,6 @@ export default function BotAgentCard({
     "LOW";
 
   /* ================= BOT STATE ================= */
-
   const normalizedAction = String(safeDecision?.action || "").toLowerCase();
 
   const botState = bot?.is_active
@@ -87,20 +86,14 @@ export default function BotAgentCard({
     : "paused";
 
   const lastRun =
-    safeDecision?.created_at
-      ? new Date(safeDecision.created_at).toLocaleTimeString("nl-NL", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : safeDecision?.updated_at
-      ? new Date(safeDecision.updated_at).toLocaleTimeString("nl-NL", {
+    bot?.last_run
+      ? new Date(bot.last_run).toLocaleTimeString("nl-NL", {
           hour: "2-digit",
           minute: "2-digit",
         })
       : null;
 
   /* ================= DEBUG ================= */
-
   useEffect(() => {
     console.log("🤖 BOT", bot);
     console.log("📊 DECISION RAW", decision);
@@ -110,7 +103,6 @@ export default function BotAgentCard({
   }, [bot, decision]);
 
   /* ================= REFRESH ON BUDGET UPDATE ================= */
-
   useEffect(() => {
     const handleBudgetUpdate = () => {
       console.log("🔄 Budget updated → refreshing bot decision");
@@ -125,82 +117,82 @@ export default function BotAgentCard({
   }, [bot, onGenerate]);
 
   /* ================= NORMALIZE DECISION ================= */
-
   const normalizedDecision = useMemo(() => {
-    const scores = safeDecision?.scores_json || {};
-    const guardrails = safeDecision?.guardrails_result || safeDecision?.guardrails || {};
-    const tradePlan = safeDecision?.trade_plan || {};
+  const scores = safeDecision?.scores_json || {};
+  const guardrails =
+    safeDecision?.guardrails_result ||
+    safeDecision?.guardrails ||
+    {};
+  const tradePlan = safeDecision?.trade_plan || {};
 
-    const normalized = {
-      ...safeDecision,
+  const normalized = {
+    ...safeDecision,
 
-      scores_json: scores,
+    scores_json: scores,
 
-      guardrails_result: guardrails,
-      guardrails: guardrails,
+    guardrails_result: guardrails,
+    guardrails: guardrails,
 
-      trade_plan: tradePlan,
+    trade_plan: tradePlan,
 
-      transition_risk:
-        scores?.transition_risk ??
-        safeDecision?.transition_risk ??
-        0,
+    transition_risk:
+      scores?.transition_risk ??
+      safeDecision?.transition_risk ??
+      null,
 
-      market_pressure:
-        scores?.market_pressure ??
-        safeDecision?.market_pressure ??
-        0,
+    // 🔥 FIX → GEEN fallback 0
+    market_pressure:
+      scores?.market_pressure ??
+      safeDecision?.market_pressure ??
+      null,
 
-      warnings:
-        scores?.warnings ??
-        safeDecision?.warnings ??
-        [],
+    warnings:
+      scores?.warnings ??
+      safeDecision?.warnings ??
+      [],
 
-      requested_amount_eur:
-        safeDecision?.requested_amount_eur ??
-        scores?.requested_amount_eur ??
-        0,
+    requested_amount_eur:
+      safeDecision?.requested_amount_eur ??
+      scores?.requested_amount_eur ??
+      0,
 
-      amount_eur:
-        safeDecision?.amount_eur ??
-        scores?.amount_eur ??
-        0,
+    amount_eur:
+      safeDecision?.amount_eur ??
+      scores?.amount_eur ??
+      0,
 
-      exposure_multiplier:
-        safeDecision?.exposure_multiplier ??
-        scores?.exposure_multiplier ??
-        scores?.position_size ??
-        1,
+    exposure_multiplier:
+      safeDecision?.exposure_multiplier ??
+      scores?.exposure_multiplier ??
+      scores?.position_size ??
+      1,
 
-      base_amount:
-        safeDecision?.base_amount ??
-        scores?.base_amount ??
-        safeDecision?.requested_amount_eur ??
-        0,
+    base_amount:
+      safeDecision?.base_amount ??
+      scores?.base_amount ??
+      safeDecision?.requested_amount_eur ??
+      0,
 
-      execution_mode:
-        safeDecision?.execution_mode ??
-        scores?.execution_mode ??
-        "fixed",
+    execution_mode:
+      safeDecision?.execution_mode ??
+      scores?.execution_mode ??
+      "fixed",
 
-      decision_curve_name:
-        safeDecision?.decision_curve_name ??
-        scores?.decision_curve_name ??
-        null,
+    decision_curve_name:
+      safeDecision?.decision_curve_name ??
+      scores?.decision_curve_name ??
+      null,
 
-      setup_match:
-        safeDecision?.setup_match ??
-        scores?.setup_match ??
-        null,
-    };
+    setup_match:
+      safeDecision?.setup_match ??
+      scores?.setup_match ??
+      null,
+  };
 
-    console.log("🧠 NORMALIZED DECISION", normalized);
-
-    return normalized;
-  }, [safeDecision]);
+  return normalized;
+}, [safeDecision]);
 
   /* ================= HISTORY ================= */
-
   const combinedHistory = useMemo(() => {
     const botHistory = (history || []).filter((h) => h.bot_id === bot.id);
 
@@ -313,13 +305,12 @@ export default function BotAgentCard({
   };
 
   /* ================= PLAN SOURCE ================= */
-
   const planSource = useMemo(() => {
     return normalizedDecision?.trade_plan || null;
-  }, [normalizedDecision]);
+  }, [normalizedDecision?.trade_plan]);
 
+  
   /* ================= ORDER STATE ================= */
-
   const hasExecutableTrade = useMemo(() => {
     if (order) return true;
 

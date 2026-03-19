@@ -23,20 +23,40 @@ export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
-   ENGINE METRICS (Bot Brain API)
-  ====================================== */
+   ENGINE METRICS (FIXED)
+====================================== */
 
-  const pressure =
-    Number(decision?.metrics?.market_pressure ?? 0);
+const scores = decision?.scores_json || {};
+const metrics = decision?.metrics || {};
 
-  const transitionRisk =
-    Number(decision?.metrics?.transition_risk ?? 0);
+// 🔥 combine beide (safety)
+const pressure =
+  Number(
+    scores?.market_pressure ??
+    metrics?.market_pressure ??
+    null
+  );
 
-  const health =
-    Number(decision?.metrics?.setup_quality ?? 50);
+const transitionRisk =
+  Number(
+    scores?.transition_risk ??
+    metrics?.transition_risk ??
+    null
+  );
 
-  const exposureMultiplier =
-    Number(decision?.metrics?.position_size ?? 1);
+const health =
+  Number(
+    scores?.setup_quality ??
+    metrics?.setup_quality ??
+    50
+  );
+
+const exposureMultiplier =
+  Number(
+    scores?.position_size ??
+    metrics?.position_size ??
+    1
+  );
 
   /* ======================================
      MARKET STRUCTURE

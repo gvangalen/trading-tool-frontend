@@ -51,8 +51,8 @@ function BotPageInner() {
     deleteBot,
 
     generateDecisionForBot,
-    executeBot,
-    skipBot,
+    executeBotDecision, 
+    skipBot, 
 
     saveTradePlanForDecision,
     createManualOrder,
@@ -212,6 +212,10 @@ function BotPageInner() {
     }
   };
 
+
+  /* =========================
+     EXECUTE BOT
+  ========================= */
   const handleExecuteBot = async (bot) => {
     try {
       if (!bot?.id) {
@@ -229,7 +233,7 @@ function BotPageInner() {
         return;
       }
   
-      await executeBot({
+      await executeBotDecision({
         bot_id: bot.id,
         decision_id,
       });
@@ -244,6 +248,9 @@ function BotPageInner() {
     }
   };
 
+  /* =========================
+     SKIP BOT
+  ========================= */
   const handleSkipBot = async (bot) => {
     try {
       if (!bot?.id) {
@@ -270,7 +277,6 @@ function BotPageInner() {
   /* =========================
      ADD BOT
   ========================= */
-
   const handleAddBot = () => {
     formRef.current = {};
 
@@ -299,7 +305,6 @@ function BotPageInner() {
   /* =========================
      SETTINGS
   ========================= */
-
   const handleOpenBotSettings = async (type, bot) => {
     if (!bot) return;
 

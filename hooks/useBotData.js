@@ -410,36 +410,118 @@ export default function useBotData() {
 
   const generateDecisionForBot = useCallback(
     async ({ bot_id }) => {
-
+  
       setLoading((l) => ({ ...l, generate: true }));
-
+  
       try {
-
+  
         const res = await generateBotDecision({ bot_id });
-
+  
         await Promise.all([
           loadToday(),
           loadHistory(30),
           loadPortfolios(),
           loadTradesForBot(bot_id),
+          loadConfigs(), // 🔥 FIX → last_run + status
         ]);
-
+  
         return res;
-
+  
       } catch (err) {
-
+  
         console.error(err);
         setError(err.message);
-
+  
       } finally {
-
+  
         setLoading((l) => ({ ...l, generate: false }));
-
+  
       }
-
+  
     },
-    [loadToday, loadHistory, loadPortfolios, loadTradesForBot]
+    [loadToday, loadHistory, loadPortfolios, loadTradesForBot, loadConfigs]
   );
+
+/* =====================================================
+     🔁 Execute Bot Decision
+  ===================================================== */
+const executeBotDecision = useCallback(
+  async ({ bot_id, decision_id }) => {
+
+    if (!bot_id || !decision_id) {
+      throw new Error("bot_id en decision_id verplicht");
+    }
+
+    setLoading((l) => ({ ...l, action: true }));
+
+    try {
+
+      const res = await markBotExecuted({ bot_id, decision_id });
+
+      await Promise.all([
+        loadToday(),
+        loadHistory(30),
+        loadPortfolios(),
+        loadTradesForBot(bot_id),
+        loadConfigs(), // 🔥 last_run fix
+      ]);
+
+      return res;
+
+    } catch (err) {
+
+      console.error(err);
+      setError(err.message);
+
+    } finally {
+
+      setLoading((l) => ({ ...l, action: false }));
+
+    }
+
+  },
+  [loadToday, loadHistory, loadPortfolios, loadTradesForBot, loadConfigs]
+);
+
+/* =====================================================
+     🔁 Skip Bot Decision
+  ===================================================== */  
+const skipBot = useCallback(
+  async ({ bot_id }) => {
+
+    if (!bot_id) {
+      throw new Error("bot_id verplicht");
+    }
+
+    setLoading((l) => ({ ...l, action: true }));
+
+    try {
+
+      const res = await skipBotToday({ bot_id });
+
+      await Promise.all([
+        loadToday(),
+        loadHistory(30),
+        loadPortfolios(),
+        loadConfigs(), // 🔥 last_run fix
+      ]);
+
+      return res;
+
+    } catch (err) {
+
+      console.error(err);
+      setError(err.message);
+
+    } finally {
+
+      setLoading((l) => ({ ...l, action: false }));
+
+    }
+
+  },
+  [loadToday, loadHistory, loadPortfolios, loadConfigs]
+);  
 
   /* =====================================================
      🔁 INIT LOAD
@@ -466,22 +548,26 @@ export default function useBotData() {
     portfolios,
     tradesByBot,
     tradePlans,
-
+  
     decisionsByBot,
     ordersByBot,
-
+  
     loading,
     error,
-
+  
     createBot,
     updateBot,
     deleteBot,
-
+  
     generateDecisionForBot,
+  
+    // 🔥 NIEUW
+    executeBotDecision,
+    skipBot,
+  
     loadTradesForBot,
     loadTradePlan,
     saveTradePlanForDecision,
     createManualOrder: apiCreateManualOrder,
   };
-
 }

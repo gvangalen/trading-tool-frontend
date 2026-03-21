@@ -51,19 +51,17 @@ export default function BotTodayProposal({
 
   const strategyMultiplier = Number(decision.exposure_multiplier ?? 1);
   const safeStrategyMultiplier = Number.isFinite(strategyMultiplier) ? strategyMultiplier : 1;
-
+  
   const safeMarketMultiplier = Number(
     decision?.metrics?.position_size ?? 1
   );
 
-  const safeStrategyMultiplier = Number(
-    decision?.exposure_multiplier ?? 1
-  );
-
-  const deviationLabel =
-    deviation > 0 ? "Higher risk"
-    : deviation < 0 ? "Safer than market"
-    : "Aligned";
+  // ✅ FIX
+  const deviation = safeStrategyMultiplier - safeMarketMultiplier;
+    const deviationLabel =
+      deviation > 0 ? "Higher risk"
+      : deviation < 0 ? "Safer than market"
+      : "Aligned";
 
   const deviationColor =
     deviation > 0 ? "text-red-600"

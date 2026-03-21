@@ -155,13 +155,13 @@ export default function MarketConditionsInline({
   const safePressure = clamp(pressure);
   const safeVolatility = clamp(volatility);
   const safeTrend = clamp(trendStrength);
-  const safeMulti = safeMultiplier(multiplier);
+  const safeMulti = safeMultiplier(multiplier / 100);
 
   const exposureLabel = getExposureLabel(safeMulti);
   const exposureColor = getExposureColor(safeMulti);
 
   /* multiplier → score schaal */
-  const exposureScore = clamp(safeMulti * 80);
+  const exposureScore = clamp(safeMulti * 100);
 
   return (
 

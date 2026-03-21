@@ -51,10 +51,10 @@ const rawMultiplier =
   1;
 
 const pressure =
-  rawPressure === null ? null : Number(rawPressure);
+  rawPressure === null ? null : Number(rawPressure) / 100;
 
 const transitionRisk =
-  rawTransitionRisk === null ? null : Number(rawTransitionRisk);
+  rawTransitionRisk === null ? null : Number(rawTransitionRisk) / 100;
 
 const health =
   rawHealth === null ? null : Number(rawHealth);

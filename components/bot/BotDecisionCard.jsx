@@ -52,14 +52,13 @@ export default function BotTodayProposal({
   const strategyMultiplier = Number(decision.exposure_multiplier ?? 1);
   const safeStrategyMultiplier = Number.isFinite(strategyMultiplier) ? strategyMultiplier : 1;
 
-  // 🔥 FIX: backend geeft 0–100 → frontend wil multiplier (0–1)
-  const rawMarketMultiplier =
-    Number(decision?.metrics?.position_size ?? 100);
+  const safeMarketMultiplier = Number(
+    decision?.metrics?.position_size ?? 1
+  );
 
-  const safeMarketMultiplier = Number.isFinite(rawMarketMultiplier)
-    ? rawMarketMultiplier / 100
-    : 1;
-    const deviation = safeStrategyMultiplier - safeMarketMultiplier;
+  const safeStrategyMultiplier = Number(
+    decision?.exposure_multiplier ?? 1
+  );
 
   const deviationLabel =
     deviation > 0 ? "Higher risk"

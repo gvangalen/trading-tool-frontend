@@ -175,16 +175,21 @@ export default function GuardrailsPanel({
         </span>
       </div>
 
-      {/* BTC exposure */}
+      {/* ✅ FIXED BTC exposure */}
 
       <div className="flex justify-between text-sm">
         <span className="text-gray-500">
           BTC exposure
         </span>
 
-        <span className="font-medium">
-          {pct(currentExposure)} / {pct(maxExposure)}
-        </span>
+        <div className="text-right">
+          <div className="font-medium">
+            {pct(currentExposure)} / 100%
+          </div>
+          <div className="text-xs text-gray-400">
+            Max {pct(maxExposure)}
+          </div>
+        </div>
       </div>
 
       {/* warnings */}

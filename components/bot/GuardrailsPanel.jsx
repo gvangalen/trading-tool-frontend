@@ -78,10 +78,16 @@ export default function GuardrailsPanel({
     0;
 
   const currentExposure =
-    guardrails?.current_asset_exposure_pct ?? 0;
+    Number(guardrails?.current_asset_exposure_pct ?? 0);
 
   const maxExposure =
-    guardrails?.max_asset_exposure_pct ?? 100;
+    Number(guardrails?.max_asset_exposure_pct ?? 100);
+
+  /* 🔥 FIX — juiste berekening */
+  const exposureUsedPct =
+    maxExposure > 0
+      ? (currentExposure / maxExposure) * 100
+      : 0;
 
   /* ============================
      FORMAT
@@ -175,7 +181,7 @@ export default function GuardrailsPanel({
         </span>
       </div>
 
-      {/* ✅ CLEAN BTC exposure */}
+      {/* ✅ EXACT WAT JE WILT */}
 
       <div className="flex justify-between text-sm">
         <span className="text-gray-500">
@@ -183,7 +189,7 @@ export default function GuardrailsPanel({
         </span>
 
         <span className="font-medium">
-          {pct(currentExposure)} / {pct(maxExposure)}
+          {pct(exposureUsedPct)} / 100%
         </span>
       </div>
 

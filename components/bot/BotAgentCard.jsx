@@ -125,6 +125,16 @@ export default function BotAgentCard({
     {};
   const tradePlan = safeDecision?.trade_plan || {};
 
+  const rawPositionSize =
+    safeDecision?.position_size ??
+    scores?.position_size ??
+    0.5;
+
+  const normalizedPositionSize = Math.max(
+    0,
+    Math.min(Number(rawPositionSize) || 0.5, 1)
+  );
+
   const normalized = {
     ...safeDecision,
 
@@ -140,7 +150,6 @@ export default function BotAgentCard({
       safeDecision?.transition_risk ??
       null,
 
-    // 🔥 FIX → GEEN fallback 0
     market_pressure:
       scores?.market_pressure ??
       safeDecision?.market_pressure ??
@@ -160,12 +169,6 @@ export default function BotAgentCard({
       safeDecision?.amount_eur ??
       scores?.amount_eur ??
       0,
-
-    exposure_multiplier:
-      safeDecision?.exposure_multiplier ??
-      scores?.exposure_multiplier ??
-      scores?.position_size ??
-      1,
 
     base_amount:
       safeDecision?.base_amount ??
@@ -187,6 +190,15 @@ export default function BotAgentCard({
       safeDecision?.setup_match ??
       scores?.setup_match ??
       null,
+
+    // ✅ MARKET SUGGESTION / POSITION SIZE
+    position_size: normalizedPositionSize,
+
+    // ✅ STRATEGY EXPOSURE BLIJFT APART
+    exposure_multiplier:
+      safeDecision?.exposure_multiplier ??
+      scores?.exposure_multiplier ??
+      1,
   };
 
   return normalized;

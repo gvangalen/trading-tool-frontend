@@ -144,6 +144,7 @@ export default function BotAgentCard({
     ...safeDecision,
 
     scores_json: scores,
+    metrics: safeDecision?.metrics || {},
 
     guardrails_result: guardrails,
     guardrails: guardrails,

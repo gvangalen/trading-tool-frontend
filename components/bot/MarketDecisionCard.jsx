@@ -17,38 +17,62 @@ export default function MarketDecisionCard({ decision = {} }) {
   const scores = decision?.scores_json || {};
   const metrics = decision?.metrics || {};
 
+  // 🔥 MARKET PRESSURE
   const pressureRaw =
-  scores?.market_pressure ??
-  metrics?.market_pressure ??
-  50;
+    scores?.market_pressure ??
+    metrics?.market_pressure ??
+    50;
 
   const pressure = Number.isFinite(Number(pressureRaw))
     ? Number(pressureRaw)
     : 50;
 
+  // 🔥 TRANSITION RISK
   const transitionRiskRaw =
-  scores?.transition_risk ??
-  metrics?.transition_risk ??
-  50;
+    scores?.transition_risk ??
+    metrics?.transition_risk ??
+    50;
 
   const transitionRisk = Number.isFinite(Number(transitionRiskRaw))
     ? Number(transitionRiskRaw)
     : 50;
 
+  // 🔥 SETUP QUALITY (HEALTH)
   const healthRaw =
-  scores?.setup_quality ??
-  metrics?.setup_quality ??
-  50;
+    scores?.setup_quality ??
+    metrics?.setup_quality ??
+    50;
 
   const health = Number.isFinite(Number(healthRaw))
     ? Number(healthRaw)
     : 50;
 
+  // 🔥 VOLATILITY (FIX)
+  const volatilityRaw =
+    scores?.volatility ??
+    metrics?.volatility ??
+    50;
+
+  const volatility = Number.isFinite(Number(volatilityRaw))
+    ? Number(volatilityRaw)
+    : 50;
+
+  // 🔥 TREND STRENGTH (FIX)
+  const trendStrengthRaw =
+    scores?.trend_strength ??
+    metrics?.trend_strength ??
+    50;
+
+  const trendStrength = Number.isFinite(Number(trendStrengthRaw))
+    ? Number(trendStrengthRaw)
+    : 50;
+
+  // 🔥 POSITION SIZE
   const positionSizeRaw =
-  decision?.position_size ??
-  scores?.position_size ??
-  metrics?.position_size ??
-  0.5;
+    decision?.position_size ??
+    scores?.position_size ??
+    metrics?.position_size ??
+    0.5;
 
   const positionSize = Number.isFinite(Number(positionSizeRaw))
     ? Number(positionSizeRaw)
@@ -230,8 +254,8 @@ export default function MarketDecisionCard({ decision = {} }) {
           health={health}
           transitionRisk={transitionRisk}
           pressure={pressure}
-
-          // 🔥 HIER IS DE FIX
+          volatility={volatility}            // ✅ FIX
+          trendStrength={trendStrength}      // ✅ FIX
           multiplier={positionSize}
         />
 

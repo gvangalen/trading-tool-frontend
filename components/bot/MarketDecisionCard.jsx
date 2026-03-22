@@ -11,71 +11,36 @@ export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
-   ENGINE METRICS (FIXED CORRECT)
+   ENGINE METRICS (FIXED DEFINITIEF)
 ====================================== */
 
   const scores = decision?.scores_json || {};
   const metrics = decision?.metrics || {};
 
-  // 🔥 MARKET PRESSURE
-  const pressureRaw =
-    scores?.market_pressure ??
-    metrics?.market_pressure ??
-    50;
+  // 🔥 ALTijd metrics eerst → dit is DE fix
 
-  const pressure = Number.isFinite(Number(pressureRaw))
-    ? Number(pressureRaw)
-    : 50;
+  const pressure = Number.isFinite(Number(metrics?.market_pressure))
+    ? Number(metrics.market_pressure)
+    : Number(scores?.market_pressure ?? 50);
 
-  // 🔥 TRANSITION RISK
-  const transitionRiskRaw =
-    scores?.transition_risk ??
-    metrics?.transition_risk ??
-    50;
+  const transitionRisk = Number.isFinite(Number(metrics?.transition_risk))
+    ? Number(metrics.transition_risk)
+    : Number(scores?.transition_risk ?? 50);
 
-  const transitionRisk = Number.isFinite(Number(transitionRiskRaw))
-    ? Number(transitionRiskRaw)
-    : 50;
+  const health = Number.isFinite(Number(metrics?.setup_quality))
+    ? Number(metrics.setup_quality)
+    : Number(scores?.setup_quality ?? 50);
 
-  // 🔥 SETUP QUALITY (HEALTH)
-  const healthRaw =
-    scores?.setup_quality ??
-    metrics?.setup_quality ??
-    50;
+  const volatility = Number.isFinite(Number(metrics?.volatility))
+    ? Number(metrics.volatility)
+    : Number(scores?.volatility ?? 50);
 
-  const health = Number.isFinite(Number(healthRaw))
-    ? Number(healthRaw)
-    : 50;
+  const trendStrength = Number.isFinite(Number(metrics?.trend_strength))
+    ? Number(metrics.trend_strength)
+    : Number(scores?.trend_strength ?? 50);
 
-  // 🔥 VOLATILITY (FIX)
-  const volatilityRaw =
-    scores?.volatility ??
-    metrics?.volatility ??
-    50;
-
-  const volatility = Number.isFinite(Number(volatilityRaw))
-    ? Number(volatilityRaw)
-    : 50;
-
-  // 🔥 TREND STRENGTH (FIX)
-  const trendStrengthRaw =
-    scores?.trend_strength ??
-    metrics?.trend_strength ??
-    50;
-
-  const trendStrength = Number.isFinite(Number(trendStrengthRaw))
-    ? Number(trendStrengthRaw)
-    : 50;
-
-  // 🔥 POSITION SIZE
-  const positionSizeRaw =
-    decision?.position_size ??
-    scores?.position_size ??
-    metrics?.position_size ??
-    0.5;
-
-  const positionSize = Number.isFinite(Number(positionSizeRaw))
-    ? Number(positionSizeRaw)
+  const positionSize = Number.isFinite(Number(decision?.position_size))
+    ? Number(decision.position_size)
     : 0.5;
 
   /* ======================================
@@ -148,6 +113,20 @@ export default function MarketDecisionCard({ decision = {} }) {
       : temperature === "hot"
       ? "text-orange-500"
       : "text-red-500";
+
+  /* ======================================
+     DEBUG (BELANGRIJK)
+  ====================================== */
+
+  console.log("MARKET CARD FINAL VALUES", {
+    pressure,
+    transitionRisk,
+    health,
+    volatility,
+    trendStrength,
+    metrics,
+    scores,
+  });
 
   /* ======================================
      RENDER
@@ -238,14 +217,6 @@ export default function MarketDecisionCard({ decision = {} }) {
 
       </div>
 
-      {/* AI explanation */}
-
-      {explanation && (
-        <div className="text-xs text-gray-600 border-t pt-3">
-          {explanation}
-        </div>
-      )}
-
       {/* 🔥 BOT RISK ENGINE */}
 
       <div className="border-t pt-4">
@@ -254,8 +225,8 @@ export default function MarketDecisionCard({ decision = {} }) {
           health={health}
           transitionRisk={transitionRisk}
           pressure={pressure}
-          volatility={volatility}            // ✅ FIX
-          trendStrength={trendStrength}      // ✅ FIX
+          volatility={volatility}
+          trendStrength={trendStrength}
           multiplier={positionSize}
         />
 

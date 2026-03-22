@@ -498,7 +498,7 @@ export default function BotAgentCard({
             Loading market intelligence...
           </div>
         ) : (
-          <MarketDecisionCard decision={normalizedDecision} />
+          <MarketDecisionCard data={marketIntelligence} />
         )}
       </div>
 

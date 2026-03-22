@@ -7,81 +7,45 @@ import {
 
 import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
 
-export default function MarketDecisionCard({ decision = {} }) {
-  if (!decision) return null;
+export default function MarketDecisionCard({ data }) {
+  if (!data) return null;
 
   /* ======================================
-   ENGINE METRICS (FIXED DEFINITIEF)
-====================================== */
+     API DATA (DE ENIGE SOURCE)
+  ====================================== */
 
-  const scores = decision?.scores_json || {};
-  const metrics = decision?.metrics || {};
+  const metrics = data?.metrics || {};
+  const trend = data?.trend || {};
 
-  // 🔥 ALTijd metrics eerst → dit is DE fix
+  const pressure = Number(metrics?.market_pressure ?? 50);
+  const transitionRisk = Number(metrics?.transition_risk ?? 50);
+  const health = Number(metrics?.setup_quality ?? 50);
+  const volatility = Number(metrics?.volatility ?? 50);
+  const trendStrength = Number(metrics?.trend_strength ?? 50);
 
-  const pressure = Number.isFinite(Number(metrics?.market_pressure))
-    ? Number(metrics.market_pressure)
-    : Number(scores?.market_pressure ?? 50);
-
-  const transitionRisk = Number.isFinite(Number(metrics?.transition_risk))
-    ? Number(metrics.transition_risk)
-    : Number(scores?.transition_risk ?? 50);
-
-  const health = Number.isFinite(Number(metrics?.setup_quality))
-    ? Number(metrics.setup_quality)
-    : Number(scores?.setup_quality ?? 50);
-
-  const volatility = Number.isFinite(Number(metrics?.volatility))
-    ? Number(metrics.volatility)
-    : Number(scores?.volatility ?? 50);
-
-  const trendStrength = Number.isFinite(Number(metrics?.trend_strength))
-    ? Number(metrics.trend_strength)
-    : Number(scores?.trend_strength ?? 50);
-
-  const positionSize = Number.isFinite(Number(decision?.position_size))
-    ? Number(decision.position_size)
-    : 0.5;
+  // position size bestaat niet in API → default
+  const positionSize = 0.5;
 
   /* ======================================
      MARKET STRUCTURE
   ====================================== */
 
-  const phase = decision?.cycle || "expansion";
-  const temperature = decision?.temperature || "warm";
+  const phase = data?.cycle || "expansion";
+  const temperature = data?.temperature || "warm";
 
   /* ======================================
      TRENDS
   ====================================== */
 
-  const trendShort =
-    decision?.trend?.short || "trading range";
+  const trendShort = trend?.short || "trading range";
+  const trendMid = trend?.mid || "trading range";
+  const trendLong = trend?.long || "trading range";
 
-  const trendMid =
-    decision?.trend?.mid || "trading range";
+  const formatTrend = (t) => {
+    const v = String(t).toLowerCase();
 
-  const trendLong =
-    decision?.trend?.long || "trading range";
-
-  const explanation = decision?.explanation || null;
-
-  /* ======================================
-     TREND LABELS
-  ====================================== */
-
-  const formatTrend = (trend) => {
-    const t = String(trend).toLowerCase();
-
-    if (t === "bullish") return "Bullish";
-    if (t === "bearish") return "Bearish";
-
-    if (
-      t === "range" ||
-      t === "sideways" ||
-      t === "trading range"
-    ) {
-      return "Trading range";
-    }
+    if (v === "bullish") return "Bullish";
+    if (v === "bearish") return "Bearish";
 
     return "Trading range";
   };
@@ -118,15 +82,7 @@ export default function MarketDecisionCard({ decision = {} }) {
      DEBUG (BELANGRIJK)
   ====================================== */
 
-  console.log("MARKET CARD FINAL VALUES", {
-    pressure,
-    transitionRisk,
-    health,
-    volatility,
-    trendStrength,
-    metrics,
-    scores,
-  });
+  console.log("MARKET API DATA", data);
 
   /* ======================================
      RENDER
@@ -149,10 +105,8 @@ export default function MarketDecisionCard({ decision = {} }) {
         </div>
 
         <div className="flex items-center gap-2 text-sm">
-
           {phases.map((p, i) => (
             <div key={p} className="flex items-center gap-1">
-
               <span
                 className={
                   i === phaseIndex
@@ -170,28 +124,20 @@ export default function MarketDecisionCard({ decision = {} }) {
               {i < phases.length - 1 && (
                 <span className="text-gray-400">→</span>
               )}
-
             </div>
           ))}
-
         </div>
 
         {/* Temperature */}
 
         <div className="flex items-center gap-2 text-sm">
-
           <Thermometer size={14} className="text-gray-500" />
-
-          <span className="text-gray-500">
-            Temperature
-          </span>
-
+          <span className="text-gray-500">Temperature</span>
           <span
             className={`font-semibold capitalize ${temperatureColor}`}
           >
             {temperature}
           </span>
-
         </div>
 
       </div>
@@ -217,7 +163,7 @@ export default function MarketDecisionCard({ decision = {} }) {
 
       </div>
 
-      {/* 🔥 BOT RISK ENGINE */}
+      {/* CONDITIONS */}
 
       <div className="border-t pt-4">
 

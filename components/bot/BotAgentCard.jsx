@@ -97,7 +97,7 @@ export default function BotAgentCard({
   useEffect(() => {
     console.log("🤖 BOT", bot);
     console.log("📊 DECISION RAW", decision);
-    console.log("📦 SCORES_JSON", normalizedDecision?.scores_json);
+    console.log("📦 SCORES_JSON", decision?.scores_json);
     console.log("🛡 GUARDRAILS RAW", decision?.guardrails_result);
     console.log("🧭 TRADE PLAN RAW", decision?.trade_plan);
   }, [bot, decision]);
@@ -130,9 +130,14 @@ export default function BotAgentCard({
     scores?.position_size ??
     0.5;
 
+  const parsedPositionSize = Number(rawPositionSize);
+
   const normalizedPositionSize = Math.max(
     0,
-    Math.min(Number(rawPositionSize) || 0.5, 1)
+    Math.min(
+      Number.isFinite(parsedPositionSize) ? parsedPositionSize : 0.5,
+      1
+    )
   );
 
   const normalized = {

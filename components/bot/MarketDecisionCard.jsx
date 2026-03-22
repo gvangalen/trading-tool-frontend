@@ -7,60 +7,46 @@ import {
 
 import MarketConditionsPanel from "@/components/bot/MarketConditionsPanel";
 
-/**
- * MarketDecisionCard
- *
- * Visualiseert:
- * - Market cycle
- * - Temperature
- * - Market trends
- * - AI explanation
- *
- * Risk engine metrics komen uit Bot Brain API
- */
-
 export default function MarketDecisionCard({ decision = {} }) {
   if (!decision) return null;
 
   /* ======================================
-   ENGINE METRICS (FIXED)
+   ENGINE METRICS (FIXED CORRECT)
 ====================================== */
 
-const scores = decision?.scores_json || {};
-const metrics = decision?.metrics || {};
+  const scores = decision?.scores_json || {};
+  const metrics = decision?.metrics || {};
 
-// 🔥 combine beide (safety)
-const rawPressure =
-  scores?.market_pressure ??
-  metrics?.market_pressure ??
-  null;
+  // 🔥 1. PRESSURE / RISK (0–100)
+  const pressure =
+    Number(
+      scores?.market_pressure ??
+      metrics?.market_pressure ??
+      50
+    ) || 50;
 
-const rawTransitionRisk =
-  scores?.transition_risk ??
-  metrics?.transition_risk ??
-  null;
+  const transitionRisk =
+    Number(
+      scores?.transition_risk ??
+      metrics?.transition_risk ??
+      50
+    ) || 50;
 
-const rawHealth =
-  scores?.setup_quality ??
-  metrics?.setup_quality ??
-  50;
+  const health =
+    Number(
+      scores?.setup_quality ??
+      metrics?.setup_quality ??
+      50
+    ) || 50;
 
-const rawMultiplier =
-  scores?.position_size ??
-  metrics?.position_size ??
-  1;
-
-const pressure =
-  rawPressure === null ? null : Number(rawPressure);
-
-const transitionRisk =
-  rawTransitionRisk === null ? null : Number(rawTransitionRisk);
-
-const health =
-  rawHealth === null ? null : Number(rawHealth);
-
-const exposureMultiplier =
-  rawMultiplier === null ? null : Number(rawMultiplier);
+  // 🔥 2. POSITION SIZE (0–1 → UI doet *100)
+  const positionSize =
+    Number(
+      decision?.position_size ??
+      scores?.position_size ??
+      metrics?.position_size ??
+      0.5
+    ) || 0.5;
 
   /* ======================================
      MARKET STRUCTURE
@@ -140,16 +126,12 @@ const exposureMultiplier =
   return (
     <div className="space-y-5">
 
-      {/* HEADER */}
-
       <div className="flex items-center gap-2 font-semibold text-base">
         <Activity size={16} />
         Market Intelligence — Global Analysis
       </div>
 
-      {/* =========================
-          MARKET CYCLE
-      ========================== */}
+      {/* MARKET CYCLE */}
 
       <div className="space-y-2">
 
@@ -205,39 +187,25 @@ const exposureMultiplier =
 
       </div>
 
-      {/* =========================
-          MARKET TRENDS
-      ========================== */}
+      {/* TRENDS */}
 
       <div className="space-y-1 text-sm">
 
         <div className="grid grid-cols-[1fr_120px] items-center">
-          <span className="text-gray-500">
-            Short term trend
-          </span>
-          <span className="font-semibold text-left">
-            {formatTrend(trendShort)}
-          </span>
+          <span className="text-gray-500">Short term trend</span>
+          <span className="font-semibold">{formatTrend(trendShort)}</span>
         </div>
-      
+
         <div className="grid grid-cols-[1fr_120px] items-center">
-          <span className="text-gray-500">
-            Mid term trend
-          </span>
-          <span className="font-semibold text-left">
-            {formatTrend(trendMid)}
-          </span>
+          <span className="text-gray-500">Mid term trend</span>
+          <span className="font-semibold">{formatTrend(trendMid)}</span>
         </div>
-      
+
         <div className="grid grid-cols-[1fr_120px] items-center">
-          <span className="text-gray-500">
-            Long term trend
-          </span>
-          <span className="font-semibold text-left">
-            {formatTrend(trendLong)}
-          </span>
+          <span className="text-gray-500">Long term trend</span>
+          <span className="font-semibold">{formatTrend(trendLong)}</span>
         </div>
-      
+
       </div>
 
       {/* AI explanation */}
@@ -248,9 +216,7 @@ const exposureMultiplier =
         </div>
       )}
 
-      {/* =========================
-          BOT RISK ENGINE
-      ========================== */}
+      {/* 🔥 BOT RISK ENGINE */}
 
       <div className="border-t pt-4">
 
@@ -258,7 +224,9 @@ const exposureMultiplier =
           health={health}
           transitionRisk={transitionRisk}
           pressure={pressure}
-          multiplier={exposureMultiplier}
+
+          // 🔥 HIER IS DE FIX
+          multiplier={positionSize}
         />
 
       </div>

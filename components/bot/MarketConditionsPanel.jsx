@@ -155,7 +155,7 @@ export default function MarketConditionsInline({
   const safePressure = clamp(pressure);
   const safeVolatility = clamp(volatility);
   const safeTrend = clamp(trendStrength);
-  const safeMulti = safeMultiplier(multiplier / 100);
+  const safeMulti = safeMultiplier(multiplier);
 
   const exposureLabel = getExposureLabel(safeMulti);
   const exposureColor = getExposureColor(safeMulti);

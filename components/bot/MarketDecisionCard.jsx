@@ -17,36 +17,42 @@ export default function MarketDecisionCard({ decision = {} }) {
   const scores = decision?.scores_json || {};
   const metrics = decision?.metrics || {};
 
-  // 🔥 1. PRESSURE / RISK (0–100)
-  const pressure =
-    Number(
-      scores?.market_pressure ??
-      metrics?.market_pressure ??
-      50
-    ) || 50;
+  const pressureRaw =
+  scores?.market_pressure ??
+  metrics?.market_pressure ??
+  50;
 
-  const transitionRisk =
-    Number(
-      scores?.transition_risk ??
-      metrics?.transition_risk ??
-      50
-    ) || 50;
+  const pressure = Number.isFinite(Number(pressureRaw))
+    ? Number(pressureRaw)
+    : 50;
 
-  const health =
-    Number(
-      scores?.setup_quality ??
-      metrics?.setup_quality ??
-      50
-    ) || 50;
+  const transitionRiskRaw =
+  scores?.transition_risk ??
+  metrics?.transition_risk ??
+  50;
 
-  // 🔥 2. POSITION SIZE (0–1 → UI doet *100)
-  const positionSize =
-    Number(
-      decision?.position_size ??
-      scores?.position_size ??
-      metrics?.position_size ??
-      0.5
-    ) || 0.5;
+  const transitionRisk = Number.isFinite(Number(transitionRiskRaw))
+    ? Number(transitionRiskRaw)
+    : 50;
+
+  const healthRaw =
+  scores?.setup_quality ??
+  metrics?.setup_quality ??
+  50;
+
+  const health = Number.isFinite(Number(healthRaw))
+    ? Number(healthRaw)
+    : 50;
+
+  const positionSizeRaw =
+  decision?.position_size ??
+  scores?.position_size ??
+  metrics?.position_size ??
+  0.5;
+
+  const positionSize = Number.isFinite(Number(positionSizeRaw))
+    ? Number(positionSizeRaw)
+    : 0.5;
 
   /* ======================================
      MARKET STRUCTURE

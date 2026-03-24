@@ -13,11 +13,6 @@ import {
    Helpers
 ========================= */
 
-const isWatchMode =
-  derived.side === "hold" ||
-  derived.side === "observe" ||
-  !derived.targets.length;
-
 const num = (v, d = null) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
@@ -64,79 +59,46 @@ const toArray = (value) => {
 const normalizeTargets = (value) =>
   toArray(value)
     .map((item, i) => {
-      if (typeof item === "number") {
-        return { label: `TP${i + 1}`, price: item };
-      }
+      const price =
+        typeof item === "number"
+          ? item
+          : typeof item === "string"
+          ? num(item)
+          : num(item?.price ?? item?.target ?? item?.value);
 
-      if (typeof item === "string") {
-        const parsed = num(item);
-        if (parsed == null) return null;
-        return { label: `TP${i + 1}`, price: parsed };
-      }
+      if (price == null) return null;
 
-      if (item && typeof item === "object") {
-        const price =
-          num(item.price) ??
-          num(item.target) ??
-          num(item.value);
-
-        if (price == null) return null;
-
-        return {
-          label: item.label || item.name || `TP${i + 1}`,
-          price,
-        };
-      }
-
-      return null;
+      return {
+        label: item?.label || item?.name || `TP${i + 1}`,
+        price,
+      };
     })
     .filter(Boolean);
 
 const normalizeEntryPlan = (value) =>
   toArray(value)
     .map((item, i) => {
-      if (typeof item === "number") {
-        return {
-          type: "watch",
-          label: `Watch level ${i + 1}`,
-          price: item,
-        };
-      }
+      const price =
+        typeof item === "number"
+          ? item
+          : typeof item === "string"
+          ? num(item)
+          : num(item?.price ?? item?.entry ?? item?.value);
 
-      if (typeof item === "string") {
-        const parsed = num(item);
-        if (parsed == null) return null;
+      if (price == null) return null;
 
-        return {
-          type: "watch",
-          label: `Watch level ${i + 1}`,
-          price: parsed,
-        };
-      }
-
-      if (item && typeof item === "object") {
-        const price =
-          num(item.price) ??
-          num(item.entry) ??
-          num(item.value);
-
-        if (price == null) return null;
-
-        return {
-          type: item.type || "watch",
-          label: item.label || item.name || `Entry ${i + 1}`,
-          price,
-        };
-      }
-
-      return null;
+      return {
+        type: item?.type || "watch",
+        label: item?.label || item?.name || `Entry ${i + 1}`,
+        price,
+      };
     })
     .filter(Boolean);
 
 const normalizeStopLoss = (value) => {
   const price =
     typeof value === "object"
-      ? num(value.price) ?? num(value.stop_loss) ?? num(value.value)
+      ? num(value?.price ?? value?.stop_loss ?? value?.value)
       : num(value);
 
   return { price };
@@ -207,6 +169,14 @@ export default function TradePlanCard({
     };
   }, [tradePlan, safeDecision]);
 
+  /* ================= WATCH MODE FIX ================= */
+
+  const isWatchMode =
+    derived.side === "hold" ||
+    derived.side === "observe" ||
+    derived.targets.length === 0 ||
+    derived.stop_loss?.price == null;
+
   /* ================= LIVE PRICE ================= */
 
   const livePrice = useMemo(() => {
@@ -266,10 +236,7 @@ export default function TradePlanCard({
                   : "bg-gray-50 text-gray-800"
               }`}
             >
-              <div className="font-medium">
-                {e.label}
-              </div>
-
+              <div className="font-medium">{e.label}</div>
               <div className="font-semibold">
                 €{fmtPrice(e.price)}
               </div>
@@ -279,10 +246,9 @@ export default function TradePlanCard({
       </div>
 
       {/* STOP LOSS */}
-      {!isWatchMode && derived.stop_loss?.price != null && (
+      {!isWatchMode && (
         <div className="rounded-xl border p-4">
           <SectionTitle icon={<Shield size={16} />} title="Stop Loss" />
-      
           <div className="font-semibold">
             €{fmtPrice(derived.stop_loss.price)}
           </div>
@@ -290,35 +256,35 @@ export default function TradePlanCard({
       )}
 
       {/* TARGETS */}
-        {!isWatchMode && (
-    <div className="rounded-xl border p-4 space-y-2">
-      <SectionTitle icon={<Target size={16} />} title="Targets" />
-  
-      {derived.targets.length === 0 ? (
-        <div className="text-sm text-gray-500">—</div>
-      ) : (
-        derived.targets.map((t, i) => (
-          <div key={i} className="flex justify-between">
-            <span>{t.label}</span>
-            <span className="font-semibold">
-              €{fmtPrice(t.price)}
-            </span>
+      {!isWatchMode && (
+        <div className="rounded-xl border p-4 space-y-2">
+          <SectionTitle icon={<Target size={16} />} title="Targets" />
+
+          {derived.targets.map((t, i) => (
+            <div key={i} className="flex justify-between">
+              <span>{t.label}</span>
+              <span className="font-semibold">
+                €{fmtPrice(t.price)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* RISK */}
+      {!isWatchMode && (
+        <div className="rounded-xl border p-4 space-y-1">
+          <SectionTitle icon={<AlertTriangle size={16} />} title="Risk" />
+
+          <div className="text-sm text-gray-600">
+            Risk: {fmtEur(derived.risk.risk_eur)}
           </div>
-        ))
+
+          <div className="text-sm text-gray-600">
+            R:R: {derived.risk.rr ?? "—"}
+          </div>
+        </div>
       )}
     </div>
-  )}
-
-      {!isWatchMode && (
-  <div className="rounded-xl border p-4 space-y-1">
-    <SectionTitle icon={<AlertTriangle size={16} />} title="Risk" />
-
-    <div className="text-sm text-gray-600">
-      Risk: {fmtEur(derived.risk.risk_eur)}
-    </div>
-
-    <div className="text-sm text-gray-600">
-      R:R: {derived.risk.rr ?? "—"}
-    </div>
-  </div>
-)}
+  );
+}

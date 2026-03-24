@@ -13,6 +13,11 @@ import {
    Helpers
 ========================= */
 
+const isWatchMode =
+  derived.side === "hold" ||
+  derived.side === "observe" ||
+  !derived.targets.length;
+
 const num = (v, d = null) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
@@ -274,44 +279,46 @@ export default function TradePlanCard({
       </div>
 
       {/* STOP LOSS */}
-      <div className="rounded-xl border p-4">
-        <SectionTitle icon={<Shield size={16} />} title="Stop Loss" />
-
-        <div className="font-semibold">
-          €{fmtPrice(derived.stop_loss.price)}
+      {!isWatchMode && derived.stop_loss?.price != null && (
+        <div className="rounded-xl border p-4">
+          <SectionTitle icon={<Shield size={16} />} title="Stop Loss" />
+      
+          <div className="font-semibold">
+            €{fmtPrice(derived.stop_loss.price)}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* TARGETS */}
-      <div className="rounded-xl border p-4 space-y-2">
-        <SectionTitle icon={<Target size={16} />} title="Targets" />
-
-        {derived.targets.length === 0 ? (
-          <div className="text-sm text-gray-500">—</div>
-        ) : (
-          derived.targets.map((t, i) => (
-            <div key={i} className="flex justify-between">
-              <span>{t.label}</span>
-              <span className="font-semibold">
-                €{fmtPrice(t.price)}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* RISK */}
-      <div className="rounded-xl border p-4 space-y-1">
-        <SectionTitle icon={<AlertTriangle size={16} />} title="Risk" />
-
-        <div className="text-sm text-gray-600">
-          Risk: {fmtEur(derived.risk.risk_eur)}
-        </div>
-
-        <div className="text-sm text-gray-600">
-          R:R: {derived.risk.rr ?? "—"}
-        </div>
-      </div>
+        {!isWatchMode && (
+    <div className="rounded-xl border p-4 space-y-2">
+      <SectionTitle icon={<Target size={16} />} title="Targets" />
+  
+      {derived.targets.length === 0 ? (
+        <div className="text-sm text-gray-500">—</div>
+      ) : (
+        derived.targets.map((t, i) => (
+          <div key={i} className="flex justify-between">
+            <span>{t.label}</span>
+            <span className="font-semibold">
+              €{fmtPrice(t.price)}
+            </span>
+          </div>
+        ))
+      )}
     </div>
-  );
-}
+  )}
+
+      {!isWatchMode && (
+  <div className="rounded-xl border p-4 space-y-1">
+    <SectionTitle icon={<AlertTriangle size={16} />} title="Risk" />
+
+    <div className="text-sm text-gray-600">
+      Risk: {fmtEur(derived.risk.risk_eur)}
+    </div>
+
+    <div className="text-sm text-gray-600">
+      R:R: {derived.risk.rr ?? "—"}
+    </div>
+  </div>
+)}

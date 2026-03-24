@@ -185,7 +185,7 @@ export default function GuardrailsPanel({
         </span>
 
         <span className="font-medium">
-          {pct(currentExposure)} / {pct(maxExposure)}
+          {pct(maxExposure)} / {pct(currentExposure)}
         </span>
       </div>
 

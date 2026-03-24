@@ -83,11 +83,7 @@ export default function GuardrailsPanel({
   const maxExposure =
     Number(guardrails?.max_asset_exposure_pct ?? 100);
 
-  /* 🔥 FIX — juiste berekening */
-  const exposureUsedPct =
-    maxExposure > 0
-      ? (currentExposure / maxExposure) * 100
-      : 0;
+  const exposureUsedPct = currentExposure;
 
   /* ============================
      FORMAT
@@ -189,7 +185,7 @@ export default function GuardrailsPanel({
         </span>
 
         <span className="font-medium">
-          {pct(exposureUsedPct)} / 100%
+          {pct(currentExposure)} / {pct(maxExposure)}
         </span>
       </div>
 

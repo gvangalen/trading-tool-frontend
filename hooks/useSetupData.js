@@ -6,34 +6,40 @@ import {
   fetchTopSetups,
   updateSetup,
   deleteSetup,
-  fetchDcaSetups,
 } from '@/lib/api/setups';
 
 export function useSetupData() {
-  const [setups, setSetups] = useState([]);          // ALLE setups (onbewerkt)
-  const [dcaSetups, setDcaSetups] = useState([]);    // Alleen DCA setups
-  const [topSetups, setTopSetups] = useState([]);    // Top setups
+  const [setups, setSetups] = useState([]);
+  const [topSetups, setTopSetups] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // ⬇ Alles één keer laden bij mount
+  // 🔥 NIEUW: filter op setup_type
+  const [setupTypeFilter, setSetupTypeFilter] = useState(null);
+
+  // ============================================================
+  // 🔁 LOAD (met filter)
+  // ============================================================
   useEffect(() => {
     loadSetups();
     loadTopSetups();
-    loadDcaSetups();
-  }, []);
+  }, [setupTypeFilter]);
 
   // ============================================================
-  // 🔁 1. ALLE setups ophalen (GEEN filtering)
+  // 🔁 1. Setups ophalen (met backend filter)
   // ============================================================
   async function loadSetups() {
-    console.log(`🔍 loadSetups gestart`);
+    console.log('🔍 loadSetups gestart');
     setLoading(true);
     setError('');
 
     try {
-      const data = await fetchSetups();   // ⬅️ GEEN filters meer
+      const data = await fetchSetups({
+        setup_type: setupTypeFilter, // 🔥 KEY
+      });
+
       setSetups(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('❌ loadSetups fout:', err);
@@ -45,22 +51,7 @@ export function useSetupData() {
   }
 
   // ============================================================
-  // 🔁 2. Alleen DCA setups ophalen
-  // ============================================================
-  async function loadDcaSetups() {
-    console.log('🔍 loadDcaSetups gestart');
-    try {
-      const data = await fetchDcaSetups();  
-      setDcaSetups(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('❌ loadDcaSetups fout:', err);
-      setError('Kan DCA setups niet laden.');
-      setDcaSetups([]);
-    }
-  }
-
-  // ============================================================
-  // ⭐ 3. Top setups (bijv. 3 nieuwste)
+  // ⭐ 2. Top setups
   // ============================================================
   async function loadTopSetups() {
     try {
@@ -73,14 +64,13 @@ export function useSetupData() {
   }
 
   // ============================================================
-  // 💾 4. Setup bijwerken
+  // 💾 3. Setup bijwerken
   // ============================================================
   async function saveSetup(id, updatedData) {
     try {
       await updateSetup(id, updatedData);
       setSuccessMessage('Setup succesvol opgeslagen.');
       await loadSetups();
-      await loadDcaSetups();
     } catch (err) {
       console.error('❌ saveSetup fout:', err);
       setError('Opslaan mislukt.');
@@ -88,13 +78,12 @@ export function useSetupData() {
   }
 
   // ============================================================
-  // 🗑 5. Setup verwijderen (nu werkt CASCADE perfect)
+  // 🗑 4. Setup verwijderen
   // ============================================================
   async function removeSetup(id) {
     try {
       await deleteSetup(id);
       await loadSetups();
-      await loadDcaSetups();
     } catch (err) {
       console.error('❌ removeSetup fout:', err);
       setError('Verwijderen mislukt.');
@@ -102,7 +91,7 @@ export function useSetupData() {
   }
 
   // ============================================================
-  // 🔍 6. Naam-check
+  // 🔍 5. Naam-check
   // ============================================================
   function checkSetupNameExists(name) {
     return setups.some(
@@ -114,14 +103,19 @@ export function useSetupData() {
   // 📤 PUBLIC API
   // ============================================================
   return {
-    setups,          // ALLE setups - ongefilterd
-    dcaSetups,
+    setups,
     topSetups,
+
     loading,
     error,
     successMessage,
+
+    // 🔥 NIEUW
+    setupTypeFilter,
+    setSetupTypeFilter,
+
+    // actions
     loadSetups,
-    loadDcaSetups,
     loadTopSetups,
     saveSetup,
     removeSetup,

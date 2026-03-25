@@ -14,7 +14,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   const { showSnackbar } = useModal();
 
   // ----------------------------------------------------
-  // SCORE MEANING (CANON)
+  // SCORE MEANING
   // ----------------------------------------------------
   const scoreLabel = (v) => {
     if (v <= 25) return "Sterk bearish / risk-off";
@@ -34,8 +34,11 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   const emptyForm = {
     name: "",
     symbol: "BTC",
-    strategyType: "dca",
+    setupType: "dca_basic",
     timeframe: "1W",
+
+    frequency: "weekly",
+    dayOfWeek: "monday",
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -53,8 +56,10 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     setFormData({
       name: initialData.name ?? "",
       symbol: initialData.symbol ?? "BTC",
-      strategyType: initialData.strategy_type ?? "dca",
+      setupType: initialData.setup_type ?? "dca_basic",
       timeframe: initialData.timeframe ?? "1W",
+      frequency: initialData.frequency ?? "weekly",
+      dayOfWeek: initialData.day_of_week ?? "monday",
     });
 
     setMacroScore([initialData.min_macro_score, initialData.max_macro_score]);
@@ -86,8 +91,11 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     const payload = {
       name: formData.name,
       symbol: formData.symbol,
-      strategy_type: formData.strategyType,
+      setup_type: formData.setupType,
       timeframe: formData.timeframe,
+
+      frequency: formData.frequency,
+      day_of_week: formData.dayOfWeek,
 
       min_macro_score: macroScore[0],
       max_macro_score: macroScore[1],
@@ -160,6 +168,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   // ----------------------------------------------------
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+
       {/* BASIS */}
       <div className={sectionClass}>
         {sectionTitle(<Settings size={18} />, "Basisgegevens")}
@@ -184,15 +193,16 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
             <option value="SOL">SOL</option>
           </select>
 
+          {/* 🔥 NIEUW: setup role */}
           <select
-            name="strategyType"
-            value={formData.strategyType}
+            name="setupType"
+            value={formData.setupType}
             onChange={handleChange}
             className={fieldClass}
           >
-            <option value="dca">DCA</option>
-            <option value="trading">Trading</option>
-            <option value="manual">Manual</option>
+            <option value="dca_basic">DCA Basic</option>
+            <option value="dca_smart">DCA Smart</option>
+            <option value="breakout">Breakout</option>
           </select>
 
           <select
@@ -206,6 +216,39 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
             <option value="1W">1W</option>
           </select>
         </div>
+
+        {/* 🔥 DCA frequentie */}
+        {formData.setupType.includes("dca") && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <select
+              name="frequency"
+              value={formData.frequency}
+              onChange={handleChange}
+              className={fieldClass}
+            >
+              <option value="daily">Dagelijks</option>
+              <option value="weekly">Wekelijks</option>
+              <option value="monthly">Maandelijks</option>
+            </select>
+
+            {formData.frequency === "weekly" && (
+              <select
+                name="dayOfWeek"
+                value={formData.dayOfWeek}
+                onChange={handleChange}
+                className={fieldClass}
+              >
+                <option value="monday">Maandag</option>
+                <option value="tuesday">Dinsdag</option>
+                <option value="wednesday">Woensdag</option>
+                <option value="thursday">Donderdag</option>
+                <option value="friday">Vrijdag</option>
+                <option value="saturday">Zaterdag</option>
+                <option value="sunday">Zondag</option>
+              </select>
+            )}
+          </div>
+        )}
       </div>
 
       {/* SCORES */}
@@ -216,30 +259,13 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
           <Info size={16} className="mt-0.5" />
           <p>
             Deze score-ranges bepalen <strong>in welke marktfase</strong> deze setup
-            geldig is. Hoeveel je koopt en hoe, regel je later in de strategie.
+            geldig is.
           </p>
         </div>
 
-        {scoreBlock(
-          "Macro",
-          macroScore,
-          setMacroScore,
-          "Macro-omgeving (liquiditeit, risk-on/off, regime)."
-        )}
-
-        {scoreBlock(
-          "Technical",
-          technicalScore,
-          setTechnicalScore,
-          "Technische structuur en trendbevestiging."
-        )}
-
-        {scoreBlock(
-          "Market / Sentiment",
-          marketScore,
-          setMarketScore,
-          "Sentiment, positioning en oververhitting."
-        )}
+        {scoreBlock("Macro", macroScore, setMacroScore, "Macro-omgeving")}
+        {scoreBlock("Technical", technicalScore, setTechnicalScore, "Trend")}
+        {scoreBlock("Market / Sentiment", marketScore, setMarketScore, "Sentiment")}
       </div>
 
       {/* SAVE */}

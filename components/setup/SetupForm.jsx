@@ -84,9 +84,8 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  const isDca =
-    formData.setupType === "dca_basic" ||
-    formData.setupType === "dca_smart";
+  const isDcaBasic = formData.setupType === "dca_basic";
+  const isDcaSmart = formData.setupType === "dca_smart";
 
   // ----------------------------------------------------
   // SUBMIT
@@ -101,9 +100,13 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       setup_type: formData.setupType,
       timeframe: formData.timeframe,
 
-      dca_frequency: formData.dcaFrequency,
-      dca_day: formData.dcaDay,
-      dca_month_day: formData.dcaMonthDay,
+      // 🔥 alleen DCA BASIC krijgt deze velden
+      ...(isDcaBasic && {
+        dca_frequency: formData.dcaFrequency,
+        dca_day: formData.dcaFrequency === "weekly" ? formData.dcaDay : null,
+        dca_month_day:
+          formData.dcaFrequency === "monthly" ? formData.dcaMonthDay : null,
+      }),
 
       min_macro_score: macroScore[0],
       max_macro_score: macroScore[1],
@@ -224,8 +227,8 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
           </select>
         </div>
 
-        {/* DCA instellingen */}
-        {isDca && (
+        {/* 🔥 DCA BASIC */}
+        {isDcaBasic && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
             <select
@@ -261,13 +264,20 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
                 type="number"
                 name="dcaMonthDay"
                 min={1}
-                max={31}
+                max={28} // 🔥 FIX
                 value={formData.dcaMonthDay}
                 onChange={handleChange}
                 className={fieldClass}
-                placeholder="Dag van de maand (1-31)"
+                placeholder="Dag van de maand (1-28)"
               />
             )}
+          </div>
+        )}
+
+        {/* 🧠 SMART DCA */}
+        {isDcaSmart && (
+          <div className="text-sm text-[var(--text-soft)]">
+            Smart DCA bepaalt automatisch wanneer en hoeveel er wordt gekocht.
           </div>
         )}
       </div>

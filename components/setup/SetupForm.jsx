@@ -37,8 +37,9 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     setupType: "dca_basic",
     timeframe: "1W",
 
-    frequency: "weekly",
-    dayOfWeek: "monday",
+    dcaFrequency: "weekly",
+    dcaDay: "monday",
+    dcaMonthDay: 1,
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -58,8 +59,10 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       symbol: initialData.symbol ?? "BTC",
       setupType: initialData.setup_type ?? "dca_basic",
       timeframe: initialData.timeframe ?? "1W",
-      frequency: initialData.frequency ?? "weekly",
-      dayOfWeek: initialData.day_of_week ?? "monday",
+
+      dcaFrequency: initialData.dca_frequency ?? "weekly",
+      dcaDay: initialData.dca_day ?? "monday",
+      dcaMonthDay: initialData.dca_month_day ?? 1,
     });
 
     setMacroScore([initialData.min_macro_score, initialData.max_macro_score]);
@@ -81,6 +84,10 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     setFormData((p) => ({ ...p, [name]: value }));
   };
 
+  const isDca =
+    formData.setupType === "dca_basic" ||
+    formData.setupType === "dca_smart";
+
   // ----------------------------------------------------
   // SUBMIT
   // ----------------------------------------------------
@@ -94,8 +101,9 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       setup_type: formData.setupType,
       timeframe: formData.timeframe,
 
-      frequency: formData.frequency,
-      day_of_week: formData.dayOfWeek,
+      dca_frequency: formData.dcaFrequency,
+      dca_day: formData.dcaDay,
+      dca_month_day: formData.dcaMonthDay,
 
       min_macro_score: macroScore[0],
       max_macro_score: macroScore[1],
@@ -193,7 +201,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
             <option value="SOL">SOL</option>
           </select>
 
-          {/* 🔥 NIEUW: setup role */}
           <select
             name="setupType"
             value={formData.setupType}
@@ -217,12 +224,13 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
           </select>
         </div>
 
-        {/* 🔥 DCA frequentie */}
-        {formData.setupType.includes("dca") && (
+        {/* DCA instellingen */}
+        {isDca && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
             <select
-              name="frequency"
-              value={formData.frequency}
+              name="dcaFrequency"
+              value={formData.dcaFrequency}
               onChange={handleChange}
               className={fieldClass}
             >
@@ -231,10 +239,10 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
               <option value="monthly">Maandelijks</option>
             </select>
 
-            {formData.frequency === "weekly" && (
+            {formData.dcaFrequency === "weekly" && (
               <select
-                name="dayOfWeek"
-                value={formData.dayOfWeek}
+                name="dcaDay"
+                value={formData.dcaDay}
                 onChange={handleChange}
                 className={fieldClass}
               >
@@ -247,6 +255,19 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
                 <option value="sunday">Zondag</option>
               </select>
             )}
+
+            {formData.dcaFrequency === "monthly" && (
+              <input
+                type="number"
+                name="dcaMonthDay"
+                min={1}
+                max={31}
+                value={formData.dcaMonthDay}
+                onChange={handleChange}
+                className={fieldClass}
+                placeholder="Dag van de maand (1-31)"
+              />
+            )}
           </div>
         )}
       </div>
@@ -258,8 +279,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
         <div className="flex items-start gap-2 text-sm text-[var(--text-soft)]">
           <Info size={16} className="mt-0.5" />
           <p>
-            Deze score-ranges bepalen <strong>in welke marktfase</strong> deze setup
-            geldig is.
+            Deze score-ranges bepalen <strong>in welke marktfase</strong> deze setup geldig is.
           </p>
         </div>
 

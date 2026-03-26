@@ -1,36 +1,58 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSetupData } from "@/hooks/useSetupData";
+import { useState, useEffect, useMemo } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 import { fetchAuth } from "@/lib/api/auth";
 
-import { Wallet } from "lucide-react";
+import { Wallet, TrendingUp } from "lucide-react";
 import CurveEditor from "@/components/decision/CurveEditor";
 
-export default function StrategyFormDCA({
+export default function StrategyForm({
   onSubmit,
   setups = [],
   initialData = null,
   mode = "create",
   hideSubmit = false,
 }) {
-  const { loadSetups } = useSetupData();
   const { showSnackbar } = useModal();
 
   const [error, setError] = useState("");
   const [curves, setCurves] = useState([]);
 
+  /* ================= LOAD CURVES ================= */
+
+  useEffect(() => {
+    loadCurves();
+  }, []);
+
+  async function loadCurves() {
+    try {
+      const res = await fetchAuth("/api/curves/execution");
+      setCurves(res || []);
+    } catch (e) {
+      console.error("Failed to load curves", e);
+    }
+  }
+
+  /* ================= FORM STATE ================= */
+
   const [form, setForm] = useState({
-    // ⭐ STRATEGY NAME (REQUIRED)
     name: initialData?.name || "",
 
     setup_id: initialData?.setup_id || "",
     symbol: initialData?.symbol || "",
     timeframe: initialData?.timeframe || "",
 
-    amount: initialData?.base_amount || "",
-    frequency: initialData?.frequency || "",
+    entry: initialData?.entry || "",
+    targetsText: Array.isArray(initialData?.targets)
+      ? initialData.targets.join(", ")
+      : "",
+    stop_loss: initialData?.stop_loss || "",
+
+    base_amount:
+      initialData?.base_amount ||
+      initialData?.amount ||
+      "",
 
     execution_mode: initialData?.execution_mode || "fixed",
 
@@ -45,27 +67,39 @@ export default function StrategyFormDCA({
       initialData?.decision_curve_id || "new",
   });
 
-  /* ================= LOAD DATA ================= */
+  /* ================= FILTER SETUPS ================= */
 
-  useEffect(() => {
-    loadSetups();
-    loadCurves();
-  }, []);
+  const availableSetups = useMemo(() => {
+    return setups.filter((s) => {
+      const type = String(s.setup_type || "").toLowerCase();
 
-  async function loadCurves() {
-    try {
-      const res = await fetchAuth("/api/curves/execution");
-      setCurves(res || []);
-    } catch (e) {
-      console.error("Failed to load curves", e);
-    }
-  }
+      return (
+        type === "dca_basic" ||
+        type === "dca_smart" ||
+        type === "breakout"
+      );
+    });
+  }, [setups]);
 
-  /* ================= AVAILABLE SETUPS ================= */
+  /* ================= SELECTED SETUP ================= */
 
-  const availableSetups = setups.filter(
-    (s) => s.strategy_type?.toLowerCase() === "dca"
-  );
+  const selectedSetup = useMemo(() => {
+    return availableSetups.find(
+      (s) => String(s.id) === String(form.setup_id)
+    );
+  }, [form.setup_id, availableSetups]);
+
+  const setupType = String(
+    selectedSetup?.setup_type ||
+      initialData?.setup_type ||
+      initialData?.setup?.setup_type ||
+      ""
+  ).toLowerCase();
+
+  const isDca =
+    setupType === "dca_basic" || setupType === "dca_smart";
+
+  const isBreakout = setupType === "breakout";
 
   /* ================= HANDLERS ================= */
 
@@ -134,38 +168,50 @@ export default function StrategyFormDCA({
   /* ================= VALIDATION ================= */
 
   const isValid =
-    form.name.trim() !== "" && // ⭐ REQUIRED
+    form.name.trim() !== "" &&
     form.setup_id &&
-    Number(form.amount) > 0 &&
-    form.frequency &&
-    (form.execution_mode === "fixed" ||
+    setupType !== "" &&
+    Number(form.base_amount) > 0 &&
+    (
+      form.execution_mode === "fixed" ||
       (form.decision_curve &&
         form.decision_curve.points?.length >= 2 &&
-        form.curve_name.trim() !== ""));
+        form.curve_name.trim() !== "")
+    ) &&
+    (
+      isDca ||
+      (
+        isBreakout &&
+        form.entry &&
+        form.targetsText &&
+        form.stop_loss
+      )
+    );
 
   /* ================= SUBMIT ================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name.trim()) {
-      setError("❌ Strategie naam is verplicht.");
-      return;
-    }
-
     if (!isValid) {
       setError("❌ Vul alle velden correct in.");
       return;
     }
 
-    const payload = {
-      name: form.name.trim(), // ⭐ REQUIRED
+    const targets = form.targetsText
+      .split(",")
+      .map((t) => parseFloat(t.trim()))
+      .filter((n) => !Number.isNaN(n));
 
-      strategy_type: "dca",
+    const payload = {
+      name: form.name.trim(),
       setup_id: Number(form.setup_id),
-      base_amount: Number(form.amount),
-      frequency: form.frequency,
+
+      base_amount: Number(form.base_amount),
       execution_mode: form.execution_mode,
+
+      // 🔥 belangrijk voor backend consistency
+      setup_type: setupType,
 
       decision_curve:
         form.execution_mode === "fixed"
@@ -186,6 +232,13 @@ export default function StrategyFormDCA({
           : null,
     };
 
+    // breakout velden
+    if (isBreakout) {
+      payload.entry = Number(form.entry);
+      payload.targets = targets;
+      payload.stop_loss = Number(form.stop_loss);
+    }
+
     try {
       await onSubmit(payload);
       showSnackbar("Strategie opgeslagen", "success");
@@ -201,11 +254,14 @@ export default function StrategyFormDCA({
     <form onSubmit={handleSubmit} className="space-y-6">
 
       <h2 className="text-xl font-bold flex items-center gap-2">
-        <Wallet className="w-5 h-5 text-blue-600" />
-        {mode === "edit" ? "DCA bewerken" : "Nieuwe DCA"}
+        {isDca ? (
+          <Wallet className="w-5 h-5 text-blue-600" />
+        ) : (
+          <TrendingUp className="w-5 h-5 text-blue-600" />
+        )}
+        Nieuwe Strategie
       </h2>
 
-      {/* ⭐ STRATEGY NAME */}
       <input
         name="name"
         value={form.name}
@@ -214,7 +270,6 @@ export default function StrategyFormDCA({
         className="input"
       />
 
-      {/* Setup */}
       <select
         name="setup_id"
         value={form.setup_id}
@@ -229,35 +284,50 @@ export default function StrategyFormDCA({
         ))}
       </select>
 
-      {/* Amount */}
+      {/* BREAKOUT */}
+      {isBreakout && (
+        <>
+          <input
+            name="entry"
+            type="number"
+            value={form.entry}
+            onChange={handleChange}
+            placeholder="Entry"
+            className="input"
+          />
+          <input
+            name="targetsText"
+            value={form.targetsText}
+            onChange={handleChange}
+            placeholder="Targets (comma)"
+            className="input"
+          />
+          <input
+            name="stop_loss"
+            type="number"
+            value={form.stop_loss}
+            onChange={handleChange}
+            placeholder="Stop loss"
+            className="input"
+          />
+        </>
+      )}
+
+      {/* AMOUNT */}
       <input
         type="number"
-        name="amount"
-        value={form.amount}
+        name="base_amount"
+        value={form.base_amount}
         onChange={handleChange}
         placeholder="Bedrag (€)"
         className="input"
       />
 
-      {/* Frequency */}
-      <select
-        name="frequency"
-        value={form.frequency}
-        onChange={handleChange}
-        className="input"
-      >
-        <option value="">Frequentie</option>
-        <option value="weekly">Wekelijks</option>
-        <option value="monthly">Maandelijks</option>
-      </select>
-
       {/* EXECUTION LOGIC */}
       <div className="space-y-3">
-        <label className="text-sm font-semibold">
-          Execution logic
-        </label>
+        <label className="text-sm font-semibold">Execution logic</label>
 
-        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer">
           <input
             type="radio"
             name="execution_mode"
@@ -265,15 +335,10 @@ export default function StrategyFormDCA({
             checked={form.execution_mode === "fixed"}
             onChange={handleChange}
           />
-          <div>
-            <div className="font-medium">Fixed amount</div>
-            <div className="text-xs text-gray-500">
-              Invest the same amount every execution.
-            </div>
-          </div>
+          <div>Fixed amount</div>
         </label>
 
-        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+        <label className="flex gap-3 p-3 border rounded-xl cursor-pointer">
           <input
             type="radio"
             name="execution_mode"
@@ -281,16 +346,11 @@ export default function StrategyFormDCA({
             checked={form.execution_mode === "custom"}
             onChange={handleChange}
           />
-          <div>
-            <div className="font-medium">Curve-based sizing</div>
-            <div className="text-xs text-gray-500">
-              Adjust allocation based on market score.
-            </div>
-          </div>
+          <div>Curve-based sizing</div>
         </label>
       </div>
 
-      {/* CURVE SECTION */}
+      {/* CURVE */}
       {form.execution_mode === "custom" && (
         <>
           <select
@@ -313,10 +373,9 @@ export default function StrategyFormDCA({
                 name="curve_name"
                 value={form.curve_name}
                 onChange={handleChange}
-                placeholder="Naam van je curve"
+                placeholder="Naam curve"
                 className="input"
               />
-
               <CurveEditor
                 value={form.decision_curve}
                 onChange={(curve) =>

@@ -7,7 +7,7 @@ import {
   createStrategy,
   updateStrategy,
   deleteStrategy,
-  analyzeStrategy,        // ✅ strategy-level AI analyse
+  analyzeStrategy,
   generateAllStrategies,
 } from '@/lib/api/strategy';
 
@@ -15,31 +15,25 @@ import { fetchSetups } from '@/lib/api/setups';
 
 
 // =====================================================================
-// 🧠 STRATEGY DATA HOOK (V1)
+// 🧠 STRATEGY DATA HOOK (CLEAN V1)
 // =====================================================================
 export function useStrategyData() {
   const [strategies, setStrategies] = useState([]);
   const [setups, setSetups] = useState([]);
-  const [dcaSetups, setDcaSetups] = useState([]);
-  const [aiSetups, setAiSetups] = useState([]);
-  const [manualSetups, setManualSetups] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
-    loadSetups();
-  }, []);
-
-  // =====================================================================
-  // 1) LOAD STRATEGIES
-  // =====================================================================
-  const loadStrategies = useCallback(async (symbol = '', timeframe = '') => {
+  // =========================================================
+  // LOAD STRATEGIES
+  // =========================================================
+  const loadStrategies = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
-      const data = await fetchStrategies(symbol, timeframe);
+      const data = await fetchStrategies();
       setStrategies(Array.isArray(data) ? data.filter(Boolean) : []);
     } catch (err) {
       console.error('❌ loadStrategies fout:', err);
@@ -50,54 +44,44 @@ export function useStrategyData() {
     }
   }, []);
 
-  // =====================================================================
-  // 2) LOAD SETUPS + FLAGS
-  // =====================================================================
-  const loadSetups = async () => {
+  // =========================================================
+  // LOAD SETUPS
+  // =========================================================
+  const loadSetups = useCallback(async () => {
     setError('');
 
     try {
-      const [setupData, strategyData] = await Promise.all([
-        fetchSetups(),
-        fetchStrategies(),
-      ]);
-
-      const setupsArray = Array.isArray(setupData) ? setupData : [];
-      const strategiesArray = Array.isArray(strategyData) ? strategyData : [];
-
-      const hasStrategy = {
-        dca: new Set(),
-        trading: new Set(),
-        manual: new Set(),
-      };
-
-      for (const strat of strategiesArray) {
-        if (strat.setup_id && strat.strategy_type) {
-          hasStrategy[strat.strategy_type]?.add(strat.setup_id);
-        }
-      }
-
-      const enriched = setupsArray.map((s) => ({
-        ...s,
-        has_dca_strategy: hasStrategy.dca.has(s.id),
-        has_ai_strategy: hasStrategy.trading.has(s.id),
-        has_manual_strategy: hasStrategy.manual.has(s.id),
-      }));
-
-      setSetups(enriched);
-      setDcaSetups(enriched.filter((s) => !s.has_dca_strategy));
-      setAiSetups(enriched.filter((s) => !s.has_ai_strategy));
-      setManualSetups(enriched.filter((s) => !s.has_manual_strategy));
-
+      const data = await fetchSetups();
+      setSetups(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('❌ loadSetups fout:', err);
       setError('Fout bij laden setups.');
+      setSetups([]);
     }
-  };
+  }, []);
 
-  // =====================================================================
-  // 3) CRUD
-  // =====================================================================
+  // =========================================================
+  // INIT LOAD
+  // =========================================================
+  useEffect(() => {
+    loadSetups();
+    loadStrategies();
+  }, [loadSetups, loadStrategies]);
+
+  // =========================================================
+  // CRUD
+  // =========================================================
+  async function addStrategy(strategyData) {
+    try {
+      await createStrategy(strategyData);
+      setSuccessMessage('Strategie toegevoegd.');
+      await loadStrategies();
+    } catch (err) {
+      console.error('❌ addStrategy fout:', err);
+      setError('Toevoegen mislukt.');
+    }
+  }
+
   async function saveStrategy(id, updatedData) {
     try {
       await updateStrategy(id, updatedData);
@@ -120,23 +104,9 @@ export function useStrategyData() {
     }
   }
 
-  async function addStrategy(strategyData) {
-    try {
-      await createStrategy(strategyData);
-      setSuccessMessage('Strategie toegevoegd.');
-      await loadStrategies();
-    } catch (err) {
-      console.error('❌ addStrategy fout:', err);
-      setError('Toevoegen mislukt.');
-    }
-  }
-
-  // =====================================================================
-  // 4) 🧠 AI STRATEGIE-ANALYSE (V1 – zoals setup)
-  // Backend: POST /api/strategies/analyze/{strategy_id}
-  // → AI schrijft strategy.data.ai_explanation
-  // → wij reloaden strategies
-  // =====================================================================
+  // =========================================================
+  // AI ANALYSE
+  // =========================================================
   async function analyzeSingleStrategy(strategyId) {
     setSuccessMessage('');
     setError('');
@@ -156,9 +126,9 @@ export function useStrategyData() {
     }
   }
 
-  // =====================================================================
-  // 5) BULK STRATEGY GENERATION (OPTIONEEL)
-  // =====================================================================
+  // =========================================================
+  // BULK
+  // =========================================================
   async function generateAll() {
     try {
       await generateAllStrategies();
@@ -170,15 +140,12 @@ export function useStrategyData() {
     }
   }
 
-  // =====================================================================
+  // =========================================================
   // RETURN
-  // =====================================================================
+  // =========================================================
   return {
     strategies,
     setups,
-    dcaSetups,
-    aiSetups,
-    manualSetups,
     loading,
     error,
     successMessage,
@@ -186,11 +153,11 @@ export function useStrategyData() {
     loadStrategies,
     loadSetups,
 
+    addStrategy,
     saveStrategy,
     removeStrategy,
-    addStrategy,
 
-    analyzeSingleStrategy,   // ✅ koppel hierop in UI
+    analyzeSingleStrategy,
     generateAll,
   };
 }

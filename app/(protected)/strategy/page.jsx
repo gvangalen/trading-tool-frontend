@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 
 import StrategyList from "@/components/strategy/StrategyList";
-import StrategyTabs from "@/components/strategy/StrategyTabs";
+import StrategyForm from "@/components/strategy/StrategyForm"; // ✅ NIEUW
+
 import ActiveStrategyTodayCard from "@/components/strategy/ActiveStrategyTodayCard";
 
 import { useSetupData } from "@/hooks/useSetupData";
@@ -33,9 +34,6 @@ import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 export default function StrategyPage() {
   const { showSnackbar } = useModal();
 
-  // ===============================
-  // 🧭 ONBOARDING
-  // ===============================
   const { status, completeStep } = useOnboarding();
 
   const [search, setSearch] = useState("");
@@ -44,26 +42,20 @@ export default function StrategyPage() {
   const { setups, loadSetups } = useSetupData();
   const { strategies, loadStrategies } = useStrategyData();
 
-  /* -------------------------------------------------- */
-  /* SAFE ARRAYS */
-  /* -------------------------------------------------- */
   const safeSetups = Array.isArray(setups) ? setups : [];
   const safeStrategies = Array.isArray(strategies) ? strategies : [];
 
-  /* -------------------------------------------------- */
-  /* INITIAL LOAD */
-  /* -------------------------------------------------- */
+  /* ================= LOAD ================= */
+
   useEffect(() => {
     loadSetups();
     loadStrategies();
   }, []);
 
-  /* -------------------------------------------------- */
-  /* 🔥 ONBOARDING TRIGGER
-  -------------------------------------------------- */
+  /* ================= ONBOARDING ================= */
+
   useEffect(() => {
     if (
-      Array.isArray(safeStrategies) &&
       safeStrategies.length > 0 &&
       status &&
       status.has_strategy === false
@@ -72,18 +64,16 @@ export default function StrategyPage() {
     }
   }, [safeStrategies, status, completeStep]);
 
-  /* -------------------------------------------------- */
-  /* 🔁 CENTRALE REFRESH */
-  /* -------------------------------------------------- */
+  /* ================= REFRESH ================= */
+
   const refreshEverything = () => {
     loadStrategies();
     loadSetups();
     setTimeout(() => setRefreshKey((k) => k + 1), 30);
   };
 
-  /* -------------------------------------------------- */
-  /* 🗑 DELETE STRATEGY */
-  /* -------------------------------------------------- */
+  /* ================= DELETE ================= */
+
   const handleDeleteStrategy = async (id) => {
     try {
       await deleteStrategy(id);
@@ -94,9 +84,8 @@ export default function StrategyPage() {
     }
   };
 
-  /* -------------------------------------------------- */
-  /* ✏️ UPDATE STRATEGY */
-  /* -------------------------------------------------- */
+  /* ================= UPDATE ================= */
+
   const handleUpdateStrategy = async (id, data) => {
     try {
       await updateStrategy(id, data);
@@ -107,9 +96,8 @@ export default function StrategyPage() {
     }
   };
 
-  /* -------------------------------------------------- */
-  /* ➕ CREATE STRATEGY */
-  /* -------------------------------------------------- */
+  /* ================= CREATE ================= */
+
   const handleStrategySubmit = async (strategy) => {
     try {
       const setup = safeSetups.find(
@@ -136,45 +124,8 @@ export default function StrategyPage() {
     }
   };
 
-  /* -------------------------------------------------- */
-  /* FILTERS */
-  /* -------------------------------------------------- */
-  const setupsWithoutTrading = useMemo(() => {
-    return safeSetups.filter(
-      (s) =>
-        !safeStrategies.some(
-          (strat) =>
-            String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === "trading"
-        )
-    );
-  }, [safeSetups, safeStrategies, refreshKey]);
+  /* ================= RENDER ================= */
 
-  const setupsWithoutDCA = useMemo(() => {
-    return safeSetups.filter(
-      (s) =>
-        !safeStrategies.some(
-          (strat) =>
-            String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === "dca"
-        )
-    );
-  }, [safeSetups, safeStrategies, refreshKey]);
-
-  const setupsWithoutManual = useMemo(() => {
-    return safeSetups.filter(
-      (s) =>
-        !safeStrategies.some(
-          (strat) =>
-            String(strat.setup_id) === String(s.id) &&
-            String(strat.strategy_type).toLowerCase() === "manual"
-        )
-    );
-  }, [safeSetups, safeStrategies, refreshKey]);
-
-  /* -------------------------------------------------- */
-  /* RENDER */
-  /* -------------------------------------------------- */
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
 
@@ -191,15 +142,13 @@ export default function StrategyPage() {
         De AI analyseert je strategieën én geeft je vandaag een concreet plan.
       </p>
 
-      {/* ✅ INSIGHT + ACTIE NAAST ELKAAR */}
+      {/* INSIGHTS */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <AgentInsightPanel category="strategy" />
         <ActiveStrategyTodayCard />
       </div>
 
-      {/* ===================== */}
       {/* BESTAANDE STRATEGIEËN */}
-      {/* ===================== */}
       <CardWrapper
         title={
           <div className="flex items-center gap-2">
@@ -229,9 +178,7 @@ export default function StrategyPage() {
         />
       </CardWrapper>
 
-      {/* ===================== */}
       {/* NIEUWE STRATEGIE */}
-      {/* ===================== */}
       <CardWrapper
         title={
           <div className="flex items-center gap-2">
@@ -240,12 +187,10 @@ export default function StrategyPage() {
           </div>
         }
       >
-        <StrategyTabs
+        <StrategyForm
           key={refreshKey}
           onSubmit={handleStrategySubmit}
-          setupsTrading={setupsWithoutTrading}
-          setupsDCA={setupsWithoutDCA}
-          setupsManual={setupsWithoutManual}
+          setups={safeSetups} // 🔥 ALLE setups
         />
       </CardWrapper>
     </div>

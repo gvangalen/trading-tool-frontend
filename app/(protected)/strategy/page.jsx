@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useModal } from "@/components/modal/ModalProvider";
 
 import {
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import StrategyList from "@/components/strategy/StrategyList";
-import StrategyForm from "@/components/strategy/StrategyForm"; // ✅ NIEUW
+import StrategyForm from "@/components/strategy/StrategyForm";
 
 import ActiveStrategyTodayCard from "@/components/strategy/ActiveStrategyTodayCard";
 
@@ -28,7 +28,6 @@ import {
 import CardWrapper from "@/components/ui/CardWrapper";
 import AgentInsightPanel from "@/components/agents/AgentInsightPanel";
 
-// ⭐ ONBOARDING
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 
 export default function StrategyPage() {
@@ -112,9 +111,7 @@ export default function StrategyPage() {
       await createStrategy({
         ...strategy,
         setup_id: setup.id,
-        setup_name: setup.name,
-        symbol: setup.symbol,
-        timeframe: setup.timeframe,
+        setup_type: setup.setup_type, // ✅ BELANGRIJK FIX
       });
 
       showSnackbar("Strategie opgeslagen ✔", "success");
@@ -128,7 +125,6 @@ export default function StrategyPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto py-10 px-6 space-y-12 animate-fade-slide">
-
       <OnboardingBanner step="strategy" />
 
       <div className="flex items-center gap-3">
@@ -190,7 +186,7 @@ export default function StrategyPage() {
         <StrategyForm
           key={refreshKey}
           onSubmit={handleStrategySubmit}
-          setups={safeSetups} // 🔥 ALLE setups
+          setups={safeSetups}
         />
       </CardWrapper>
     </div>

@@ -16,11 +16,10 @@ export function useSetupData() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // 🔥 NIEUW: filter op setup_type
   const [setupTypeFilter, setSetupTypeFilter] = useState(null);
 
   // ============================================================
-  // 🔁 LOAD (met filter)
+  // 🔁 LOAD
   // ============================================================
   useEffect(() => {
     loadSetups();
@@ -28,7 +27,7 @@ export function useSetupData() {
   }, [setupTypeFilter]);
 
   // ============================================================
-  // 🔁 1. Setups ophalen (met backend filter)
+  // 🔁 1. Setups ophalen
   // ============================================================
   async function loadSetups() {
     console.log('🔍 loadSetups gestart');
@@ -37,7 +36,7 @@ export function useSetupData() {
 
     try {
       const data = await fetchSetups({
-        setup_type: setupTypeFilter, // 🔥 KEY
+        setup_type: setupTypeFilter,
       });
 
       setSetups(Array.isArray(data) ? data : []);
@@ -110,12 +109,12 @@ export function useSetupData() {
     error,
     successMessage,
 
-    // 🔥 NIEUW
     setupTypeFilter,
     setSetupTypeFilter,
 
     // actions
     loadSetups,
+    reloadSetups: loadSetups, // ✅ FIX
     loadTopSetups,
     saveSetup,
     removeSetup,

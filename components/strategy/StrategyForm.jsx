@@ -72,12 +72,7 @@ export default function StrategyForm({
   const availableSetups = useMemo(() => {
     return setups.filter((s) => {
       const type = String(s.setup_type || "").toLowerCase();
-
-      return (
-        type === "dca_basic" ||
-        type === "dca_smart" ||
-        type === "breakout"
-      );
+      return type === "dca" || type === "trade";
     });
   }, [setups]);
 
@@ -91,15 +86,13 @@ export default function StrategyForm({
 
   const setupType = String(
     selectedSetup?.setup_type ||
-      initialData?.setup_type ||
-      initialData?.setup?.setup_type ||
-      ""
+    initialData?.setup_type ||
+    initialData?.setup?.setup_type ||
+    ""
   ).toLowerCase();
-
-  const isDca =
-    setupType === "dca_basic" || setupType === "dca_smart";
-
-  const isBreakout = setupType === "breakout";
+  
+  const isDca = setupType === "dca";
+  const isTrade = setupType === "trade";
 
   /* ================= HANDLERS ================= */
 
@@ -181,13 +174,12 @@ export default function StrategyForm({
     (
       isDca ||
       (
-        isBreakout &&
+        isTrade &&
         form.entry &&
         form.targetsText &&
         form.stop_loss
       )
     );
-
   /* ================= SUBMIT ================= */
 
   const handleSubmit = async (e) => {
@@ -232,8 +224,8 @@ export default function StrategyForm({
           : null,
     };
 
-    // breakout velden
-    if (isBreakout) {
+    // Trade velden
+    if (isTrade) {
       payload.entry = Number(form.entry);
       payload.targets = targets;
       payload.stop_loss = Number(form.stop_loss);
@@ -285,7 +277,7 @@ export default function StrategyForm({
       </select>
 
       {/* BREAKOUT */}
-      {isBreakout && (
+      {isTrade && (
         <>
           <input
             name="entry"

@@ -49,10 +49,22 @@ export function useStrategyData() {
   // =========================================================
   const loadSetups = useCallback(async () => {
     setError('');
-
+  
     try {
       const data = await fetchSetups();
-      setSetups(Array.isArray(data) ? data : []);
+  
+      const cleaned = Array.isArray(data)
+        ? data
+            .filter(Boolean)
+            .map((s) => ({
+              ...s,
+              setup_type: String(s.setup_type || '').toLowerCase(),
+            }))
+            .filter((s) => s.setup_type === 'dca' || s.setup_type === 'trade')
+        : [];
+  
+      setSetups(cleaned);
+  
     } catch (err) {
       console.error('❌ loadSetups fout:', err);
       setError('Fout bij laden setups.');

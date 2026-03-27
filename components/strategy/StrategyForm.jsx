@@ -133,27 +133,27 @@ export default function StrategyForm({
     }
 
     if (name === "selected_curve_id") {
-      if (value === "new") {
-        setForm((p) => ({
-          ...p,
-          selected_curve_id: "new",
-          decision_curve: null,
-          curve_name: "",
-        }));
-      } else {
-        const selected = curves.find(
-          (c) => String(c.id) === value
-        );
-
-        setForm((p) => ({
-          ...p,
-          selected_curve_id: value,
-          decision_curve: selected.curve,
-          curve_name: selected.name ?? "",
-        }));
-      }
-      return;
+    if (value === "new") {
+      setForm((p) => ({
+        ...p,
+        selected_curve_id: "new",
+        decision_curve: null,
+        curve_name: "",
+      }));
+    } else {
+      const selected = curves.find(
+        (c) => String(c.id) === value
+      );
+  
+      setForm((p) => ({
+        ...p,
+        selected_curve_id: value,
+        decision_curve: selected?.curve || null,
+        curve_name: selected?.name ?? "",
+      }));
     }
+    return;
+  }
 
     setForm((p) => ({ ...p, [name]: value }));
   };
@@ -175,70 +175,70 @@ export default function StrategyForm({
       isDca ||
       (
         isTrade &&
-        form.entry &&
-        form.targetsText &&
-        form.stop_loss
+        form.entry !== "" &&
+        form.targetsText !== "" &&
+        form.stop_loss !== ""
       )
     );
   /* ================= SUBMIT ================= */
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!isValid) {
-      setError("❌ Vul alle velden correct in.");
-      return;
-    }
+  if (!isValid) {
+    setError("❌ Vul alle velden correct in.");
+    return;
+  }
 
-    const targets = form.targetsText
-      .split(",")
-      .map((t) => parseFloat(t.trim()))
-      .filter((n) => !Number.isNaN(n));
+  const targets = form.targetsText
+    .split(",")
+    .map((t) => parseFloat(t.trim()))
+    .filter((n) => !Number.isNaN(n));
 
-    const payload = {
-      name: form.name.trim(),
-      setup_id: Number(form.setup_id),
+  const payload = {
+    name: form.name.trim(),
+    setup_id: Number(form.setup_id),
 
-      base_amount: Number(form.base_amount),
-      execution_mode: form.execution_mode,
+    base_amount: Number(form.base_amount),
+    execution_mode: form.execution_mode,
 
-      // 🔥 belangrijk voor backend consistency
-      setup_type: setupType,
+    // 🔥 belangrijk voor backend consistency
+    setup_type: setupType,
 
-      decision_curve:
-        form.execution_mode === "fixed"
-          ? null
-          : {
-              ...form.decision_curve,
-              name: form.curve_name.trim(),
-            },
+    decision_curve:
+      form.execution_mode === "fixed"
+        ? null
+        : {
+            ...form.decision_curve,
+            name: form.curve_name.trim(),
+          },
 
-      decision_curve_name:
-        form.execution_mode === "fixed"
-          ? null
-          : form.curve_name.trim(),
+    decision_curve_name:
+      form.execution_mode === "fixed"
+        ? null
+        : form.curve_name.trim(),
 
-      decision_curve_id:
-        form.selected_curve_id !== "new"
-          ? Number(form.selected_curve_id)
-          : null,
-    };
-
-    // Trade velden
-    if (isTrade) {
-      payload.entry = Number(form.entry);
-      payload.targets = targets;
-      payload.stop_loss = Number(form.stop_loss);
-    }
-
-    try {
-      await onSubmit(payload);
-      showSnackbar("Strategie opgeslagen", "success");
-    } catch (err) {
-      console.error(err);
-      setError("Opslaan mislukt.");
-    }
+    decision_curve_id:
+      form.selected_curve_id !== "new"
+        ? Number(form.selected_curve_id)
+        : null,
   };
+
+  // 🔥 TRADE velden (fix: geen NaN)
+  if (isTrade) {
+    payload.entry = form.entry !== "" ? Number(form.entry) : null;
+    payload.targets = targets;
+    payload.stop_loss = form.stop_loss !== "" ? Number(form.stop_loss) : null;
+  }
+
+  try {
+    await onSubmit(payload);
+    showSnackbar("Strategie opgeslagen", "success");
+  } catch (err) {
+    console.error(err);
+    setError("Opslaan mislukt.");
+  }
+};
 
   /* ================= UI ================= */
 

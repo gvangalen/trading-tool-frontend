@@ -172,14 +172,17 @@ export default function TopSetupsMini() {
                   <span className="font-semibold text-[var(--text-dark)]">
                     {setup.name}
                   </span>
+
+                  {/* ✅ FIX: geen indicators meer */}
                   <span className="ml-2 text-xs text-[var(--text-light)]">
-                    {setup.indicators?.split(",")[0] || "–"}
+                    {setup.symbol || "-"} · {setup.timeframe || "-"}
                   </span>
                 </div>
               </div>
 
+              {/* ✅ FIX: geen decimals */}
               <span className="font-semibold text-[var(--text-dark)]">
-                {setup.score?.toFixed(1) ?? "-"}
+                {Math.round(setup.score ?? 0)}
               </span>
             </li>
           ))

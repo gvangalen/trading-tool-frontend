@@ -25,8 +25,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     return "Euforisch / oververhit";
   };
 
-  const rangeText = (min, max) =>
-    `${scoreLabel(min)} → ${scoreLabel(max)}`;
+  const rangeText = (min, max) => `${scoreLabel(min)} → ${scoreLabel(max)}`;
 
   // ----------------------------------------------------
   // STATE
@@ -34,7 +33,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   const emptyForm = {
     name: "",
     symbol: "BTC",
-    setupType: "dca_basic",
+    setupType: "dca", // ✅ nu alleen dca of trade
     timeframe: "1W",
 
     dcaFrequency: "weekly",
@@ -57,7 +56,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     setFormData({
       name: initialData.name ?? "",
       symbol: initialData.symbol ?? "BTC",
-      setupType: initialData.setup_type ?? "dca_basic",
+      setupType: initialData.setup_type ?? "dca",
       timeframe: initialData.timeframe ?? "1W",
 
       dcaFrequency: initialData.dca_frequency ?? "weekly",
@@ -65,14 +64,19 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
       dcaMonthDay: initialData.dca_month_day ?? 1,
     });
 
-    setMacroScore([initialData.min_macro_score, initialData.max_macro_score]);
-    setTechnicalScore([
-      initialData.min_technical_score,
-      initialData.max_technical_score,
+    setMacroScore([
+      initialData.min_macro_score ?? 30,
+      initialData.max_macro_score ?? 70,
     ]);
+
+    setTechnicalScore([
+      initialData.min_technical_score ?? 40,
+      initialData.max_technical_score ?? 80,
+    ]);
+
     setMarketScore([
-      initialData.min_market_score,
-      initialData.max_market_score,
+      initialData.min_market_score ?? 20,
+      initialData.max_market_score ?? 60,
     ]);
   }, [isEdit, initialData]);
 
@@ -81,11 +85,14 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   // ----------------------------------------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    setFormData((p) => ({
+      ...p,
+      [name]: name === "dcaMonthDay" ? Number(value) : value,
+    }));
   };
 
-  const isDcaBasic = formData.setupType === "dca_basic";
-  const isDcaSmart = formData.setupType === "dca_smart";
+  const isDca = formData.setupType === "dca";
+  const isTrade = formData.setupType === "trade";
 
   // ----------------------------------------------------
   // SUBMIT
@@ -95,17 +102,24 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
     setLoading(true);
 
     const payload = {
-      name: formData.name,
+      name: formData.name?.trim(),
       symbol: formData.symbol,
       setup_type: formData.setupType,
       timeframe: formData.timeframe,
 
-      // 🔥 alleen DCA BASIC krijgt deze velden
-      ...(isDcaBasic && {
+      ...(isDca && {
         dca_frequency: formData.dcaFrequency,
         dca_day: formData.dcaFrequency === "weekly" ? formData.dcaDay : null,
         dca_month_day:
-          formData.dcaFrequency === "monthly" ? formData.dcaMonthDay : null,
+          formData.dcaFrequency === "monthly"
+            ? Number(formData.dcaMonthDay || 1)
+            : null,
+      }),
+
+      ...(isTrade && {
+        dca_frequency: null,
+        dca_day: null,
+        dca_month_day: null,
       }),
 
       min_macro_score: macroScore[0],
@@ -124,7 +138,11 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
         await saveNewSetup(payload);
         showSnackbar("Setup opgeslagen", "success");
         setFormData(emptyForm);
+        setMacroScore([30, 70]);
+        setTechnicalScore([40, 80]);
+        setMarketScore([20, 60]);
       }
+
       onSaved?.();
     } catch (err) {
       console.error(err);
@@ -159,13 +177,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
         </span>
       </div>
 
-      <Slider
-        range
-        min={0}
-        max={100}
-        value={score}
-        onChange={setScore}
-      />
+      <Slider range min={0} max={100} value={score} onChange={setScore} />
 
       <div className="text-sm text-[var(--text-soft)]">
         <strong>{rangeText(score[0], score[1])}</strong>
@@ -179,7 +191,6 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
   // ----------------------------------------------------
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-
       {/* BASIS */}
       <div className={sectionClass}>
         {sectionTitle(<Settings size={18} />, "Basisgegevens")}
@@ -210,9 +221,8 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
             onChange={handleChange}
             className={fieldClass}
           >
-            <option value="dca_basic">DCA Basic</option>
-            <option value="dca_smart">DCA Smart</option>
-            <option value="breakout">Breakout</option>
+            <option value="dca">DCA setup</option>
+            <option value="trade">Trade setup</option>
           </select>
 
           <select
@@ -227,10 +237,9 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
           </select>
         </div>
 
-        {/* 🔥 DCA BASIC */}
-        {isDcaBasic && (
+        {/* DCA planning */}
+        {isDca && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
             <select
               name="dcaFrequency"
               value={formData.dcaFrequency}
@@ -264,7 +273,7 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
                 type="number"
                 name="dcaMonthDay"
                 min={1}
-                max={28} // 🔥 FIX
+                max={28}
                 value={formData.dcaMonthDay}
                 onChange={handleChange}
                 className={fieldClass}
@@ -274,17 +283,20 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
           </div>
         )}
 
-        {/* 🧠 SMART DCA */}
-        {isDcaSmart && (
+        {/* Trade info */}
+        {isTrade && (
           <div className="text-sm text-[var(--text-soft)]">
-            Smart DCA bepaalt automatisch wanneer en hoeveel er wordt gekocht.
+            Dit is een trade setup. Entry, targets en stop-loss beheer je later in de gekoppelde strategie.
           </div>
         )}
       </div>
 
       {/* SCORES */}
       <div className={sectionClass}>
-        {sectionTitle(<BarChart3 size={18} />, "Wanneer mag deze setup actief zijn?")}
+        {sectionTitle(
+          <BarChart3 size={18} />,
+          "Wanneer mag deze setup actief zijn?"
+        )}
 
         <div className="flex items-start gap-2 text-sm text-[var(--text-soft)]">
           <Info size={16} className="mt-0.5" />
@@ -295,7 +307,12 @@ export default function SetupForm({ onSaved, mode = "new", initialData = null })
 
         {scoreBlock("Macro", macroScore, setMacroScore, "Macro-omgeving")}
         {scoreBlock("Technical", technicalScore, setTechnicalScore, "Trend")}
-        {scoreBlock("Market / Sentiment", marketScore, setMarketScore, "Sentiment")}
+        {scoreBlock(
+          "Market / Sentiment",
+          marketScore,
+          setMarketScore,
+          "Sentiment"
+        )}
       </div>
 
       {/* SAVE */}

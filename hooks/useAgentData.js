@@ -43,48 +43,56 @@ export function useAgentData(category) {
   const [reflections, setReflections] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = async () => {
     if (!category) return;
 
-    const load = async () => {
-      setLoading(true);
-      console.log(`🧠 [useAgentData] load voor categorie: ${category}`);
+    console.log(`🧠 [useAgentData] load voor categorie: ${category}`);
 
-      const fetchInsightFn = insightMap[category];
-      const fetchReflectionsFn = reflectionMap[category];
+    const fetchInsightFn = insightMap[category];
+    const fetchReflectionsFn = reflectionMap[category];
 
-      if (!fetchInsightFn || !fetchReflectionsFn) {
-        console.error(`❌ Geen fetch functie gevonden voor category=${category}`);
-        setInsight(null);
-        setReflections([]);
-        setLoading(false);
-        return;
-      }
+    if (!fetchInsightFn || !fetchReflectionsFn) {
+      console.error(`❌ Geen fetch functie gevonden voor category=${category}`);
+      setInsight(null);
+      setReflections([]);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const [insightData, reflectionsData] = await Promise.all([
-          fetchInsightFn(),
-          fetchReflectionsFn(),
-        ]);
+    try {
+      const [insightData, reflectionsData] = await Promise.all([
+        fetchInsightFn(),
+        fetchReflectionsFn(),
+      ]);
 
-        setInsight(insightData || null);
-        setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
-      } catch (e) {
-        console.error("❌ [useAgentData] Fout:", e);
-        setInsight(null);
-        setReflections([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setInsight(insightData || null);
+      setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
+    } catch (e) {
+      console.error("❌ [useAgentData] Fout:", e);
+      setInsight(null);
+      setReflections([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    setLoading(true);
     load();
+
+    // 🔥 FIX: auto refresh elke 10 sec
+    const interval = setInterval(() => {
+      load();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [category]);
 
   return {
     insight,
     reflections,
     loading,
+    refetch: load, // 🔥 manual trigger mogelijk
   };
 }
 

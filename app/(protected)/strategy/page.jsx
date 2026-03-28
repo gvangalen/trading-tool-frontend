@@ -140,7 +140,7 @@ export default function StrategyPage() {
 
       {/* INSIGHTS */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <AgentInsightPanel category="strategy" />
+        <AgentInsightPanel category="strategy" key={refreshKey} />
         <ActiveStrategyTodayCard />
       </div>
 
